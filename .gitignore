@@ -1,0 +1,23 @@
+# Secrets & Environment (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+
+# Local Offline Databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Dependencies & Build Outputs
+node_modules/
+.next/
+out/
+dist/
+build/
+vendor/
+
+# OS & Editor Noise
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
