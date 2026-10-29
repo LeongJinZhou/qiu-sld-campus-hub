@@ -31,6 +31,7 @@ use App\Http\Controllers\Membership\MembershipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
+use App\Http\Controllers\SldRequestController;
 use App\Http\Controllers\Social\ClubSocialController;
 use App\Http\Controllers\Social\FeedController;
 use App\Http\Controllers\Social\PostController;
@@ -160,6 +161,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/annual-report/draft', [AnnualReportController::class, 'draft'])->middleware('throttle:6,1')->name('annual.draft');
     Route::post('/clubs/{club}/annual-report/generate', [AnnualReportController::class, 'generate'])->middleware('throttle:6,1')->name('annual.generate');
     Route::get('/clubs/{club}/annual-report/{format}', [AnnualReportController::class, 'download'])->name('annual.download');
+    Route::post('/sld-requests/{sldRequest}/reply', [SldRequestController::class, 'reply'])->name('sld-requests.reply');
     Route::get('/clubs/{club}/venues', [VenueController::class, 'index'])->name('venues.index');
     Route::post('/clubs/{club}/venues', [VenueController::class, 'store'])->middleware('throttle:10,1')->name('venues.store');
     Route::get('/clubs/{club}/payments/review', [MembershipController::class, 'reviewQueue'])->name('payments.review');
@@ -186,6 +188,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('members', [MembersController::class, 'all'])->name('members.all');
         Route::get('finance', Admin\FinanceOverviewController::class)->name('finance.index');
+        Route::get('requests', [SldRequestController::class, 'index'])->name('requests.index');
+        Route::post('requests', [SldRequestController::class, 'store'])->name('requests.store');
         Route::get('agm', [Admin\AgmController::class, 'index'])->name('agm.index');
         Route::post('agm/periods', [Admin\AgmController::class, 'open'])->name('agm.open');
         Route::post('agm/periods/{period}/close', [Admin\AgmController::class, 'close'])->name('agm.close');

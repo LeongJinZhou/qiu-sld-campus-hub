@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Approvals\ApproverResolver;
 use App\Services\Camsys\CamsysSync;
+use App\Services\Events\ProposalForm;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Roles\RoleService;
 use App\Services\Time\SessionResolver;
@@ -185,4 +186,18 @@ function plainMembers(object $t, int $count, string $status = 'active'): array
 
             return $s->user;
         })->values()->all();
+}
+
+function completeProposal(array $f, array $overrides = []): array
+{
+    $data = app(ProposalForm::class)->defaults($f['event']);
+
+    return array_replace_recursive($data, [
+        'summary' => 'Clean the beach.', 'venue' => 'Pantai Remis', 'introduction' => 'SDG 14.', 'eligibility' => 'All students',
+        'nature' => ['environmental'], 'source_of_fund' => ['club'], 'objectives' => ['Clean', 'Learn', 'Bond'],
+        'activities' => [['name' => 'Cleanup', 'description' => 'Pick litter']],
+        'itinerary' => [['start' => '08:00', 'end' => '12:30', 'agenda' => 'Cleanup']],
+        'budget' => ['revenue' => [['description' => 'Club fund', 'price_sen' => 50000, 'quantity' => 1]], 'expenses' => [['description' => 'Gloves', 'price_sen' => 500, 'quantity' => 40]]],
+        'conclusion' => 'Good for all.',
+    ], $overrides);
 }
