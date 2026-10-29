@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\Social\FeedQuery;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 /** 24-hour story. */
@@ -17,6 +19,13 @@ class Story extends Model
     protected function casts(): array
     {
         return ['expires_at' => 'datetime'];
+    }
+
+    protected static function booted(): void
+    {
+        $forget = fn () => Cache::forget(FeedQuery::STORIES_CACHE);
+        static::saved($forget);
+        static::deleted($forget);
     }
 
     /** @param Builder<Story> $query */

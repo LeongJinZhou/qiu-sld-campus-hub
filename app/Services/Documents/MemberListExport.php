@@ -23,7 +23,8 @@ class MemberListExport
 
         return $this->xlsx->render(self::TEMPLATE, function (Spreadsheet $book) use ($club, $rows, $advisor): void {
             $sheet = $book->getActiveSheet();
-            $sheet->setCellValue('B1', $club->name)->setCellValue('B2', $advisor?->name);
+            // Column A is narrow and the labels overflow into B, so the value follows the label in the same cell.
+            $sheet->setCellValue('A1', "Club Name: {$club->name}")->setCellValue('A2', 'Advisor: '.($advisor->name ?? ''));
             // Clear the template's sample rows (5-8), then write the members from row 5.
             foreach (range(5, 8) as $row) {
                 foreach (range('A', 'G') as $col) {

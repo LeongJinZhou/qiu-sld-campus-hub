@@ -8,6 +8,7 @@ use App\Models\Club;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Services\Social\PostPresenter;
+use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -35,7 +36,7 @@ class PostController extends Controller
             'published_at' => now(),
         ]);
         foreach ($request->file('photos') as $i => $photo) {
-            $post->media()->create(['path' => $photo->store("posts/{$club->id}", 'public'), 'sort' => $i]);
+            $post->media()->create(['path' => app(ImageUpload::class)->store($photo, "posts/{$club->id}"), 'sort' => $i]);
         }
 
         return to_route('feed')->with('success', 'Posted.');

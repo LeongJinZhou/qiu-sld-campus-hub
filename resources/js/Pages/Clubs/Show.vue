@@ -43,6 +43,7 @@ const props = defineProps<{
     events?: { id: number; slug: string; name: string; starts_at: string; venue: string | null; status: string; poster_url: string | null }[];
     faqs: { id: number; question: string; answer: string }[];
     agm: { days_left: number; deadline: string } | null;
+    sldRequests: { id: number; subject: string; body: string; due_on: string; overdue: boolean; reply: string | null }[];
     documents?: { id: number; type: string; event: string | null; status: string; updated: string | null; progress: ApprovalProgress }[] | null;
     can: { manage: boolean; publish: boolean; createEvent: boolean; internal: boolean; treasure: boolean };
 }>();
@@ -55,6 +56,7 @@ const tabs = computed(() => [
     { key: 'faq', label: 'FAQ' },
     ...(props.can.internal ? [{ key: 'documents', label: 'Documents' }] : []),
 ]);
+const replies = ref<Record<number, string>>({});
 const tab = ref(tabs.value.some((t) => t.key === props.tab) ? props.tab : 'committee');
 
 const viewing = ref<{ name: string; logo_url: string | null; stories: Story[] } | null>(null);
@@ -89,6 +91,20 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
             </div>
 
             <p v-if="membership.drive" class="rounded-card bg-gradient-to-r from-brand-yellow/30 to-brand-magenta/20 px-4 py-3 text-sm font-medium">🎉 {{ membership.drive }} is on — join {{ club.name }} now!</p>
+
+            <section v-for="r in sldRequests" :key="r.id" class="grid gap-2 rounded-card border p-4 text-sm" :class="r.reply ? 'border-line bg-surface' : r.overdue ? 'border-danger/40 bg-danger/5' : 'border-warning/40 bg-warning/5'">
+                <p class="flex flex-wrap items-center justify-between gap-2">
+                    <strong>SLD request: {{ r.subject }}</strong>
+                    <Badge v-if="r.reply" tone="success">Replied</Badge>
+                    <Badge v-else :tone="r.overdue ? 'danger' : 'warning'">{{ r.overdue ? 'Overdue' : 'Reply by' }} {{ r.due_on }}</Badge>
+                </p>
+                <p class="whitespace-pre-line">{{ r.body }}</p>
+                <p v-if="r.reply" class="whitespace-pre-line text-ink-muted">Your reply: {{ r.reply }}</p>
+                <form v-else class="grid gap-2" @submit.prevent="router.post(`/sld-requests/${r.id}/reply`, { reply: replies[r.id] ?? '' }, { preserveScroll: true })">
+                    <Textarea v-model="replies[r.id]" :rows="2" placeholder="Reply to SLD" />
+                    <div><Button type="submit" size="sm">Send reply</Button></div>
+                </form>
+            </section>
 
             <div v-if="can.publish || can.createEvent || can.internal" class="flex flex-wrap gap-2">
                 <Link v-if="can.createEvent" :href="`/clubs/${club.slug}/events/create`"><Button size="sm">＋ New event proposal</Button></Link>

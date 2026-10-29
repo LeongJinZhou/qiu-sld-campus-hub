@@ -2,6 +2,7 @@
 
 use App\Exceptions\NotInRecordsException;
 use App\Models\Staff;
+use App\Models\User;
 use App\Services\Auth\SignInService;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as GoogleUser;
@@ -59,3 +60,11 @@ it('logs a staff member in through the Google callback', function () {
 it('does not register the dev login outside local', function () {
     $this->get('/dev/login-as')->assertNotFound();
 });
+
+it('lets alumni sign in only with the personal email they linked', function () {
+    seedCamsys();
+    $user = User::factory()->create(['personal_email' => 'Mei.Alumni@gmail.com']);
+
+    expect(app(SignInService::class)->signInWithPersonalEmail('mei.alumni@gmail.com')->is($user))->toBeTrue();
+    app(SignInService::class)->signInWithPersonalEmail('stranger@gmail.com');
+})->throws(NotInRecordsException::class);

@@ -17,7 +17,7 @@ const props = defineProps<{
     club: { slug: string; name: string };
     ready: boolean;
     opening: { amount_sen: number; as_of: string; note: string | null } | null;
-    rows: { id: number | null; date: string; description: string; income_sen: number; expense_sen: number; balance_sen: number; has_receipt: boolean; receipt_id: number | null }[];
+    rows: { id: number | null; date: string; description: string; income_sen: number; expense_sen: number; balance_sen: number; has_receipt: boolean; receipt_id: number | null; receipt_url: string | null }[];
     balance_sen: number;
     payees: { id: number; kind: string; name: string; bank_name: string; account: string }[];
     requests: { id: number; event: string | null; purpose: string | null; total_sen: number; status: string; progress: ApprovalProgress }[];
@@ -80,7 +80,7 @@ const payee = useForm({ kind: 'vendor', name: '', email: '', contact_no: '', ban
                                 <td class="px-3 py-2 text-right tabular-nums text-success">{{ r.income_sen ? rm(r.income_sen) : '' }}</td>
                                 <td class="px-3 py-2 text-right tabular-nums text-danger">{{ r.expense_sen ? rm(r.expense_sen) : '' }}</td>
                                 <td class="px-3 py-2 text-right font-medium tabular-nums">{{ rm(r.balance_sen) }}</td>
-                                <td class="px-3 py-2"><a v-if="r.receipt_id" :href="`/clubs/${club.slug}/finance/receipts/${r.receipt_id}`" target="_blank" class="text-brand-blue">View</a></td>
+                                <td class="px-3 py-2"><a v-if="r.receipt_url" :href="r.receipt_url" target="_blank" class="text-brand-blue">View</a></td>
                             </tr>
                         </tbody>
                     </table>
