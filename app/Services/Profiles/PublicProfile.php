@@ -44,11 +44,12 @@ class PublicProfile
             'intake' => $student ? sprintf('%02d/%d', $student->intake_month, $student->year_entry) : null,
             'title' => $user->staff?->title,
             'department' => $user->staff?->department,
+            // A hidden section hides its count as well.
             'stats' => [
-                'clubs' => $clubs->count(),
-                'positions' => $assignments->where('role', '!=', ScopedRole::Advisor)->count(),
-                'events' => $attended->count(),
-                'cca_hours' => round($cca->sum('hours'), 1),
+                'clubs' => $show('clubs') ? $clubs->count() : null,
+                'positions' => $show('positions') ? $assignments->where('role', '!=', ScopedRole::Advisor)->count() : null,
+                'events' => $show('events') ? $attended->count() : null,
+                'cca_hours' => $show('cca') ? round($cca->sum('hours'), 1) : null,
             ],
             'clubs' => $show('clubs') ? $clubs->map(fn (Club $c) => [
                 'name' => $c->name,
