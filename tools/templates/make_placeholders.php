@@ -139,3 +139,50 @@ $d->setText($d->paragraphContaining('Participants:'), 'Participants: ${cca_appro
 
 $d->save("{$filled}/{$name}");
 echo "Wrote {$filled}/{$name}\n";
+
+// ---- 07 Fund Withdrawal and Transfer ----------------------------------------------------------------------
+$name = '07. Student Organization Fund Withdrawal and Transfer Form template.docx';
+$d = new DocxPlaceholders("{$original}/{$name}");
+
+$header = $d->block(4); // To / From / CC / Date
+$d->setText($d->cellParagraph($header, 1, 1), '${from}');
+$d->setText($d->cellParagraph($header, 3, 1), '${date}');
+
+$d->setText($d->block(8), '${from} would like to request a withdrawal of RM${total} from the club’s fund to cover ${purpose}. Therefore, we are requesting the money to purchase items as below: ');
+$itemLine = $d->block(10);
+$d->setText($itemLine, '${item_no}. ${item_description} – RM${item_amount} (${item_method})');
+$itemLine->parentNode->insertBefore($d->block(9)->cloneNode(true), $itemLine);
+$d->setText($d->block(10), '${items}');
+$d->insertAfter($d->block(11), '${/items}', $d->block(9));
+
+// One repeatable payee block (treasurer or vendor accounts), replacing the two sample blocks.
+$first = $d->paragraphContaining('Individual/Company Name:', 0);
+$fields = ['Individual/Company Name: ${payee_name}', 'Email Address: ${payee_email}', 'Contact No: ${payee_contact}', 'Bank Name: ${payee_bank} (${payee_kind} acc)', 'Account Holder Name: ${payee_holder}', 'Account number: ${payee_account}', 'Amount: RM${payee_amount}'];
+$line = $first;
+foreach ($fields as $i => $text) {
+    $d->setText($line, $text);
+    $line = $line->nextSibling;
+}
+$blank = $line; // the empty paragraph between the two sample blocks
+$first->parentNode->insertBefore($d->paragraphContaining('We kindly request')->cloneNode(false), $first);
+$d->setText($first->previousSibling, '${payees}');
+$d->insertAfter($blank, '${/payees}', $d->paragraphContaining('We kindly request'));
+$second = $d->paragraphContaining('Individual/Company Name:', 1);
+for ($i = 0; $i < 7; $i++) {
+    $next = $second->nextSibling;
+    $second->parentNode->removeChild($second);
+    $second = $next;
+}
+$d->setText($d->paragraphContaining('A petty cash record'), 'A petty cash record will be submitted after the event together with all supporting receipts for the purchases made. If there is any remaining balance, the funds will be banked back into the ${from} fund.');
+
+// Signatures: Secretary, President (first table); Advisor, Assistant Registrar, Bursar, COO (second table).
+foreach ([[$d->paragraphContaining('Prepared by:')->parentNode->parentNode->parentNode, [1, 2]], [$d->paragraphContaining('Endorsed by:')->parentNode->parentNode->parentNode, [3, 4, 5, 6]]] as [$table, $signers]) {
+    foreach ($signers as $col => $k) {
+        $d->setText($d->cellParagraph($table, 1, $col), "\${sig{$k}_image}");
+        $d->setText($d->cellParagraph($table, 2, $col), "Name: \${sig{$k}_name}");
+        $d->setText($d->cellParagraph($table, 4, $col), "Date: \${sig{$k}_date}");
+    }
+}
+
+$d->save("{$filled}/{$name}");
+echo "Wrote {$filled}/{$name}\n";
