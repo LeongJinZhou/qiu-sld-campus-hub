@@ -35,8 +35,8 @@ defineProps<{ document: PresentedDocument; canEdit: boolean; downloads: string[]
                 <Card v-else-if="document.type === 'fund_withdrawal'">
                     <template #title>07 Fund Withdrawal / Transfer</template>
                     <ul class="grid gap-1 text-sm">
-                        <li v-for="(item, i) in (document.data as unknown as { items: { description: string; amount_sen: number; method: string }[] }).items" :key="i" class="flex justify-between gap-3">
-                            <span>{{ i + 1 }}. {{ item.description }} <span class="text-ink-muted">({{ item.method === 'transfer' ? 'bank transfer' : 'petty cash' }})</span></span>
+                        <li v-for="(item, i) in (document.data as unknown as { items: { description: string; unit_sen: number; quantity: number; amount_sen: number; method: string }[] }).items" :key="i" class="flex justify-between gap-3">
+                            <span>{{ i + 1 }}. {{ item.description }} · RM {{ (item.unit_sen / 100).toFixed(2) }} × {{ item.quantity }} <span class="text-ink-muted">({{ item.method === 'vendor' ? 'QIU to vendor' : 'Student self purchase' }})</span></span>
                             <span class="tabular-nums">RM {{ (item.amount_sen / 100).toFixed(2) }}</span>
                         </li>
                     </ul>

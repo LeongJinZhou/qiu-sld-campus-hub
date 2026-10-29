@@ -8,6 +8,7 @@ use App\Models\Approval;
 use App\Models\Document;
 use App\Models\Payee;
 use App\Models\Staff;
+use App\Services\Finance\FundWithdrawals;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\TemplateProcessor;
 
@@ -34,10 +35,10 @@ class FundWithdrawalDocx
                 'total' => $rm((int) ($d['total_sen'] ?? 0)),
                 'purpose' => $document->event ? "the {$document->event->name} event that will be held on {$document->event->starts_at->format('j.n.Y')}" : (string) ($d['purpose'] ?? ''),
             ]);
-            DocxRenderer::block($t, 'items', array_map(fn (array $i, int $n) => [
-                'item_no' => (string) ($n + 1), 'item_description' => $i['description'], 'item_amount' => $rm($i['amount_sen']),
-                'item_method' => $i['method'] === 'transfer' ? 'bank transfer' : 'petty cash',
-            ], $d['items'] ?? [], array_keys($d['items'] ?? [])) ?: [['item_no' => '', 'item_description' => '', 'item_amount' => '', 'item_method' => '']]);
+            $t->cloneRowAndSetValues('item_no', array_map(fn (array $i, int $n) => [
+                'item_no' => (string) ($n + 1), 'item_description' => $i['description'], 'item_price' => $rm($i['unit_sen']),
+                'item_quantity' => (string) $i['quantity'], 'item_total' => $rm($i['amount_sen']), 'item_method' => FundWithdrawals::METHODS[$i['method']] ?? $i['method'],
+            ], $d['items'] ?? [], array_keys($d['items'] ?? [])) ?: [array_fill_keys(['item_no', 'item_description', 'item_price', 'item_quantity', 'item_total', 'item_method'], '')]);
 
             $payees = Payee::whereIn('id', array_column($d['payees'] ?? [], 'payee_id'))->get()->keyBy('id');
             DocxRenderer::block($t, 'payees', array_map(function (array $p) use ($payees, $rm) {

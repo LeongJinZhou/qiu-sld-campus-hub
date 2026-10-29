@@ -21,15 +21,24 @@ class FundWithdrawals
 {
     public const WEEKLY_LEAD_DAYS = 14;
 
+    /** Payment methods printed on the 07 form. Both are paid by transfer: to the vendor, or to the treasurer's account. */
+    public const METHODS = ['vendor' => 'QIU to vendor', 'self' => 'Student self purchase'];
+
     public function __construct(private readonly SessionResolver $sessions) {}
 
-    /** Budget expense lines the club may draw on for an approved event (amounts in sen). @return list<array{description: string, amount_sen: int}> */
+    /**
+     * Budget expense lines the club may draw on for an approved event (money in sen).
+     *
+     * @return list<array{description: string, unit_sen: int, quantity: int, amount_sen: int}>
+     */
     public function budgetLines(Event $event): array
     {
         $data = $event->proposal?->data() ?? [];
 
         return array_values(array_map(fn (array $i) => [
             'description' => (string) $i['description'],
+            'unit_sen' => (int) $i['price_sen'],
+            'quantity' => (int) $i['quantity'],
             'amount_sen' => (int) $i['price_sen'] * (int) $i['quantity'],
         ], $data['budget']['expenses'] ?? []));
     }
@@ -50,7 +59,7 @@ class FundWithdrawals
             $lines = collect($this->budgetLines($event))->keyBy('description');
             foreach ($input['items'] as $item) {
                 $line = $lines[$item['description']] ?? throw new DomainException("“{$item['description']}” is not in the approved budget.");
-                if ((int) $item['amount_sen'] > $line['amount_sen']) {
+                if ((int) $item['unit_sen'] * (int) $item['quantity'] > $line['amount_sen']) {
                     throw new DomainException("“{$item['description']}” is more than the approved RM ".number_format($line['amount_sen'] / 100, 2).'.');
                 }
             }
@@ -61,21 +70,24 @@ class FundWithdrawals
             }
         }
 
-        $total = array_sum(array_map(fn ($i) => (int) $i['amount_sen'], $input['items']));
-        $transfer = array_sum(array_map(fn ($i) => $i['method'] === 'transfer' ? (int) $i['amount_sen'] : 0, $input['items']));
+        $items = array_values(array_map(fn ($i) => [
+            'description' => $i['description'], 'unit_sen' => (int) $i['unit_sen'], 'quantity' => (int) $i['quantity'],
+            'amount_sen' => (int) $i['unit_sen'] * (int) $i['quantity'], 'method' => $i['method'],
+        ], $input['items']));
+        $total = array_sum(array_column($items, 'amount_sen'));
         $payees = Payee::where('club_id', $club->id)->whereIn('id', array_column($input['payees'], 'payee_id'))->pluck('id')->all();
         if (count($payees) !== count($input['payees'])) {
             throw new DomainException('Choose payees saved for this club.');
         }
-        if (array_sum(array_map(fn ($p) => (int) $p['amount_sen'], $input['payees'])) !== $transfer) {
-            throw new DomainException('Payee amounts must add up to the bank-transfer items (RM '.number_format($transfer / 100, 2).').');
+        if ($input['payees'] === [] || array_sum(array_map(fn ($p) => (int) $p['amount_sen'], $input['payees'])) !== $total) {
+            throw new DomainException('Payee amounts must add up to the total (RM '.number_format($total / 100, 2).').');
         }
 
         return [
             'event_id' => $event?->id,
             'purpose' => trim((string) $input['purpose']),
             'needed_by' => $event?->starts_at->toDateString() ?? (string) $input['needed_by'],
-            'items' => array_values(array_map(fn ($i) => ['description' => $i['description'], 'amount_sen' => (int) $i['amount_sen'], 'method' => $i['method']], $input['items'])),
+            'items' => $items,
             'payees' => array_values(array_map(fn ($p) => ['payee_id' => (int) $p['payee_id'], 'amount_sen' => (int) $p['amount_sen']], $input['payees'])),
             'total_sen' => $total,
         ];

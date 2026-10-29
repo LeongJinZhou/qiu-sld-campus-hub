@@ -14,7 +14,7 @@ import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
     club: { slug: string; name: string };
-    events: { id: number; name: string; date: string; lines: { description: string; amount_sen: number }[] }[];
+    events: { id: number; name: string; date: string; lines: { description: string; unit_sen: number; quantity: number; amount_sen: number }[] }[];
     payees: { id: number; label: string }[];
     selectedEvent: number | null;
     earliestWeekly: string;
@@ -25,7 +25,7 @@ const form = useForm({
     event_id: props.selectedEvent as number | null,
     purpose: '',
     needed_by: '',
-    items: [] as { description: string; amount_sen: number; method: 'transfer' | 'petty_cash' }[],
+    items: [] as { description: string; unit_sen: number; quantity: number; method: 'vendor' | 'self' }[],
     payees: [] as { payee_id: number | null; amount_sen: number }[],
     signature: null as string | null,
     signature_strokes: null as string | null,
@@ -33,15 +33,17 @@ const form = useForm({
 const event = computed(() => props.events.find((e) => e.id === form.event_id) ?? null);
 // Items come from the approved budget; pre-fill all of them when an event is picked.
 watch(event, (e) => {
-    form.items = e ? e.lines.map((l) => ({ description: l.description, amount_sen: l.amount_sen, method: 'transfer' as const })) : [];
+    form.items = e ? e.lines.map((l) => ({ description: l.description, unit_sen: l.unit_sen, quantity: l.quantity, method: 'vendor' as const })) : [];
     if (e) form.purpose = `the ${e.name} event`;
 }, { immediate: true });
-const total = computed(() => form.items.reduce((s, i) => s + Number(i.amount_sen || 0), 0));
-const transfer = computed(() => form.items.filter((i) => i.method === 'transfer').reduce((s, i) => s + Number(i.amount_sen || 0), 0));
+const total = computed(() => form.items.reduce((s, i) => s + i.unit_sen * Number(i.quantity || 0), 0));
 const payeeTotal = computed(() => form.payees.reduce((s, p) => s + Number(p.amount_sen || 0), 0));
 const signing = ref(false);
 const submit = (): void => form.post(`/clubs/${props.club.slug}/fund-requests`, { onFinish: () => (signing.value = false) });
-const setRm = (row: { amount_sen: number }, value: string): void => {
+const setUnit = (row: { unit_sen: number }, value: string): void => {
+    row.unit_sen = Math.round(Number(value || 0) * 100);
+};
+const setPayee = (row: { amount_sen: number }, value: string): void => {
     row.amount_sen = Math.round(Number(value || 0) * 100);
 };
 </script>
@@ -69,29 +71,31 @@ const setRm = (row: { amount_sen: number }, value: string): void => {
             </FormSection>
 
             <FormSection title="Items" :hint="event ? 'From the approved budget. Lower an amount or remove lines you do not need now.' : undefined">
-                <div v-for="(item, i) in form.items" :key="i" class="grid gap-2 sm:grid-cols-[1fr_9rem_10rem_auto] sm:items-end">
+                <div v-for="(item, i) in form.items" :key="i" class="grid gap-2 sm:grid-cols-[1fr_8rem_6rem_7rem_11rem_auto] sm:items-end">
                     <Input v-model="item.description" label="Item" :readonly="!!event" />
-                    <Input :model-value="(item.amount_sen / 100).toFixed(2)" type="number" label="Amount (RM)" @update:model-value="setRm(item, String($event))" />
-                    <Select v-model="item.method" label="Paid by" :options="[{ value: 'transfer', label: 'Bank transfer' }, { value: 'petty_cash', label: 'Petty cash' }]" />
+                    <Input :model-value="(item.unit_sen / 100).toFixed(2)" type="number" label="Unit price (RM)" :readonly="!!event" @update:model-value="setUnit(item, String($event))" />
+                    <Input v-model="item.quantity" type="number" label="Quantity" />
+                    <LockedField label="Total (RM)" :value="((item.unit_sen * Number(item.quantity || 0)) / 100).toFixed(2)" />
+                    <Select v-model="item.method" label="Payment method" :options="[{ value: 'vendor', label: 'QIU to vendor' }, { value: 'self', label: 'Student self purchase' }]" />
                     <button type="button" class="pb-2 text-ink-muted hover:text-danger" aria-label="Remove" @click="form.items.splice(i, 1)">✕</button>
                 </div>
-                <button v-if="!event" type="button" class="justify-self-start text-sm font-medium text-brand-blue" @click="form.items.push({ description: '', amount_sen: 0, method: 'transfer' })">＋ Add item</button>
+                <button v-if="!event" type="button" class="justify-self-start text-sm font-medium text-brand-blue" @click="form.items.push({ description: '', unit_sen: 0, quantity: 1, method: 'vendor' })">＋ Add item</button>
                 <p class="text-right font-semibold">Total {{ rm(total) }}</p>
             </FormSection>
 
-            <FormSection title="Transfer to" :hint="`Bank-transfer items total ${rm(transfer)}; payee amounts must match.`">
+            <FormSection title="Transfer to" :hint="`Vendor accounts for “QIU to vendor”, the treasurer account for “Student self purchase”. Amounts must add up to ${rm(total)}.`">
                 <div v-for="(p, i) in form.payees" :key="i" class="grid gap-2 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
                     <Select v-model="p.payee_id" label="Payee" :options="payees.map((x) => ({ value: x.id, label: x.label }))" placeholder="Choose" />
-                    <Input :model-value="(p.amount_sen / 100).toFixed(2)" type="number" label="Amount (RM)" @update:model-value="setRm(p, String($event))" />
+                    <Input :model-value="(p.amount_sen / 100).toFixed(2)" type="number" label="Amount (RM)" @update:model-value="setPayee(p, String($event))" />
                     <button type="button" class="pb-2 text-ink-muted hover:text-danger" aria-label="Remove" @click="form.payees.splice(i, 1)">✕</button>
                 </div>
                 <button type="button" class="justify-self-start text-sm font-medium text-brand-blue" @click="form.payees.push({ payee_id: null, amount_sen: 0 })">＋ Add payee</button>
-                <p class="text-sm" :class="payeeTotal === transfer ? 'text-success' : 'text-warning'">Payees {{ rm(payeeTotal) }} / transfers {{ rm(transfer) }}</p>
+                <p class="text-sm" :class="payeeTotal === total ? 'text-success' : 'text-warning'">Payees {{ rm(payeeTotal) }} / total {{ rm(total) }}</p>
                 <p class="text-xs text-ink-muted">Save new treasurer or vendor accounts on the club's Finance page first.</p>
             </FormSection>
 
             <div class="flex justify-end">
-                <Button :disabled="!form.items.length || payeeTotal !== transfer" @click="signing = true">Sign as Secretary &amp; submit</Button>
+                <Button :disabled="!form.items.length || payeeTotal !== total" @click="signing = true">Sign as Secretary &amp; submit</Button>
             </div>
         </div>
 
