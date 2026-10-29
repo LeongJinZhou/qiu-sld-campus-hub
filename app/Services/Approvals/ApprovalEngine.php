@@ -34,7 +34,7 @@ class ApprovalEngine
     ) {}
 
     /** @param array<string, mixed> $data */
-    public function submit(Document $document, User $user, array $data, string $signature): void
+    public function submit(Document $document, User $user, array $data, string $signature, ?string $strokes = null): void
     {
         if (! $document->status->isEditable()) {
             throw new DomainException('This document is already in review.');
@@ -49,7 +49,7 @@ class ApprovalEngine
             throw new DomainException("Only the club's {$chain[0]->label()} can submit this document.");
         }
 
-        DB::transaction(function () use ($document, $user, $data, $signature, $chain): void {
+        DB::transaction(function () use ($document, $user, $data, $signature, $strokes, $chain): void {
             $previous = $document->latestVersion;
             $version = $document->versions()->create([
                 'number' => ($previous->number ?? 0) + 1,
@@ -73,7 +73,7 @@ class ApprovalEngine
             }
 
             $first = $document->approvals()->where('step_no', 1)->firstOrFail();
-            $this->decide($first, $user, ApprovalDecision::Approved, null, $signature, $version->id);
+            $this->decide($first, $user, ApprovalDecision::Approved, null, $signature, $version->id, $strokes);
 
             $document->update(['status' => DocumentStatus::InReview, 'submitted_at' => now(), 'decided_at' => null]);
             $document->event?->update(['status' => DocumentStatus::InReview]);
@@ -83,12 +83,12 @@ class ApprovalEngine
         $this->advance($document->fresh());
     }
 
-    public function approve(Approval $approval, User $user, string $signature, ?string $comment = null): void
+    public function approve(Approval $approval, User $user, string $signature, ?string $comment = null, ?string $strokes = null): void
     {
         $this->assertCanAct($approval, $user);
 
-        DB::transaction(function () use ($approval, $user, $signature, $comment): void {
-            $this->decide($approval, $user, ApprovalDecision::Approved, $comment, $signature, $approval->document->latestVersion?->id);
+        DB::transaction(function () use ($approval, $user, $signature, $comment, $strokes): void {
+            $this->decide($approval, $user, ApprovalDecision::Approved, $comment, $signature, $approval->document->latestVersion?->id, $strokes);
             $this->audit->log('approval.approved', $approval->document, ['step' => $approval->step_no, 'role' => $approval->role->value]);
         });
 
@@ -149,7 +149,7 @@ class ApprovalEngine
         ));
     }
 
-    private function decide(Approval $approval, User $user, ApprovalDecision $decision, ?string $comment, ?string $signature = null, ?int $versionId = null): void
+    private function decide(Approval $approval, User $user, ApprovalDecision $decision, ?string $comment, ?string $signature = null, ?int $versionId = null, ?string $strokes = null): void
     {
         $document = $approval->document;
         if ($signature !== null) {
@@ -158,7 +158,7 @@ class ApprovalEngine
                 'document_id' => $document->id,
                 'approval_id' => $approval->id,
                 'document_version_id' => $versionId,
-            ]);
+            ], $strokes);
         }
         $approval->update([
             'decision' => $decision,

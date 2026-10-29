@@ -14,6 +14,7 @@ class DecideApprovalRequest extends FormRequest
             'decision' => ['required', Rule::in(['approve', 'return', 'reject'])],
             'comment' => ['nullable', 'required_unless:decision,approve', 'string', 'max:2000'],
             'signature' => ['nullable', 'required_if:decision,approve', 'string'],
+            'signature_strokes' => ['nullable', 'required_if:decision,approve', 'string', 'max:307200'],
         ];
     }
 }

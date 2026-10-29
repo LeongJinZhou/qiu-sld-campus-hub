@@ -62,7 +62,7 @@ class IndemnityController extends Controller
     {
         Gate::authorize('view', $event);
         try {
-            $this->indemnities->sign($event, $request->user(), $request->fields(), $request->validated('signature'));
+            $this->indemnities->sign($event, $request->user(), $request->fields(), $request->validated('signature'), $request->validated('signature_strokes'));
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }

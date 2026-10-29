@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ApprovalTimeline from '@/Components/forms/ApprovalTimeline.vue';
+import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import ProposalView from '@/Components/forms/ProposalView.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
@@ -14,7 +14,7 @@ defineProps<{ document: PresentedDocument; canEdit: boolean; downloads: string[]
 <template>
     <Head :title="document.type_label" />
     <AppLayout>
-        <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
+        <div class="grid gap-6 lg:grid-cols-[1fr_24rem]">
             <div class="grid content-start gap-4">
                 <header class="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -32,11 +32,20 @@ defineProps<{ document: PresentedDocument; canEdit: boolean; downloads: string[]
                 </div>
                 <Link v-if="canEdit && document.event" :href="`/events/${document.event.slug}/proposal`"><Button>Edit and resubmit</Button></Link>
                 <ProposalView v-if="document.type === 'proposal' && document.version" :document="document" />
+                <Card v-else-if="document.type === 'attendance_list'">
+                    <template #title>03 Event Attendance List</template>
+                    <dl class="grid grid-cols-3 gap-3 text-center">
+                        <div class="rounded-control bg-surface-muted p-3"><dd class="text-2xl font-bold">{{ (document.data as unknown as Record<string, number>).participants ?? 0 }}</dd><dt class="text-xs text-ink-muted">Participants</dt></div>
+                        <div class="rounded-control bg-surface-muted p-3"><dd class="text-2xl font-bold">{{ (document.data as unknown as Record<string, number>).committee ?? 0 }}</dd><dt class="text-xs text-ink-muted">Committee</dt></div>
+                        <div class="rounded-control bg-surface-muted p-3"><dd class="text-2xl font-bold">{{ (document.data as unknown as Record<string, number>).registered ?? 0 }}</dd><dt class="text-xs text-ink-muted">Registered</dt></div>
+                    </dl>
+                    <p class="mt-3 text-sm text-ink-muted">Download the official form above. Signatures appear on it as each person signs.</p>
+                </Card>
             </div>
-            <aside>
+            <aside class="order-first lg:order-none">
                 <Card>
-                    <template #title>Approvals</template>
-                    <ApprovalTimeline :steps="document.steps" />
+                    <template #title>Approval progress</template>
+                    <ApprovalTracker :progress="document.progress" :steps="document.steps" />
                 </Card>
             </aside>
         </div>

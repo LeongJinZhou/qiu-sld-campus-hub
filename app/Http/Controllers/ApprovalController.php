@@ -7,6 +7,7 @@ use App\Enums\DocumentStatus;
 use App\Http\Requests\DecideApprovalRequest;
 use App\Models\Approval;
 use App\Services\Approvals\ApprovalEngine;
+use App\Services\Documents\DocumentExporter;
 use App\Services\Documents\DocumentPresenter;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +42,7 @@ class ApprovalController extends Controller
                 'step_no' => $a->step_no,
                 'due_at' => $a->due_at?->toFormattedDateString(),
                 'overdue' => $a->due_at?->isPast() ?? false,
+                'progress' => app(DocumentPresenter::class)->progress($a->document),
             ]),
         ]);
     }
@@ -53,6 +55,7 @@ class ApprovalController extends Controller
             'approvalId' => $approval->id,
             'role' => $approval->role->label(),
             'canAct' => $this->engine->canAct($approval, $request->user()),
+            'downloads' => app(DocumentExporter::class)->formats($approval->document),
             'document' => $presenter->present($approval->document),
         ]);
     }
@@ -64,7 +67,7 @@ class ApprovalController extends Controller
 
         try {
             match ($request->validated('decision')) {
-                'approve' => $this->engine->approve($approval, $user, (string) $request->validated('signature'), $comment ?: null),
+                'approve' => $this->engine->approve($approval, $user, (string) $request->validated('signature'), $comment ?: null, $request->validated('signature_strokes')),
                 'return' => $this->engine->returnToClub($approval, $user, $comment),
                 'reject' => $this->engine->reject($approval, $user, $comment),
             };

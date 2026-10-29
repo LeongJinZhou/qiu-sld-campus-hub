@@ -66,12 +66,13 @@ class ProposalRequest extends FormRequest
             'budget.*.*.quantity' => ['required', 'integer', 'min:0', 'max:100000'],
             'conclusion' => [$required, 'string', 'max:5000'],
             'signature' => [$submitting ? 'required' : 'prohibited', 'string'],
+            'signature_strokes' => [$submitting ? 'required' : 'prohibited', 'string', 'max:307200'],
         ];
     }
 
     /** @return array<string, mixed> */
     public function proposalData(): array
     {
-        return collect($this->validated())->except('signature')->all();
+        return collect($this->validated())->except(['signature', 'signature_strokes'])->all();
     }
 }

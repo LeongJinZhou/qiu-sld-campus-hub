@@ -2,9 +2,11 @@
 import Avatar from '@/Components/ui/Avatar.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
+import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import Card from '@/Components/ui/Card.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { dateTime } from '@/lib/format';
+import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps<{
@@ -27,6 +29,7 @@ const props = defineProps<{
         proposal_id: number | null;
     };
     committee: { position: string; name: string; photo_url: string | null; responsibility: string | null }[];
+    approval: { progress: ApprovalProgress; steps: ApprovalStep[] } | null;
     registered: boolean;
     indemnity: { signed: boolean; closes_at: string; closed: boolean } | null;
     registrations: number;
@@ -57,6 +60,10 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                     <div class="flex gap-2"><dt class="w-16 text-ink-muted">Where</dt><dd>{{ event.venue }} <span class="capitalize text-ink-muted">({{ event.mode }})</span></dd></div>
                 </dl>
                 <p v-if="event.summary" class="whitespace-pre-line text-sm">{{ event.summary }}</p>
+                <Card v-if="approval">
+                    <template #title>Proposal approval</template>
+                    <ApprovalTracker :progress="approval.progress" :steps="approval.steps" />
+                </Card>
                 <Card v-if="committee.length">
                     <template #title>Event committee</template>
                     <ul class="grid gap-3 sm:grid-cols-2">

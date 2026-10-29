@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import Badge from '@/Components/ui/Badge.vue';
+import Modal from '@/Components/ui/Modal.vue';
+import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
 import Input from '@/Components/ui/Input.vue';
@@ -9,7 +12,8 @@ import Table from '@/Components/ui/Table.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { useIntervalFn } from '@vueuse/core';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import type { ApprovalProgress, ApprovalStep } from '@/types';
 
 const props = defineProps<{
     event: { slug: string; name: string; is_outdoor: boolean; attendance_open: boolean; starts_at: string };
@@ -17,7 +21,13 @@ const props = defineProps<{
     qrSvg: string | null;
     rows: { id: number; name: string; student_number: string | null; role: string; in: string | null; out: string | null; method: string }[];
     counts: { registered: number; present: number };
+    signOff: { id: number; status: string; progress: ApprovalProgress; steps: ApprovalStep[] } | null;
 }>();
+
+const signing = ref(false);
+const sign = useForm({ signature: null as string | null, signature_strokes: null as string | null });
+const submitList = (): void => sign.post(`/events/${props.event.slug}/attendance/submit`, { preserveScroll: true, onSuccess: () => { signing.value = false; sign.reset(); } });
+const canSubmit = computed(() => !props.signOff || ['draft', 'returned'].includes(props.signOff.status));
 
 // The on-screen code rotates every minute; refresh it (and the list) every 30 s.
 useIntervalFn(() => router.reload({ only: ['qrSvg', 'rows', 'counts'] }), 30_000);
@@ -55,10 +65,17 @@ const columns = [
                     <p class="text-sm text-ink-muted">{{ event.name }} · {{ counts.present }} present / {{ counts.registered }} registered</p>
                 </div>
                 <div class="flex gap-2">
+                    <Button v-if="canSubmit && event.attendance_open" @click="signing = true">Sign &amp; submit attendance list</Button>
                     <a :href="`/events/${event.slug}/attendance/export`"><Button variant="secondary">Download 03 Attendance List (XLSX)</Button></a>
+                    <Link v-if="signOff" :href="`/documents/${signOff.id}`"><Button variant="ghost">Signed copy (PDF)</Button></Link>
                     <Link v-if="event.is_outdoor" :href="`/events/${event.slug}/indemnities`"><Button variant="ghost">Indemnities</Button></Link>
                 </div>
             </header>
+
+            <Card v-if="signOff">
+                <template #title>Attendance list sign-off</template>
+                <ApprovalTracker :progress="signOff.progress" :steps="signOff.steps" />
+            </Card>
 
             <p v-if="!event.attendance_open" class="rounded-card bg-warning/10 px-4 py-3 text-sm text-warning">Attendance opens once the proposal is approved.</p>
 
@@ -91,5 +108,13 @@ const columns = [
                 <template #cell-role="{ row }"><Badge :tone="row.role === 'committee' ? 'info' : 'neutral'">{{ row.role }}</Badge></template>
             </Table>
         </div>
+
+        <Modal v-model:open="signing" title="Sign the attendance list">
+            <div class="grid gap-4">
+                <p class="text-sm text-ink-muted">{{ counts.present }} present. Your signature goes on the official 03 Attendance List as “Prepared by”, then it goes to your Club Advisor.</p>
+                <SignaturePad v-model="sign.signature" v-model:strokes="sign.signature_strokes" label="Your signature" />
+                <Button :disabled="!sign.signature" :loading="sign.processing" @click="submitList">Sign &amp; submit</Button>
+            </div>
+        </Modal>
     </AppLayout>
 </template>

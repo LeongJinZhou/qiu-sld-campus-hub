@@ -14,6 +14,7 @@ use App\Models\Highlight;
 use App\Models\HighlightItem;
 use App\Models\Post;
 use App\Models\Story;
+use App\Services\Documents\DocumentPresenter;
 use App\Services\QrCodes;
 use App\Services\Roles\CommitteeBoard;
 use App\Services\Roles\CompulsoryPositionsCheck;
@@ -43,7 +44,7 @@ class ClubController extends Controller
         ]);
     }
 
-    public function show(Request $request, Club $club, SessionResolver $sessions, CommitteeBoard $board, CompulsoryPositionsCheck $compulsory, QrCodes $qr): Response
+    public function show(Request $request, Club $club, SessionResolver $sessions, CommitteeBoard $board, CompulsoryPositionsCheck $compulsory, QrCodes $qr, DocumentPresenter $presenter): Response
     {
         $current = $sessions->current();
         $session = AcademicSession::where('name', $request->query('session'))->first() ?? $current;
@@ -89,8 +90,9 @@ class ClubController extends Controller
                 ->map(fn (Event $e) => ['id' => $e->id, 'slug' => $e->slug, 'name' => $e->name, 'starts_at' => $e->starts_at->toIso8601String(), 'venue' => $e->venue, 'status' => $e->status->value, 'poster_url' => $e->posterUrl()])),
             'faqs' => $club->faqs()->get(['id', 'question', 'answer']),
             'documents' => $user->can('viewInternal', $club)
-                ? Inertia::defer(fn () => $club->documents()->with('event')->latest()->get()->map(fn (Document $d) => [
+                ? Inertia::defer(fn () => $club->documents()->with('event', 'approvals')->latest()->get()->map(fn (Document $d) => [
                     'id' => $d->id, 'type' => $d->type->label(), 'event' => $d->event?->name, 'status' => $d->status->value, 'updated' => $d->updated_at?->toFormattedDateString(),
+                    'progress' => $presenter->progress($d),
                 ]))
                 : null,
             'can' => [

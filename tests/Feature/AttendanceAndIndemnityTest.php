@@ -25,7 +25,7 @@ function indemnityData(): array
 {
     return [
         'emergency_name' => 'Mother', 'emergency_mobile_phone' => '012-3456789', 'emergency_relationship' => 'Mother',
-        'address' => '12 Jalan Test, Ipoh', 'consent' => '1', 'signature' => signaturePng(),
+        'address' => '12 Jalan Test, Ipoh', 'consent' => '1', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
     ];
 }
 

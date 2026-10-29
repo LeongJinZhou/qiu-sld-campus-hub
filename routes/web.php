@@ -74,6 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/attendance', [AttendanceController::class, 'index'])->name('events.attendance');
     Route::post('/events/{event}/attendance', [AttendanceController::class, 'record'])->middleware('throttle:120,1')->name('events.attendance.record');
     Route::get('/events/{event}/attendance/export', [AttendanceController::class, 'export'])->name('events.attendance.export');
+    Route::post('/events/{event}/attendance/submit', [AttendanceController::class, 'submit'])->name('events.attendance.submit');
     Route::get('/events/{event}/poster', [PosterController::class, 'edit'])->name('events.poster');
     Route::post('/events/{event}/poster', [PosterController::class, 'update'])->name('events.poster.update');
     Route::get('/events/{event}/documents', [EventDocumentController::class, 'index'])->name('events.documents');

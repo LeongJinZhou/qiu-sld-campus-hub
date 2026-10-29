@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Events;
 
+use App\Enums\DocumentType;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Document;
 use App\Models\Event;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\AttendanceListExport;
+use App\Services\Documents\DocumentPresenter;
 use App\Services\Events\AttendanceQr;
 use App\Services\Events\AttendanceService;
 use App\Services\QrCodes;
@@ -25,7 +29,7 @@ class AttendanceController extends Controller
     public function __construct(private readonly AttendanceService $attendance, private readonly AttendanceQr $qr) {}
 
     /** Committee screen: rotating clock-in/out QR, scanner for personal QRs, manual add, list. */
-    public function index(Request $request, Event $event, QrCodes $codes): Response
+    public function index(Request $request, Event $event, QrCodes $codes, DocumentPresenter $presenter): Response
     {
         Gate::authorize('organises', $event);
         $action = $request->query('action') === 'out' ? 'out' : 'in';
@@ -43,8 +47,39 @@ class AttendanceController extends Controller
                 'out' => $a->clock_out_at?->format('g:i A'),
                 'method' => $a->method,
             ]),
+            'signOff' => ($document = Document::where('event_id', $event->id)->where('type', DocumentType::AttendanceList)->first())
+                ? ['id' => $document->id, 'status' => $document->status->value, 'progress' => $presenter->progress($document), 'steps' => $presenter->present($document)['steps']]
+                : null,
             'counts' => ['registered' => $event->registrations()->count(), 'present' => $event->attendance()->whereNotNull('clock_in_at')->count()],
         ]);
+    }
+
+    /** Preparer signs the 03 Attendance List; it then goes to the Club Advisor and SLD (CLAUDE.md §6). */
+    public function submit(Request $request, Event $event, ApprovalEngine $engine): RedirectResponse
+    {
+        Gate::authorize('organises', $event);
+        $data = $request->validate(['signature' => ['required', 'string'], 'signature_strokes' => ['required', 'string', 'max:307200']]);
+        if (! $event->attendance_open) {
+            return back()->with('error', 'Attendance opens once the proposal is approved.');
+        }
+
+        $document = Document::firstOrCreate(
+            ['event_id' => $event->id, 'type' => DocumentType::AttendanceList],
+            ['club_id' => $event->club_id, 'session_id' => $event->session_id, 'created_by' => $request->user()->id],
+        );
+        $present = $event->attendance()->whereNotNull('clock_in_at');
+
+        try {
+            $engine->submit($document, $request->user(), [
+                'participants' => (clone $present)->where('role', 'participant')->count(),
+                'committee' => (clone $present)->where('role', 'committee')->count(),
+                'registered' => $event->registrations()->count(),
+            ], $data['signature'], $data['signature_strokes']);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Attendance list signed and sent to your Club Advisor.');
     }
 
     /** A student scanned the event's rotating QR with their own phone. */
