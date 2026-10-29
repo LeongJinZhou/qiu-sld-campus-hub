@@ -13,6 +13,7 @@ use App\Models\Event;
 use App\Models\EventDocumentItem;
 use App\Models\Membership;
 use App\Models\MembershipPayment;
+use App\Models\SldRequest;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Finance\Ledger;
 use App\Services\Time\SessionResolver;
@@ -46,6 +47,7 @@ class SldDashboard
             'overdue' => [
                 'approvals' => $waiting->filter(fn (Approval $a) => $a->due_at?->isPast())->count(),
                 'post_event' => EventDocumentItem::whereNull('submitted_at')->whereDate('due_on', '<', today())->count(),
+                'sld_requests' => SldRequest::whereNull('replied_at')->whereDate('due_on', '<', today())->count(),
             ],
             'events_this_month' => Event::with('club')->whereBetween('starts_at', [now()->startOfMonth(), now()->endOfMonth()])->orderBy('starts_at')->get()
                 ->map(fn (Event $e) => ['slug' => $e->slug, 'name' => $e->name, 'club' => $e->club->name, 'date' => $e->starts_at->format('D j M'), 'status' => $e->status->value]),

@@ -14,6 +14,7 @@ use App\Models\Highlight;
 use App\Models\HighlightItem;
 use App\Models\MembershipDrive;
 use App\Models\Post;
+use App\Models\SldRequest;
 use App\Models\Story;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Documents\DocumentPresenter;
@@ -99,6 +100,10 @@ class ClubController extends Controller
                 ->orderByDesc('starts_at')->get()
                 ->map(fn (Event $e) => ['id' => $e->id, 'slug' => $e->slug, 'name' => $e->name, 'starts_at' => $e->starts_at->toIso8601String(), 'venue' => $e->venue, 'status' => $e->status->value, 'poster_url' => $e->posterUrl()])),
             'faqs' => $club->faqs()->get(['id', 'question', 'answer']),
+            'sldRequests' => $user?->can('viewInternal', $club)
+                ? SldRequest::where('club_id', $club->id)->where(fn ($q) => $q->whereNull('replied_at')->orWhere('replied_at', '>', now()->subDays(30)))->latest()->get()
+                    ->map(fn (SldRequest $r) => ['id' => $r->id, 'subject' => $r->subject, 'body' => $r->body, 'due_on' => $r->due_on->toFormattedDateString(), 'overdue' => $r->isOverdue(), 'reply' => $r->reply])
+                : [],
             // AGM countdown for the club's own people while the period is open.
             'agm' => $user?->can('viewInternal', $club) && ($period = app(AgmPeriods::class)->current())
                 ? ['days_left' => max(0, (int) ceil(now()->diffInDays($period->report_deadline->endOfDay()))), 'deadline' => $period->report_deadline->toDateString()]
