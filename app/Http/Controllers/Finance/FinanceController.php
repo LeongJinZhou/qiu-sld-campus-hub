@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -42,7 +43,8 @@ class FinanceController extends Controller
             'club' => $club->only('slug', 'name'),
             'ready' => $this->ledger->isReady($club),
             'opening' => $club->openingBalance ? ['amount_sen' => $club->openingBalance->amount_sen, 'as_of' => $club->openingBalance->as_of->toDateString(), 'note' => $club->openingBalance->note] : null,
-            'rows' => $this->ledger->rows($club),
+            // Receipts are private: each link is signed and expires after 30 minutes.
+            'rows' => array_map(fn (array $r) => [...$r, 'receipt_url' => $r['receipt_id'] ? URL::temporarySignedRoute('finance.receipt', now()->addMinutes(30), [$club, $r['receipt_id']]) : null], $this->ledger->rows($club)),
             'balance_sen' => $this->ledger->balance($club),
             'payees' => Payee::where('club_id', $club->id)->orderBy('kind')->get()->map(fn (Payee $p) => [
                 'id' => $p->id, 'kind' => $p->kind, 'name' => $p->name, 'bank_name' => $p->bank_name, 'account' => $p->maskedAccount(),

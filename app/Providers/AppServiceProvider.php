@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Events\DocumentApproved;
 use App\Services\Events\EventApprovalActions;
 use App\Services\Meetings\Meetings;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\PermissionRegistrar;
@@ -30,5 +31,9 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(DocumentApproved::class, [EventApprovalActions::class, 'handle']);
         Event::listen(DocumentApproved::class, [Meetings::class, 'handleApproved']);
+
+        // N+1 guard: outside production a lazy-loaded relation is reported, so missing eager loads surface in tests.
+        Model::handleLazyLoadingViolationUsing(fn (Model $model, string $relation) => logger()->warning('Lazy loading', ['model' => $model::class, 'relation' => $relation]));
+        Model::preventLazyLoading(! $this->app->isProduction());
     }
 }

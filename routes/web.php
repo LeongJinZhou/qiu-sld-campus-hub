@@ -9,6 +9,7 @@ use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\Auth\DevLoginController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ClubQrController;
 use App\Http\Controllers\DocumentController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Membership\MembershipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
+use App\Http\Controllers\SldRequestController;
 use App\Http\Controllers\Social\ClubSocialController;
 use App\Http\Controllers\Social\FeedController;
 use App\Http\Controllers\Social\PostController;
@@ -43,6 +45,7 @@ use Inertia\Inertia;
 Route::middleware('guest')->group(function () {
     Route::get('/', fn () => Inertia::render('Auth/Login', ['devLogin' => app()->isLocal()]))->name('login');
     Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/alumni', [GoogleController::class, 'alumni'])->name('auth.google.alumni');
     Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->middleware('throttle:10,1');
 
     if (app()->isLocal()) {
@@ -54,6 +57,7 @@ Route::middleware('guest')->group(function () {
 Route::get('/not-in-records', fn () => Inertia::render('Auth/NotFoundInRecords'))->name('not-in-records');
 Route::get('/p/{token}', PublicProfileController::class)->name('profile.public');
 Route::get('/verify/{code}', VerifyController::class)->middleware('throttle:30,1')->name('verify');
+Route::get('/certificates/{code}', [CertificateController::class, 'verify'])->middleware('throttle:30,1')->name('certificates.verify');
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', LogoutController::class)->name('logout');
@@ -96,7 +100,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/post-mortem/submit', [PostMortemController::class, 'submit'])->name('events.post-mortem.submit');
     Route::get('/events/{event}/documents', [EventDocumentController::class, 'index'])->name('events.documents');
     Route::post('/events/{event}/documents/{item}', [EventDocumentController::class, 'upload'])->name('events.documents.upload');
-    Route::get('/events/{event}/documents/{item}', [EventDocumentController::class, 'download'])->name('events.documents.download');
+    Route::get('/events/{event}/documents/{item}', [EventDocumentController::class, 'download'])->middleware('signed')->name('events.documents.download');
     Route::get('/events/{event}/indemnity', [IndemnityController::class, 'create'])->name('events.indemnity');
     Route::post('/events/{event}/indemnity', [IndemnityController::class, 'store'])->name('events.indemnity.store');
     Route::get('/events/{event}/indemnities', [IndemnityController::class, 'index'])->name('events.indemnities');
@@ -127,7 +131,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/clubs/{club}/finance', [FinanceController::class, 'show'])->name('finance.show');
     Route::post('/clubs/{club}/finance/opening', [FinanceController::class, 'opening'])->name('finance.opening');
     Route::post('/clubs/{club}/finance/entries', [FinanceController::class, 'entry'])->name('finance.entry');
-    Route::get('/clubs/{club}/finance/receipts/{receipt}', [FinanceController::class, 'receipt'])->name('finance.receipt');
+    Route::get('/clubs/{club}/finance/receipts/{receipt}', [FinanceController::class, 'receipt'])->middleware('signed')->name('finance.receipt');
     Route::get('/clubs/{club}/finance/export/{format}', [FinanceController::class, 'export'])->name('finance.export');
     Route::post('/clubs/{club}/finance/payees', [FinanceController::class, 'payee'])->name('finance.payees');
     Route::get('/clubs/{club}/fund-requests/create', [FinanceController::class, 'requestForm'])->name('fund.create');
@@ -159,18 +163,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/annual-report/draft', [AnnualReportController::class, 'draft'])->middleware('throttle:6,1')->name('annual.draft');
     Route::post('/clubs/{club}/annual-report/generate', [AnnualReportController::class, 'generate'])->middleware('throttle:6,1')->name('annual.generate');
     Route::get('/clubs/{club}/annual-report/{format}', [AnnualReportController::class, 'download'])->name('annual.download');
+    Route::post('/sld-requests/{sldRequest}/reply', [SldRequestController::class, 'reply'])->name('sld-requests.reply');
     Route::get('/clubs/{club}/venues', [VenueController::class, 'index'])->name('venues.index');
     Route::post('/clubs/{club}/venues', [VenueController::class, 'store'])->middleware('throttle:10,1')->name('venues.store');
     Route::get('/clubs/{club}/payments/review', [MembershipController::class, 'reviewQueue'])->name('payments.review');
     Route::post('/payments/{payment}/decide', [MembershipController::class, 'decide'])->name('payments.decide');
-    Route::get('/payments/{payment}/receipt', [MembershipController::class, 'receiptFile'])->name('payments.receipt');
+    Route::get('/payments/{payment}/receipt', [MembershipController::class, 'receiptFile'])->middleware('signed')->name('payments.receipt');
     Route::post('/clubs/{club}/fee', [FeeController::class, 'store'])->name('fees.store');
     Route::get('/handovers/{handover}', [HandoverController::class, 'show'])->name('handovers.show');
     Route::post('/handovers/{handover}', [HandoverController::class, 'act'])->middleware('throttle:60,1')->name('handovers.act');
     Route::get('/me', [ProfileController::class, 'show'])->name('profile.me');
+    Route::get('/me/certificates/{kind}/{source}', [CertificateController::class, 'download'])->middleware('throttle:20,1')->whereNumber('source')->name('certificates.download');
     Route::post('/me', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::prefix('admin')->name('admin.')->middleware('can:manage,'.Club::class)->group(function () {
+        Route::get('/', Admin\DashboardController::class)->name('dashboard');
         Route::resource('clubs', Admin\ClubController::class)->except(['show', 'destroy']);
         Route::post('clubs/{club}/committee', [Admin\ClubCommitteeController::class, 'assign'])->name('clubs.committee.assign');
         Route::post('clubs/{club}/advisors', [Admin\ClubCommitteeController::class, 'addAdvisor'])->name('clubs.advisors.store');
@@ -184,6 +191,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('members', [MembersController::class, 'all'])->name('members.all');
         Route::get('finance', Admin\FinanceOverviewController::class)->name('finance.index');
+        Route::get('requests', [SldRequestController::class, 'index'])->name('requests.index');
+        Route::post('requests', [SldRequestController::class, 'store'])->name('requests.store');
         Route::get('agm', [Admin\AgmController::class, 'index'])->name('agm.index');
         Route::post('agm/periods', [Admin\AgmController::class, 'open'])->name('agm.open');
         Route::post('agm/periods/{period}/close', [Admin\AgmController::class, 'close'])->name('agm.close');

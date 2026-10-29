@@ -23,7 +23,10 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 - Google sign-in restricted to `@qiu.edu.my`, matched against the university student system (camsys)
 - Nightly camsys sync (read-only) with automatic year group and academic session rollover (1 July)
 - Scoped roles: club committee and advisor per session; President, Vice President, Secretary and Treasurer compulsory before any submission
-- SLD admin: clubs, committees, staff accounts, transfer club to committee, settings, audit log
+- SLD admin: dashboard, clubs, committees, staff accounts, transfer club to committee, requests to clubs (7-working-day replies), settings, audit log
+- Daily reminders for every deadline (approvals, proposal lead time, indemnity, post-event documents, membership grace, AGM, replies to SLD)
+- Lifelong profile with CCA, positions, verifiable PDF certificates; alumni sign in with a linked personal email
+- Installable PWA (manifest, offline shell); photos re-encoded on upload; private files behind signed, expiring links
 - Event proposals with approval chains and e-signatures, QR attendance, indemnity, posters, post mortem (09)
 - Membership and payments (online receipt check, cash handover), finance ledger (02) and fund withdrawal (07)
 - Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA
@@ -65,6 +68,7 @@ composer run dev                        # or: php artisan serve + npm run dev
 ```bash
 composer test     # Pest
 npm run build     # vue-tsc type-check + Vite build
+QA_TEMPLATES=1 php artisan test --filter=TemplateFidelity   # every official template → storage/qa/ side by side
 ```
 
 ## Security and privacy
@@ -86,9 +90,11 @@ Everything sensitive stays on the server:
 - [x] Phase 2: Feed, events, proposals, approvals, attendance, indemnity
 - [x] Phase 3: Membership, payments, finance, meetings, minutes, post mortem, venues
 - [x] Phase 4: AGM, elections, Annual Activities Report
-- [ ] Phase 5: Dashboards, reminders, hardening, pilot
+- [x] Phase 5: Dashboards, reminders, hardening, pilot
 
 Business rules and decisions: [`CLAUDE.md`](CLAUDE.md). Phase plan: [`docs/BUILD_PROMPT.md`](docs/BUILD_PROMPT.md).
+
+Guides: [SLD admin](docs/ADMIN_GUIDE.md) · [Committees](docs/COMMITTEE_GUIDE.md) · [Pilot checklist](docs/PILOT.md) · [Template fidelity check](docs/QA_TEMPLATES.md)
 
 ## Project layout
 
