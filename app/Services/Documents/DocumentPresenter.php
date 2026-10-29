@@ -37,6 +37,7 @@ class DocumentPresenter
             'version' => $document->latestVersion?->number,
             'club' => $document->club->only('slug', 'name'),
             'event' => $document->event?->only('slug', 'name'),
+            'agm_id' => $document->agm_id,
             'submitted_at' => $document->submitted_at?->toDayDateTimeString(),
             'data' => $data,
             'locked' => $document->type === DocumentType::Proposal ? $this->proposals->lockedFields($document) : [],

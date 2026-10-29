@@ -109,6 +109,7 @@ export interface PresentedDocument {
     version: number | null;
     club: { slug: string; name: string };
     event: { slug: string; name: string } | null;
+    agm_id: number | null;
     submitted_at: string | null;
     data: ProposalData;
     locked: { to?: string; from?: string; submitted_on?: string | null };

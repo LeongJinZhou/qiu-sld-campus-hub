@@ -1,9 +1,11 @@
 <?php
 
 use App\Enums\DocumentType;
+use App\Models\Agm;
 use App\Models\Club;
 use App\Models\Document;
 use App\Models\Event;
+use App\Models\Membership;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
@@ -142,4 +144,45 @@ function qrPhoto(string $text): UploadedFile
     imagejpeg($photo, $path, 85);
 
     return new UploadedFile($path, 'handover.jpg', 'image/jpeg', null, true);
+}
+
+/** Plain text of a DOCX body, one line per paragraph. */
+function docxText(string $path): string
+{
+    $zip = new ZipArchive;
+    $zip->open($path);
+    $xml = (string) $zip->getFromName('word/document.xml');
+    $zip->close();
+
+    return strip_tags(str_replace('</w:p>', "\n", $xml));
+}
+
+/** Opens a period for the current session and schedules the club's AGM for tomorrow. */
+function openPeriodAndAgm(object $t): Agm
+{
+    $t->actingAs($t->sld)->post('/admin/agm/periods', [
+        'session' => app(SessionResolver::class)->current()->name,
+        'starts_on' => today()->toDateString(), 'agm_deadline' => today()->addWeeks(3)->toDateString(),
+        'report_deadline' => today()->addWeeks(5)->toDateString(),
+    ])->assertSessionHas('success');
+    $t->actingAs($t->secretary)->post("/clubs/{$t->club->slug}/agm", [
+        'starts_at' => now()->addDay()->setTime(16, 0)->toDateTimeString(), 'ends_at' => now()->addDay()->setTime(18, 0)->toDateTimeString(),
+        'venue' => 'Lecture Hall 2', 'online' => false,
+    ])->assertSessionHas('success');
+
+    return Agm::sole();
+}
+
+/** @return list<User> students who are not on the committee */
+function plainMembers(object $t, int $count, string $status = 'active'): array
+{
+    $committee = $t->club->roleAssignments()->pluck('user_id');
+
+    return Student::where('status', 'active')->whereNotIn('user_id', $committee)->whereNotNull('user_id')->orderBy('student_number')
+        ->get()->reject(fn ($s) => Membership::where('user_id', $s->user_id)->exists())->take($count)
+        ->map(function (Student $s) use ($t, $status) {
+            Membership::create(['club_id' => $t->club->id, 'user_id' => $s->user_id, 'status' => $status, 'starts_on' => today()->subMonths(2), 'expires_on' => today()->addMonths(10)]);
+
+            return $s->user;
+        })->values()->all();
 }

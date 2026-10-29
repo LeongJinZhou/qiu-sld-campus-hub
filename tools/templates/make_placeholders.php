@@ -245,3 +245,77 @@ foreach ([0 => 1, 1 => 2, 2 => 3] as $row => $k) {
 
 $d->save("{$filled}/{$name}");
 echo "Wrote {$filled}/{$name}\n";
+
+// ---- 01 AGM Report ----------------------------------------------------------------------------------------
+$name = '01. AGM Template.docx';
+$d = new DocxPlaceholders("{$original}/{$name}");
+$table = fn (string $header, int $occurrence = 0) => $d->paragraphContaining($header, $occurrence)->parentNode->parentNode->parentNode;
+/** Wraps $p as one repeated row of a clone block: ${name} before it and ${/name} after it. */
+$repeat = function (DOMElement $p, string $name, string $content) use ($d): void {
+    $d->setText($p, $content);
+    $open = $p->cloneNode(true);
+    $p->parentNode->insertBefore($open, $p);
+    $d->setText($open, "\${{$name}}");
+    $d->insertAfter($p, "\${/{$name}}");
+};
+
+$d->setText($d->paragraphContaining('SESSION 2025/2026'), 'SESSION ${session}');
+$d->setText($d->paragraphContaining('DATE:'), 'DATE: ${date}');
+$d->setText($d->paragraphContaining('TIME:'), 'TIME: ${time}');
+$d->setText($d->paragraphContaining('VENUE:'), 'VENUE: ${venue}');
+$d->setText($d->paragraphContaining('STUDENT ORGANIZATON:'), 'STUDENT ORGANIZATON: ${club}');
+
+// Prepared by (Secretary), Checked by (President), Reviewed by (Advisor): image above the line, then name and date.
+$signers = $table('PREPARED BY:');
+foreach ([0, 1, 2] as $c) {
+    $k = $c + 1;
+    $d->setText($d->cellParagraph($signers, 0, $c, 4), "\${sig{$k}_image}");
+    $d->setText($d->cellParagraph($signers, 0, $c, 7), "NAME: \${sig{$k}_name}");
+    $d->setText($d->cellParagraph($signers, 0, $c, 9), "DATE: \${sig{$k}_date}");
+}
+
+// 1.0 Objectives: the three sample lines become one repeated line.
+$samples = [$d->paragraphContaining('Xxx', 0), $d->paragraphContaining('Xxx', 1), $d->paragraphContaining('Xxx', 2)];
+$samples[1]->parentNode->removeChild($samples[1]);
+$samples[2]->parentNode->removeChild($samples[2]);
+$repeat($samples[0], 'objectives', '${objective}');
+
+// 2.0 Attendance: computed sentence (the bracketed note is guidance for whoever fills the form).
+$d->setText($d->paragraphContaining('Our club has a total of'), 'Our club has a total of ${total_members} members, ${attended_members} members attended the AGM, ${absent_members} members absent.');
+$attendance = $table('YEAR GROUP');
+foreach (['att_no', 'att_name', 'att_position', 'att_id', 'att_email', 'att_year', 'att_programme'] as $c => $field) {
+    $d->setText($d->cellParagraph($attendance, 1, $c), "\${{$field}}");
+}
+$d->removeRows($attendance, 2, 3);
+
+// 3.0 Opening speech: numbered 3.1, 3.2, ... points.
+$second = $d->paragraphContaining('3.2 xxx');
+$second->parentNode->removeChild($second);
+$repeat($d->paragraphContaining('3.1 xxx'), 'speech', '${speech_no} ${speech_point}');
+
+// 4.0 Agenda (the "Sample" caption goes).
+$sample = $d->paragraphContaining('Sample');
+$sample->parentNode->removeChild($sample);
+$agenda = $table('TIME START');
+foreach (['agenda_start', 'agenda_end', 'agenda_item'] as $c => $field) {
+    $d->setText($d->cellParagraph($agenda, 1, $c), "\${{$field}}");
+}
+$d->removeRows($agenda, 2, 3);
+
+// 5.0 Current committee, straight from the roles.
+$d->setText($d->paragraphContaining('5.0 CURRENT COMMITTEE MEMBERS'), '5.0 CURRENT COMMITTEE MEMBERS ${session}');
+$committee = $table('NO.', 1);
+foreach (['com_no', 'com_name', 'com_position', 'com_id', 'com_email', 'com_programme'] as $c => $field) {
+    $d->setText($d->cellParagraph($committee, 1, $c), "\${{$field}}");
+}
+$d->removeRows($committee, 2, 3);
+
+// 6.0 / 7.0 from the election module; 8.0 adjournment.
+$d->setText($d->paragraphContaining('6.0 ELECTION OF NEW COMMITTEE MEMBERS'), '6.0 ELECTION OF NEW COMMITTEE MEMBERS ${next_session}');
+$repeat($d->paragraphContaining('How many positions were elected?'), 'election', '${election_line}');
+$d->setText($d->paragraphContaining('7.0 APPOINTMENT OF NEW COMMITTEE MEMBERS'), '7.0 APPOINTMENT OF NEW COMMITTEE MEMBERS ${next_session}');
+$repeat($d->paragraphContaining('Who has been appointed?'), 'appointments', '${appointment_line}');
+$d->insertAfter($d->paragraphContaining('8.0 ADJOURMENT'), '${adjournment}', $d->paragraphContaining('${election_line}'));
+
+$d->save("{$filled}/{$name}");
+echo "Wrote {$filled}/{$name}\n";

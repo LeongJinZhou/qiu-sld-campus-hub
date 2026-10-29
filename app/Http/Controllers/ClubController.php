@@ -15,6 +15,7 @@ use App\Models\HighlightItem;
 use App\Models\MembershipDrive;
 use App\Models\Post;
 use App\Models\Story;
+use App\Services\Agm\AgmPeriods;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Membership\MembershipService;
 use App\Services\QrCodes;
@@ -98,6 +99,10 @@ class ClubController extends Controller
                 ->orderByDesc('starts_at')->get()
                 ->map(fn (Event $e) => ['id' => $e->id, 'slug' => $e->slug, 'name' => $e->name, 'starts_at' => $e->starts_at->toIso8601String(), 'venue' => $e->venue, 'status' => $e->status->value, 'poster_url' => $e->posterUrl()])),
             'faqs' => $club->faqs()->get(['id', 'question', 'answer']),
+            // AGM countdown for the club's own people while the period is open.
+            'agm' => $user?->can('viewInternal', $club) && ($period = app(AgmPeriods::class)->current())
+                ? ['days_left' => max(0, (int) ceil(now()->diffInDays($period->report_deadline->endOfDay()))), 'deadline' => $period->report_deadline->toDateString()]
+                : null,
             'documents' => $user->can('viewInternal', $club)
                 ? Inertia::defer(fn () => $club->documents()->with('event', 'approvals')->latest()->get()->map(fn (Document $d) => [
                     'id' => $d->id, 'type' => $d->type->label(), 'event' => $d->event?->name, 'status' => $d->status->value, 'updated' => $d->updated_at?->toFormattedDateString(),

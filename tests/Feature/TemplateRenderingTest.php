@@ -23,16 +23,6 @@ function proposalPayload(array $f): array
     ]);
 }
 
-function docxText(string $path): string
-{
-    $zip = new ZipArchive;
-    $zip->open($path);
-    $xml = (string) $zip->getFromName('word/document.xml');
-    $zip->close();
-
-    return strip_tags(str_replace('</w:p>', "\n", $xml));
-}
-
 it('fills every placeholder in the proposal template', function () {
     $data = proposalPayload($this->f);
     app(ApprovalEngine::class)->submit($this->f['document'], $this->f['president'], $data, signaturePng());
