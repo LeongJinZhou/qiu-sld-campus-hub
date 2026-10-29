@@ -25,7 +25,7 @@ interface Story {
 }
 
 const props = defineProps<{
-    club: { id: number; slug: string; name: string; logo_url: string | null; category: string | null; established_year: number | null; bio: string | null; instagram_handle: string | null; qr_svg: string };
+    club: { id: number; slug: string; name: string; logo_url: string | null; category: string | null; established_year: number | null; bio: string | null; instagram_handle: string | null; qr_svg: string; status: string };
     session: string;
     isCurrentSession: boolean;
     sessions: SessionOption[];
@@ -96,6 +96,7 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
                 <Link v-if="can.treasure" :href="`/clubs/${club.slug}/finance`"><Button size="sm" variant="secondary">Finance</Button></Link>
                 <Link v-if="can.treasure" :href="`/clubs/${club.slug}/payments/review`"><Button size="sm" variant="secondary">Payment review</Button></Link>
                 <Link v-if="can.internal" :href="`/clubs/${club.slug}/meetings`"><Button size="sm" variant="secondary">Meetings</Button></Link>
+                <Link v-if="can.internal" :href="`/clubs/${club.slug}/venues`"><Button size="sm" variant="secondary">Venues</Button></Link>
             </div>
 
             <p v-if="missingCompulsory.length" class="rounded-card bg-warning/10 px-4 py-3 text-sm text-warning">
