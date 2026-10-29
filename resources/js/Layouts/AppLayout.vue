@@ -60,7 +60,7 @@ const logout = (): void => router.post('/logout');
                 </Link>
             </nav>
             <div class="mt-auto grid gap-1">
-                <Link v-if="nav?.isAdmin" href="/admin/clubs" class="flex items-center gap-4 rounded-control px-3 py-2.5 text-[15px] text-ink/80 hover:bg-surface-muted">
+                <Link v-if="nav?.isAdmin" href="/admin" class="flex items-center gap-4 rounded-control px-3 py-2.5 text-[15px] text-ink/80 hover:bg-surface-muted">
                     <Icon name="shield" /><span class="hidden lg:inline">SLD Admin</span>
                 </Link>
                 <button type="button" class="flex items-center gap-4 rounded-control px-3 py-2.5 text-left text-[15px] text-ink/80 hover:bg-surface-muted" @click="logout">
@@ -85,7 +85,7 @@ const logout = (): void => router.post('/logout');
                 </Link>
                 <div class="flex items-center gap-4">
                     <Link v-if="nav?.isStaff" href="/approvals" aria-label="Approvals"><Icon name="check" /></Link>
-                    <Link v-if="nav?.isAdmin" href="/admin/clubs" aria-label="SLD Admin"><Icon name="shield" /></Link>
+                    <Link v-if="nav?.isAdmin" href="/admin" aria-label="SLD Admin"><Icon name="shield" /></Link>
                 </div>
             </header>
 
