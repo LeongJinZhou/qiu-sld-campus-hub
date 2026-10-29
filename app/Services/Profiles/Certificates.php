@@ -62,7 +62,7 @@ class Certificates
         $section = $word->addSection(['orientation' => 'landscape', 'marginTop' => 900, 'marginBottom' => 700, 'marginLeft' => 1200, 'marginRight' => 1200,
             'borderSize' => 24, 'borderColor' => '1CBDFD']);
         $center = ['alignment' => Jc::CENTER, 'spaceAfter' => 120];
-        $section->addImage(public_path('brand/QIU_Student_Activity_Black.png'), ['height' => 120, 'alignment' => Jc::CENTER]);
+        $section->addImage(public_path('brand/student-activity-black.png'), ['height' => 56, 'alignment' => Jc::CENTER]);
         $section->addText('STUDENT LIFE DIVISION · QUEST INTERNATIONAL UNIVERSITY', ['size' => 10, 'color' => '666666'], $center);
         $section->addTextBreak();
         $section->addText(strtoupper($certificate->title), ['size' => 28, 'bold' => true, 'color' => 'E01CEB'], $center);
