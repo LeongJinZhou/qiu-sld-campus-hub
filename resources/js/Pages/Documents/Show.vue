@@ -32,6 +32,17 @@ defineProps<{ document: PresentedDocument; canEdit: boolean; downloads: string[]
                 </div>
                 <Link v-if="canEdit && document.event" :href="`/events/${document.event.slug}/proposal`"><Button>Edit and resubmit</Button></Link>
                 <ProposalView v-if="document.type === 'proposal' && document.version" :document="document" />
+                <Card v-else-if="document.type === 'fund_withdrawal'">
+                    <template #title>07 Fund Withdrawal / Transfer</template>
+                    <ul class="grid gap-1 text-sm">
+                        <li v-for="(item, i) in (document.data as unknown as { items: { description: string; amount_sen: number; method: string }[] }).items" :key="i" class="flex justify-between gap-3">
+                            <span>{{ i + 1 }}. {{ item.description }} <span class="text-ink-muted">({{ item.method === 'transfer' ? 'bank transfer' : 'petty cash' }})</span></span>
+                            <span class="tabular-nums">RM {{ (item.amount_sen / 100).toFixed(2) }}</span>
+                        </li>
+                    </ul>
+                    <p class="mt-3 text-right font-semibold">Total RM {{ (((document.data as unknown as { total_sen: number }).total_sen ?? 0) / 100).toFixed(2) }}</p>
+                    <p class="mt-2 text-xs text-ink-muted">Bank details appear only on the official form download.</p>
+                </Card>
                 <Card v-else-if="document.type === 'attendance_list'">
                     <template #title>03 Event Attendance List</template>
                     <dl class="grid grid-cols-3 gap-3 text-center">

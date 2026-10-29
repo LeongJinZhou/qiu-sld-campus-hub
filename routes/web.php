@@ -16,6 +16,7 @@ use App\Http\Controllers\Events\EventRegistrationController;
 use App\Http\Controllers\Events\IndemnityController;
 use App\Http\Controllers\Events\PosterController;
 use App\Http\Controllers\Events\ProposalController;
+use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Membership\FeeController;
 use App\Http\Controllers\Membership\HandoverController;
 use App\Http\Controllers\Membership\MembersController;
@@ -111,6 +112,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/members/remind', [MembersController::class, 'remind'])->middleware('throttle:5,1')->name('members.remind');
     Route::post('/saved-views', [MembersController::class, 'saveView'])->name('views.store');
     Route::delete('/saved-views/{view}', [MembersController::class, 'deleteView'])->name('views.destroy');
+    Route::get('/clubs/{club}/finance', [FinanceController::class, 'show'])->name('finance.show');
+    Route::post('/clubs/{club}/finance/opening', [FinanceController::class, 'opening'])->name('finance.opening');
+    Route::post('/clubs/{club}/finance/entries', [FinanceController::class, 'entry'])->name('finance.entry');
+    Route::get('/clubs/{club}/finance/receipts/{receipt}', [FinanceController::class, 'receipt'])->name('finance.receipt');
+    Route::get('/clubs/{club}/finance/export/{format}', [FinanceController::class, 'export'])->name('finance.export');
+    Route::post('/clubs/{club}/finance/payees', [FinanceController::class, 'payee'])->name('finance.payees');
+    Route::get('/clubs/{club}/fund-requests/create', [FinanceController::class, 'requestForm'])->name('fund.create');
+    Route::post('/clubs/{club}/fund-requests', [FinanceController::class, 'submitRequest'])->name('fund.store');
     Route::get('/clubs/{club}/payments/review', [MembershipController::class, 'reviewQueue'])->name('payments.review');
     Route::post('/payments/{payment}/decide', [MembershipController::class, 'decide'])->name('payments.decide');
     Route::get('/payments/{payment}/receipt', [MembershipController::class, 'receiptFile'])->name('payments.receipt');
@@ -133,6 +142,7 @@ Route::middleware('auth')->group(function () {
         Route::put('staff/{staff}', [Admin\StaffController::class, 'update'])->name('staff.update');
 
         Route::get('members', [MembersController::class, 'all'])->name('members.all');
+        Route::get('finance', Admin\FinanceOverviewController::class)->name('finance.index');
         Route::get('fees', [FeeController::class, 'index'])->name('fees.index');
         Route::post('fees/{fee}/approve', [FeeController::class, 'approve'])->name('fees.approve');
         Route::post('drives', [FeeController::class, 'drive'])->name('drives.store');

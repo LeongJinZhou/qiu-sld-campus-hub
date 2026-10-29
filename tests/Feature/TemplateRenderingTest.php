@@ -15,7 +15,7 @@ function proposalPayload(array $f): array
     return array_replace(app(ProposalForm::class)->defaults($f['event']), [
         'summary' => 'Clean the beach', 'venue' => 'Pantai Remis', 'introduction' => 'SDG 14', 'eligibility' => 'All',
         'nature' => ['environmental', 'humanity'], 'sdgs' => [14, 13], 'source_of_fund' => ['club'],
-        'objectives' => ['Clean', 'Learn', 'Bond'],
+        'objectives' => ['Clean & green', 'Learn', 'Bond'],
         'activities' => [['name' => 'Cleanup', 'description' => 'Pick litter'], ['name' => 'Talk', 'description' => 'Marine life']],
         'itinerary' => [['start' => '08:00', 'end' => '08:30', 'agenda' => 'Arrival & <Registration>'], ['start' => '08:30', 'end' => '12:00', 'agenda' => 'Cleanup'], ['start' => '12:00', 'end' => '12:30', 'agenda' => 'Lunch']],
         'budget' => ['revenue' => [['description' => 'Club fund', 'price_sen' => 50000, 'quantity' => 1]], 'expenses' => [['description' => 'Gloves', 'price_sen' => 500, 'quantity' => 40], ['description' => 'Bags', 'price_sen' => 200, 'quantity' => 50]]],

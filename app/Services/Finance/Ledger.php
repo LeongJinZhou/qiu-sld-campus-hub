@@ -81,14 +81,14 @@ class Ledger
         $balance = (int) ($opening->amount_sen ?? 0);
         $rows = [];
         if ($opening) {
-            $rows[] = ['id' => null, 'date' => $opening->as_of->toDateString(), 'description' => 'Opening Acc', 'income_sen' => 0, 'expense_sen' => 0, 'balance_sen' => $balance, 'has_receipt' => false];
+            $rows[] = ['id' => null, 'date' => $opening->as_of->toDateString(), 'description' => 'Opening Acc', 'income_sen' => 0, 'expense_sen' => 0, 'balance_sen' => $balance, 'has_receipt' => false, 'receipt_id' => null];
         }
         foreach ($club->ledger()->orderBy('entry_date')->orderBy('id')->get() as $entry) {
             $balance += $entry->income_sen - $entry->expense_sen;
             $rows[] = [
                 'id' => $entry->id, 'date' => $entry->entry_date->toDateString(), 'description' => $entry->description,
                 'income_sen' => $entry->income_sen, 'expense_sen' => $entry->expense_sen, 'balance_sen' => $balance,
-                'has_receipt' => $entry->receipt_id !== null,
+                'has_receipt' => $entry->receipt_id !== null, 'receipt_id' => $entry->receipt_id,
             ];
         }
 
