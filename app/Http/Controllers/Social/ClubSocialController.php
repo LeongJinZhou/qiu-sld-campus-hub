@@ -9,10 +9,12 @@ use App\Models\Club;
 use App\Models\ClubFaq;
 use App\Models\Highlight;
 use App\Models\Story;
+use App\Services\Social\FeedQuery;
 use App\Services\Time\SessionResolver;
 use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -23,6 +25,7 @@ class ClubSocialController extends Controller
     public function follow(Request $request, Club $club): RedirectResponse
     {
         $club->followers()->toggle($request->user()->id);
+        Cache::forget(FeedQuery::followedKey($request->user()->id));
 
         return back();
     }
