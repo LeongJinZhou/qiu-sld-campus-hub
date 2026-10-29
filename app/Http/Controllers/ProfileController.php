@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Profiles\Certificates;
 use App\Services\Profiles\PublicProfile;
 use App\Services\QrCodes;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,7 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    public function show(Request $request, PublicProfile $profile, QrCodes $qr): Response
+    public function show(Request $request, PublicProfile $profile, QrCodes $qr, Certificates $certificates): Response
     {
         $user = $request->user();
         $student = $user->student;
@@ -34,6 +35,7 @@ class ProfileController extends Controller
             'hideableSections' => User::HIDEABLE_SECTIONS,
             'saved' => Inertia::defer(fn () => $user->savedPosts()->visible()->with('media', 'event')->latest('saves.created_at')->limit(30)->get()
                 ->map(fn (Post $p) => ['id' => $p->id, 'url' => route('posts.show', $p), 'image' => $p->media->first()?->url() ?? $p->event?->posterUrl(), 'caption' => $p->caption])),
+            'certificates' => $certificates->available($user),
             'publicUrl' => $publicUrl,
             'qrSvg' => $qr->svg($publicUrl),
         ]);
