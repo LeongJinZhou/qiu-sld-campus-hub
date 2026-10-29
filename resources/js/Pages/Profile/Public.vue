@@ -1,51 +1,23 @@
 <script setup lang="ts">
-import Avatar from '@/Components/ui/Avatar.vue';
-import Card from '@/Components/ui/Card.vue';
-import { Head } from '@inertiajs/vue3';
-
-export interface ProfileData {
-    name: string;
-    photo_url: string | null;
-    programme_short: string | null;
-    programme: string | null;
-    year_group: string | null;
-    title: string | null;
-    clubs: { name: string; url: string }[] | null;
-    positions: { session: string | null; club: string | null; position: string }[] | null;
-}
+import ProfileView from '@/Components/profile/ProfileView.vue';
+import type { ProfileData } from '@/types';
+import { Head, Link } from '@inertiajs/vue3';
 
 defineProps<{ profile: ProfileData }>();
 </script>
 
 <template>
     <Head :title="profile.name" />
-    <main class="mx-auto grid max-w-2xl gap-6 px-4 py-8">
-        <header class="grid justify-items-center gap-3 text-center">
-            <Avatar :src="profile.photo_url" :name="profile.name" size="xl" ring />
-            <h1 class="text-xl font-bold">{{ profile.name }}</h1>
-            <p class="text-sm text-ink-muted">
-                {{ [profile.programme_short, profile.year_group, profile.title].filter(Boolean).join(' · ') }}
-            </p>
-            <p v-if="profile.programme" class="text-xs text-ink-muted">{{ profile.programme }}</p>
+    <div class="min-h-dvh bg-surface-muted">
+        <header class="flex h-14 items-center justify-between border-b border-line bg-surface px-4">
+            <Link href="/feed" class="flex items-center gap-2">
+                <img src="/brand/QIU_Student_Activity_Black.png" alt="QIU Student Activity" class="h-8 w-auto" />
+                <span class="font-bold"><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></span>
+            </Link>
+            <span class="text-xs text-ink-muted">Verified QIU profile</span>
         </header>
-
-        <Card v-if="profile.clubs?.length">
-            <template #title>Clubs</template>
-            <ul class="flex flex-wrap gap-2">
-                <li v-for="club in profile.clubs" :key="club.url">
-                    <a :href="club.url" class="inline-block rounded-full bg-surface-muted px-3 py-1 text-sm hover:bg-line">{{ club.name }}</a>
-                </li>
-            </ul>
-        </Card>
-
-        <Card v-if="profile.positions?.length">
-            <template #title>Positions</template>
-            <ul class="grid gap-2 text-sm">
-                <li v-for="(item, index) in profile.positions" :key="index" class="flex justify-between gap-4">
-                    <span><strong>{{ item.position }}</strong> · {{ item.club }}</span>
-                    <span class="text-ink-muted">{{ item.session }}</span>
-                </li>
-            </ul>
-        </Card>
-    </main>
+        <main class="mx-auto max-w-3xl px-4 py-6">
+            <ProfileView :profile="profile" />
+        </main>
+    </div>
 </template>

@@ -21,6 +21,7 @@ class FeedController extends Controller
         return Inertia::render('Feed/Index', [
             'stories' => $feed->storyBar($user),
             'posts' => Inertia::scroll(fn () => $page->through(fn (Post $p) => $presenter->card($p))),
+            'openCreate' => $request->boolean('create'),
             'publishable' => Club::orderBy('name')->get()->filter(fn (Club $c) => $user->can('publish', $c))
                 ->map(fn (Club $c) => ['slug' => $c->slug, 'name' => $c->name])->values(),
         ]);

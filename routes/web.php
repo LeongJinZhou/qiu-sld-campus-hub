@@ -16,6 +16,7 @@ use App\Http\Controllers\Events\EventRegistrationController;
 use App\Http\Controllers\Events\IndemnityController;
 use App\Http\Controllers\Events\PosterController;
 use App\Http\Controllers\Events\ProposalController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\Social\ClubSocialController;
@@ -94,6 +95,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/approvals/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
     Route::post('/approvals/{approval}', [ApprovalController::class, 'decide'])->name('approvals.decide');
 
+    Route::get('/notifications', NotificationController::class)->name('notifications');
     Route::get('/me', [ProfileController::class, 'show'])->name('profile.me');
     Route::post('/me', [ProfileController::class, 'update'])->name('profile.update');
 

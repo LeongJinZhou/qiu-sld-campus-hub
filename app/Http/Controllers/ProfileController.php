@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateProfileRequest;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\Profiles\PublicProfile;
 use App\Services\QrCodes;
@@ -31,6 +32,8 @@ class ProfileController extends Controller
                 'hidden_sections' => $user->hidden_sections ?? [],
             ],
             'hideableSections' => User::HIDEABLE_SECTIONS,
+            'saved' => Inertia::defer(fn () => $user->savedPosts()->visible()->with('media', 'event')->latest('saves.created_at')->limit(30)->get()
+                ->map(fn (Post $p) => ['id' => $p->id, 'url' => route('posts.show', $p), 'image' => $p->media->first()?->url() ?? $p->event?->posterUrl(), 'caption' => $p->caption])),
             'publicUrl' => $publicUrl,
             'qrSvg' => $qr->svg($publicUrl),
         ]);
@@ -47,10 +50,14 @@ class ProfileController extends Controller
             $user->avatar_path = $request->file('photo')?->store('avatars', 'public');
         }
 
-        $user->fill([
-            'hidden_sections' => $request->validated('hidden_sections', []),
-            'personal_email' => $request->validated('personal_email'),
-        ])->save();
+        // Photo-only saves must not wipe the other settings.
+        if ($request->has('hidden_sections') || $request->has('personal_email')) {
+            $user->fill([
+                'hidden_sections' => $request->validated('hidden_sections', []),
+                'personal_email' => $request->validated('personal_email'),
+            ]);
+        }
+        $user->save();
 
         return back()->with('success', 'Profile updated.');
     }
