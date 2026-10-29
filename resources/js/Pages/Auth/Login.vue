@@ -14,7 +14,7 @@ defineProps<{ devLogin: boolean }>();
             <div class="absolute -left-24 -top-24 size-96 rounded-full bg-brand-orange/40 blur-3xl" aria-hidden="true" />
             <div class="absolute -bottom-32 right-0 size-[28rem] rounded-full bg-brand-magenta/30 blur-3xl" aria-hidden="true" />
             <div class="absolute bottom-24 left-24 size-64 rounded-full bg-brand-cyan/25 blur-3xl" aria-hidden="true" />
-            <img src="/brand/QIU_Student_Activity_White.png" alt="QIU Student Activity" class="relative h-14 w-auto self-start" />
+            <img src="/brand/student-activity-white.png" alt="QIU Student Activity" class="relative h-14 w-auto self-start" />
             <div class="relative grid gap-4">
                 <h2 class="text-5xl font-bold leading-tight">Every club.<br />Every event.<br /><span class="text-gradient-warm">One campus hub.</span></h2>
                 <p class="max-w-md text-white/70">Follow clubs, join events, earn CCA hours and run your club's paperwork — all with your QIU account.</p>
@@ -26,7 +26,7 @@ defineProps<{ devLogin: boolean }>();
         <section class="relative grid place-items-center overflow-hidden px-6 py-12">
             <div class="absolute -right-24 -top-24 size-72 rounded-full bg-brand-yellow/40 blur-3xl lg:hidden" aria-hidden="true" />
             <div class="relative grid w-full max-w-sm gap-8 text-center">
-                <img src="/brand/QIU_Student_Activity_Black.png" alt="QIU Student Activity" class="mx-auto h-16 w-auto" />
+                <img src="/brand/student-activity-black.png" alt="QIU Student Activity" class="mx-auto h-16 w-auto" />
                 <div class="grid gap-2">
                     <h1 class="text-3xl font-bold"><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></h1>
                     <p class="text-ink-muted">Sign in with your <strong class="text-ink">@qiu.edu.my</strong> account.</p>

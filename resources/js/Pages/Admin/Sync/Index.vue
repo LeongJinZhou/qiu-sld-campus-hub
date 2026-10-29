@@ -12,19 +12,19 @@ defineProps<{
 const form = useForm({});
 const columns = [
     { key: 'started_at' as const, label: 'Started', sortable: true },
-    { key: 'trigger' as const, label: 'Trigger', sortable: true },
-    { key: 'upserted' as const, label: 'Upserted / seen' },
+    { key: 'trigger' as const, label: 'Started by', sortable: true },
+    { key: 'upserted' as const, label: 'Students updated / checked' },
     { key: 'seconds' as const, label: 'Duration' },
     { key: 'error' as const, label: 'Result' },
 ];
 </script>
 
 <template>
-    <Head title="camsys sync" />
-    <PortalLayout title="camsys sync">
+    <Head title="Student records sync" />
+    <PortalLayout title="Student records sync">
         <div class="grid gap-4">
             <div class="flex items-center justify-between gap-3">
-                <p class="text-sm text-ink-muted">Runs nightly at 02:00 and for each student on login. SELECT only.</p>
+                <p class="text-sm text-ink-muted">Student details are copied from the university student system (camsys) every night at 02:00, and again for each student when they sign in. The portal only reads from camsys; it never changes it.</p>
                 <Button :loading="form.processing" @click="form.post('/admin/sync', { preserveScroll: true })">Sync now</Button>
             </div>
             <Table :columns="columns" :rows="runs" row-key="id">

@@ -25,7 +25,7 @@ const props = defineProps<{
     can: { edit: boolean; sld: boolean };
 }>();
 
-const opening = useForm({ amount_rm: props.opening ? props.opening.amount_sen / 100 : 0, as_of: props.opening?.as_of ?? new Date().toISOString().slice(0, 10), note: props.opening?.note ?? '' });
+const openingForm = useForm({ amount_rm: props.opening ? props.opening.amount_sen / 100 : 0, as_of: props.opening?.as_of ?? new Date().toISOString().slice(0, 10), note: props.opening?.note ?? '' });
 const entry = useForm({ date: new Date().toISOString().slice(0, 10), description: '', kind: 'expense', amount_rm: '', receipt: [] as File[], original: false });
 const addEntry = (): void => {
     entry.transform((d) => ({ ...d, receipt: d.receipt[0] ?? null })).post(`/clubs/${props.club.slug}/finance/entries`, { preserveScroll: true, onSuccess: () => entry.reset('description', 'amount_rm', 'receipt', 'original') });
@@ -50,11 +50,11 @@ const payee = useForm({ kind: 'vendor', name: '', email: '', contact_no: '', ban
 
             <Card v-if="can.sld">
                 <template #title>Opening balance (SLD only)</template>
-                <form class="grid gap-3 sm:grid-cols-[10rem_12rem_1fr_auto] sm:items-end" @submit.prevent="opening.post(`/clubs/${club.slug}/finance/opening`, { preserveScroll: true })">
-                    <Input v-model="opening.amount_rm" type="number" label="Amount (RM)" :error="opening.errors.amount_rm" />
-                    <Input v-model="opening.as_of" type="date" label="As of" :error="opening.errors.as_of" />
-                    <Input v-model="opening.note" label="Note" />
-                    <Button type="submit" :loading="opening.processing">{{ opening ? 'Update' : 'Open ledger' }}</Button>
+                <form class="grid gap-3 sm:grid-cols-[10rem_12rem_1fr_auto] sm:items-end" @submit.prevent="openingForm.post(`/clubs/${club.slug}/finance/opening`, { preserveScroll: true })">
+                    <Input v-model="openingForm.amount_rm" type="number" label="Amount (RM)" :error="openingForm.errors.amount_rm" />
+                    <Input v-model="openingForm.as_of" type="date" label="As of" :error="openingForm.errors.as_of" />
+                    <Input v-model="openingForm.note" label="Note" />
+                    <Button type="submit" :loading="openingForm.processing">{{ props.opening ? 'Update' : 'Open ledger' }}</Button>
                 </form>
                 <p class="mt-2 text-xs text-ink-muted">Every change is recorded in the audit log.</p>
             </Card>

@@ -7,14 +7,12 @@ const props = withDefaults(
 );
 
 const sizes = { xs: 'size-6 text-[10px]', sm: 'size-9 text-xs', md: 'size-14 text-base', lg: 'size-20 text-xl', xl: 'size-28 text-3xl' };
-const initials = computed(() =>
-    props.name
-        .split(/\s+/)
-        .filter((word) => /^\p{Lu}/u.test(word))
-        .slice(0, 2)
-        .map((word) => word[0])
-        .join('') || '?',
-);
+// Initials from the first two words; an email falls back to the part before "@" ("jinzhou.leong" -> "JL").
+const initials = computed(() => {
+    const words = props.name.split('@')[0]!.split(/[\s._-]+/).filter((w) => /^[\p{L}\p{N}]/u.test(w));
+    const capitals = words.filter((w) => /^\p{Lu}/u.test(w));
+    return (capitals.length ? capitals : words).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || '?';
+});
 </script>
 
 <template>

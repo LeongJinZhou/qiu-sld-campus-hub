@@ -15,7 +15,7 @@ defineProps<{
     clubs: Option[];
 }>();
 
-const drive = useForm({ title: '', club_id: null as number | null, starts_at: '', ends_at: '' });
+const drive = useForm({ title: '', club_id: '' as number | '', starts_at: '', ends_at: '' });
 const approve = (id: number): void => router.post(`/admin/fees/${id}/approve`, {}, { preserveScroll: true });
 </script>
 
