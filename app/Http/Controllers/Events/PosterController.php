@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Social\StorePostRequest;
 use App\Models\Event;
 use App\Services\Events\PosterRules;
+use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -48,7 +49,7 @@ class PosterController extends Controller
         if ($event->poster_path) {
             Storage::disk('public')->delete($event->poster_path);
         }
-        $event->update(['poster_path' => $data['poster']->store("posters/{$event->club_id}", 'public'), 'poster_checklist' => $ticked]);
+        $event->update(['poster_path' => app(ImageUpload::class)->store($data['poster'], "posters/{$event->club_id}"), 'poster_checklist' => $ticked]);
 
         return to_route('events.show', $event)->with('success', 'Poster saved. It appears on the feed post once the proposal is approved.');
     }

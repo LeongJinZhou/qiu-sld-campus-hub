@@ -13,6 +13,7 @@ use App\Services\AuditLogger;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Roles\RoleService;
 use App\Services\Time\SessionResolver;
+use App\Services\Uploads\ImageUpload;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -76,7 +77,7 @@ class Elections
 
         $candidate = $position->candidates()->create([
             'user_id' => $user->id, 'statement' => $statement,
-            'photo_path' => $photo?->store("elections/{$election->id}", 'public'),
+            'photo_path' => $photo ? app(ImageUpload::class)->store($photo, "elections/{$election->id}") : null,
         ]);
         $this->audit->log('election.nominated', $candidate, ['position' => $position->position]);
 

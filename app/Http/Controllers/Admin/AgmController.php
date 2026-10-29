@@ -13,6 +13,7 @@ use App\Services\Agm\AgmPeriods;
 use App\Services\Agm\Elections;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Time\SessionResolver;
+use App\Services\Uploads\ImageUpload;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -109,7 +110,7 @@ class AgmController extends Controller
             ReportTheme::create([
                 ...collect($data)->except('background')->all(),
                 'is_default' => $request->boolean('is_default'),
-                'background_path' => $request->file('background')?->store('report-themes', 'public'),
+                'background_path' => $request->hasFile('background') ? app(ImageUpload::class)->store($request->file('background'), 'report-themes') : null,
             ]);
         });
 

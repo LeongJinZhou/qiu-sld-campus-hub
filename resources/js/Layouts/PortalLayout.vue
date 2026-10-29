@@ -12,12 +12,14 @@ const user = computed(() => page.props.auth.user);
 const menuOpen = ref(false);
 
 const links = computed(() => [
+    { label: 'Dashboard', href: '/admin' },
     { label: 'Clubs', href: '/admin/clubs' },
     { label: 'Staff', href: '/admin/staff' },
     { label: 'All members', href: '/admin/members' },
     { label: 'Fees & drives', href: '/admin/fees' },
     { label: 'Venue requests', href: '/admin/venues' },
     { label: 'AGM', href: '/admin/agm' },
+    { label: 'Requests to clubs', href: '/admin/requests' },
     { label: 'Club finance', href: '/admin/finance' },
     { label: 'Moderation', href: '/admin/moderation' },
     { label: 'Settings', href: '/admin/settings' },
@@ -30,7 +32,7 @@ const links = computed(() => [
         : []),
     { label: '← Back to Campus Hub', href: '/clubs' },
 ]);
-const isActive = (href: string): boolean => page.url.startsWith(href);
+const isActive = (href: string): boolean => (href === '/admin' ? page.url === '/admin' : page.url.startsWith(href));
 </script>
 
 <template>

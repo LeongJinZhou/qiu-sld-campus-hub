@@ -53,9 +53,8 @@ it('exports into the official 10 Full Member List template', function () {
     $path = app(MemberListExport::class)->render($this->club, $rows);
     $sheet = IOFactory::load($path)->getActiveSheet();
 
-    expect($sheet->getCell('A1')->getValue())->toBe('Club Name:')
-        ->and($sheet->getCell('B1')->getValue())->toBe('Fixture Club')
-        ->and($sheet->getCell('B2')->getValue())->toBe('Dr Lim Siew Ling')
+    expect($sheet->getCell('A1')->getValue())->toBe('Club Name: Fixture Club')
+        ->and($sheet->getCell('A2')->getValue())->toBe('Advisor: Dr Lim Siew Ling')
         ->and($sheet->getCell('B4')->getValue())->toBe('Name')
         ->and($sheet->getCell('B5')->getValue())->toBe($rows[0]['name'])
         ->and($sheet->getCell('A8')->getValue())->toBeNull();

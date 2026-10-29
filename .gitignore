@@ -46,3 +46,4 @@ _ide_helper.php
 /storage/inertia-devtools/*
 /bootstrap/cache/*.php
 /tools/pptx/.venv
+/storage/qa

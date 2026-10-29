@@ -86,7 +86,7 @@ class ElectionController extends Controller
 
     public function nominate(Request $request, ElectionPosition $position): RedirectResponse
     {
-        $data = $request->validate(['statement' => ['required', 'string', 'max:2000'], 'photo' => ['nullable', 'image', 'max:5120']]);
+        $data = $request->validate(['statement' => ['required', 'string', 'max:2000'], 'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']]);
         try {
             $this->elections->nominate($position, $request->user(), $data['statement'], $request->file('photo'));
         } catch (DomainException $e) {

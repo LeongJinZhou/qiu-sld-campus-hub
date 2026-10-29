@@ -14,6 +14,7 @@ use App\Services\ClubStatusService;
 use App\Services\Roles\CommitteeBoard;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Time\SessionResolver;
+use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -95,7 +96,7 @@ class ClubController extends Controller
             if ($club?->logo_path) {
                 Storage::disk('public')->delete($club->logo_path);
             }
-            $attributes['logo_path'] = $request->file('logo')->store('club-logos', 'public');
+            $attributes['logo_path'] = app(ImageUpload::class)->store($request->file('logo'), 'club-logos');
         }
 
         return $attributes;

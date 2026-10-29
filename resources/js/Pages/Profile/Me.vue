@@ -22,6 +22,7 @@ const props = defineProps<{
     saved?: { id: number; url: string; image: string | null; caption: string | null }[];
     publicUrl: string;
     qrSvg: string;
+    certificates: { kind: string; source_id: number; title: string; statement: string; date: string; code: string | null }[];
 }>();
 
 const editing = ref(false);
@@ -53,7 +54,7 @@ async function share(): Promise<void> {
 <template>
     <Head title="My profile" />
     <AppLayout>
-        <ProfileView :profile="profile" :extra-tabs="[{ key: 'saved', label: 'Saved', icon: 'bookmark' }]">
+        <ProfileView :profile="profile" :extra-tabs="[{ key: 'certificates', label: 'Certificates', icon: 'check' }, { key: 'saved', label: 'Saved', icon: 'bookmark' }]">
             <template #avatar-action>
                 <button type="button" class="absolute bottom-1 right-1 grid size-9 place-items-center rounded-full border-2 border-surface bg-ink text-white shadow-pop" aria-label="Change photo" @click="photo = true">
                     <Icon name="camera" :size="18" />
@@ -66,6 +67,19 @@ async function share(): Promise<void> {
             </template>
             <template #meta>
                 <p class="text-xs text-ink-muted">{{ account.student_number }} · {{ account.email }}</p>
+            </template>
+            <template #tab-certificates>
+                <EmptyState v-if="!certificates.length" title="No certificates yet" description="Committee positions and events you attend (clock in and out) appear here as downloadable certificates." />
+                <ul class="grid gap-2">
+                    <li v-for="c in certificates" :key="`${c.kind}-${c.source_id}`" class="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface p-4">
+                        <span class="min-w-0 flex-1">
+                            <strong class="block">{{ c.title }}</strong>
+                            <span class="text-sm text-ink-muted">You {{ c.statement }}</span>
+                            <a v-if="c.code" :href="`/certificates/${c.code}`" class="block text-xs text-brand-blue">Verification code {{ c.code }}</a>
+                        </span>
+                        <a :href="`/me/certificates/${c.kind}/${c.source_id}`"><Button size="sm" variant="secondary">Download PDF</Button></a>
+                    </li>
+                </ul>
             </template>
             <template #tab-saved>
                 <Deferred data="saved">

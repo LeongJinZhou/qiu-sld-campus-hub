@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -29,6 +30,7 @@ class EventDocumentController extends Controller
                 'overdue' => ! $i->submitted_at && $i->due_on->endOfDay()->isPast(),
                 'submitted_at' => $i->submitted_at?->toFormattedDateString(),
                 'file_name' => $i->file_path ? basename($i->file_path) : null,
+                'file_url' => $i->file_path ? URL::temporarySignedRoute('events.documents.download', now()->addMinutes(30), [$event, $i]) : null,
             ]),
         ]);
     }

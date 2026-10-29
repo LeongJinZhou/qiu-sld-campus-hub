@@ -32,7 +32,7 @@ class PublicProfile
         $clubs = Club::with('category')->whereIn('id', $clubAssignments->pluck('scope_id'))->get()->keyBy('id');
         $eventCommittees = Event::whereIn('id', $assignments->where('scope_type', ScopeType::Event)->pluck('scope_id'))->get()->keyBy('id');
         $attended = Attendance::with('event.club')->where('user_id', $user->id)->whereNotNull('clock_in_at')->latest('clock_in_at')->get();
-        $cca = CcaRecord::with('event')->where('user_id', $user->id)->get();
+        $cca = CcaRecord::with(['event', 'meeting.club'])->where('user_id', $user->id)->get();
 
         return [
             'name' => $user->name,
@@ -84,9 +84,10 @@ class PublicProfile
             ])->all() : null,
             'cca' => $show('cca') ? [
                 'total' => round($cca->sum('hours'), 1),
-                'records' => $cca->sortByDesc(fn (CcaRecord $r) => $r->event->starts_at)->map(fn (CcaRecord $r) => [
-                    'event' => $r->event->name,
-                    'date' => $r->event->starts_at->toFormattedDateString(),
+                // Event CCA, or weekly-activity CCA claimed through a meeting.
+                'records' => $cca->sortByDesc(fn (CcaRecord $r) => ($r->event ?? $r->meeting)?->starts_at)->map(fn (CcaRecord $r) => [
+                    'event' => $r->event->name ?? ($r->meeting ? "{$r->meeting->club->name}: {$r->meeting->title}" : ''),
+                    'date' => ($r->event ?? $r->meeting)?->starts_at->toFormattedDateString(),
                     'role' => $r->role,
                     'hours' => $r->hours,
                 ])->values()->all(),

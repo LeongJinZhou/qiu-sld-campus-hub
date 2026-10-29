@@ -60,4 +60,21 @@ class SignInService
 
         return $user;
     }
+
+    /**
+     * Alumni keep access through the personal email they linked before graduating (CLAUDE.md §6 profile).
+     * Only accounts that linked that exact address get in; nothing new is created.
+     *
+     * @throws NotInRecordsException
+     */
+    public function signInWithPersonalEmail(string $email): User
+    {
+        $user = User::whereRaw('lower(personal_email) = ?', [strtolower(trim($email))])->first() ?? throw new NotInRecordsException;
+        if ($user->student) {
+            $this->camsys->syncByEmail($user->email);
+        }
+        $user->forceFill(['last_login_at' => now()])->save();
+
+        return $user;
+    }
 }
