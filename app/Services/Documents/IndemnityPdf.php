@@ -23,7 +23,7 @@ class IndemnityPdf
         'I understand and acknowledge that participating in events/activities organised externally by Quest International University may carry certain risks such as physical injury, personal injury, property damage or illness which may occur through known and unknown causes which is not the fault of QIU staff/coach/event committee or other QIU employee/students who were involved with the activity. I fully understand that the program may be strenuous and choose to participate voluntarily. I accept full responsibility for my own safety and will not act in a manner that will bring harm to me and to others.',
     ];
 
-    private const FONT = ['name' => 'Times New Roman', 'size' => 12];
+    private const FONT = ['name' => 'Times New Roman', 'size' => 11];
 
     private const LABEL_WIDTH = 2100;
 
@@ -41,7 +41,7 @@ class IndemnityPdf
         $word->setDefaultFontSize(self::FONT['size']);
 
         foreach ($event->indemnities->sortBy(fn (Indemnity $i) => $i->user->name) as $indemnity) {
-            $this->page($word->addSection(['marginTop' => 700, 'marginLeft' => 1300, 'marginRight' => 1300]), $event, $indemnity, $advisor?->name);
+            $this->page($word->addSection(['marginTop' => 500, 'marginBottom' => 500, 'marginLeft' => 1300, 'marginRight' => 1300]), $event, $indemnity, $advisor?->name);
         }
         if ($event->indemnities->isEmpty()) {
             $word->addSection()->addText('No indemnity forms have been signed yet.');
@@ -60,13 +60,12 @@ class IndemnityPdf
 
     private function page(Section $section, Event $event, Indemnity $i, ?string $staffInCharge): void
     {
-        $section->addImage(public_path('brand/QIU_Wordmark.jpg'), ['width' => 140, 'alignment' => Jc::CENTER]);
-        $section->addTextBreak(1);
+        $section->addImage(public_path('brand/QIU_Wordmark.jpg'), ['width' => 110, 'alignment' => Jc::CENTER]);
         $bar = $section->addTable(['bgColor' => '231F20', 'cellMargin' => 40]);
         $bar->addRow();
         $bar->addCell(self::LABEL_WIDTH + self::VALUE_WIDTH, ['bgColor' => '231F20'])
             ->addText('STUDENT LIFE DIVISION – INDEMNITY FORM', ['name' => 'Arial', 'bold' => true, 'size' => 13, 'color' => 'FFFFFF']);
-        $section->addTextBreak(1);
+        $section->addText('', ['size' => 6]);
 
         $table = $section->addTable(['borderSize' => 6, 'borderColor' => '000000', 'cellMargin' => 30]);
         $this->heading($table, 'Activity Details');
@@ -103,7 +102,7 @@ class IndemnityPdf
         $cell->addText('Signature:');
         $image = Storage::disk('local')->path($i->signature->image_path);
         if (is_file($image)) {
-            $cell->addImage($image, ['height' => 40]);
+            $cell->addImage($image, ['height' => 32]);
         }
         $cell->addText('----------------------------------');
         $cell->addText("Verify: {$i->signature->verification_code} · ".route('verify', $i->signature->verification_code), ['size' => 8, 'color' => '555555']);
