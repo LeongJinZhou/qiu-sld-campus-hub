@@ -82,20 +82,21 @@ it('exports the ledger into the official 02 Finance Record with its balance form
 
 it('only allows fund withdrawals for approved events, within the approved budget', function () {
     $funds = app(FundWithdrawals::class);
-    $input = ['event_id' => $this->f['event']->id, 'purpose' => 'x', 'items' => [['description' => 'Gloves', 'amount_sen' => 20000, 'method' => 'petty_cash']], 'payees' => []];
+    $payee = Payee::create(['club_id' => $this->club->id, 'kind' => 'vendor', 'name' => 'Kedai', 'bank_name' => 'Maybank', 'account_holder' => 'Kedai', 'account_number' => '514012345678']);
+    $input = ['event_id' => $this->f['event']->id, 'purpose' => 'x', 'items' => [['description' => 'Gloves', 'unit_sen' => 500, 'quantity' => 40, 'method' => 'vendor']], 'payees' => [['payee_id' => $payee->id, 'amount_sen' => 20000]]];
 
     expect(fn () => $funds->normalise($this->club, $input))->toThrow(DomainException::class, 'approved');
 
     approvedEventWithBudget($this);
-    expect(fn () => $funds->normalise($this->club, [...$input, 'items' => [['description' => 'Gloves', 'amount_sen' => 30000, 'method' => 'petty_cash']]]))->toThrow(DomainException::class, 'more than')
-        ->and(fn () => $funds->normalise($this->club, [...$input, 'items' => [['description' => 'Fireworks', 'amount_sen' => 100, 'method' => 'petty_cash']]]))->toThrow(DomainException::class, 'not in the approved budget')
+    expect(fn () => $funds->normalise($this->club, [...$input, 'items' => [['description' => 'Gloves', 'unit_sen' => 500, 'quantity' => 41, 'method' => 'vendor']]]))->toThrow(DomainException::class, 'more than')
+        ->and(fn () => $funds->normalise($this->club, [...$input, 'items' => [['description' => 'Fireworks', 'unit_sen' => 100, 'quantity' => 1, 'method' => 'vendor']]]))->toThrow(DomainException::class, 'not in the approved budget')
         ->and($funds->normalise($this->club, $input)['total_sen'])->toBe(20000);
 });
 
 it('needs weekly-activity withdrawals 2 weeks ahead and payees matching the transfers', function () {
     $funds = app(FundWithdrawals::class);
     $payee = Payee::create(['club_id' => $this->club->id, 'kind' => 'vendor', 'name' => 'Kedai ABC', 'bank_name' => 'Maybank', 'account_holder' => 'ABC Sdn Bhd', 'account_number' => '514012345678']);
-    $base = ['purpose' => 'weekly training', 'items' => [['description' => 'Shuttlecocks', 'amount_sen' => 8000, 'method' => 'transfer']], 'payees' => [['payee_id' => $payee->id, 'amount_sen' => 8000]]];
+    $base = ['purpose' => 'weekly training', 'items' => [['description' => 'Shuttlecocks', 'unit_sen' => 2000, 'quantity' => 4, 'method' => 'vendor']], 'payees' => [['payee_id' => $payee->id, 'amount_sen' => 8000]]];
 
     expect(fn () => $funds->normalise($this->club, [...$base, 'needed_by' => today()->addDays(5)->toDateString()]))->toThrow(DomainException::class, '2 weeks')
         ->and(fn () => $funds->normalise($this->club, [...$base, 'needed_by' => today()->addDays(20)->toDateString(), 'payees' => [['payee_id' => $payee->id, 'amount_sen' => 1]]]))->toThrow(DomainException::class, 'add up')
@@ -116,8 +117,8 @@ it('runs a fund withdrawal through Secretary → President → Advisor → AR �
 
     $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/fund-requests", [
         'event_id' => $this->f['event']->id, 'purpose' => 'x',
-        'items' => [['description' => 'Gloves', 'amount_sen' => 20000, 'method' => 'transfer'], ['description' => 'Refreshments & water', 'amount_sen' => 30000, 'method' => 'petty_cash']],
-        'payees' => [['payee_id' => $payee->id, 'amount_sen' => 20000]],
+        'items' => [['description' => 'Gloves', 'unit_sen' => 500, 'quantity' => 40, 'method' => 'vendor'], ['description' => 'Refreshments & water', 'unit_sen' => 1000, 'quantity' => 30, 'method' => 'self']],
+        'payees' => [['payee_id' => $payee->id, 'amount_sen' => 50000]],
         'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
     ])->assertRedirect();
 
@@ -135,6 +136,8 @@ it('runs a fund withdrawal through Secretary → President → Advisor → AR �
     expect(DocxRenderer::remainingPlaceholders($path))->toBe([])
         ->and($xml)->toContain('withdrawal of RM500.00')
         ->toContain('Refreshments &amp; water')
+        ->toContain('Student self purchase')
+        ->not->toContain('100 Plus')
         ->toContain('7001234567')
         ->toContain('Mr Nicholas Goh')
         ->not->toContain('GPS Club')
@@ -146,7 +149,8 @@ it('only lets the Secretary prepare a fund withdrawal', function () {
     approvedEventWithBudget($this);
 
     $this->actingAs($this->f['president'])->post("/clubs/{$this->club->slug}/fund-requests", [
-        'event_id' => $this->f['event']->id, 'purpose' => 'x', 'items' => [['description' => 'Gloves', 'amount_sen' => 100, 'method' => 'petty_cash']],
-        'payees' => [], 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
+        'event_id' => $this->f['event']->id, 'purpose' => 'x', 'items' => [['description' => 'Gloves', 'unit_sen' => 500, 'quantity' => 1, 'method' => 'vendor']],
+        'payees' => [['payee_id' => Payee::create(['club_id' => $this->club->id, 'kind' => 'vendor', 'name' => 'K', 'bank_name' => 'B', 'account_holder' => 'K', 'account_number' => '1234567'])->id, 'amount_sen' => 500]],
+        'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
     ])->assertSessionHas('error', fn ($m) => str_contains($m, 'Secretary'));
 });

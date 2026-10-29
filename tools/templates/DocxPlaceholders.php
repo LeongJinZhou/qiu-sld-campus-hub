@@ -80,7 +80,10 @@ final class DocxPlaceholders
         if ($rPr) {
             $copy = $this->dom->createElementNS(self::W, 'w:rPr');
             foreach ($rPr->childNodes as $child) {
-                $copy->appendChild($child->cloneNode(true));
+                // Templates highlight their sample text; filled values must not inherit it.
+                if ($child->localName !== 'highlight') {
+                    $copy->appendChild($child->cloneNode(true));
+                }
             }
             $run->appendChild($copy);
         }
