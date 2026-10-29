@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\StudentStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'type_of_programme', 'programme_status', 'profile_status', 'year_entry', 'intake_number', 'intake_month',
     'course_duration', 'expected_end_date', 'status', 'year_group', 'synced_at',
 ])]
+// Contact details stay server-side; forms read them explicitly when auto-filling.
+#[Hidden(['mobile_no', 'email'])]
 class Student extends Model
 {
     use HasFactory;
@@ -21,6 +24,7 @@ class Student extends Model
     {
         return [
             'status' => StudentStatus::class,
+            'mobile_no' => 'encrypted',
             'expected_end_date' => 'date',
             'synced_at' => 'datetime',
         ];

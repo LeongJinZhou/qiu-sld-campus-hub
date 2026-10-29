@@ -86,3 +86,12 @@ it('maps dummy intake numbers to QIU intakes (March, July, November)', function 
         // July 2023 intake on 2026-10-29: 39 months -> Year 4.
         ->and(Student::where('student_number', 'STD20240003')->value('year_group'))->toBe('Year 4');
 });
+
+it('encrypts student phone numbers at rest and keeps contact details out of serialisation', function () {
+    app(CamsysSync::class)->syncAll('manual');
+    $student = Student::where('student_number', 'STD20240001')->first();
+
+    expect($student->mobile_no)->toBe('012-3456789')
+        ->and(DB::table('students')->where('id', $student->id)->value('mobile_no'))->not->toContain('3456789')
+        ->and($student->toArray())->not->toHaveKeys(['mobile_no', 'email']);
+});
