@@ -40,8 +40,10 @@ const logout = (): void => router.post('/logout');
         <!-- Desktop / tablet sidebar -->
         <aside class="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface px-3 py-6 md:flex">
             <Link href="/feed" class="mb-8 flex items-center gap-3 px-2">
-                <img src="/brand/QIU_Student_Activity_Black.png" alt="QIU Student Activity" class="h-9 w-auto" />
-                <span class="hidden text-lg font-bold lg:inline"><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></span>
+                <!-- Narrow rail: square icon. Full sidebar: the wide logo. -->
+                <img src="/icons/icon-192.png" alt="QIU Student Activity" class="size-9 rounded-lg lg:hidden" />
+                <img src="/brand/student-activity-black.png" alt="QIU Student Activity" class="hidden h-8 w-auto shrink-0 lg:block" />
+                <span class="hidden whitespace-nowrap text-base font-bold lg:inline"><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></span>
             </Link>
             <nav class="grid gap-1" aria-label="Primary">
                 <Link
@@ -80,8 +82,8 @@ const logout = (): void => router.post('/logout');
             <!-- Mobile top bar -->
             <header class="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface/90 px-4 backdrop-blur md:hidden">
                 <Link href="/feed" class="flex items-center gap-2">
-                    <img src="/brand/QIU_Student_Activity_Black.png" alt="QIU Student Activity" class="h-8 w-auto" />
-                    <span class="font-bold"><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></span>
+                    <img src="/brand/student-activity-black.png" alt="QIU Student Activity" class="h-8 w-auto" />
+                    <span class="whitespace-nowrap font-bold"><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></span>
                 </Link>
                 <div class="flex items-center gap-4">
                     <Link v-if="nav?.isStaff" href="/approvals" aria-label="Approvals"><Icon name="check" /></Link>

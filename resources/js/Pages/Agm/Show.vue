@@ -106,7 +106,7 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
                                 <Link :href="`/agms/${agm.id}/election`"><Button variant="secondary" size="sm">Election<Badge v-if="agm.election" class="ml-2">{{ agm.election }}</Badge></Button></Link>
                                 <Link :href="`/agms/${agm.id}/report`"><Button variant="secondary" size="sm">AGM Report (01)</Button></Link>
                             </div>
-                            <div v-if="agm.report" class="mt-4"><ApprovalTracker :progress="agm.report" compact /></div>
+                            <div v-if="agm.report && agm.report.total" class="mt-4"><ApprovalTracker :progress="agm.report" compact /></div>
                         </Card>
 
                         <Card v-if="annual">

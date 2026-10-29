@@ -22,7 +22,7 @@ const variants = {
 const sizes = { sm: 'h-8 px-3 text-sm', md: 'h-10 px-4 text-sm', lg: 'h-12 px-6 text-base' };
 
 const classes = computed(() => [
-    'inline-flex items-center justify-center gap-2 rounded-control font-medium transition',
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cyan',
     'disabled:cursor-not-allowed disabled:opacity-50',
     variants[props.variant],

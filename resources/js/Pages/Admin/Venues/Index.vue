@@ -31,8 +31,8 @@ const tone = (s: string): 'success' | 'danger' | 'warning' => (s === 'confirmed'
                     <p v-if="b.sld_note" class="text-xs text-ink-muted">Note: {{ b.sld_note }}</p>
                     <div v-if="b.status === 'pending'" class="flex flex-wrap items-end gap-2">
                         <div class="min-w-48 flex-1"><Input v-model="notes[b.id]" placeholder="Note to the club (optional)" /></div>
-                        <Button size="sm" @click="decide(b.id, true)">Confirm</Button>
-                        <Button size="sm" variant="secondary" @click="decide(b.id, false)">Decline</Button>
+                        <Button @click="decide(b.id, true)">Confirm</Button>
+                        <Button variant="secondary" @click="decide(b.id, false)">Decline</Button>
                     </div>
                 </li>
                 <li v-if="!bookings.length" class="py-3 text-sm text-ink-muted">No venue requests.</li>
