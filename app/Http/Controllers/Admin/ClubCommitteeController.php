@@ -21,12 +21,10 @@ class ClubCommitteeController extends Controller
     public function assign(AssignPositionRequest $request, Club $club): RedirectResponse
     {
         $student = Student::where('student_number', $request->validated('student_number'))->firstOrFail();
-        // Students can be appointed before their first sign-in; the account links by camsys email.
-        $user = $student->user ?? User::firstOrCreate(['email' => $student->email], ['name' => $student->name]);
-        $student->update(['user_id' => $user->id]);
+        $user = $student->ensureUser();
 
         try {
-            $this->roles->assignClubPosition($club, $this->sessions->forName($request->validated('session')), $user->load('student'), $request->validated('position'));
+            $this->roles->assignClubPosition($club, $this->sessions->forName($request->validated('session')), $user, $request->validated('position'));
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
