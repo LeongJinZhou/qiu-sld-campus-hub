@@ -15,6 +15,7 @@ use App\Http\Controllers\Events\EventDocumentController;
 use App\Http\Controllers\Events\EventRegistrationController;
 use App\Http\Controllers\Events\IndemnityController;
 use App\Http\Controllers\Events\PosterController;
+use App\Http\Controllers\Events\PostMortemController;
 use App\Http\Controllers\Events\ProposalController;
 use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Meetings\GoogleCalendarController;
@@ -84,6 +85,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/attendance/submit', [AttendanceController::class, 'submit'])->name('events.attendance.submit');
     Route::get('/events/{event}/poster', [PosterController::class, 'edit'])->name('events.poster');
     Route::post('/events/{event}/poster', [PosterController::class, 'update'])->name('events.poster.update');
+    Route::get('/events/{event}/post-mortem', [PostMortemController::class, 'show'])->name('events.post-mortem');
+    Route::put('/events/{event}/post-mortem', [PostMortemController::class, 'save'])->name('events.post-mortem.save');
+    Route::post('/events/{event}/post-mortem/suggest', [PostMortemController::class, 'suggest'])->middleware('throttle:6,1')->name('events.post-mortem.suggest');
+    Route::post('/events/{event}/post-mortem/submit', [PostMortemController::class, 'submit'])->name('events.post-mortem.submit');
     Route::get('/events/{event}/documents', [EventDocumentController::class, 'index'])->name('events.documents');
     Route::post('/events/{event}/documents/{item}', [EventDocumentController::class, 'upload'])->name('events.documents.upload');
     Route::get('/events/{event}/documents/{item}', [EventDocumentController::class, 'download'])->name('events.documents.download');

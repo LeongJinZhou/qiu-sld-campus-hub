@@ -2,18 +2,15 @@
 
 namespace App\Services\Documents;
 
-use App\Enums\ApprovalDecision;
 use App\Enums\ChainRole;
 use App\Enums\DocumentType;
 use App\Enums\ScopedRole;
-use App\Models\Approval;
 use App\Models\Attendance;
 use App\Models\Document;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /** 03 Event Attendance List: Participant, Committee (with CCA points) and Pictures sheets. */
 class AttendanceListExport
@@ -29,7 +26,7 @@ class AttendanceListExport
         [$committee, $participants] = $present->partition(fn (Attendance $a) => $a->role === 'committee');
         // Signed sign-off (Preparer → Advisor) if there is one; otherwise names only, unsigned.
         $document = Document::with('approvals.signature')->where('event_id', $event->id)->where('type', DocumentType::AttendanceList)->first();
-        $signed = fn (ChainRole $role) => $document?->approvals->first(fn (Approval $a) => $a->role === $role && $a->decision === ApprovalDecision::Approved)?->signature;
+        $signed = fn (ChainRole $role) => XlsxRenderer::signed($document, $role);
         $secretary = $event->committee->firstWhere('position', 'Secretary')?->user;
         $advisor = $event->club->roleAssignments()->where('session_id', $event->session_id)->where('role', ScopedRole::Advisor)->first()?->user;
         $preparer = new Signer($signed(ChainRole::Preparer)?->signer_name ?? $secretary?->name, $signed(ChainRole::Preparer)?->position_at_time ?? 'Secretary', $signed(ChainRole::Preparer));
@@ -44,47 +41,16 @@ class AttendanceListExport
                 ->setCellValue('B3', $event->starts_at->format('d/m/Y'))
                 ->setCellValue('D3', $event->starts_at->format('g.i A').' – '.$event->ends_at->format('g.i A'));
             $this->xlsx->fillRows($sheet, 6, 19, $participants->values()->map(fn (Attendance $a, int $i) => [$i + 1, $a->user->name, $a->user->email])->all());
-            $this->signers($sheet, $preparer, $reviewer);
+            $this->xlsx->signers($sheet, [$preparer, $reviewer]);
 
             $sheet = $book->getSheetByName('Committee');
             $this->xlsx->fillRows($sheet, 3, 17, $committee->values()->map(fn (Attendance $a, int $i) => [
                 $i + 1, $a->user->name, $a->user->email, $event->committee->firstWhere('user_id', $a->user_id)?->position, $event->cca_committee,
             ])->all());
-            $this->signers($sheet, $preparer, $reviewer);
+            $this->xlsx->signers($sheet, [$preparer, $reviewer]);
 
             $this->pictures($book, $event);
         }, $output);
-    }
-
-    /**
-     * Fills Prepared by / Reviewed by wherever inserted rows moved them: the drawn signature in the blank
-     * rows above "Name:", then name, position (preparer) and the server date with the verification code.
-     */
-    private function signers(Worksheet $sheet, Signer $preparer, Signer $reviewer): void
-    {
-        $names = [];
-        for ($row = 1; $row <= $sheet->getHighestDataRow('A'); $row++) {
-            if (trim((string) $sheet->getCell("A{$row}")->getValue()) === 'Name:') {
-                $names[] = $row;
-            }
-        }
-        foreach ([$preparer, $reviewer] as $i => $signer) {
-            $row = $names[$i] ?? null;
-            if ($row === null) {
-                continue;
-            }
-            $sheet->setCellValue("B{$row}", $signer->name);
-            if ($i === 0) {
-                $sheet->setCellValue('B'.($row + 1), $signer->position);
-            }
-            if ($signer->signature) {
-                $sheet->setCellValue('B'.($row + 2), $signer->signature->signed_at->format('d/m/Y g:i A').' · Verify '.$signer->signature->verification_code);
-                $image = Storage::disk('local')->path($signer->signature->image_path);
-                if (is_file($image)) {
-                    (new Drawing)->setPath($image)->setHeight(48)->setCoordinates('B'.($row - 3))->setOffsetY(4)->setWorksheet($sheet);
-                }
-            }
-        }
     }
 
     private function pictures(Spreadsheet $book, Event $event): void
