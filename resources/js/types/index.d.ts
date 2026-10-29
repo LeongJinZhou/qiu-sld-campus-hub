@@ -13,6 +13,7 @@ export interface Flash {
 
 export interface SharedProps {
     auth: { user: AuthUser | null };
+    nav: { unread: number; isStaff: boolean; isAdmin: boolean; canPublish: boolean } | null;
     flash: Flash;
     [key: string]: unknown;
 }
@@ -146,4 +147,21 @@ export interface StoryGroup {
     name: string;
     logo_url: string | null;
     stories: { id: number; url: string; at: string | null }[];
+}
+
+export interface ProfileData {
+    name: string;
+    photo_url: string | null;
+    programme: string | null;
+    programme_short: string | null;
+    year_group: string | null;
+    status: 'active' | 'alumni' | 'unknown' | null;
+    intake: string | null;
+    title: string | null;
+    department: string | null;
+    stats: { clubs: number; positions: number; events: number; cca_hours: number };
+    clubs: { name: string; url: string; logo_url: string | null; category: string | null; current_position: string | null }[] | null;
+    positions: { session: string | null; organisation: string | null; url: string | null; position: string; kind: 'club' | 'event' }[] | null;
+    events: { name: string; url: string; club: string; date: string; role: string; poster_url: string | null }[] | null;
+    cca: { total: number; records: { event: string; date: string; role: string; hours: number }[] } | null;
 }

@@ -23,7 +23,7 @@ class User extends Authenticatable
     use HasFactory, HasRoles, Notifiable;
 
     /** Profile sections a student may hide from their public profile. */
-    public const HIDEABLE_SECTIONS = ['clubs', 'positions'];
+    public const HIDEABLE_SECTIONS = ['clubs', 'positions', 'events', 'cca'];
 
     protected function casts(): array
     {
@@ -60,6 +60,12 @@ class User extends Authenticatable
     public function followedClubs(): BelongsToMany
     {
         return $this->belongsToMany(Club::class, 'club_follows');
+    }
+
+    /** @return BelongsToMany<Post, $this> */
+    public function savedPosts(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class, 'saves')->withPivot('created_at');
     }
 
     /** @return HasOne<EmergencyContact, $this> */

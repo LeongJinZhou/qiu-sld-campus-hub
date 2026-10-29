@@ -33,6 +33,7 @@ class DemoEventsSeeder extends Seeder
             $club = Club::where('name', $clubName)->firstOrFail();
             $start = now()->addMonthsNoOverflow($months)->next('Saturday')->setTime(8, 0);
             $event = Event::create([
+                'poster_path' => DemoMedia::poster($name, $clubName, $start->format('D, j M Y · g:i A'), $venue, "{$months} CCA", $months),
                 'club_id' => $club->id, 'session_id' => $sessions->current()->id, 'name' => $name,
                 'starts_at' => $start, 'ends_at' => $start->copy()->setTime(12, 0), 'venue' => $venue,
                 'expected_participants' => $participants, 'is_outdoor' => $outdoor,

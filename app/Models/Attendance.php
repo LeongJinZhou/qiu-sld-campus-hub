@@ -16,6 +16,12 @@ class Attendance extends Model
         return ['clock_in_at' => 'datetime', 'clock_out_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Event, $this> */
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class);
+    }
+
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
