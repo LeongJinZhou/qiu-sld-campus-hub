@@ -54,7 +54,7 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /** Preparer signs the 03 Attendance List; it then goes to the Club Advisor and SLD (CLAUDE.md §6). */
+    /** Preparer signs the 03 Attendance List; it then goes to the Club Advisor and SLD. */
     public function submit(Request $request, Event $event, ApprovalEngine $engine): RedirectResponse
     {
         Gate::authorize('organises', $event);

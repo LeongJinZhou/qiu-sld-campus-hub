@@ -10,7 +10,7 @@ defineProps<{ code: string; certificate: { title: string; name: string; statemen
     <Head title="Verify certificate" />
     <GuestLayout>
         <Card class="grid gap-4">
-            <img src="/brand/QIU_Student_Activity_Black.png" alt="QIU Student Activity" class="mx-auto h-12 w-auto" />
+            <img src="/brand/student-activity-black.png" alt="QIU Student Activity" class="mx-auto h-12 w-auto" />
             <h1 class="text-center text-lg font-semibold">Certificate verification</h1>
             <p class="text-center font-mono text-sm text-ink-muted">{{ code }}</p>
             <dl v-if="certificate" class="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2 text-sm">

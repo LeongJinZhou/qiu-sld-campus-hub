@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Zxing\QrReader;
 
 /**
- * Cash payment handover (CLAUDE.md §6): student picks a committee member → Accept/Decline → both tap ready →
+ * Cash payment handover: student picks a committee member → Accept/Decline → both tap ready →
  * student shows a one-time QR → member photographs the QR with the cash → server decodes the QR in the photo
  * → both tap done → membership active, ledger income credited to that member, receipts to both. 7-day expiry.
  */

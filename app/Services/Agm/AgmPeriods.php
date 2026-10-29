@@ -8,7 +8,7 @@ use App\Services\AuditLogger;
 use App\Services\Time\SessionResolver;
 use DomainException;
 
-/** SLD opens and closes the AGM period; the AGM module is locked outside it (CLAUDE.md §6 AGM). */
+/** SLD opens and closes the AGM period; the AGM module is locked outside it. */
 class AgmPeriods
 {
     public function __construct(private readonly SessionResolver $sessions, private readonly AuditLogger $audit) {}

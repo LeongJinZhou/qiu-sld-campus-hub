@@ -15,7 +15,7 @@ use DomainException;
 use Illuminate\Support\Collection;
 
 /**
- * 01 AGM Report (CLAUDE.md §6 AGM). Editable parts (objectives, opening speech, agenda, adjournment) are the
+ * 01 AGM Report. Editable parts (objectives, opening speech, agenda, adjournment) are the
  * form; the header, attendance, committee and election sections are computed from records and locked.
  */
 class AgmReportForm

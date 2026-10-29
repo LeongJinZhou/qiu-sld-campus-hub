@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-/** Who acts at each approval step (CLAUDE.md §6 Approval chains). */
+/** Who acts at each approval step. */
 enum ChainRole: string
 {
     case Preparer = 'preparer';

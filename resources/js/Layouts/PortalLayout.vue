@@ -26,7 +26,7 @@ const links = computed(() => [
     ...(user.value?.roles.includes('superadmin')
         ? [
               { label: 'Roles', href: '/admin/roles' },
-              { label: 'camsys sync', href: '/admin/sync' },
+              { label: 'Student records sync', href: '/admin/sync' },
               { label: 'Audit log', href: '/admin/audit' },
           ]
         : []),
@@ -40,7 +40,7 @@ const isActive = (href: string): boolean => (href === '/admin' ? page.url === '/
         <Toast />
         <aside class="hidden border-r border-line bg-surface md:block">
             <div class="sticky top-0 grid gap-6 p-5">
-                <Link href="/clubs"><img src="/brand/QIU_Student_Activity_Black.png" alt="QIU Student Activity" class="h-10 w-auto" /></Link>
+                <Link href="/clubs"><img src="/brand/student-activity-black.png" alt="QIU Student Activity" class="h-10 w-auto" /></Link>
                 <nav class="grid gap-1 text-sm">
                     <Link
                         v-for="link in links"

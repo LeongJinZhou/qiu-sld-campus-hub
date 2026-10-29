@@ -6,7 +6,7 @@ use App\Enums\ChainRole;
 use App\Enums\DocumentType;
 use App\Models\Document;
 
-/** Ordered approval chains per document type (CLAUDE.md §6). */
+/** Ordered approval chains per document type. */
 class Chains
 {
     /** Changing any of these on resubmission restarts the whole chain. */

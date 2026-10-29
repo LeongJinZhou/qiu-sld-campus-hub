@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 /**
- * Creates Google Calendar events with a Meet link on the organiser's own QIU account (CLAUDE.md §2),
+ * Creates Google Calendar events with a Meet link on the organiser's own QIU account,
  * inviting the attendees. Tokens are stored encrypted and refreshed when they expire.
  */
 class CalendarMeetService

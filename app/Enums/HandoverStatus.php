@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-/** Cash handover state machine (CLAUDE.md §6): each side confirms every step. */
+/** Cash handover state machine: each side confirms every step. */
 enum HandoverStatus: string
 {
     case Requested = 'requested';

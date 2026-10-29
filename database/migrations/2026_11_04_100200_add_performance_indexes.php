@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Indexes for foreign keys and the columns lists filter or sort on (BUILD_PROMPT Phase 5.7). MySQL already indexes
+ * Indexes for foreign keys and the columns lists filter or sort on. MySQL already indexes
  * foreign keys and SQLite does not, so each index is only added where no index on those columns exists yet.
  */
 return new class extends Migration

@@ -45,7 +45,7 @@ const ccaBySession = computed(() => props.profile.cca?.records ?? []);
                     <Avatar :src="profile.photo_url" :name="profile.name" size="xl" ring class="[&>span]:size-28 sm:[&>span]:size-32" />
                     <slot name="avatar-action" />
                 </div>
-                <div class="flex gap-2 pb-1"><slot name="actions" /></div>
+                <div class="flex flex-wrap gap-2 pb-1"><slot name="actions" /></div>
             </div>
 
             <div class="mt-4 grid gap-1">
@@ -71,7 +71,7 @@ const ccaBySession = computed(() => props.profile.cca?.records ?? []);
 
         <!-- Tabs -->
         <div class="border-t border-line">
-            <div role="tablist" class="flex justify-center gap-1 overflow-x-auto px-2 sm:gap-8">
+            <div role="tablist" class="flex gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:justify-center sm:gap-8">
                 <button
                     v-for="t in tabs"
                     :key="t.key"
