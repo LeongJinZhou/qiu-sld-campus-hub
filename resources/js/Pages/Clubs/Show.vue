@@ -13,7 +13,8 @@ import Tabs from '@/Components/ui/Tabs.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { dateTime } from '@/lib/format';
-import type { MemberCard, SessionOption } from '@/types';
+import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
+import type { ApprovalProgress, MemberCard, SessionOption } from '@/types';
 import { Deferred, Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -40,7 +41,7 @@ const props = defineProps<{
     albums?: { id: number; title: string; session: string; photos: string[] }[];
     events?: { id: number; slug: string; name: string; starts_at: string; venue: string | null; status: string; poster_url: string | null }[];
     faqs: { id: number; question: string; answer: string }[];
-    documents?: { id: number; type: string; event: string | null; status: string; updated: string | null }[] | null;
+    documents?: { id: number; type: string; event: string | null; status: string; updated: string | null; progress: ApprovalProgress }[] | null;
     can: { manage: boolean; publish: boolean; createEvent: boolean; internal: boolean };
 }>();
 
@@ -176,9 +177,12 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
                         <EmptyState v-if="!documents?.length" title="No documents yet" />
                         <ul class="grid gap-2">
                             <li v-for="d in documents" :key="d.id">
-                                <Link :href="`/documents/${d.id}`" class="flex items-center justify-between gap-3 rounded-card border border-line bg-surface p-3 text-sm hover:shadow-card">
-                                    <span><strong>{{ d.type }}</strong><template v-if="d.event"> · {{ d.event }}</template> <span class="text-ink-muted">· {{ d.updated }}</span></span>
-                                    <Badge :tone="statusTone(d.status)">{{ d.status.replace('_', ' ') }}</Badge>
+                                <Link :href="`/documents/${d.id}`" class="grid gap-2 rounded-card border border-line bg-surface p-3 text-sm hover:shadow-card">
+                                    <span class="flex items-center justify-between gap-3">
+                                        <span><strong>{{ d.type }}</strong><template v-if="d.event"> · {{ d.event }}</template> <span class="text-ink-muted">· {{ d.updated }}</span></span>
+                                        <Badge :tone="statusTone(d.status)">{{ d.status.replace('_', ' ') }}</Badge>
+                                    </span>
+                                    <ApprovalTracker v-if="d.progress.total" :progress="d.progress" compact />
                                 </Link>
                             </li>
                         </ul>

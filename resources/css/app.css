@@ -53,3 +53,32 @@
         var(--color-brand-yellow)
     );
 }
+
+/* Approval tracker animations */
+@keyframes tracker-pulse {
+    0% { box-shadow: 0 0 0 0 rgb(224 28 235 / 0.55); }
+    70% { box-shadow: 0 0 0 12px rgb(224 28 235 / 0); }
+    100% { box-shadow: 0 0 0 0 rgb(224 28 235 / 0); }
+}
+@keyframes tracker-pop {
+    0% { transform: scale(0.4); opacity: 0; }
+    70% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); }
+}
+@keyframes tracker-flow {
+    from { background-position: 0 0; }
+    to { background-position: 40px 0; }
+}
+@utility animate-tracker-pulse {
+    animation: tracker-pulse 1.8s ease-out infinite;
+}
+@utility animate-tracker-pop {
+    animation: tracker-pop 0.45s ease-out both;
+}
+@utility animate-tracker-flow {
+    background-image: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.35) 0 10px, transparent 10px 20px);
+    animation: tracker-flow 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .animate-tracker-pulse, .animate-tracker-pop, .animate-tracker-flow { animation: none; }
+}

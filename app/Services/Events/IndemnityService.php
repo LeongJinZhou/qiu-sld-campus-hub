@@ -19,7 +19,7 @@ class IndemnityService
     public function __construct(private readonly SignatureStore $signatures, private readonly AuditLogger $audit) {}
 
     /** @param array<string, string|null> $data validated form fields */
-    public function sign(Event $event, User $user, array $data, string $signature): Indemnity
+    public function sign(Event $event, User $user, array $data, string $signature, ?string $strokes = null): Indemnity
     {
         if (! $event->is_outdoor) {
             throw new DomainException('This event does not need an indemnity form.');
@@ -34,7 +34,7 @@ class IndemnityService
             throw new DomainException('You have already signed.');
         }
 
-        return DB::transaction(function () use ($event, $user, $data, $signature): Indemnity {
+        return DB::transaction(function () use ($event, $user, $data, $signature, $strokes): Indemnity {
             // Saved for next time so the student does not retype it.
             $user->emergencyContact()->updateOrCreate([], [
                 'name' => $data['emergency_name'],
@@ -45,7 +45,7 @@ class IndemnityService
                 'alternate_phone' => $data['alternate_phone'] ?? null,
             ]);
 
-            $signed = $this->signatures->store($user, $signature, 'Participant');
+            $signed = $this->signatures->store($user, $signature, 'Participant', [], $strokes);
             $indemnity = $event->indemnities()->create([
                 ...$data,
                 'user_id' => $user->id,

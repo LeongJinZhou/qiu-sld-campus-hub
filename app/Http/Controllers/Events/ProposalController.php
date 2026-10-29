@@ -8,6 +8,7 @@ use App\Http\Requests\Events\ProposalRequest;
 use App\Models\Event;
 use App\Models\RoleAssignment;
 use App\Services\Approvals\ApprovalEngine;
+use App\Services\Documents\DocumentPresenter;
 use App\Services\Events\ProposalForm;
 use App\Services\Events\ProposalRules;
 use App\Services\Roles\CompulsoryPositionsCheck;
@@ -23,7 +24,7 @@ class ProposalController extends Controller
 {
     public function __construct(private readonly ProposalForm $form, private readonly ProposalRules $rules) {}
 
-    public function edit(Request $request, Event $event, CompulsoryPositionsCheck $compulsory): Response
+    public function edit(Request $request, Event $event, CompulsoryPositionsCheck $compulsory, DocumentPresenter $presenter): Response
     {
         Gate::authorize('update', $event);
         $document = $event->proposal()->firstOrFail();
@@ -34,6 +35,7 @@ class ProposalController extends Controller
             'documentId' => $document->id,
             'status' => $document->status->value,
             'editable' => $document->status->isEditable(),
+            'approval' => $document->approvals()->exists() ? ['progress' => $presenter->progress($document), 'steps' => $presenter->present($document)['steps']] : null,
             'data' => $this->form->current($document),
             'locked' => [
                 ...$this->form->lockedFields($document),
@@ -83,7 +85,7 @@ class ProposalController extends Controller
         try {
             $this->rules->assertLeadTime((int) $data['expected_participants'], CarbonImmutable::parse($data['starts_at']), now());
             $this->form->saveDraft($document, $data, $request->user()->id);
-            $engine->submit($document->fresh(), $request->user(), $data, $request->validated('signature'));
+            $engine->submit($document->fresh(), $request->user(), $data, $request->validated('signature'), $request->validated('signature_strokes'));
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }

@@ -2,6 +2,7 @@
 import BudgetTable from '@/Components/forms/BudgetTable.vue';
 import CheckboxGroup from '@/Components/forms/CheckboxGroup.vue';
 import DynamicTable from '@/Components/forms/DynamicTable.vue';
+import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import FormSection from '@/Components/forms/FormSection.vue';
 import LockedField from '@/Components/forms/LockedField.vue';
 import Badge from '@/Components/ui/Badge.vue';
@@ -14,7 +15,7 @@ import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { hoursBetween, rm } from '@/lib/format';
-import type { ProposalData } from '@/types';
+import type { ApprovalProgress, ApprovalStep, ProposalData } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
@@ -23,6 +24,7 @@ const props = defineProps<{
     documentId: number;
     status: string;
     editable: boolean;
+    approval: { progress: ApprovalProgress; steps: ApprovalStep[] } | null;
     data: ProposalData;
     locked: { to: string; from: string; submitted_on: string | null; prepared_by: string };
     committee: { id: number; position: string; is_compulsory: boolean; name: string; student_number: string | null; responsibility: string | null }[];
@@ -33,7 +35,7 @@ const props = defineProps<{
     leadTime: { threshold: number; small: string; large: string };
 }>();
 
-const form = useForm<ProposalData & { signature: string | null }>({ ...props.data, signature: null });
+const form = useForm<ProposalData & { signature: string | null; signature_strokes: string | null }>({ ...props.data, signature: null, signature_strokes: null });
 const readOnly = computed(() => !props.editable);
 
 // CCA follows the event hours (1 hour = 1 CCA) until the club types its own value.
@@ -51,7 +53,7 @@ const objectiveRows = computed({
 });
 
 const save = (): void => {
-    form.transform(({ signature: _signature, ...data }) => data).put(`/events/${props.event.slug}/proposal`, { preserveScroll: true });
+    form.transform(({ signature: _signature, signature_strokes: _strokes, ...data }) => data).put(`/events/${props.event.slug}/proposal`, { preserveScroll: true });
 };
 
 const signing = ref(false);
@@ -84,6 +86,10 @@ const positionOptions = computed(() => props.options.compulsoryPositions.filter(
                 </div>
                 <Badge :tone="status === 'returned' ? 'warning' : status === 'approved' ? 'success' : 'neutral'">{{ status.replace('_', ' ') }}</Badge>
             </header>
+
+            <section v-if="approval" class="rounded-card border border-line bg-surface p-5 shadow-card">
+                <ApprovalTracker :progress="approval.progress" :steps="approval.steps" />
+            </section>
 
             <p v-if="returnComment && status === 'returned'" class="rounded-card bg-warning/10 px-4 py-3 text-sm text-warning">Returned: “{{ returnComment }}” Edit and resubmit.</p>
 
@@ -228,7 +234,7 @@ const positionOptions = computed(() => props.options.compulsoryPositions.filter(
         <Modal v-model:open="signing" title="Sign as preparer">
             <div class="grid gap-4">
                 <p class="text-sm text-ink-muted">Signed as <strong>{{ locked.prepared_by }}</strong>. The date and time come from the server.</p>
-                <SignaturePad v-model="form.signature" label="Your signature" />
+                <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Your signature" :signer="locked.prepared_by" />
                 <p v-if="Object.keys(form.errors).length" class="text-sm text-danger">Some fields need attention. Close this and check the highlighted fields.</p>
                 <Button :disabled="!form.signature" :loading="form.processing" @click="submit">Submit proposal</Button>
             </div>
