@@ -12,6 +12,7 @@ class DocumentExporter
         private readonly ProposalDocx $proposal,
         private readonly AttendanceListExport $attendance,
         private readonly FundWithdrawalDocx $fund,
+        private readonly MinutesDocx $minutes,
         private readonly PdfConverter $pdf,
     ) {}
 
@@ -21,7 +22,7 @@ class DocumentExporter
         return match ($document->type) {
             DocumentType::Proposal => $document->latestVersion ? ['pdf', 'docx'] : [],
             DocumentType::AttendanceList => ['pdf', 'xlsx'],
-            DocumentType::FundWithdrawal => $document->latestVersion ? ['pdf', 'docx'] : [],
+            DocumentType::FundWithdrawal, DocumentType::Minutes => $document->latestVersion ? ['pdf', 'docx'] : [],
             default => [],
         };
     }
@@ -32,6 +33,7 @@ class DocumentExporter
             DocumentType::Proposal => $this->proposal->render($document),
             DocumentType::AttendanceList => $this->attendance->render($document->event),
             DocumentType::FundWithdrawal => $this->fund->render($document),
+            DocumentType::Minutes => $this->minutes->render($document),
             default => abort(404),
         };
         if ($format !== 'pdf') {

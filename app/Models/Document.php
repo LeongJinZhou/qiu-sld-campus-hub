@@ -44,6 +44,12 @@ class Document extends Model
         return $this->belongsTo(Event::class);
     }
 
+    /** @return BelongsTo<Meeting, $this> */
+    public function meeting(): BelongsTo
+    {
+        return $this->belongsTo(Meeting::class);
+    }
+
     /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
