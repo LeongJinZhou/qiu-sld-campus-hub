@@ -139,3 +139,109 @@ $d->setText($d->paragraphContaining('Participants:'), 'Participants: ${cca_appro
 
 $d->save("{$filled}/{$name}");
 echo "Wrote {$filled}/{$name}\n";
+
+// ---- 07 Fund Withdrawal and Transfer ----------------------------------------------------------------------
+$name = '07. Student Organization Fund Withdrawal and Transfer Form template.docx';
+$d = new DocxPlaceholders("{$original}/{$name}");
+$table = fn (string $header) => $d->paragraphContaining($header)->parentNode->parentNode->parentNode;
+
+$header = $d->block(4); // To / From / CC / Date
+$d->setText($d->cellParagraph($header, 1, 1), '${from}');
+$d->setText($d->cellParagraph($header, 3, 1), '${date}');
+
+$d->setText($d->block(8), '${from} would like to request a withdrawal of RM${total} from the club’s fund to cover ${purpose}. Therefore, we are requesting the money to purchase items as below: ');
+// Items table (inside a content control): one sample row becomes the cloned row, the other is removed.
+$items = $table('Unit Price (RM)');
+foreach (['item_no', 'item_description', 'item_price', 'item_quantity', 'item_total', 'item_method'] as $c => $field) {
+    $d->setText($d->cellParagraph($items, 2, $c), "\${{$field}}");
+}
+$d->setText($d->cellParagraph($items, 4, 4), '${total}');
+$d->removeRows($items, 3, 3);
+
+// One repeatable payee block (treasurer or vendor accounts), replacing the two sample blocks.
+$first = $d->paragraphContaining('Individual/Company Name:', 0);
+$fields = ['Individual/Company Name: ${payee_name}', 'Email Address: ${payee_email}', 'Contact No: ${payee_contact}', 'Bank Name: ${payee_bank} (${payee_kind} acc)', 'Account Holder Name: ${payee_holder}', 'Account number: ${payee_account}', 'Amount: RM${payee_amount}'];
+$line = $first;
+foreach ($fields as $i => $text) {
+    $d->setText($line, $text);
+    $line = $line->nextSibling;
+}
+$blank = $line; // the empty paragraph between the two sample blocks
+$first->parentNode->insertBefore($d->paragraphContaining('We kindly request')->cloneNode(false), $first);
+$d->setText($first->previousSibling, '${payees}');
+$d->insertAfter($blank, '${/payees}', $d->paragraphContaining('We kindly request'));
+$second = $d->paragraphContaining('Individual/Company Name:', 1);
+for ($i = 0; $i < 7; $i++) {
+    $next = $second->nextSibling;
+    $second->parentNode->removeChild($second);
+    $second = $next;
+}
+$d->setText($d->paragraphContaining('A petty cash record'), 'A petty cash record will be submitted after the event together with all supporting receipts for the purchases made. If there is any remaining balance, the funds will be banked back into the ${from} fund.');
+
+// Signatures: Secretary, President (first table); Advisor, Assistant Registrar, Bursar, COO (second table).
+foreach ([[$d->paragraphContaining('Prepared by:')->parentNode->parentNode->parentNode, [1, 2]], [$d->paragraphContaining('Endorsed by:')->parentNode->parentNode->parentNode, [3, 4, 5, 6]]] as [$table, $signers]) {
+    foreach ($signers as $col => $k) {
+        $d->setText($d->cellParagraph($table, 1, $col), "\${sig{$k}_image}");
+        $d->setText($d->cellParagraph($table, 2, $col), "Name: \${sig{$k}_name}");
+        $d->setText($d->cellParagraph($table, 4, $col), "Date: \${sig{$k}_date}");
+    }
+}
+
+$d->save("{$filled}/{$name}");
+echo "Wrote {$filled}/{$name}\n";
+
+// ---- 13 Meeting Minutes ----------------------------------------------------------------------------------
+$name = '13. Meeting Minutes Template.docx';
+$d = new DocxPlaceholders("{$original}/{$name}");
+$table = fn (string $header) => $d->paragraphContaining($header)->parentNode->parentNode->parentNode;
+
+$d->setText($d->block(0), '${club_logo}');
+$d->setText($d->paragraphContaining('XXX club'), '${club}');
+$d->setText($d->paragraphContaining('DATE:'), 'DATE: ${date}');
+$d->setText($d->paragraphContaining('VENUE:'), 'VENUE: ${venue}');
+$d->setText($d->paragraphContaining('TIME:'), 'TIME: ${time}');
+// The "Example:" list is guidance for whoever fills the form, not part of the minutes.
+foreach (['Example:', 'Weekly committee meeting', 'Weekly club training', 'Event planning meeting', 'Workshop / Sharing Session'] as $guide) {
+    $p = $d->paragraphContaining($guide);
+    $p->parentNode->removeChild($p);
+}
+$d->setText($d->paragraphContaining('Purpose:'), 'Purpose: ${purpose}');
+
+// Summary: one numbered point per discussion item, replacing the five sample points.
+$point = $d->paragraphContaining('Attendance was taken.');
+$d->setText($point, '${summary_point}');
+foreach (['President updated members', 'Committee discussed event budget', 'Members participated in photography', "Next week's activity"] as $sample) {
+    $p = $d->paragraphContaining($sample);
+    $p->parentNode->removeChild($p);
+}
+$point->parentNode->insertBefore($d->paragraphContaining('Briefly summarize')->cloneNode(false), $point);
+$d->setText($point->previousSibling, '${summary}');
+$d->insertAfter($point, '${/summary}', $d->paragraphContaining('Briefly summarize'));
+
+$actions = $table('Person in Charge');
+foreach (['action_task', 'action_pic', 'action_deadline'] as $c => $field) {
+    $d->setText($d->cellParagraph($actions, 1, $c), "\${{$field}}");
+}
+$d->setText($d->paragraphContaining('Date: ____'), 'Date: ${next_date}');
+$d->setText($d->paragraphContaining('Time: ____'), 'Time: ${next_time}');
+$d->setText($d->paragraphContaining('Venue: ____'), 'Venue: ${next_venue}');
+
+// Sign-off: Prepared by, President's signature, Advisor's signature (each with server date).
+$signoff = $d->block(count(iterator_to_array($d->xp->query('/w:document/w:body/*'))) - 3);
+foreach ([0 => 1, 1 => 2, 2 => 3] as $row => $k) {
+    $cell = $d->cellParagraph($signoff, $row, 2);
+    $d->setText($cell, "\${sig{$k}_image}");
+    $d->insertAfter($cell, "(Name) \${sig{$k}_name}");
+    if ($row > 0) {
+        // The date cell holds a dotted fill-line; replace the whole cell content with the date.
+        $dateCell = $d->cell($signoff, $row, 5);
+        $paragraphs = iterator_to_array($d->xp->query('w:p', $dateCell));
+        $d->setText(array_shift($paragraphs), "\${sig{$k}_date}");
+        foreach ($paragraphs as $extra) {
+            $dateCell->removeChild($extra);
+        }
+    }
+}
+
+$d->save("{$filled}/{$name}");
+echo "Wrote {$filled}/{$name}\n";

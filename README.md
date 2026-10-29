@@ -24,7 +24,11 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 - Nightly camsys sync (read-only) with automatic year group and academic session rollover (1 July)
 - Scoped roles: club committee and advisor per session; President, Vice President, Secretary and Treasurer compulsory before any submission
 - SLD admin: clubs, committees, staff accounts, transfer club to committee, settings, audit log
-- *Coming:* event proposals with approval chains, QR attendance, indemnity, membership and payments, finance ledger, meetings and minutes, AGM and elections, Annual Activities Report (PPTX/PDF)
+- Event proposals with approval chains and e-signatures, QR attendance, indemnity, posters, post mortem (09)
+- Membership and payments (online receipt check, cash handover), finance ledger (02) and fund withdrawal (07)
+- Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA
+- Venue booking (La Place, semester venues, big rooms) with SLD confirmation; daily club status (Active / At risk / Inactive)
+- *Coming:* AGM and elections, Annual Activities Report (PPTX/PDF)
 
 ## Tech stack
 
@@ -77,8 +81,8 @@ Everything sensitive stays on the server:
 
 - [x] Phase 0: Laravel setup, design system, layouts
 - [x] Phase 1: Login, camsys sync, roles, clubs, profiles
-- [ ] Phase 2: Feed, events, proposals, approvals, attendance, indemnity
-- [ ] Phase 3: Membership, payments, finance, meetings, minutes, post mortem, venues
+- [x] Phase 2: Feed, events, proposals, approvals, attendance, indemnity
+- [x] Phase 3: Membership, payments, finance, meetings, minutes, post mortem, venues
 - [ ] Phase 4: AGM, elections, Annual Activities Report
 - [ ] Phase 5: Dashboards, reminders, hardening, pilot
 

@@ -11,6 +11,9 @@ class DocumentExporter
     public function __construct(
         private readonly ProposalDocx $proposal,
         private readonly AttendanceListExport $attendance,
+        private readonly FundWithdrawalDocx $fund,
+        private readonly MinutesDocx $minutes,
+        private readonly PostMortemExport $postMortem,
         private readonly PdfConverter $pdf,
     ) {}
 
@@ -20,6 +23,8 @@ class DocumentExporter
         return match ($document->type) {
             DocumentType::Proposal => $document->latestVersion ? ['pdf', 'docx'] : [],
             DocumentType::AttendanceList => ['pdf', 'xlsx'],
+            DocumentType::PostMortem => $document->latestVersion ? ['pdf', 'xlsx'] : [],
+            DocumentType::FundWithdrawal, DocumentType::Minutes => $document->latestVersion ? ['pdf', 'docx'] : [],
             default => [],
         };
     }
@@ -29,6 +34,9 @@ class DocumentExporter
         $native = match ($document->type) {
             DocumentType::Proposal => $this->proposal->render($document),
             DocumentType::AttendanceList => $this->attendance->render($document->event),
+            DocumentType::FundWithdrawal => $this->fund->render($document),
+            DocumentType::Minutes => $this->minutes->render($document),
+            DocumentType::PostMortem => $this->postMortem->render($document),
             default => abort(404),
         };
         if ($format !== 'pdf') {

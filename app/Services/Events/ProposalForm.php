@@ -6,6 +6,7 @@ use App\Enums\ApproverRole;
 use App\Models\Document;
 use App\Models\Event;
 use App\Models\Staff;
+use App\Services\Documents\Drafts;
 use Carbon\CarbonImmutable;
 
 /** Builds and stores the proposal JSON (06 template fields) and keeps the event row in step with it. */
@@ -27,7 +28,7 @@ class ProposalForm
 
     public const FUND_SOURCES = ['own' => 'Own budget', 'club' => 'Club Fund', 'qiu' => 'Request budget from QIU'];
 
-    public function __construct(private readonly ProposalRules $rules) {}
+    public function __construct(private readonly ProposalRules $rules, private readonly Drafts $drafts) {}
 
     /** @return array<string, mixed> */
     public function defaults(Event $event): array
@@ -61,9 +62,7 @@ class ProposalForm
     /** @return array<string, mixed> current draft, falling back to defaults for a new proposal */
     public function current(Document $document): array
     {
-        $draft = $document->versions()->where('number', 0)->value('data');
-
-        return array_replace($this->defaults($document->event), $draft ? json_decode($draft, true) : $document->data());
+        return $this->drafts->current($document, $this->defaults($document->event));
     }
 
     /**
@@ -73,7 +72,7 @@ class ProposalForm
      */
     public function saveDraft(Document $document, array $data, int $userId): void
     {
-        $document->versions()->updateOrCreate(['number' => 0], ['data' => $data, 'created_by' => $userId]);
+        $this->drafts->save($document, $data, $userId);
         $this->syncEvent($document->event, $data);
     }
 

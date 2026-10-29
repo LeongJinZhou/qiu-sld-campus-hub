@@ -9,17 +9,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'slug', 'logo_path', 'category_id', 'established_year', 'bio', 'instagram_handle', 'managed_by', 'transferred_at'])]
+#[Fillable(['name', 'slug', 'logo_path', 'category_id', 'established_year', 'bio', 'instagram_handle', 'managed_by', 'transferred_at', 'status', 'last_activity_at'])]
 class Club extends Model
 {
     use HasFactory;
 
     protected function casts(): array
     {
-        return ['transferred_at' => 'datetime'];
+        return ['transferred_at' => 'datetime', 'last_activity_at' => 'datetime'];
     }
 
     protected static function booted(): void
@@ -51,6 +52,36 @@ class Club extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
+    }
+
+    /** @return HasMany<Membership, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(Membership::class);
+    }
+
+    /** @return HasMany<ClubFee, $this> */
+    public function fees(): HasMany
+    {
+        return $this->hasMany(ClubFee::class);
+    }
+
+    /** @return HasMany<LedgerEntry, $this> */
+    public function ledger(): HasMany
+    {
+        return $this->hasMany(LedgerEntry::class);
+    }
+
+    /** @return HasOne<ClubOpeningBalance, $this> */
+    public function openingBalance(): HasOne
+    {
+        return $this->hasOne(ClubOpeningBalance::class);
+    }
+
+    /** @return HasMany<Meeting, $this> */
+    public function meetings(): HasMany
+    {
+        return $this->hasMany(Meeting::class);
     }
 
     /** @return HasMany<Post, $this> */
