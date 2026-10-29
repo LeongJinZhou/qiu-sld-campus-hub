@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -113,7 +114,7 @@ class MembershipController extends Controller
                     'amount_sen' => $p->amount_sen,
                     'ai' => ['amount_sen' => $p->ai_amount_sen, 'date' => $p->ai_date?->toDateString(), 'reference' => $p->ai_reference, 'payee' => $p->ai_payee, 'confidence' => $p->ai_confidence],
                     'flags' => $p->flags ?? [],
-                    'receipt_url' => route('payments.receipt', $p),
+                    'receipt_url' => URL::temporarySignedRoute('payments.receipt', now()->addMinutes(30), $p),
                     'at' => $p->created_at?->diffForHumans(),
                 ]),
         ]);

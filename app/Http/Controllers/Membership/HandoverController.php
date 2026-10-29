@@ -47,7 +47,7 @@ class HandoverController extends Controller
     {
         $data = $request->validate([
             'action' => ['required', 'in:accept,decline,ready,photo,done'],
-            'photo' => ['required_if:action,photo', 'nullable', 'image', 'max:12288'],
+            'photo' => ['required_if:action,photo', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
         ]);
         $user = $request->user();
 

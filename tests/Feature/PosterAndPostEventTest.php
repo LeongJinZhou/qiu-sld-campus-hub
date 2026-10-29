@@ -8,6 +8,7 @@ use App\Services\Events\PosterRules;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 beforeEach(fn () => $this->f = proposalFixture());
 
@@ -44,6 +45,11 @@ it('keeps uploaded event documents private to organisers', function () {
 
     $this->actingAs($this->f['president'])->post("/events/{$this->f['event']->slug}/documents/{$item->id}", ['file' => UploadedFile::fake()->create('r.pdf', 10, 'application/pdf')])
         ->assertSessionHas('success');
-    $this->actingAs(User::factory()->create())->get("/events/{$this->f['event']->slug}/documents/{$item->id}")->assertForbidden();
-    $this->actingAs($this->f['president'])->get("/events/{$this->f['event']->slug}/documents/{$item->id}")->assertOk();
+    $signed = URL::temporarySignedRoute('events.documents.download', now()->addMinutes(30), [$this->f['event'], $item]);
+    // A signed link alone is not enough (the policy still applies), and an unsigned or expired link never works.
+    $this->actingAs(User::factory()->create())->get($signed)->assertForbidden();
+    $this->actingAs($this->f['president'])->get("/events/{$this->f['event']->slug}/documents/{$item->id}")->assertForbidden();
+    $this->actingAs($this->f['president'])->get($signed)->assertOk();
+    $this->travel(31)->minutes();
+    $this->actingAs($this->f['president'])->get($signed)->assertForbidden();
 });
