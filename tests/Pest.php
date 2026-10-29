@@ -1,7 +1,19 @@
 <?php
 
+use App\Enums\DocumentType;
+use App\Models\Club;
+use App\Models\Document;
+use App\Models\Event;
+use App\Models\Student;
 use App\Models\User;
+use App\Services\Approvals\ApprovalEngine;
+use App\Services\Approvals\ApproverResolver;
+use App\Services\Camsys\CamsysSync;
+use App\Services\Roles\CompulsoryPositionsCheck;
+use App\Services\Roles\RoleService;
+use App\Services\Time\SessionResolver;
 use Database\Seeders\SettingsSeeder;
+use Database\Seeders\StaffSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
@@ -25,4 +37,74 @@ function superAdmin(): User
 function sldOfficer(): User
 {
     return tap(User::factory()->create())->assignRole('admin');
+}
+
+function signaturePng(): string
+{
+    $image = imagecreatetruecolor(20, 10);
+    ob_start();
+    imagepng($image);
+
+    return 'data:image/png;base64,'.base64_encode((string) ob_get_clean());
+}
+
+/**
+ * A club with a full committee and advisor, plus an event with a full event committee and a draft proposal.
+ *
+ * @return array{club: Club, event: Event, document: Document, president: User, advisor: User}
+ */
+function proposalFixture(array $eventAttributes = []): array
+{
+    seedCamsys();
+    app(CamsysSync::class)->syncAll('test');
+    (new StaffSeeder)->run();
+
+    $session = app(SessionResolver::class)->current();
+    $roles = app(RoleService::class);
+    $users = Student::where('status', 'active')->orderBy('student_number')->get()->map(function ($s) {
+        $user = User::firstOrCreate(['email' => $s->email], ['name' => $s->name]);
+        $s->update(['user_id' => $user->id]);
+
+        return $user->load('student');
+    })->values();
+
+    $club = Club::create(['name' => 'Fixture Club']);
+    foreach (CompulsoryPositionsCheck::POSITIONS as $i => $position) {
+        $roles->assignClubPosition($club, $session, $users[$i], $position);
+    }
+    $advisor = User::where('email', 'advisor1.demo@qiu.edu.my')->firstOrFail();
+    $roles->addAdvisor($club, $session, $advisor);
+
+    $event = Event::create([
+        'club_id' => $club->id,
+        'session_id' => $session->id,
+        'name' => 'Beach Cleanup',
+        'starts_at' => now()->addMonths(4)->setTime(8, 0),
+        'ends_at' => now()->addMonths(4)->setTime(12, 30),
+        'expected_participants' => 40,
+        ...$eventAttributes,
+    ]);
+    foreach (CompulsoryPositionsCheck::POSITIONS as $i => $position) {
+        $roles->assignEventPosition($event, $users[$i + 4], $position, "Handles {$position} duties");
+    }
+
+    $document = Document::create([
+        'type' => DocumentType::Proposal,
+        'club_id' => $club->id,
+        'event_id' => $event->id,
+        'session_id' => $session->id,
+        'created_by' => $users[0]->id,
+    ]);
+
+    return ['club' => $club, 'event' => $event, 'document' => $document, 'president' => $users[0], 'advisor' => $advisor];
+}
+
+/** Signs off every remaining step of the chain with whoever may act on it. */
+function approveRemainingSteps(Document $document): void
+{
+    $engine = app(ApprovalEngine::class);
+    $resolver = app(ApproverResolver::class);
+    while ($step = $engine->currentStep($document->fresh())) {
+        $engine->approve($step, $resolver->candidates($document, $step->role)->firstOrFail(), signaturePng());
+    }
 }

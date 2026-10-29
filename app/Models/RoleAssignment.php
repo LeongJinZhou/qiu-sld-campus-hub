@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'role', 'scope_type', 'scope_id', 'session_id', 'position', 'is_compulsory', 'starts_on', 'ends_on'])]
+#[Fillable(['user_id', 'role', 'scope_type', 'scope_id', 'session_id', 'position', 'responsibility', 'is_compulsory', 'starts_on', 'ends_on'])]
 class RoleAssignment extends Model
 {
     protected function casts(): array

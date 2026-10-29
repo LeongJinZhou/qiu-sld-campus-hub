@@ -36,6 +36,17 @@ class Student extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** Students can be appointed before their first sign-in; the account links by camsys email. */
+    public function ensureUser(): User
+    {
+        $user = $this->user ?? User::firstOrCreate(['email' => $this->email], ['name' => $this->name]);
+        if ($this->user_id !== $user->id) {
+            $this->update(['user_id' => $user->id]);
+        }
+
+        return $user->setRelation('student', $this);
+    }
+
     public function programmeShortForm(): string
     {
         return ProgrammeAbbrev::for($this->programme_code) ?? $this->programme_code;

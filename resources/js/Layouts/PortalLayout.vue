@@ -14,6 +14,7 @@ const menuOpen = ref(false);
 const links = computed(() => [
     { label: 'Clubs', href: '/admin/clubs' },
     { label: 'Staff', href: '/admin/staff' },
+    { label: 'Moderation', href: '/admin/moderation' },
     { label: 'Settings', href: '/admin/settings' },
     ...(user.value?.roles.includes('superadmin')
         ? [
