@@ -22,3 +22,8 @@ createInertiaApp({
     },
     progress: { color: '#E01CEB' },
 });
+
+// Installable app: offline shell only (public/sw.js). Service workers need HTTPS, or localhost in development.
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+}
