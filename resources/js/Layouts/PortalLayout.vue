@@ -14,6 +14,7 @@ const menuOpen = ref(false);
 const links = computed(() => [
     { label: 'Clubs', href: '/admin/clubs' },
     { label: 'Staff', href: '/admin/staff' },
+    { label: 'All members', href: '/admin/members' },
     { label: 'Fees & drives', href: '/admin/fees' },
     { label: 'Moderation', href: '/admin/moderation' },
     { label: 'Settings', href: '/admin/settings' },
