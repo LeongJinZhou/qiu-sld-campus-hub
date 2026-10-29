@@ -61,9 +61,9 @@ class ProposalForm
     /** @return array<string, mixed> current draft, falling back to defaults for a new proposal */
     public function current(Document $document): array
     {
-        $draft = $document->versions()->where('number', 0)->value('data');
+        $draft = $document->versions()->where('number', 0)->first()?->data;
 
-        return array_replace($this->defaults($document->event), $draft ? json_decode($draft, true) : $document->data());
+        return array_replace($this->defaults($document->event), $draft ?? $document->data());
     }
 
     /**

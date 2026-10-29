@@ -189,3 +189,59 @@ foreach ([[$d->paragraphContaining('Prepared by:')->parentNode->parentNode->pare
 
 $d->save("{$filled}/{$name}");
 echo "Wrote {$filled}/{$name}\n";
+
+// ---- 13 Meeting Minutes ----------------------------------------------------------------------------------
+$name = '13. Meeting Minutes Template.docx';
+$d = new DocxPlaceholders("{$original}/{$name}");
+$table = fn (string $header) => $d->paragraphContaining($header)->parentNode->parentNode->parentNode;
+
+$d->setText($d->block(0), '${club_logo}');
+$d->setText($d->paragraphContaining('XXX club'), '${club}');
+$d->setText($d->paragraphContaining('DATE:'), 'DATE: ${date}');
+$d->setText($d->paragraphContaining('VENUE:'), 'VENUE: ${venue}');
+$d->setText($d->paragraphContaining('TIME:'), 'TIME: ${time}');
+// The "Example:" list is guidance for whoever fills the form, not part of the minutes.
+foreach (['Example:', 'Weekly committee meeting', 'Weekly club training', 'Event planning meeting', 'Workshop / Sharing Session'] as $guide) {
+    $p = $d->paragraphContaining($guide);
+    $p->parentNode->removeChild($p);
+}
+$d->setText($d->paragraphContaining('Purpose:'), 'Purpose: ${purpose}');
+
+// Summary: one numbered point per discussion item, replacing the five sample points.
+$point = $d->paragraphContaining('Attendance was taken.');
+$d->setText($point, '${summary_point}');
+foreach (['President updated members', 'Committee discussed event budget', 'Members participated in photography', "Next week's activity"] as $sample) {
+    $p = $d->paragraphContaining($sample);
+    $p->parentNode->removeChild($p);
+}
+$point->parentNode->insertBefore($d->paragraphContaining('Briefly summarize')->cloneNode(false), $point);
+$d->setText($point->previousSibling, '${summary}');
+$d->insertAfter($point, '${/summary}', $d->paragraphContaining('Briefly summarize'));
+
+$actions = $table('Person in Charge');
+foreach (['action_task', 'action_pic', 'action_deadline'] as $c => $field) {
+    $d->setText($d->cellParagraph($actions, 1, $c), "\${{$field}}");
+}
+$d->setText($d->paragraphContaining('Date: ____'), 'Date: ${next_date}');
+$d->setText($d->paragraphContaining('Time: ____'), 'Time: ${next_time}');
+$d->setText($d->paragraphContaining('Venue: ____'), 'Venue: ${next_venue}');
+
+// Sign-off: Prepared by, President's signature, Advisor's signature (each with server date).
+$signoff = $d->block(count(iterator_to_array($d->xp->query('/w:document/w:body/*'))) - 3);
+foreach ([0 => 1, 1 => 2, 2 => 3] as $row => $k) {
+    $cell = $d->cellParagraph($signoff, $row, 2);
+    $d->setText($cell, "\${sig{$k}_image}");
+    $d->insertAfter($cell, "(Name) \${sig{$k}_name}");
+    if ($row > 0) {
+        // The date cell holds a dotted fill-line; replace the whole cell content with the date.
+        $dateCell = $d->cell($signoff, $row, 5);
+        $paragraphs = iterator_to_array($d->xp->query('w:p', $dateCell));
+        $d->setText(array_shift($paragraphs), "\${sig{$k}_date}");
+        foreach ($paragraphs as $extra) {
+            $dateCell->removeChild($extra);
+        }
+    }
+}
+
+$d->save("{$filled}/{$name}");
+echo "Wrote {$filled}/{$name}\n";
