@@ -4,9 +4,11 @@ use App\Enums\DocumentStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Club;
 use App\Models\ClubFee;
+use App\Models\Document;
 use App\Models\Event;
 use App\Models\LedgerEntry;
 use App\Models\Student;
+use App\Services\Approvals\ApprovalEngine;
 use App\Services\Events\ProposalForm;
 use App\Services\Membership\MembershipService;
 use App\Services\Profiles\PublicProfile;
@@ -68,4 +70,16 @@ it('hides the counts of hidden profile sections', function () {
     $public = app(PublicProfile::class)->for($f['president']);
 
     expect($public['clubs'])->toBeNull()->and($public['stats'])->toBe(['clubs' => null, 'positions' => null, 'events' => null, 'cca_hours' => null]);
+});
+
+it('leaves an approved event approved when other documents about it are submitted or returned', function () {
+    $f = proposalFixture();
+    $f['event']->update(['status' => DocumentStatus::Approved, 'attendance_open' => true]);
+
+    $this->actingAs($f['president'])->post("/events/{$f['event']->slug}/attendance/submit", ['signature' => signaturePng(), 'signature_strokes' => signatureStrokes()]);
+    $list = Document::where('type', 'attendance_list')->firstOrFail();
+    $engine = app(ApprovalEngine::class);
+    $engine->returnToClub($engine->currentStep($list->fresh()), $f['advisor'], 'Missing names');
+
+    expect($f['event']->fresh()->status)->toBe(DocumentStatus::Approved);
 });

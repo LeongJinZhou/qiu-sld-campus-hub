@@ -143,17 +143,20 @@ echo "Wrote {$filled}/{$name}\n";
 // ---- 07 Fund Withdrawal and Transfer ----------------------------------------------------------------------
 $name = '07. Student Organization Fund Withdrawal and Transfer Form template.docx';
 $d = new DocxPlaceholders("{$original}/{$name}");
+$table = fn (string $header) => $d->paragraphContaining($header)->parentNode->parentNode->parentNode;
 
 $header = $d->block(4); // To / From / CC / Date
 $d->setText($d->cellParagraph($header, 1, 1), '${from}');
 $d->setText($d->cellParagraph($header, 3, 1), '${date}');
 
 $d->setText($d->block(8), '${from} would like to request a withdrawal of RM${total} from the club’s fund to cover ${purpose}. Therefore, we are requesting the money to purchase items as below: ');
-$itemLine = $d->block(10);
-$d->setText($itemLine, '${item_no}. ${item_description} – RM${item_amount} (${item_method})');
-$itemLine->parentNode->insertBefore($d->block(9)->cloneNode(true), $itemLine);
-$d->setText($d->block(10), '${items}');
-$d->insertAfter($d->block(11), '${/items}', $d->block(9));
+// Items table (inside a content control): one sample row becomes the cloned row, the other is removed.
+$items = $table('Unit Price (RM)');
+foreach (['item_no', 'item_description', 'item_price', 'item_quantity', 'item_total', 'item_method'] as $c => $field) {
+    $d->setText($d->cellParagraph($items, 2, $c), "\${{$field}}");
+}
+$d->setText($d->cellParagraph($items, 4, 4), '${total}');
+$d->removeRows($items, 3, 3);
 
 // One repeatable payee block (treasurer or vendor accounts), replacing the two sample blocks.
 $first = $d->paragraphContaining('Individual/Company Name:', 0);
