@@ -172,6 +172,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/me', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::prefix('admin')->name('admin.')->middleware('can:manage,'.Club::class)->group(function () {
+        Route::get('/', Admin\DashboardController::class)->name('dashboard');
         Route::resource('clubs', Admin\ClubController::class)->except(['show', 'destroy']);
         Route::post('clubs/{club}/committee', [Admin\ClubCommitteeController::class, 'assign'])->name('clubs.committee.assign');
         Route::post('clubs/{club}/advisors', [Admin\ClubCommitteeController::class, 'addAdvisor'])->name('clubs.advisors.store');
