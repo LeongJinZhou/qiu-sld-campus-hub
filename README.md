@@ -28,7 +28,9 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 - Membership and payments (online receipt check, cash handover), finance ledger (02) and fund withdrawal (07)
 - Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA
 - Venue booking (La Place, semester venues, big rooms) with SLD confirmation; daily club status (Active / At risk / Inactive)
-- *Coming:* AGM and elections, Annual Activities Report (PPTX/PDF)
+- AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance
+- Elections: nominations with full-term check, one vote per position, SLD flags, results into the AGM Report, role handover on 1 July
+- Annual Activities Report (12) as PPTX/PDF from the official template, AI-written event details, SLD themes; AGM package checklist
 
 ## Tech stack
 
@@ -43,7 +45,7 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 
 ## Getting started
 
-Requirements: PHP 8.3+, Composer, Node 20+.
+Requirements: PHP 8.3+, Composer, Node 20+, LibreOffice (PDFs), Python 3 with python-pptx (Annual Activities Report: `python3 -m venv tools/pptx/.venv && tools/pptx/.venv/bin/pip install python-pptx`).
 
 ```bash
 composer install && npm install
@@ -83,7 +85,7 @@ Everything sensitive stays on the server:
 - [x] Phase 1: Login, camsys sync, roles, clubs, profiles
 - [x] Phase 2: Feed, events, proposals, approvals, attendance, indemnity
 - [x] Phase 3: Membership, payments, finance, meetings, minutes, post mortem, venues
-- [ ] Phase 4: AGM, elections, Annual Activities Report
+- [x] Phase 4: AGM, elections, Annual Activities Report
 - [ ] Phase 5: Dashboards, reminders, hardening, pilot
 
 Business rules and decisions: [`CLAUDE.md`](CLAUDE.md). Phase plan: [`docs/BUILD_PROMPT.md`](docs/BUILD_PROMPT.md).

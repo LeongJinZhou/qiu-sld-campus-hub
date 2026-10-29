@@ -14,6 +14,7 @@ class DocumentExporter
         private readonly FundWithdrawalDocx $fund,
         private readonly MinutesDocx $minutes,
         private readonly PostMortemExport $postMortem,
+        private readonly AgmReportDocx $agmReport,
         private readonly PdfConverter $pdf,
     ) {}
 
@@ -24,7 +25,7 @@ class DocumentExporter
             DocumentType::Proposal => $document->latestVersion ? ['pdf', 'docx'] : [],
             DocumentType::AttendanceList => ['pdf', 'xlsx'],
             DocumentType::PostMortem => $document->latestVersion ? ['pdf', 'xlsx'] : [],
-            DocumentType::FundWithdrawal, DocumentType::Minutes => $document->latestVersion ? ['pdf', 'docx'] : [],
+            DocumentType::FundWithdrawal, DocumentType::Minutes, DocumentType::AgmReport => $document->latestVersion ? ['pdf', 'docx'] : [],
             default => [],
         };
     }
@@ -37,6 +38,7 @@ class DocumentExporter
             DocumentType::FundWithdrawal => $this->fund->render($document),
             DocumentType::Minutes => $this->minutes->render($document),
             DocumentType::PostMortem => $this->postMortem->render($document),
+            DocumentType::AgmReport => $this->agmReport->render($document),
             default => abort(404),
         };
         if ($format !== 'pdf') {
