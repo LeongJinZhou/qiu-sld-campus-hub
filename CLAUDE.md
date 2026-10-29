@@ -49,6 +49,7 @@ Confirmed facts and fixes:
 
 1. **Student ID** real format: `QIU-YYYYMM-NNNN` (e.g. `QIU-202404-0001` = April 2024 intake). The dummy dump uses `STD20240001`; the parser must accept both in dev. Regex for real IDs: `^QIU-(\d{4})(0[1-9]|1[0-2])-(\d{4})$`.
 2. **Intake month comes from the student ID**, not `INTAKE_NUMBER` (that column is a sequence 1, 2, 3). Fallback for dummy IDs: `intake_map` table (intake number → month) editable by Admin.
+   QIU has **3 intakes a year: March, July, November** (3 semesters per year). Default `intake_map`: 1 → March, 2 → July, 3 → November.
 3. **`E_MAIL` is the student's @qiu.edu.my Google email** in the real data (dummy shows example.com). Google login matches `E_MAIL` exactly (case-insensitive). Reject logins that are not @qiu.edu.my or not found in camsys (staff accounts are the exception, see section 5).
 4. **`is_active` generated column is wrong** (checks for 'Active' but data says 'Enrolled'). Ignore it. Status mapping, stored in `settings` and editable by Admin:
    - active: `Enrolled, Active, Deferred, Suspended`
@@ -108,6 +109,7 @@ Roles are **scoped**. One person can hold many scoped roles at once.
 On final proposal approval: auto-create feed post, record CCA hours, unlock fund withdrawal and QR attendance.
 
 ### Events
+- **CCA = event hours, 1 hour = 1 CCA.** The proposal pre-fills CCA from the event duration (participants and committee); the club can still edit it before submitting.
 - Size rule: < 60 participants → submit ≥ 1.5 months before; > 60 → ≥ 3 months before. Date picker enforces it.
 - Outdoor / off-campus flag → **indemnity required** from every participant and committee member; signing closes 3 days before the event. Without a signed indemnity, QR clock-in is blocked.
 - Indemnity visibility: student sees own; event committee, club committee and advisor see signed / not-signed list and can download all as one PDF; SLD sees all.

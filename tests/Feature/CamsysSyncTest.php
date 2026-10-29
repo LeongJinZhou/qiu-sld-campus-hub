@@ -77,3 +77,12 @@ it('records each run in the sync log', function () {
 
     $this->assertDatabaseHas('camsys_sync_runs', ['trigger' => 'manual', 'records_seen' => 10, 'upserted' => 10, 'error' => null]);
 });
+
+it('maps dummy intake numbers to QIU intakes (March, July, November)', function () {
+    app(CamsysSync::class)->syncAll('manual');
+
+    expect(Student::where('student_number', 'STD20240001')->value('intake_month'))->toBe(3)   // intake 1
+        ->and(Student::where('student_number', 'STD20240003')->value('intake_month'))->toBe(7) // intake 2
+        // July 2023 intake on 2026-10-29: 39 months -> Year 4.
+        ->and(Student::where('student_number', 'STD20240003')->value('year_group'))->toBe('Year 4');
+});

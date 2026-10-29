@@ -20,8 +20,8 @@ class SettingsSeeder extends Seeder
 
         Setting::write(StatusMapper::SETTING_KEY, StatusMapper::DEFAULTS);
 
-        // Dummy-ID fallback only; real QIU-YYYYMM-NNNN IDs carry the month. Adjust in Admin › Settings.
-        foreach ([1 => 1, 2 => 5, 3 => 9] as $intake => $month) {
+        // QIU intakes: March, July, November. Dummy-ID fallback only; real QIU-YYYYMM-NNNN IDs carry the month.
+        foreach ([1 => 3, 2 => 7, 3 => 11] as $intake => $month) {
             IntakeMap::updateOrCreate(['intake_number' => $intake], ['month' => $month]);
         }
 
