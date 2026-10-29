@@ -18,6 +18,7 @@ use App\Http\Controllers\Events\PosterController;
 use App\Http\Controllers\Events\ProposalController;
 use App\Http\Controllers\Membership\FeeController;
 use App\Http\Controllers\Membership\HandoverController;
+use App\Http\Controllers\Membership\MembersController;
 use App\Http\Controllers\Membership\MembershipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -105,6 +106,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/join', [MembershipController::class, 'join'])->middleware('throttle:10,1')->name('membership.store');
     Route::post('/clubs/{club}/join/receipt', [MembershipController::class, 'receipt'])->middleware('throttle:10,1')->name('membership.receipt');
     Route::post('/clubs/{club}/join/cash', [MembershipController::class, 'cash'])->middleware('throttle:10,1')->name('membership.cash');
+    Route::get('/clubs/{club}/members', [MembersController::class, 'club'])->name('members.club');
+    Route::get('/clubs/{club}/members/export/{format}', [MembersController::class, 'export'])->name('members.export');
+    Route::post('/clubs/{club}/members/remind', [MembersController::class, 'remind'])->middleware('throttle:5,1')->name('members.remind');
+    Route::post('/saved-views', [MembersController::class, 'saveView'])->name('views.store');
+    Route::delete('/saved-views/{view}', [MembersController::class, 'deleteView'])->name('views.destroy');
     Route::get('/clubs/{club}/payments/review', [MembershipController::class, 'reviewQueue'])->name('payments.review');
     Route::post('/payments/{payment}/decide', [MembershipController::class, 'decide'])->name('payments.decide');
     Route::get('/payments/{payment}/receipt', [MembershipController::class, 'receiptFile'])->name('payments.receipt');
@@ -126,6 +132,7 @@ Route::middleware('auth')->group(function () {
         Route::post('staff', [Admin\StaffController::class, 'store'])->name('staff.store');
         Route::put('staff/{staff}', [Admin\StaffController::class, 'update'])->name('staff.update');
 
+        Route::get('members', [MembersController::class, 'all'])->name('members.all');
         Route::get('fees', [FeeController::class, 'index'])->name('fees.index');
         Route::post('fees/{fee}/approve', [FeeController::class, 'approve'])->name('fees.approve');
         Route::post('drives', [FeeController::class, 'drive'])->name('drives.store');
