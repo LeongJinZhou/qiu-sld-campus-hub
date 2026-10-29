@@ -97,7 +97,7 @@ class ProposalDocx
         }
         $t->setValues($values);
 
-        $t->cloneBlock('objectives', 0, true, false, array_map(fn (string $o) => ['objective' => $o], array_values(array_filter($d['objectives'])) ?: ['']));
+        DocxRenderer::block($t, 'objectives', array_map(fn (string $o) => ['objective' => $o], array_values(array_filter($d['objectives'])) ?: ['']));
         $this->rows($t, 'activity_name', array_map(fn ($a) => ['activity_name' => $a['name'], 'activity_description' => $a['description']], $d['activities']));
         $this->rows($t, 'itinerary_start', array_map(fn ($r) => ['itinerary_start' => $this->time($r['start']), 'itinerary_end' => $this->time($r['end']), 'itinerary_agenda' => $r['agenda']], $d['itinerary']));
         $this->rows($t, 'committee_name', $document->event->committee->map(fn (RoleAssignment $a) => [
