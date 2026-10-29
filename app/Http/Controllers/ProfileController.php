@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Profiles\Certificates;
 use App\Services\Profiles\PublicProfile;
 use App\Services\QrCodes;
+use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -49,7 +50,7 @@ class ProfileController extends Controller
             if ($user->avatar_path) {
                 Storage::disk('public')->delete($user->avatar_path);
             }
-            $user->avatar_path = $request->file('photo')?->store('avatars', 'public');
+            $user->avatar_path = $request->hasFile('photo') ? app(ImageUpload::class)->store($request->file('photo'), 'avatars') : null;
         }
 
         // Photo-only saves must not wipe the other settings.

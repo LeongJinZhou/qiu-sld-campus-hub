@@ -5,7 +5,7 @@ import { Head, router } from '@inertiajs/vue3';
 
 const props = defineProps<{
     event: { slug: string; name: string };
-    items: { id: number; label: string; due_on: string; overdue: boolean; submitted_at: string | null; file_name: string | null }[];
+    items: { id: number; label: string; due_on: string; overdue: boolean; submitted_at: string | null; file_name: string | null; file_url: string | null }[];
 }>();
 
 function upload(id: number, event: Event): void {
@@ -29,7 +29,7 @@ function upload(id: number, event: Event): void {
                         <span class="text-xs text-ink-muted">Due {{ item.due_on }}</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <a v-if="item.file_name" :href="`/events/${event.slug}/documents/${item.id}`" class="text-xs text-brand-blue">{{ item.file_name }}</a>
+                        <a v-if="item.file_url" :href="item.file_url" class="text-xs text-brand-blue">{{ item.file_name }}</a>
                         <Badge :tone="item.submitted_at ? 'success' : item.overdue ? 'danger' : 'neutral'">{{ item.submitted_at ? `Submitted ${item.submitted_at}` : item.overdue ? 'Overdue' : 'Pending' }}</Badge>
                         <label class="cursor-pointer rounded-control border border-line px-3 py-1.5 text-xs font-medium hover:bg-surface-muted">
                             {{ item.submitted_at ? 'Replace' : 'Upload' }}
