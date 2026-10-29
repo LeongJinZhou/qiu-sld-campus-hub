@@ -57,7 +57,8 @@ $d->setText($d->paragraphContaining('The Curve, Level 3'), '${venue}');
 $d->setText($d->paragraphContaining('X Hours'), '${duration}');
 $d->setText($d->paragraphContaining('8.00 AM – 12.00 PM'), '${time_range}');
 $d->setText($d->paragraphContaining('XXX Club / Society'), '${from}');
-$d->setText($d->paragraphContaining('Brief introduction of the event'), '${introduction}');
+$body = $d->paragraphContaining('Brief introduction of the event'); // body-text style for inserted paragraphs
+$d->setText($body, '${introduction}');
 
 // Objectives: one numbered paragraph inside a clone block, so each objective keeps the numbering.
 $objective = $d->block(31);
@@ -69,7 +70,7 @@ $d->block(34)->parentNode->removeChild($d->block(34)); // second sample numbered
 
 $d->setText($d->paragraphContaining('Expected number of participants:'), 'Expected number of participants: ${expected_participants}');
 $d->setText($d->paragraphContaining('Eligibility:'), 'Eligibility: ${eligibility}');
-$d->insertAfter($d->paragraphContaining('ICT & Maintenance Requirement'), '${ict_requirements}');
+$d->insertAfter($d->paragraphContaining('ICT & Maintenance Requirement'), '${ict_requirements}', $body);
 $d->setText($d->paragraphContaining('Transportation required / not required'), '${transport}');
 $d->setText($d->paragraphContaining('Departure Time:'), 'Departure Time: ${departure_time}');
 $d->setText($d->paragraphContaining('Pickup Point:', 0), 'Pickup Point: ${departure_pickup}');
@@ -107,7 +108,7 @@ $d->removeRows($budget, 12, 13);
 $d->removeRows($budget, 3, 6);
 
 $conclusion = $d->paragraphContaining('Conclusion');
-$d->insertAfter($conclusion, '${conclusion}');
+$d->insertAfter($conclusion, '${conclusion}', $body);
 
 // Approval & Verification: six signers in chain order. Names come from records, never the printed ones.
 $labels = ['Prepared by:', 'Reviewed by:', 'Reviewed by:', 'Recommended by:', 'Verified by:', 'Approved by:'];

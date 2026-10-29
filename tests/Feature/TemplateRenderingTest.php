@@ -3,6 +3,7 @@
 use App\Models\Staff;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\DocxRenderer;
+use App\Services\Documents\PdfConverter;
 use App\Services\Documents\ProposalDocx;
 use App\Services\Events\ProposalForm;
 
@@ -16,7 +17,7 @@ function proposalPayload(array $f): array
         'nature' => ['environmental', 'humanity'], 'sdgs' => [14, 13], 'source_of_fund' => ['club'],
         'objectives' => ['Clean', 'Learn', 'Bond'],
         'activities' => [['name' => 'Cleanup', 'description' => 'Pick litter'], ['name' => 'Talk', 'description' => 'Marine life']],
-        'itinerary' => [['start' => '08:00', 'end' => '08:30', 'agenda' => 'Arrival'], ['start' => '08:30', 'end' => '12:00', 'agenda' => 'Cleanup'], ['start' => '12:00', 'end' => '12:30', 'agenda' => 'Lunch']],
+        'itinerary' => [['start' => '08:00', 'end' => '08:30', 'agenda' => 'Arrival & <Registration>'], ['start' => '08:30', 'end' => '12:00', 'agenda' => 'Cleanup'], ['start' => '12:00', 'end' => '12:30', 'agenda' => 'Lunch']],
         'budget' => ['revenue' => [['description' => 'Club fund', 'price_sen' => 50000, 'quantity' => 1]], 'expenses' => [['description' => 'Gloves', 'price_sen' => 500, 'quantity' => 40], ['description' => 'Bags', 'price_sen' => 200, 'quantity' => 50]]],
         'conclusion' => 'Done',
     ]);
@@ -40,7 +41,13 @@ it('fills every placeholder in the proposal template', function () {
     $path = app(ProposalDocx::class)->render($this->f['document']->fresh());
     $text = docxText($path);
 
-    expect(DocxRenderer::remainingPlaceholders($path))->toBe([])
+    $zip = new ZipArchive;
+    $zip->open($path);
+    $wellFormed = (new DOMDocument)->loadXML((string) $zip->getFromName('word/document.xml'));
+    $zip->close();
+
+    expect($wellFormed)->toBeTrue()
+        ->and(DocxRenderer::remainingPlaceholders($path))->toBe([])
         ->and($text)->toContain('BEACH CLEANUP PROPOSAL')
         ->toContain('Mr Nicholas Goh, COO')
         ->toContain('Pantai Remis')
@@ -69,3 +76,14 @@ it('never modifies the original templates', function () {
 
     expect(md5_file(resource_path('templates/original/'.ProposalDocx::TEMPLATE)))->toBe($before);
 });
+
+it('converts the filled proposal to PDF with LibreOffice', function () {
+    app(ApprovalEngine::class)->submit($this->f['document'], $this->f['president'], proposalPayload($this->f), signaturePng());
+    $docx = app(ProposalDocx::class)->render($this->f['document']->fresh());
+
+    $pdf = app(PdfConverter::class)->convert($docx);
+
+    expect(file_get_contents($pdf, length: 5))->toBe('%PDF-');
+    @unlink($docx);
+    unlink($pdf);
+})->skip(fn () => ! is_executable((string) config('sld.soffice')), 'LibreOffice not installed');

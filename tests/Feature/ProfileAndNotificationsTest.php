@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\DocumentStatus;
+use App\Models\Student;
 use App\Notifications\DocumentNotification;
 use App\Services\Events\AttendanceService;
 use Illuminate\Http\UploadedFile;
@@ -11,7 +12,7 @@ beforeEach(function () {
     $this->f = proposalFixture();
     $this->event = $this->f['event'];
     $this->event->update(['status' => DocumentStatus::Approved, 'attendance_open' => true, 'cca_participant' => 4.5]);
-    $this->student = App\Models\Student::where('student_number', 'STD20240010')->first()->ensureUser();
+    $this->student = Student::where('student_number', 'STD20240010')->first()->ensureUser();
     $this->travelTo($this->event->starts_at);
     app(AttendanceService::class)->addManually($this->event, $this->student, $this->f['president']);
 });

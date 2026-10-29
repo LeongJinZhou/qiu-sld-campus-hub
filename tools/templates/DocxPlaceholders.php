@@ -90,10 +90,10 @@ final class DocxPlaceholders
         $p->appendChild($run);
     }
 
-    /** Inserts a copy of $p (same formatting) after it, with new text. */
-    public function insertAfter(DOMElement $p, string $text): DOMElement
+    /** Inserts a paragraph after $p with new text, formatted like $styleFrom (default: like $p itself). */
+    public function insertAfter(DOMElement $p, string $text, ?DOMElement $styleFrom = null): DOMElement
     {
-        $copy = $p->cloneNode(true);
+        $copy = ($styleFrom ?? $p)->cloneNode(true);
         $p->parentNode->insertBefore($copy, $p->nextSibling);
         $this->setText($copy, $text);
 
