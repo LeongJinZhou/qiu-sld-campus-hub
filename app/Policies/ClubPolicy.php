@@ -37,6 +37,12 @@ class ClubPolicy
             || ($club->isTransferred() && $this->roles->belongsToClub($user, $club, $this->sessions->current()));
     }
 
+    /** Posts, stories, highlights, gallery and FAQ: the club's own people and SLD. */
+    public function publish(User $user, Club $club): bool
+    {
+        return $this->viewInternal($user, $club);
+    }
+
     /** Members, documents and finance tabs (later phases): committee, advisor and SLD only. */
     public function viewInternal(User $user, Club $club): bool
     {

@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Events\DocumentApproved;
+use App\Services\Events\EventApprovalActions;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -23,5 +26,7 @@ class AppServiceProvider extends ServiceProvider
         // Global roles (student, staff, admin, superadmin) live under the system team; club/event
         // scoping is handled by role_assignments.
         app(PermissionRegistrar::class)->setPermissionsTeamId(0);
+
+        Event::listen(DocumentApproved::class, [EventApprovalActions::class, 'handle']);
     }
 }

@@ -7,6 +7,7 @@ use App\Enums\ScopedRole;
 use App\Enums\ScopeType;
 use App\Models\AcademicSession;
 use App\Models\Club;
+use App\Models\Event;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -52,6 +53,40 @@ class RoleService
                 'ends_on' => $session->ends_on,
             ]);
             $this->audit->log('committee.assigned', $club, ['session' => $session->name, 'position' => $position, 'user_id' => $user->id]);
+
+            return $assignment;
+        });
+    }
+
+    /** Event committees are separate from club committees; any active student may be chosen. */
+    public function assignEventPosition(Event $event, User $user, string $position, ?string $responsibility = null): RoleAssignment
+    {
+        $position = trim($position);
+        if ($position === '') {
+            throw new DomainException('Position is required.');
+        }
+        if (! $user->student?->isActive()) {
+            throw new DomainException("{$user->name} is not an active student.");
+        }
+
+        $scope = $this->scope(ScopeType::Event, $event->id, null, ScopedRole::EventCommittee);
+        $existing = (clone $scope)->where('user_id', $user->id)->first();
+        if ($existing && $existing->position !== $position) {
+            throw new DomainException("{$user->name} is already {$existing->position} for this event.");
+        }
+
+        return DB::transaction(function () use ($scope, $event, $user, $position, $responsibility): RoleAssignment {
+            (clone $scope)->where('position', $position)->delete();
+            $assignment = RoleAssignment::create([
+                'user_id' => $user->id,
+                'role' => ScopedRole::EventCommittee,
+                'scope_type' => ScopeType::Event,
+                'scope_id' => $event->id,
+                'position' => $position,
+                'responsibility' => $responsibility,
+                'is_compulsory' => in_array($position, CompulsoryPositionsCheck::POSITIONS, true),
+            ]);
+            $this->audit->log('event_committee.assigned', $event, ['position' => $position, 'user_id' => $user->id]);
 
             return $assignment;
         });

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -38,6 +39,54 @@ class Club extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(ClubCategory::class);
+    }
+
+    /** @return HasMany<Event, $this> */
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
+
+    /** @return HasMany<Document, $this> */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
+    /** @return HasMany<Post, $this> */
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
+
+    /** @return HasMany<Story, $this> */
+    public function stories(): HasMany
+    {
+        return $this->hasMany(Story::class);
+    }
+
+    /** @return HasMany<Highlight, $this> */
+    public function highlights(): HasMany
+    {
+        return $this->hasMany(Highlight::class)->orderBy('sort');
+    }
+
+    /** @return HasMany<Album, $this> */
+    public function albums(): HasMany
+    {
+        return $this->hasMany(Album::class);
+    }
+
+    /** @return HasMany<ClubFaq, $this> */
+    public function faqs(): HasMany
+    {
+        return $this->hasMany(ClubFaq::class)->orderBy('sort');
+    }
+
+    /** @return BelongsToMany<User, $this> */
+    public function followers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'club_follows');
     }
 
     /** @return HasMany<RoleAssignment, $this> */

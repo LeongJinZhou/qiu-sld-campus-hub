@@ -52,7 +52,7 @@ it('logs a staff member in through the Google callback', function () {
     $google = (new GoogleUser)->setRaw(['hd' => 'qiu.edu.my'])->map(['id' => '9', 'email' => 'lecturer@qiu.edu.my', 'name' => 'Dr L', 'avatar' => 'https://p']);
     Socialite::shouldReceive('driver->user')->andReturn($google);
 
-    $this->get('/auth/google/callback')->assertRedirect(route('clubs.index'));
+    $this->get('/auth/google/callback')->assertRedirect(route('feed'));
     $this->assertAuthenticated();
 });
 

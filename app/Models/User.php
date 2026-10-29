@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -53,6 +54,24 @@ class User extends Authenticatable
     public function roleAssignments(): HasMany
     {
         return $this->hasMany(RoleAssignment::class);
+    }
+
+    /** @return BelongsToMany<Club, $this> */
+    public function followedClubs(): BelongsToMany
+    {
+        return $this->belongsToMany(Club::class, 'club_follows');
+    }
+
+    /** @return HasOne<EmergencyContact, $this> */
+    public function emergencyContact(): HasOne
+    {
+        return $this->hasOne(EmergencyContact::class);
+    }
+
+    /** @return HasMany<CcaRecord, $this> */
+    public function ccaRecords(): HasMany
+    {
+        return $this->hasMany(CcaRecord::class);
     }
 
     /** Uploaded override first, then the Google photo. */

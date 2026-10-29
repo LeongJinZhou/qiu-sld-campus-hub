@@ -9,10 +9,10 @@ const user = computed(() => page.props.auth.user);
 
 // href null = page arrives in a later phase.
 const tabs = computed(() => [
-    { label: 'Feed', icon: '⌂', href: null },
+    { label: 'Feed', icon: '⌂', href: '/feed' },
     { label: 'Search', icon: '⌕', href: '/clubs' },
     { label: 'Create', icon: '＋', href: null },
-    { label: 'Notifications', icon: '♡', href: null },
+    { label: 'Approvals', icon: '✓', href: user.value?.roles.some((r) => ['staff', 'admin', 'superadmin'].includes(r)) ? '/approvals' : null },
     { label: 'Profile', icon: '◉', href: '/me' },
 ]);
 </script>
@@ -22,7 +22,7 @@ const tabs = computed(() => [
         <Toast />
         <header class="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur">
             <div class="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
-                <Link href="/clubs" class="flex items-center gap-2 font-semibold">
+                <Link href="/feed" class="flex items-center gap-2 font-semibold">
                     <img src="/brand/QIU_Student_Activity_Black.png" alt="" class="h-8 w-auto" />
                     <span class="text-gradient-warm hidden sm:inline">Campus Hub</span>
                 </Link>

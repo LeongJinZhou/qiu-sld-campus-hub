@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
-        $middleware->redirectUsersTo(fn () => route('clubs.index'));
+        $middleware->redirectUsersTo(fn () => route('feed'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
