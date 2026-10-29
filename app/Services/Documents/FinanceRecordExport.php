@@ -27,6 +27,8 @@ class FinanceRecordExport
 
         return $this->xlsx->render(self::TEMPLATE, function (Spreadsheet $book) use ($rows, $treasurer, $advisor): void {
             $sheet = $book->getActiveSheet();
+            // One page wide, as many pages tall as the ledger needs (the template's "fit to 1 page" made long ledgers unreadable).
+            $sheet->getPageSetup()->setFitToWidth(1)->setFitToHeight(0);
             $sheet->setCellValue('A3', null); // the template's "Sample" marker
             // Blank the template's sample lines (rows 4-7) before writing the real ledger from row 4.
             foreach (range(4, 7) as $r) {
