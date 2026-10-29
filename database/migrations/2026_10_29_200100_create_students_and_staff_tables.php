@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->index();
             $table->string('gender', 20)->nullable();
-            $table->string('mobile_no', 50)->nullable();
+            $table->text('mobile_no')->nullable(); // encrypted at rest
             $table->string('programme');
             $table->string('programme_code', 50)->index();
             $table->string('type_of_programme', 50)->nullable();

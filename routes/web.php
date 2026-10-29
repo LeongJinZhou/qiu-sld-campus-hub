@@ -15,11 +15,11 @@ use Inertia\Inertia;
 Route::middleware('guest')->group(function () {
     Route::get('/', fn () => Inertia::render('Auth/Login', ['devLogin' => app()->isLocal()]))->name('login');
     Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('auth.google');
-    Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
+    Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->middleware('throttle:10,1');
 
     if (app()->isLocal()) {
         Route::get('/dev/login-as', [DevLoginController::class, 'index'])->name('dev.login');
-        Route::post('/dev/login-as', [DevLoginController::class, 'store']);
+        Route::post('/dev/login-as', [DevLoginController::class, 'store'])->middleware('throttle:30,1');
     }
 });
 
