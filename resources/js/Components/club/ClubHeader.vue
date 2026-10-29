@@ -17,6 +17,7 @@ const props = defineProps<{
         bio: string | null;
         instagram_handle: string | null;
         qr_svg: string;
+        status: string;
     };
     counts: { committee: number; followers: number; events: number; members: number };
     membership: { status: string | null; fee_sen: number | null; drive: string | null };
@@ -40,6 +41,7 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
             <div class="flex flex-wrap items-center gap-2">
                 <h1 class="text-xl font-bold">{{ club.name }}</h1>
                 <Badge v-if="club.category" tone="info">{{ club.category }}</Badge>
+                <Badge v-if="club.status !== 'active'" :tone="club.status === 'inactive' ? 'danger' : 'warning'">{{ club.status === 'inactive' ? 'Inactive' : 'At risk' }}</Badge>
             </div>
             <dl class="flex gap-6 text-sm">
                 <div><dt class="sr-only">Members</dt><dd><strong>{{ counts.members }}</strong> members</dd></div>
