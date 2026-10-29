@@ -49,7 +49,8 @@ class OnlinePayments
     /** Runs in the queue: read with AI, then auto-confirm, send to review, or reject a reused reference. */
     public function process(MembershipPayment $payment): void
     {
-        if ($payment->status !== PaymentStatus::Reading) {
+        // Claim the payment so a retried or duplicate job cannot process it twice.
+        if (MembershipPayment::whereKey($payment->id)->where('status', PaymentStatus::Reading)->update(['status' => PaymentStatus::PendingReview]) === 0) {
             return;
         }
         $path = Storage::disk('local')->path((string) $payment->receipt_path);

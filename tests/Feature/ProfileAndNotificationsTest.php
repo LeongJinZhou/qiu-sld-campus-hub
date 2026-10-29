@@ -40,7 +40,8 @@ it('hides events and CCA on the public profile when the student turns them off',
     $this->get("/p/{$this->student->qr_token}")->assertInertia(fn (Assert $p) => $p
         ->where('profile.events', null)
         ->where('profile.cca', null)
-        ->where('profile.stats.events', 1)
+        ->where('profile.stats.events', null)
+        ->where('profile.stats.cca_hours', null)
         ->missing('profile.email'));
 });
 

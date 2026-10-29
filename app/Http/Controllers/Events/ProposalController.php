@@ -16,6 +16,7 @@ use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -81,11 +82,17 @@ class ProposalController extends Controller
     {
         $document = $event->proposal()->firstOrFail();
         $data = $request->proposalData();
+        if (! $document->status->isEditable()) {
+            return back()->with('error', 'This proposal is in review or decided and cannot be changed.');
+        }
 
         try {
             $this->rules->assertLeadTime((int) $data['expected_participants'], CarbonImmutable::parse($data['starts_at']), now());
-            $this->form->saveDraft($document, $data, $request->user()->id);
-            $engine->submit($document->fresh(), $request->user(), $data, $request->validated('signature'), $request->validated('signature_strokes'));
+            // Draft + submission succeed or fail together, so a refused submission never changes the event.
+            DB::transaction(function () use ($document, $data, $request, $engine): void {
+                $this->form->saveDraft($document, $data, $request->user()->id);
+                $engine->submit($document->fresh(), $request->user(), $data, $request->validated('signature'), $request->validated('signature_strokes'));
+            });
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
