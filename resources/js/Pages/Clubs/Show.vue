@@ -25,7 +25,7 @@ interface Story {
 }
 
 const props = defineProps<{
-    club: { id: number; slug: string; name: string; logo_url: string | null; category: string | null; established_year: number | null; bio: string | null; instagram_handle: string | null; qr_svg: string };
+    club: { id: number; slug: string; name: string; logo_url: string | null; category: string | null; established_year: number | null; bio: string | null; instagram_handle: string | null; qr_svg: string; status: string };
     session: string;
     isCurrentSession: boolean;
     sessions: SessionOption[];
@@ -34,7 +34,8 @@ const props = defineProps<{
     missingCompulsory: string[];
     stories: Story[];
     highlights: { id: number; title: string; items: string[] }[];
-    counts: { followers: number; events: number };
+    counts: { followers: number; events: number; members: number };
+    membership: { status: string | null; fee_sen: number | null; drive: string | null };
     following: boolean;
     tab: string;
     posts?: { id: number; url: string; image: string | null; caption: string | null; count: number }[];
@@ -42,7 +43,7 @@ const props = defineProps<{
     events?: { id: number; slug: string; name: string; starts_at: string; venue: string | null; status: string; poster_url: string | null }[];
     faqs: { id: number; question: string; answer: string }[];
     documents?: { id: number; type: string; event: string | null; status: string; updated: string | null; progress: ApprovalProgress }[] | null;
-    can: { manage: boolean; publish: boolean; createEvent: boolean; internal: boolean };
+    can: { manage: boolean; publish: boolean; createEvent: boolean; internal: boolean; treasure: boolean };
 }>();
 
 const tabs = computed(() => [
@@ -77,7 +78,7 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
     <Head :title="club.name" />
     <AppLayout>
         <div class="grid gap-6">
-            <ClubHeader :club="club" :counts="{ committee: committee.length, ...counts }" :following="following" :has-stories="stories.length > 0" @open-stories="openStories" />
+            <ClubHeader :club="club" :membership="membership" :counts="{ committee: committee.length, ...counts }" :following="following" :has-stories="stories.length > 0" @open-stories="openStories" />
 
             <div v-if="highlights.length || can.publish" class="flex gap-4 overflow-x-auto pb-1">
                 <button v-for="h in highlights" :key="h.id" type="button" class="grid w-16 shrink-0 justify-items-center gap-1" @click="openHighlight(h)">
@@ -86,9 +87,16 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
                 </button>
             </div>
 
-            <div v-if="can.publish || can.createEvent" class="flex flex-wrap gap-2">
+            <p v-if="membership.drive" class="rounded-card bg-gradient-to-r from-brand-yellow/30 to-brand-magenta/20 px-4 py-3 text-sm font-medium">🎉 {{ membership.drive }} is on — join {{ club.name }} now!</p>
+
+            <div v-if="can.publish || can.createEvent || can.internal" class="flex flex-wrap gap-2">
                 <Link v-if="can.createEvent" :href="`/clubs/${club.slug}/events/create`"><Button size="sm">＋ New event proposal</Button></Link>
                 <Button v-if="can.publish" size="sm" variant="secondary" @click="creating = true">＋ Post / story</Button>
+                <Link v-if="can.internal" :href="`/clubs/${club.slug}/members`"><Button size="sm" variant="secondary">Members</Button></Link>
+                <Link v-if="can.treasure" :href="`/clubs/${club.slug}/finance`"><Button size="sm" variant="secondary">Finance</Button></Link>
+                <Link v-if="can.treasure" :href="`/clubs/${club.slug}/payments/review`"><Button size="sm" variant="secondary">Payment review</Button></Link>
+                <Link v-if="can.internal" :href="`/clubs/${club.slug}/meetings`"><Button size="sm" variant="secondary">Meetings</Button></Link>
+                <Link v-if="can.internal" :href="`/clubs/${club.slug}/venues`"><Button size="sm" variant="secondary">Venues</Button></Link>
             </div>
 
             <p v-if="missingCompulsory.length" class="rounded-card bg-warning/10 px-4 py-3 text-sm text-warning">

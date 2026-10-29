@@ -20,12 +20,14 @@ const tabs = computed(() => [
 const tab = ref(tabs.value[0]?.key ?? 'clubs');
 
 const subtitle = computed(() => [props.profile.programme_short, props.profile.year_group, props.profile.title].filter(Boolean).join(' · '));
-const stats = computed(() => [
-    { label: 'Clubs', value: props.profile.stats.clubs },
-    { label: 'Positions', value: props.profile.stats.positions },
-    { label: 'Events', value: props.profile.stats.events },
-    { label: 'CCA hours', value: props.profile.stats.cca_hours },
-]);
+const stats = computed(() =>
+    [
+        { label: 'Clubs', value: props.profile.stats.clubs },
+        { label: 'Positions', value: props.profile.stats.positions },
+        { label: 'Events', value: props.profile.stats.events },
+        { label: 'CCA hours', value: props.profile.stats.cca_hours },
+    ].filter((s) => s.value !== null),
+);
 const ccaBySession = computed(() => props.profile.cca?.records ?? []);
 </script>
 
@@ -59,7 +61,7 @@ const ccaBySession = computed(() => props.profile.cca?.records ?? []);
                 <slot name="meta" />
             </div>
 
-            <dl class="mt-5 grid grid-cols-4 divide-x divide-line rounded-card border border-line text-center">
+            <dl v-if="stats.length" class="mt-5 grid divide-x divide-line rounded-card border border-line text-center" :style="{ gridTemplateColumns: `repeat(${stats.length}, minmax(0, 1fr))` }">
                 <div v-for="s in stats" :key="s.label" class="py-3">
                     <dd class="text-xl font-bold tabular-nums">{{ s.value }}</dd>
                     <dt class="text-xs text-ink-muted">{{ s.label }}</dt>

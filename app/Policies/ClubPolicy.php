@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Club;
+use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Services\Roles\RoleService;
 use App\Services\Time\SessionResolver;
@@ -41,6 +42,18 @@ class ClubPolicy
     public function publish(User $user, Club $club): bool
     {
         return $this->viewInternal($user, $club);
+    }
+
+    /** Fees, payment review and the ledger: the Treasurer (current session) and SLD. */
+    public function treasure(User $user, Club $club): bool
+    {
+        return $user->isSldAdmin() || $this->holds($user, $club, 'Treasurer');
+    }
+
+    private function holds(User $user, Club $club, string $position): bool
+    {
+        return RoleAssignment::where('scope_type', 'club')->where('scope_id', $club->id)
+            ->where('session_id', $this->sessions->current()->id)->where('position', $position)->where('user_id', $user->id)->exists();
     }
 
     /** Members, documents and finance tabs (later phases): committee, advisor and SLD only. */

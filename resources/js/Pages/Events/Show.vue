@@ -93,6 +93,7 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                     <Link :href="`/events/${event.slug}/attendance`"><Button block>Attendance &amp; QR</Button></Link>
                     <Link v-if="event.is_outdoor" :href="`/events/${event.slug}/indemnities`"><Button variant="secondary" block>Indemnity list</Button></Link>
                     <Link v-if="event.status === 'approved'" :href="`/events/${event.slug}/documents`"><Button variant="secondary" block>Post-event documents</Button></Link>
+                    <Link v-if="event.status === 'approved'" :href="`/events/${event.slug}/post-mortem`"><Button variant="secondary" block>Post mortem (09)</Button></Link>
                 </template>
                 <Link v-if="can.update" :href="`/events/${event.slug}/poster`"><Button variant="ghost" block>Poster</Button></Link>
                 <template v-if="can.update && event.proposal_id">

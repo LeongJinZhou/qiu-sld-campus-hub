@@ -10,6 +10,7 @@ use App\Models\Club;
 use App\Models\ClubCategory;
 use App\Models\Staff;
 use App\Services\AuditLogger;
+use App\Services\ClubStatusService;
 use App\Services\Roles\CommitteeBoard;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Time\SessionResolver;
@@ -35,6 +36,8 @@ class ClubController extends Controller
                 'name' => $club->name,
                 'category' => $club->category?->name,
                 'managed_by' => $club->managed_by,
+                'status' => $club->status,
+                'last_activity' => app(ClubStatusService::class)->lastActivity($club)?->toFormattedDateString(),
                 'missing' => $compulsory->missing(ScopeType::Club, $club->id, $session->id),
             ]),
         ]);

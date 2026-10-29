@@ -26,6 +26,19 @@ class DocxRenderer
     }
 
     /**
+     * cloneBlock() does not escape its replacement values (setValue does), so escape them here.
+     *
+     * @param  list<array<string, string>>  $rows
+     */
+    public static function block(TemplateProcessor $t, string $name, array $rows): void
+    {
+        $t->cloneBlock($name, 0, true, false, array_map(
+            fn (array $row) => array_map(fn (string $v) => htmlspecialchars($v, ENT_XML1 | ENT_QUOTES, 'UTF-8'), $row),
+            $rows,
+        ));
+    }
+
+    /**
      * Placeholders still present after filling (should be none).
      *
      * @return list<string>

@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'personal_email', 'hidden_sections', 'last_login_at'])]
-#[Hidden(['remember_token', 'google_id'])]
+#[Hidden(['remember_token', 'google_id', 'google_token', 'google_refresh_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -30,6 +30,9 @@ class User extends Authenticatable
         return [
             'hidden_sections' => 'array',
             'last_login_at' => 'datetime',
+            'google_token' => 'encrypted',
+            'google_refresh_token' => 'encrypted',
+            'google_token_expires_at' => 'datetime',
         ];
     }
 
@@ -72,6 +75,12 @@ class User extends Authenticatable
     public function emergencyContact(): HasOne
     {
         return $this->hasOne(EmergencyContact::class);
+    }
+
+    /** @return HasMany<Membership, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(Membership::class);
     }
 
     /** @return HasMany<CcaRecord, $this> */

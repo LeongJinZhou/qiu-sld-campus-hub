@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Events\DocumentApproved;
 use App\Services\Events\EventApprovalActions;
+use App\Services\Meetings\Meetings;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\PermissionRegistrar;
@@ -28,5 +29,6 @@ class AppServiceProvider extends ServiceProvider
         app(PermissionRegistrar::class)->setPermissionsTeamId(0);
 
         Event::listen(DocumentApproved::class, [EventApprovalActions::class, 'handle']);
+        Event::listen(DocumentApproved::class, [Meetings::class, 'handleApproved']);
     }
 }

@@ -76,7 +76,7 @@ class ApprovalEngine
             $this->decide($first, $user, ApprovalDecision::Approved, null, $signature, $version->id, $strokes);
 
             $document->update(['status' => DocumentStatus::InReview, 'submitted_at' => now(), 'decided_at' => null]);
-            $document->event?->update(['status' => DocumentStatus::InReview]);
+            $this->syncEventStatus($document, DocumentStatus::InReview);
             $this->audit->log($restart ? 'document.submitted' : 'document.resubmitted', $document, ['version' => $version->number]);
         });
 
@@ -119,6 +119,14 @@ class ApprovalEngine
             && $this->approvers->canAct($user, $approval->document, $approval->role);
     }
 
+    /** An event's status follows its proposal only; other documents about the event leave it alone. */
+    private function syncEventStatus(Document $document, DocumentStatus $status): void
+    {
+        if ($document->type === DocumentType::Proposal) {
+            $document->event?->update(['status' => $status]);
+        }
+    }
+
     private function assertCanAct(Approval $approval, User $user): void
     {
         if (! $this->canAct($approval, $user)) {
@@ -137,7 +145,7 @@ class ApprovalEngine
         DB::transaction(function () use ($approval, $user, $decision, $status, $comment, $document): void {
             $this->decide($approval, $user, $decision, $comment);
             $document->update(['status' => $status, 'decided_at' => $status === DocumentStatus::Rejected ? now() : null]);
-            $document->event?->update(['status' => $status]);
+            $this->syncEventStatus($document, $status);
             $this->audit->log("approval.{$decision->value}", $document, ['step' => $approval->step_no, 'comment' => $comment]);
         });
 
