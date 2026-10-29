@@ -75,7 +75,7 @@ return new class extends Migration
             $table->unique(['user_id', 'event_id']);
         });
 
-        // Post-event document checklist with deadlines (CLAUDE.md §6 Events).
+        // Post-event document checklist with deadlines.
         Schema::create('event_document_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();

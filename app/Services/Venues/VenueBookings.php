@@ -12,7 +12,7 @@ use DomainException;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Venue requests (CLAUDE.md §6 Venue): La Place booth (form + email to SLD, SLD confirms in the app),
+ * Venue requests: La Place booth (form + email to SLD, SLD confirms in the app),
  * semester permanent venues, and one-off big rooms booked at least a week ahead.
  */
 class VenueBookings

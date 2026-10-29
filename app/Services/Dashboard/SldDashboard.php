@@ -18,7 +18,7 @@ use App\Services\Agm\AgmPeriods;
 use App\Services\Finance\Ledger;
 use App\Services\Time\SessionResolver;
 
-/** SLD at a glance (BUILD_PROMPT Phase 5.1): club status, approvals, overdue work, events, AGM, money. */
+/** SLD at a glance: club status, approvals, overdue work, events, AGM, money. */
 class SldDashboard
 {
     public function __construct(

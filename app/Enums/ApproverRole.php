@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-/** Staff approvers in the document chains (CLAUDE.md §6). */
+/** Staff approvers in the document chains. */
 enum ApproverRole: string
 {
     case AssistantRegistrar = 'assistant_registrar';

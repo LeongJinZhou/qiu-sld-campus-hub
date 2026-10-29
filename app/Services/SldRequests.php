@@ -10,7 +10,7 @@ use App\Services\Meetings\Meetings;
 use DomainException;
 use Illuminate\Support\Facades\Notification;
 
-/** SLD asks clubs for something; the club replies within 7 working days (CLAUDE.md §6 Club status). */
+/** SLD asks clubs for something; the club replies within 7 working days. */
 class SldRequests
 {
     public function __construct(private readonly Meetings $meetings, private readonly AuditLogger $audit) {}

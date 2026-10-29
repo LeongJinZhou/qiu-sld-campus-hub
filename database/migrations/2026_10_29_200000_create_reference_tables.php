@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Admin-editable lookups that fill gaps in camsys (CLAUDE.md §3) and the academic calendar (§4). */
+/** Admin-editable lookups that fill gaps in camsys and the academic calendar (§4). */
 return new class extends Migration
 {
     public function up(): void

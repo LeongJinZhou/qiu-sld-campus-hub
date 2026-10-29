@@ -47,3 +47,16 @@ _ide_helper.php
 /bootstrap/cache/*.php
 /tools/pptx/.venv
 /storage/qa
+
+# AI agent / tool configuration and internal planning material: local only, never published
+/.agents
+/.claude
+/.codex
+/.cursor
+/.gemini
+/.mcp.json
+/AGENTS.md
+/CLAUDE.md
+/docs/BUILD_PROMPT.md
+/docs/reference/
+/storage/inertia-devtools
