@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'email', 'name', 'title', 'approver_role', 'active'])]
+#[Fillable(['user_id', 'email', 'name', 'title', 'department', 'approver_role', 'active'])]
 class Staff extends Model
 {
     protected $table = 'staff';

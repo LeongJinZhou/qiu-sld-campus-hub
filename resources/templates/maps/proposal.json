@@ -1,0 +1,28 @@
+{
+  "template": "06. Event Proposal Template 052026.docx",
+  "fields": {
+    "to": "staff table: active COO name + ', COO'",
+    "from": "club name",
+    "submission_date": "documents.submitted_at (server date)",
+    "event_date / event_time / tentative_date / time_range": "proposal starts_at, ends_at",
+    "name / name_upper / summary / venue / introduction / eligibility / conclusion": "proposal data",
+    "nature_{sports,competition,humanity,social,fundraising,environmental,seminar,exhibition,others}": "'/' when ticked",
+    "nature_other": "proposal nature_other",
+    "cca_participant / cca_committee": "proposal CCA (default = event hours, 1 hour = 1 CCA)",
+    "duration": "event hours",
+    "mode_physical / mode_virtual": "'/' when ticked",
+    "sdg_1 … sdg_17": "'/' when ticked",
+    "collaboration": "proposal data",
+    "total_budget": "sum of expenses (RM)",
+    "fund_{own,club,qiu}": "'/' when ticked",
+    "objectives block → objective": "one numbered paragraph per objective",
+    "activity_name / activity_description": "row per activity",
+    "itinerary_start / itinerary_end / itinerary_agenda": "row per itinerary line",
+    "ict_requirements / transport / departure_* / return_*": "proposal logistics",
+    "committee_name / committee_role / committee_responsibility": "event committee (role_assignments, locked)",
+    "revenue_* / expense_*": "row per budget item (RM, 2 decimals)",
+    "revenue_sum / expense_sum / profit_loss": "computed totals",
+    "sig1..sig6 _image/_name/_designation/_department/_date": "Preparer, Club Advisor, Assistant Registrar, Registrar, Bursar, COO — signer name, position, signature image, server timestamp + verification code; names of unsigned approvers from the staff table",
+    "cca_approved_committee / cca_approved_participant": "filled once the proposal is approved"
+  }
+}
