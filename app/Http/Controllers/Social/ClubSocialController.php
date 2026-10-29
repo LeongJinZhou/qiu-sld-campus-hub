@@ -10,6 +10,7 @@ use App\Models\ClubFaq;
 use App\Models\Highlight;
 use App\Models\Story;
 use App\Services\Time\SessionResolver;
+use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -32,7 +33,7 @@ class ClubSocialController extends Controller
         $data = $request->validate(['photo' => ['required', ...StorePostRequest::IMAGE_RULES]]);
         $club->stories()->create([
             'author_id' => $request->user()->id,
-            'media_path' => $data['photo']->store("stories/{$club->id}", 'public'),
+            'media_path' => app(ImageUpload::class)->store($data['photo'], "stories/{$club->id}"),
             'expires_at' => now()->addHours(Story::LIFETIME_HOURS),
         ]);
 
@@ -115,7 +116,7 @@ class ClubSocialController extends Controller
     private function addPhotos(Request $request, Album $album): void
     {
         foreach ($request->file('photos') as $photo) {
-            $album->photos()->create(['path' => $photo->store("albums/{$album->id}", 'public'), 'uploaded_by' => $request->user()->id]);
+            $album->photos()->create(['path' => app(ImageUpload::class)->store($photo, "albums/{$album->id}"), 'uploaded_by' => $request->user()->id]);
         }
     }
 }

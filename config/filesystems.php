@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Private files are only ever streamed by controllers that check the policy, never by URL.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],
