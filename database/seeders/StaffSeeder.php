@@ -18,6 +18,7 @@ class StaffSeeder extends Seeder
             ['Mr Muhammad MG Omar', 'Registrar', 'Registry', ApproverRole::Registrar, 'registrar.demo'],
             ['Ms Sumathi Ayadurai', 'Bursar', 'Finance and Accounts', ApproverRole::Bursar, 'bursar.demo'],
             ['Mr Nicholas Goh', 'Chief Operating Officer', null, ApproverRole::Coo, 'coo.demo'],
+            ['Prof Dr Tan Wei Ming', 'Dean', 'Faculty of Computing', ApproverRole::Dean, 'dean.demo'],
             ['Dr Lim Siew Ling', 'Lecturer', 'Faculty of Computing', null, 'advisor1.demo'],
             ['Dr Ahmad Faiz Rahman', 'Senior Lecturer', 'Faculty of Business', null, 'advisor2.demo'],
             ['Ms Priya Nair', 'Lecturer', 'Faculty of Health Sciences', null, 'advisor3.demo'],
