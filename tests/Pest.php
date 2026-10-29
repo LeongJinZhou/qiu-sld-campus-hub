@@ -179,7 +179,7 @@ function plainMembers(object $t, int $count, string $status = 'active'): array
 {
     $committee = $t->club->roleAssignments()->pluck('user_id');
 
-    return Student::where('status', 'active')->whereNotIn('user_id', $committee)->whereNotNull('user_id')->orderBy('student_number')
+    return Student::where('status', 'active')->whereNotIn('user_id', $committee)->whereNotNull('user_id')->with('user')->orderBy('student_number')
         ->get()->reject(fn ($s) => Membership::where('user_id', $s->user_id)->exists())->take($count)
         ->map(function (Student $s) use ($t, $status) {
             Membership::create(['club_id' => $t->club->id, 'user_id' => $s->user_id, 'status' => $status, 'starts_on' => today()->subMonths(2), 'expires_on' => today()->addMonths(10)]);
