@@ -9,6 +9,7 @@ use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\Auth\DevLoginController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ClubQrController;
 use App\Http\Controllers\DocumentController;
@@ -56,6 +57,7 @@ Route::middleware('guest')->group(function () {
 Route::get('/not-in-records', fn () => Inertia::render('Auth/NotFoundInRecords'))->name('not-in-records');
 Route::get('/p/{token}', PublicProfileController::class)->name('profile.public');
 Route::get('/verify/{code}', VerifyController::class)->middleware('throttle:30,1')->name('verify');
+Route::get('/certificates/{code}', [CertificateController::class, 'verify'])->middleware('throttle:30,1')->name('certificates.verify');
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', LogoutController::class)->name('logout');
@@ -171,6 +173,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/handovers/{handover}', [HandoverController::class, 'show'])->name('handovers.show');
     Route::post('/handovers/{handover}', [HandoverController::class, 'act'])->middleware('throttle:60,1')->name('handovers.act');
     Route::get('/me', [ProfileController::class, 'show'])->name('profile.me');
+    Route::get('/me/certificates/{kind}/{source}', [CertificateController::class, 'download'])->middleware('throttle:20,1')->whereNumber('source')->name('certificates.download');
     Route::post('/me', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::prefix('admin')->name('admin.')->middleware('can:manage,'.Club::class)->group(function () {
