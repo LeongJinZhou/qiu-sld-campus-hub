@@ -31,7 +31,9 @@ class Chains
                 ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo,
             ],
             DocumentType::AgmReport => [ChainRole::Secretary, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer],
-            DocumentType::Minutes, DocumentType::FinanceRecord, DocumentType::AttendanceList, DocumentType::PostMortem => [
+            // The official 13 template is signed by the preparer, the President and the Advisor.
+            DocumentType::Minutes => [ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer],
+            DocumentType::FinanceRecord, DocumentType::AttendanceList, DocumentType::PostMortem => [
                 ChainRole::Preparer, ChainRole::Advisor, ChainRole::SldOfficer,
             ],
         };

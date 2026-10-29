@@ -12,9 +12,11 @@ use App\Models\Document;
 use App\Models\Event;
 use App\Models\Highlight;
 use App\Models\HighlightItem;
+use App\Models\MembershipDrive;
 use App\Models\Post;
 use App\Models\Story;
 use App\Services\Documents\DocumentPresenter;
+use App\Services\Membership\MembershipService;
 use App\Services\QrCodes;
 use App\Services\Roles\CommitteeBoard;
 use App\Services\Roles\CompulsoryPositionsCheck;
@@ -61,6 +63,7 @@ class ClubController extends Controller
                 'bio' => $club->bio,
                 'instagram_handle' => $club->instagram_handle,
                 'qr_svg' => $qr->svg(route('clubs.qr', $club->qr_token)),
+                'status' => $club->status,
             ],
             'session' => $session->name,
             'isCurrentSession' => $session->is($current),
@@ -73,7 +76,13 @@ class ClubController extends Controller
             'highlights' => $club->highlights()->with('items')->get()->map(fn (Highlight $h) => [
                 'id' => $h->id, 'title' => $h->title, 'items' => $h->items->map(fn (HighlightItem $i) => $i->url())->all(),
             ]),
+            'membership' => [
+                'status' => $club->memberships()->where('user_id', $user->id)->first()?->status->value,
+                'fee_sen' => app(MembershipService::class)->fee($club)?->amount_sen,
+                'drive' => MembershipDrive::running()->where(fn ($q) => $q->whereNull('club_id')->orWhere('club_id', $club->id))->value('title'),
+            ],
             'counts' => [
+                'members' => $club->memberships()->whereIn('status', ['active', 'grace'])->count(),
                 'followers' => $club->followers()->count(),
                 'events' => $club->events()->where('status', DocumentStatus::Approved)->count(),
             ],
@@ -100,6 +109,7 @@ class ClubController extends Controller
                 'publish' => $user->can('publish', $club),
                 'createEvent' => $user->can('create', [Event::class, $club]),
                 'internal' => $user->can('viewInternal', $club),
+                'treasure' => $user->can('treasure', $club),
             ],
         ]);
     }
