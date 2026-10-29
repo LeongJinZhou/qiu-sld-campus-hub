@@ -1,4 +1,4 @@
-"""Annual Activities Report from the official 12 template (CLAUDE.md §6 Annual Activities Report).
+"""Annual Activities Report from the official 12 template.
 
 Usage: python annual_report.py <job.json>
 job.json: {"template", "output", "club", "events": [{"name", "date", "time", "venue", "details", "photos": [path]}],

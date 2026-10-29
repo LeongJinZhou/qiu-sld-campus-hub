@@ -19,7 +19,7 @@ interface NavItem {
     badge?: number;
 }
 
-// Mobile tab bar follows CLAUDE.md §8: Feed, Search, Create, Notifications, Profile.
+// Mobile tab bar: Feed, Search, Create, Notifications, Profile.
 const items = computed<NavItem[]>(() => [
     { label: 'Feed', icon: 'home', href: '/feed', match: '/feed' },
     { label: 'Clubs', icon: 'search', href: '/clubs', match: '/clubs' },

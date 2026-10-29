@@ -6,7 +6,7 @@ use App\Enums\PaymentStatus;
 use Carbon\CarbonImmutable;
 
 /**
- * Decides whether an online payment can be confirmed automatically (CLAUDE.md §6): amount, date, reference
+ * Decides whether an online payment can be confirmed automatically: amount, date, reference
  * and payee must all match; reused references are rejected; receipts older than 7 days are flagged.
  */
 class ReceiptVerifier

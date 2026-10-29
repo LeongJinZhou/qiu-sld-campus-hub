@@ -22,7 +22,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Elections inside the AGM (CLAUDE.md §6 Elections): nomination and voting windows, eligibility, one vote per
+ * Elections inside the AGM: nomination and voting windows, eligibility, one vote per
  * position per voter, flags for SLD, results, and the role handover when the new term starts (1 July).
  */
 class Elections

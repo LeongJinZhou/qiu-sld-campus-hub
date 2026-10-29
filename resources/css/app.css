@@ -4,7 +4,7 @@
 @source '../../storage/framework/views/*.php';
 @source '../js/**/*.vue';
 
-/* Design tokens: QIU Student Activity palette (CLAUDE.md §8) + neutral UI scale. */
+/* Design tokens: QIU Student Activity palette + neutral UI scale. */
 @theme {
     --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
 

@@ -16,7 +16,7 @@ use InvalidArgumentException;
 use Throwable;
 
 /**
- * Pulls students from camsys (SELECT only) into `students`, copying only the columns CLAUDE.md §3 allows.
+ * Pulls students from camsys (SELECT only) into `students`, copying only the columns the SLD rules allow.
  * A student can have several rows (e.g. Foundation then Degree); the latest intake wins.
  */
 class CamsysSync

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Club membership, fees, drives, payments and the cash handover (CLAUDE.md §6 Club membership). */
+/** Club membership, fees, drives, payments and the cash handover. */
 return new class extends Migration
 {
     public function up(): void

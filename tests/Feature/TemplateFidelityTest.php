@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Notification;
 use Symfony\Component\Process\Process;
 
 /*
- * Template fidelity check (BUILD_PROMPT Phase 5.6). Renders every official template with full sample data,
+ * Template fidelity check. Renders every official template with full sample data,
  * converts to PDF and saves each next to a PDF of the untouched original in storage/qa/, with REPORT.md.
  * Slow (LibreOffice), so it runs only on request:  QA_TEMPLATES=1 php artisan test --filter=TemplateFidelity
  */

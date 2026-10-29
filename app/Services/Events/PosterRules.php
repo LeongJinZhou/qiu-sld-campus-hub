@@ -2,7 +2,7 @@
 
 namespace App\Services\Events;
 
-/** SLD poster guidelines (CLAUDE.md §6 Events). Every item must be confirmed before a poster is accepted. */
+/** SLD poster guidelines. Every item must be confirmed before a poster is accepted. */
 class PosterRules
 {
     public const CHECKLIST = [

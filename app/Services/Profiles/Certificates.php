@@ -18,7 +18,7 @@ use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\SimpleType\Jc;
 
 /**
- * Lifelong profile certificates (BUILD_PROMPT Phase 5.3): club committee positions, event committee positions
+ * Lifelong profile certificates: club committee positions, event committee positions
  * and event participation. Only what the records prove can be issued; each PDF carries a public check code.
  */
 class Certificates

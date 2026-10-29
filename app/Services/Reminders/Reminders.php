@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Daily deadline reminders (CLAUDE.md §6) not covered elsewhere: approval steps, proposal lead time, indemnity
+ * Daily deadline reminders not covered elsewhere: approval steps, proposal lead time, indemnity
  * closing, AGM deadlines and replies to SLD. Post-event documents (events:send-reminders) and membership grace
  * (MembershipLifecycle) send their own. Each reminder is sent once, keyed in reminder_log.
  */
