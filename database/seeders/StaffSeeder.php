@@ -14,17 +14,17 @@ class StaffSeeder extends Seeder
     public function run(): void
     {
         $staff = [
-            ['Mr Khor Desmond', 'Assistant Registrar', ApproverRole::AssistantRegistrar, 'assistant.registrar.demo'],
-            ['Mr Muhammad MG Omar', 'Registrar', ApproverRole::Registrar, 'registrar.demo'],
-            ['Ms Sumathi Ayadurai', 'Bursar', ApproverRole::Bursar, 'bursar.demo'],
-            ['Mr Nicholas Goh', 'Chief Operating Officer', ApproverRole::Coo, 'coo.demo'],
-            ['Dr Lim Siew Ling', 'Lecturer, Faculty of Computing', null, 'advisor1.demo'],
-            ['Dr Ahmad Faiz Rahman', 'Senior Lecturer, Faculty of Business', null, 'advisor2.demo'],
-            ['Ms Priya Nair', 'Lecturer, Faculty of Health Sciences', null, 'advisor3.demo'],
-            ['Ms Nur Iman Zakaria', 'SLD Officer', null, 'sld.officer.demo'],
+            ['Mr Khor Desmond', 'Assistant Registrar', 'Registry', ApproverRole::AssistantRegistrar, 'assistant.registrar.demo'],
+            ['Mr Muhammad MG Omar', 'Registrar', 'Registry', ApproverRole::Registrar, 'registrar.demo'],
+            ['Ms Sumathi Ayadurai', 'Bursar', 'Finance and Accounts', ApproverRole::Bursar, 'bursar.demo'],
+            ['Mr Nicholas Goh', 'Chief Operating Officer', null, ApproverRole::Coo, 'coo.demo'],
+            ['Dr Lim Siew Ling', 'Lecturer', 'Faculty of Computing', null, 'advisor1.demo'],
+            ['Dr Ahmad Faiz Rahman', 'Senior Lecturer', 'Faculty of Business', null, 'advisor2.demo'],
+            ['Ms Priya Nair', 'Lecturer', 'Faculty of Health Sciences', null, 'advisor3.demo'],
+            ['Ms Nur Iman Zakaria', 'SLD Officer', 'Student Life Division', null, 'sld.officer.demo'],
         ];
 
-        foreach ($staff as [$name, $title, $approver, $local]) {
+        foreach ($staff as [$name, $title, $department, $approver, $local]) {
             $email = "{$local}@qiu.edu.my";
             $user = User::firstOrCreate(['email' => $email], ['name' => $name]);
             $user->assignRole(GlobalRole::Staff->value);
@@ -32,6 +32,7 @@ class StaffSeeder extends Seeder
                 'user_id' => $user->id,
                 'name' => $name,
                 'title' => $title,
+                'department' => $department,
                 'approver_role' => $approver,
             ]);
         }
