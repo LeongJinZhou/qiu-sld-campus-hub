@@ -5,7 +5,7 @@ use Carbon\CarbonImmutable;
 
 $calc = fn () => new YearGroupCalculator;
 
-it('matches the CLAUDE.md example: intake 2024-04 on 2026-10-29 is Year 3', function () use ($calc) {
+it('matches the SLD example: intake 2024-04 on 2026-10-29 is Year 3', function () use ($calc) {
     expect($calc()->calculate(2024, 4, CarbonImmutable::parse('2026-10-29'))->label)->toBe('Year 3');
 });
 

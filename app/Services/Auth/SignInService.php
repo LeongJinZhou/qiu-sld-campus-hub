@@ -62,7 +62,7 @@ class SignInService
     }
 
     /**
-     * Alumni keep access through the personal email they linked before graduating (CLAUDE.md §6 profile).
+     * Alumni keep access through the personal email they linked before graduating.
      * Only accounts that linked that exact address get in; nothing new is created.
      *
      * @throws NotInRecordsException

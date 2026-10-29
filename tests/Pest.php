@@ -22,10 +22,16 @@ use Database\Seeders\StaffSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    // Uploads and signatures go to throwaway disks, never into the developer's real storage folder.
+    ->beforeEach(function () {
+        Storage::fake('local');
+        Storage::fake('public');
+    })
     ->in('Feature');
 
 /** Loads the sample camsys dump into the in-memory camsys connection and seeds lookups. */

@@ -9,7 +9,7 @@ use App\Services\AuditLogger;
 use App\Services\Time\SessionResolver;
 use DomainException;
 
-/** SLD sets a club up, then hands it to its committee and advisor; SLD can take it back (CLAUDE.md §5). */
+/** SLD sets a club up, then hands it to its committee and advisor; SLD can take it back. */
 class ClubTransfer
 {
     public function __construct(

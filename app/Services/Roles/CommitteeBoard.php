@@ -8,7 +8,7 @@ use App\Models\Club;
 use App\Models\RoleAssignment;
 use Illuminate\Support\Collection;
 
-/** Committee + advisor cards for a club's Committee tab (CLAUDE.md §6 Social). */
+/** Committee + advisor cards for a club's Committee tab. */
 class CommitteeBoard
 {
     /**

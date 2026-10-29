@@ -5,7 +5,7 @@ namespace App\Services\Events;
 use Carbon\CarbonInterface;
 use DomainException;
 
-/** Lead-time, budget and CCA rules for event proposals (CLAUDE.md §6 Events). */
+/** Lead-time, budget and CCA rules for event proposals. */
 class ProposalRules
 {
     public const LARGE_EVENT_PARTICIPANTS = 60;

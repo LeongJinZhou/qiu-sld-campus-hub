@@ -92,8 +92,6 @@ Everything sensitive stays on the server:
 - [x] Phase 4: AGM, elections, Annual Activities Report
 - [x] Phase 5: Dashboards, reminders, hardening, pilot
 
-Business rules and decisions: [`CLAUDE.md`](CLAUDE.md). Phase plan: [`docs/BUILD_PROMPT.md`](docs/BUILD_PROMPT.md).
-
 Guides: [SLD admin](docs/ADMIN_GUIDE.md) · [Committees](docs/COMMITTEE_GUIDE.md) · [Pilot checklist](docs/PILOT.md) · [Template fidelity check](docs/QA_TEMPLATES.md)
 
 ## Project layout

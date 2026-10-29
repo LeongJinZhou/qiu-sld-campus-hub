@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // The AGM module is open only inside a period set by SLD (CLAUDE.md §6 AGM).
+        // The AGM module is open only inside a period set by SLD.
         Schema::create('agm_periods', function (Blueprint $table) {
             $table->id();
             $table->foreignId('session_id')->constrained('sessions_academic')->restrictOnDelete();

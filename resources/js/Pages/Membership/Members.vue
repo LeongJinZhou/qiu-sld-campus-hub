@@ -53,9 +53,9 @@ const props = defineProps<{
 }>();
 
 const url = props.club ? `/clubs/${props.club.slug}/members` : '/admin/members';
-const f = reactive<Filters>({ status: [], position: [], payment: [], method: [], collected_by: [], year_group: [], programme_short: [], intake: [], club_id: [], category: [], club_status: [], ...structuredClone(props.filters) });
-const sort = ref<string[][]>((props.filters.sort as string[][]) ?? [['name', 'asc']]);
-const search = ref((props.filters.search as string) ?? '');
+const f = reactive<Filters>({ status: [], position: [], payment: [], method: [], collected_by: [], year_group: [], programme_short: [], intake: [], club_id: [], category: [], club_status: [], ...(JSON.parse(JSON.stringify(props.filters)) as Partial<Filters>) });
+const sort = ref<string[][]>(Array.isArray(props.filters.sort) ? (props.filters.sort as string[][]) : [['name', 'asc']]);
+const search = ref(typeof props.filters.search === 'string' ? props.filters.search : '');
 const open = ref(false);
 
 const apply = (extra: Filters = {}): void => {

@@ -7,7 +7,7 @@ use App\Models\Club;
 use Carbon\CarbonImmutable;
 
 /**
- * Club status (CLAUDE.md §6): Active, At-risk (no activity for 2+ months), Inactive (3+ months).
+ * Club status: Active, At-risk (no activity for 2+ months), Inactive (3+ months).
  * Activity = approved events, meetings, posts and other recorded club actions (fees, bookings, payments).
  */
 class ClubStatusService

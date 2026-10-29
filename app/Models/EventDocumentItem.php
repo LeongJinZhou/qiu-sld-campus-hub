@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['event_id', 'kind', 'due_on', 'file_path', 'submitted_by', 'submitted_at', 'reminded_at'])]
 class EventDocumentItem extends Model
 {
-    /** Post-event deliverables and how many days after the event each is due (CLAUDE.md §6). */
+    /** Post-event deliverables and how many days after the event each is due. */
     public const KINDS = [
         'finance_record' => ['Finance record', 7],
         'receipts' => ['Receipts', 7],

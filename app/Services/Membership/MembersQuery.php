@@ -14,7 +14,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
- * Members list for committee, advisor and SLD (CLAUDE.md §6): search, combinable filters, multi-level sort.
+ * Members list for committee, advisor and SLD: search, combinable filters, multi-level sort.
  * Rows are built per club scope; club sizes are small enough to filter in memory with full flexibility.
  */
 class MembersQuery

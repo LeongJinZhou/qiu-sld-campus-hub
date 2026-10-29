@@ -26,7 +26,7 @@ function show(member: MemberCard): void {
                 <li v-for="member in group.members" :key="member.assignment_id">
                     <button
                         type="button"
-                        class="grid w-full justify-items-center gap-2 rounded-card border border-line bg-surface p-4 text-center transition hover:shadow-card"
+                        class="grid h-full w-full content-start justify-items-center gap-2 rounded-card border border-line bg-surface p-4 text-center transition hover:shadow-card"
                         @click="show(member)"
                     >
                         <Avatar :src="member.photo_url" :name="member.name" size="lg" :ring="member.is_compulsory" />

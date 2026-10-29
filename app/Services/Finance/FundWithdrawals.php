@@ -14,7 +14,7 @@ use Carbon\CarbonImmutable;
 use DomainException;
 
 /**
- * 07 Fund Withdrawal/Transfer (CLAUDE.md §6 Finance): items come from the approved proposal budget; weekly
+ * 07 Fund Withdrawal/Transfer: items come from the approved proposal budget; weekly
  * activities need the request 2 weeks ahead; events only once their proposal is approved; several payees.
  */
 class FundWithdrawals

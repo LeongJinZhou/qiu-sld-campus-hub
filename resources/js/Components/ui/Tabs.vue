@@ -5,7 +5,7 @@ const active = defineModel<string>({ required: true });
 
 <template>
     <div>
-        <div role="tablist" class="flex gap-6 overflow-x-auto border-b border-line">
+        <div role="tablist" class="flex gap-6 overflow-x-auto border-b border-line [scrollbar-width:none]">
             <button
                 v-for="tab in tabs"
                 :key="tab.key"

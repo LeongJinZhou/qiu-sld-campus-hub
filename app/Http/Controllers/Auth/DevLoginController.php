@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Services\Auth\SignInService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -36,7 +37,9 @@ class DevLoginController extends Controller
     public function store(DevLoginRequest $request, SignInService $signIn): RedirectResponse
     {
         try {
-            $user = $signIn->signIn($request->validated('email'), $request->validated('email'), null, null, enforceDomain: false);
+            // Google supplies the real name; locally, "jinzhou.leong@…" becomes "Jinzhou Leong".
+            $email = $request->validated('email');
+            $user = $signIn->signIn($email, Str::headline(Str::before($email, '@')), null, null, enforceDomain: false);
         } catch (NotInRecordsException) {
             return to_route('not-in-records');
         }

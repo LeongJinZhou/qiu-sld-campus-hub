@@ -4,7 +4,7 @@ namespace App\Services\Time;
 
 use Carbon\CarbonImmutable;
 
-/** CLAUDE.md §4: floor(months since intake / 12) + 1, capped at course duration. */
+/** floor(months since intake / 12) + 1, capped at course duration. */
 class YearGroupCalculator
 {
     public function calculate(

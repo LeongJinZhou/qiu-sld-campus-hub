@@ -31,9 +31,13 @@ const sorted = computed(() => {
             <thead class="bg-surface-muted text-xs uppercase tracking-wide text-ink-muted">
                 <tr>
                     <th v-for="column in columns" :key="column.key" class="px-4 py-3 font-medium" :aria-sort="sortKey === column.key ? (direction === 1 ? 'ascending' : 'descending') : undefined">
-                        <button v-if="column.sortable" type="button" class="inline-flex items-center gap-1 hover:text-ink" @click="sortBy(column.key)">
+                        <!-- Buttons reset text-transform, so repeat the header style; SVG arrows (not ↕, which macOS draws as an emoji). -->
+                        <button v-if="column.sortable" type="button" class="inline-flex items-center gap-1 font-medium uppercase tracking-wide hover:text-ink" :class="sortKey === column.key ? 'text-ink' : ''" @click="sortBy(column.key)">
                             {{ column.label }}
-                            <span aria-hidden="true">{{ sortKey === column.key ? (direction === 1 ? '▲' : '▼') : '↕' }}</span>
+                            <svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true" class="shrink-0">
+                                <path d="M5 1 9 5H1z" fill="currentColor" :opacity="sortKey !== column.key ? 0.45 : direction === 1 ? 1 : 0.25" />
+                                <path d="M5 11 1 7h8z" fill="currentColor" :opacity="sortKey !== column.key ? 0.45 : direction === 1 ? 0.25 : 1" />
+                            </svg>
                         </button>
                         <template v-else>{{ column.label }}</template>
                     </th>
