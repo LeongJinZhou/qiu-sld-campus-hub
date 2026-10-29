@@ -42,6 +42,7 @@ const props = defineProps<{
     albums?: { id: number; title: string; session: string; photos: string[] }[];
     events?: { id: number; slug: string; name: string; starts_at: string; venue: string | null; status: string; poster_url: string | null }[];
     faqs: { id: number; question: string; answer: string }[];
+    agm: { days_left: number; deadline: string } | null;
     documents?: { id: number; type: string; event: string | null; status: string; updated: string | null; progress: ApprovalProgress }[] | null;
     can: { manage: boolean; publish: boolean; createEvent: boolean; internal: boolean; treasure: boolean };
 }>();
@@ -96,6 +97,7 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
                 <Link v-if="can.treasure" :href="`/clubs/${club.slug}/finance`"><Button size="sm" variant="secondary">Finance</Button></Link>
                 <Link v-if="can.treasure" :href="`/clubs/${club.slug}/payments/review`"><Button size="sm" variant="secondary">Payment review</Button></Link>
                 <Link v-if="can.internal" :href="`/clubs/${club.slug}/meetings`"><Button size="sm" variant="secondary">Meetings</Button></Link>
+                <Link v-if="can.internal" :href="`/clubs/${club.slug}/agm`"><Button size="sm" :variant="agm ? 'primary' : 'secondary'">AGM<template v-if="agm"> · {{ agm.days_left }} days left</template></Button></Link>
                 <Link v-if="can.internal" :href="`/clubs/${club.slug}/venues`"><Button size="sm" variant="secondary">Venues</Button></Link>
             </div>
 

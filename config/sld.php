@@ -6,4 +6,7 @@ return [
 
     // LibreOffice headless, used to turn filled DOCX/XLSX templates into PDFs that match the originals.
     'soffice' => env('SOFFICE_PATH', PHP_OS_FAMILY === 'Darwin' ? '/Applications/LibreOffice.app/Contents/MacOS/soffice' : 'soffice'),
+
+    // Python with python-pptx for the Annual Activities Report (tools/pptx). Local: python3 -m venv tools/pptx/.venv.
+    'python' => env('PYTHON_PATH', is_file(base_path('tools/pptx/.venv/bin/python')) ? base_path('tools/pptx/.venv/bin/python') : 'python3'),
 ];
