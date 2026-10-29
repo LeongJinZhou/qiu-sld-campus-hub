@@ -63,6 +63,7 @@ class ClubController extends Controller
                 'bio' => $club->bio,
                 'instagram_handle' => $club->instagram_handle,
                 'qr_svg' => $qr->svg(route('clubs.qr', $club->qr_token)),
+                'status' => $club->status,
             ],
             'session' => $session->name,
             'isCurrentSession' => $session->is($current),

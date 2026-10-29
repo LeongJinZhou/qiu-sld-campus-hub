@@ -16,6 +16,7 @@ const links = computed(() => [
     { label: 'Staff', href: '/admin/staff' },
     { label: 'All members', href: '/admin/members' },
     { label: 'Fees & drives', href: '/admin/fees' },
+    { label: 'Venue requests', href: '/admin/venues' },
     { label: 'Club finance', href: '/admin/finance' },
     { label: 'Moderation', href: '/admin/moderation' },
     { label: 'Settings', href: '/admin/settings' },

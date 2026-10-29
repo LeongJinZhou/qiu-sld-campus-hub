@@ -30,6 +30,7 @@ use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\Social\ClubSocialController;
 use App\Http\Controllers\Social\FeedController;
 use App\Http\Controllers\Social\PostController;
+use App\Http\Controllers\Venues\VenueController;
 use App\Http\Controllers\VerifyController;
 use App\Models\Club;
 use Illuminate\Support\Facades\Route;
@@ -136,6 +137,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/meetings/{meeting}/minutes/submit', [MeetingController::class, 'submit'])->name('meetings.minutes.submit');
     Route::get('/google/calendar/connect', [GoogleCalendarController::class, 'connect'])->name('google.calendar.connect');
     Route::get('/google/calendar/callback', [GoogleCalendarController::class, 'callback'])->name('google.calendar.callback');
+    Route::get('/clubs/{club}/venues', [VenueController::class, 'index'])->name('venues.index');
+    Route::post('/clubs/{club}/venues', [VenueController::class, 'store'])->middleware('throttle:10,1')->name('venues.store');
     Route::get('/clubs/{club}/payments/review', [MembershipController::class, 'reviewQueue'])->name('payments.review');
     Route::post('/payments/{payment}/decide', [MembershipController::class, 'decide'])->name('payments.decide');
     Route::get('/payments/{payment}/receipt', [MembershipController::class, 'receiptFile'])->name('payments.receipt');
@@ -159,6 +162,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('members', [MembersController::class, 'all'])->name('members.all');
         Route::get('finance', Admin\FinanceOverviewController::class)->name('finance.index');
+        Route::get('venues', [VenueController::class, 'pending'])->name('venues.index');
+        Route::post('venues/{booking}', [VenueController::class, 'decide'])->name('venues.decide');
         Route::get('fees', [FeeController::class, 'index'])->name('fees.index');
         Route::post('fees/{fee}/approve', [FeeController::class, 'approve'])->name('fees.approve');
         Route::post('drives', [FeeController::class, 'drive'])->name('drives.store');
