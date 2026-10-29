@@ -21,15 +21,19 @@ class EventPolicy
         return $user->isSldAdmin() || $this->roles->belongsToClub($user, $club, $this->sessions->current());
     }
 
-    /** Approved events are public to signed-in users; drafts only to the organisers, advisors, approvers and SLD. */
+    /** Approved events are public to signed-in users; drafts only to organisers, SLD and people in its approval chain. */
     public function view(User $user, Event $event): bool
     {
-        return $event->status === DocumentStatus::Approved || $this->organises($user, $event) || $user->staff()->exists();
+        return $event->status === DocumentStatus::Approved
+            || $this->organises($user, $event)
+            || ($event->proposal !== null && $user->can('view', $event->proposal));
     }
 
+    /** Past sessions are read-only history: only SLD can change an event from an earlier session. */
     public function update(User $user, Event $event): bool
     {
-        return $this->organises($user, $event);
+        return $user->isSldAdmin()
+            || ($event->session_id === $this->sessions->current()->id && $this->organises($user, $event));
     }
 
     /** Club committee, advisor, event committee or SLD. */

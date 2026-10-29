@@ -122,13 +122,21 @@ class CashHandovers
         $handover->update([$side === 'student' ? 'student_done_at' : 'committee_done_at' => now()]);
 
         if ($handover->student_done_at && $handover->committee_done_at) {
-            DB::transaction(function () use ($handover): void {
-                $handover->update(['status' => HandoverStatus::Completed, 'completed_at' => now()]);
+            $completed = DB::transaction(function () use ($handover): bool {
+                // Only the first of the two final taps completes it.
+                if (CashHandover::whereKey($handover->id)->where('status', HandoverStatus::PhotoTaken)->update(['status' => HandoverStatus::Completed, 'completed_at' => now()]) === 0) {
+                    return false;
+                }
                 $payment = $handover->payment;
                 $payment->update(['status' => PaymentStatus::Confirmed, 'verified_by' => $handover->committee_user_id, 'verified_at' => now()]);
                 $this->memberships->activate($payment, "Membership fee (cash) – collected by {$handover->committee->name}");
                 $this->audit->log('payment.cash_completed', $payment->club, ['payment_id' => $payment->id, 'collected_by' => $handover->committee_user_id]);
+
+                return true;
             });
+            if (! $completed) {
+                return;
+            }
             $receipt = new DocumentNotification(
                 'Cash payment receipt',
                 sprintf('RM %s received by %s from %s for %s on %s. Ref: CASH-%d.', number_format($handover->payment->amount_sen / 100, 2), $handover->committee->name, $handover->student->name, $handover->payment->club->name, now()->toDayDateTimeString(), $handover->payment_id),

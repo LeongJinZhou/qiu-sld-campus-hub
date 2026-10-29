@@ -98,15 +98,17 @@ class MembershipService
     /** Treasurer decision on a payment in the review queue. */
     public function review(MembershipPayment $payment, User $treasurer, bool $approve, ?string $note): void
     {
-        if ($payment->status !== PaymentStatus::PendingReview) {
-            throw new DomainException('This payment is not waiting for review.');
-        }
-        $payment->update([
+        // Conditional update: only one reviewer can move it out of the queue, even with stale copies.
+        $moved = MembershipPayment::whereKey($payment->id)->where('status', PaymentStatus::PendingReview)->update([
             'status' => $approve ? PaymentStatus::Confirmed : PaymentStatus::Rejected,
             'review_note' => $note,
             'verified_by' => $treasurer->id,
             'verified_at' => now(),
         ]);
+        if ($moved === 0) {
+            throw new DomainException('This payment is not waiting for review.');
+        }
+        $payment->refresh();
         $this->audit->log($approve ? 'payment.confirmed' : 'payment.rejected', $payment->membership->club, ['payment_id' => $payment->id, 'note' => $note]);
 
         if ($approve) {
