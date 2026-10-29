@@ -13,7 +13,7 @@ use App\Models\User;
 use App\Services\Time\SessionResolver;
 
 /**
- * Lifelong portfolio view of a person (CLAUDE.md §6): photo, programme, year group, clubs, positions per
+ * Lifelong portfolio view of a person: photo, programme, year group, clubs, positions per
  * session, events and CCA hours. Never includes IC, phone, address or payment data.
  */
 class PublicProfile

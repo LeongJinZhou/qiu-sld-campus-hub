@@ -20,3 +20,29 @@ foreach ($icons as [$file, $size, $share]) {
     imagepng($canvas, "{$root}/public/icons/{$file}");
     echo "Wrote public/icons/{$file}\n";
 }
+
+// Web logos: the brand PNGs are 4500px squares with wide empty margins, so crop to the artwork for headers.
+foreach (['Black', 'White'] as $tone) {
+    $src = imagecreatefrompng("{$root}/public/brand/QIU_Student_Activity_{$tone}.png");
+    [$w, $h] = [imagesx($src), imagesy($src)];
+    [$minX, $minY, $maxX, $maxY] = [$w, $h, 0, 0];
+    for ($y = 0; $y < $h; $y += 4) {
+        for ($x = 0; $x < $w; $x += 4) {
+            if (((imagecolorat($src, $x, $y) >> 24) & 0x7F) < 100) {
+                [$minX, $minY, $maxX, $maxY] = [min($minX, $x), min($minY, $y), max($maxX, $x), max($maxY, $y)];
+            }
+        }
+    }
+    $pad = 40;
+    $cw = $maxX - $minX + 2 * $pad;
+    $ch = $maxY - $minY + 2 * $pad;
+    $outW = 640;
+    $outH = (int) round($ch * $outW / $cw);
+    $out = imagecreatetruecolor($outW, $outH);
+    imagealphablending($out, false);
+    imagesavealpha($out, true);
+    imagefill($out, 0, 0, imagecolorallocatealpha($out, 0, 0, 0, 127));
+    imagecopyresampled($out, $src, 0, 0, $minX - $pad, $minY - $pad, $outW, $outH, $cw, $ch);
+    imagepng($out, "{$root}/public/brand/student-activity-".strtolower($tone).'.png');
+    echo 'Wrote public/brand/student-activity-'.strtolower($tone).".png\n";
+}

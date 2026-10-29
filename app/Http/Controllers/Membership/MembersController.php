@@ -88,7 +88,7 @@ class MembersController extends Controller
 
         return Inertia::render('Membership/Members', [
             'club' => $club?->only('slug', 'name'),
-            'filters' => $filters,
+            'filters' => (object) $filters, // always a JSON object, even with no filters
             'counts' => $this->members->counts($rows),
             'rows' => $rows->take(500)->values(),
             'truncated' => $rows->count() > 500,

@@ -28,7 +28,7 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    // Server-side only: receipt reading and drafting run in queued jobs (CLAUDE.md §2 AI).
+    // Server-side only: receipt reading and drafting run in queued jobs.
     'anthropic' => [
         'key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL', 'claude-opus-5-5'),

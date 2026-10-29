@@ -22,4 +22,4 @@ All 10 templates render with **no placeholders left**. Layout, fonts, tables, lo
 | 03 Attendance List | 4 → 3 pages: the Pictures sheet is empty when the event album has no photos. | Expected. |
 | 12 Annual Activities Report | 6 → 4 slides: the template's sample slides are removed; one event gives cover, summary, details and photos. | Expected. |
 | 13 Minutes / 01 AGM | The "Club logo" box stays empty when a club's logo is SVG (Word cannot embed SVG). The demo clubs use SVG logos. | Open: ask clubs to upload a PNG/JPG logo. |
-| 10 Full Member List | Long names and emails are cut at the template's column widths. | Template layout, left unchanged (CLAUDE.md: never change layout). SLD may widen the columns in the original if wanted. |
+| 10 Full Member List | Long names and emails are cut at the template's column widths. | Template layout, left unchanged (official layouts are never changed). SLD may widen the columns in the original if wanted. |

@@ -54,7 +54,7 @@ class PostMortemForm
     }
 
     /**
-     * Auto-filled, locked header (CLAUDE.md §6 Phase 3 F).
+     * Auto-filled, locked header.
      *
      * @return array{event: string, club: string, date: string, time: string, venue: string, participants: int, committee: list<string>}
      */

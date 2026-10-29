@@ -7,7 +7,7 @@ use App\Services\Membership\OnlinePayments;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-/** AI receipt reading runs in the queue, never in the request (CLAUDE.md §2 AI). */
+/** AI receipt reading runs in the queue, never in the request. */
 class ReadReceipt implements ShouldQueue
 {
     use Queueable;

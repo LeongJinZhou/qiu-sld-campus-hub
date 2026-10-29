@@ -5,7 +5,7 @@ namespace App\Services\Time;
 use App\Models\AcademicSession;
 use Carbon\CarbonImmutable;
 
-/** Academic session runs 1 July – 30 June, labelled "2026/2027" (CLAUDE.md §4). */
+/** Academic session runs 1 July – 30 June, labelled "2026/2027". */
 class SessionResolver
 {
     public const START_MONTH = 7;

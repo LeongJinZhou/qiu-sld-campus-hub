@@ -43,10 +43,10 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
                 <Badge v-if="club.category" tone="info">{{ club.category }}</Badge>
                 <Badge v-if="club.status !== 'active'" :tone="club.status === 'inactive' ? 'danger' : 'warning'">{{ club.status === 'inactive' ? 'Inactive' : 'At risk' }}</Badge>
             </div>
-            <dl class="flex gap-6 text-sm">
-                <div><dt class="sr-only">Members</dt><dd><strong>{{ counts.members }}</strong> members</dd></div>
-                <div><dt class="sr-only">Events</dt><dd><strong>{{ counts.events }}</strong> events</dd></div>
-                <div><dt class="sr-only">Followers</dt><dd><strong>{{ counts.followers }}</strong> followers</dd></div>
+            <dl class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                <div><dt class="sr-only">Members</dt><dd><strong>{{ counts.members }}</strong> {{ counts.members === 1 ? 'member' : 'members' }}</dd></div>
+                <div><dt class="sr-only">Events</dt><dd><strong>{{ counts.events }}</strong> {{ counts.events === 1 ? 'event' : 'events' }}</dd></div>
+                <div><dt class="sr-only">Followers</dt><dd><strong>{{ counts.followers }}</strong> {{ counts.followers === 1 ? 'follower' : 'followers' }}</dd></div>
                 <div><dt class="sr-only">Committee</dt><dd><strong>{{ counts.committee }}</strong> committee</dd></div>
                 <div v-if="club.established_year"><dt class="sr-only">Established</dt><dd>Est. <strong>{{ club.established_year }}</strong></dd></div>
             </dl>

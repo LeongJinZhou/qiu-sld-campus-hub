@@ -100,7 +100,7 @@ async function draw(): Promise<void> {
     }
 
     // A: logos, top corners
-    const sa = await load('/brand/QIU_Student_Activity_White.png');
+    const sa = await load('/brand/student-activity-white.png');
     ctx.drawImage(sa, 48, 40, 220, (220 * sa.height) / sa.width);
     if (props.event.club.logo_url) {
         const club = await load(props.event.club.logo_url).catch(() => null);
