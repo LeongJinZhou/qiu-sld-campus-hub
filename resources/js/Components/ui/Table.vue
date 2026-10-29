@@ -1,5 +1,5 @@
-<script setup lang="ts" generic="Row extends Record<string, unknown>">
-import { computed, ref } from 'vue';
+<script setup lang="ts" generic="Row extends object">
+import { computed, ref, shallowRef } from 'vue';
 
 const props = defineProps<{
     columns: { key: keyof Row & string; label: string; sortable?: boolean }[];
@@ -7,7 +7,7 @@ const props = defineProps<{
     rowKey: keyof Row & string;
 }>();
 
-const sortKey = ref<(keyof Row & string) | null>(null);
+const sortKey = shallowRef<(keyof Row & string) | null>(null);
 const direction = ref<1 | -1>(1);
 
 function sortBy(key: keyof Row & string): void {
@@ -16,11 +16,12 @@ function sortBy(key: keyof Row & string): void {
 }
 
 const sorted = computed(() => {
-    const key = sortKey.value;
+    const key: (keyof Row & string) | null = sortKey.value;
     if (!key) {
         return props.rows;
     }
-    return [...props.rows].sort((a, b) => String(a[key] ?? '').localeCompare(String(b[key] ?? ''), undefined, { numeric: true }) * direction.value);
+    const text = (row: Row): string => String(row[key] ?? '');
+    return [...(props.rows as Row[])].sort((a, b) => text(a).localeCompare(text(b), undefined, { numeric: true }) * direction.value);
 });
 </script>
 

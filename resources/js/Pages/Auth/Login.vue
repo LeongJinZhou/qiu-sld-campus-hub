@@ -2,7 +2,9 @@
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+
+defineProps<{ devLogin: boolean }>();
 </script>
 
 <template>
@@ -20,6 +22,7 @@ import { Head } from '@inertiajs/vue3';
                 <Button block size="lg">Continue with Google</Button>
             </a>
             <p class="text-xs text-ink-muted">Use your @qiu.edu.my account.</p>
+            <Link v-if="devLogin" href="/dev/login-as" class="text-xs font-medium text-brand-blue">Local dev: log in as a demo account</Link>
         </Card>
     </GuestLayout>
 </template>

@@ -2,31 +2,78 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'personal_email', 'hidden_sections', 'last_login_at'])]
+#[Hidden(['remember_token', 'google_id'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    /** Profile sections a student may hide from their public profile. */
+    public const HIDEABLE_SECTIONS = ['clubs', 'positions'];
+
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'hidden_sections' => 'array',
+            'last_login_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(fn (User $user) => $user->qr_token ??= Str::random(32));
+    }
+
+    /** @return HasOne<Student, $this> */
+    public function student(): HasOne
+    {
+        return $this->hasOne(Student::class);
+    }
+
+    /** @return HasOne<Staff, $this> */
+    public function staff(): HasOne
+    {
+        return $this->hasOne(Staff::class);
+    }
+
+    /** @return HasMany<RoleAssignment, $this> */
+    public function roleAssignments(): HasMany
+    {
+        return $this->hasMany(RoleAssignment::class);
+    }
+
+    /** Uploaded override first, then the Google photo. */
+    public function photoUrl(): ?string
+    {
+        return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : $this->avatar_url;
+    }
+
+    /** @return list<string> */
+    public function globalRoles(): array
+    {
+        return $this->getRoleNames()->values()->all();
+    }
+
+    public function isSldAdmin(): bool
+    {
+        return $this->hasAnyRole(['admin', 'superadmin']);
+    }
+
+    public function hidesSection(string $section): bool
+    {
+        return in_array($section, $this->hidden_sections ?? [], true);
     }
 }

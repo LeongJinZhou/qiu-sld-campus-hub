@@ -13,10 +13,13 @@ Laravel 13 · PHP 8.3+ · Vue 3 (TypeScript) + Inertia · Tailwind CSS 4 · Mari
 ```bash
 composer install && npm install
 cp .env.example .env && php artisan key:generate
-touch database/database.sqlite
-php artisan migrate --seed
+touch database/database.sqlite database/camsys.sqlite
+php artisan camsys:import-dump          # local camsys copy from database/camsys/*.sql
+php artisan migrate --seed              # roles, lookups, staff, 6 demo clubs
 composer run dev            # or: php artisan serve + npm run dev
 ```
+
+Local sign-in without Google: open `/dev/login-as` (only registered when `APP_ENV=local`). Put your email in `SUPERADMIN_EMAILS` for Super Admin.
 
 ## Tests
 
@@ -28,7 +31,7 @@ npm run build               # vue-tsc type-check + Vite build
 ## Status
 
 - [x] Phase 0 — Laravel setup, two DB connections, design tokens, UI components, layouts *(Stitch design import pending: no Stitch tool available)*
-- [ ] Phase 1 — Login, camsys sync, roles, clubs, profiles
+- [x] Phase 1 — Google login, camsys sync (nightly 02:00 + on login), scoped roles, compulsory positions, club page + Committee tab, club & profile QR, lifelong public profile, SLD admin (clubs, committees, staff, settings, roles, audit, sync)
 - [ ] Phase 2 — Feed, events, proposals, approvals, attendance, indemnity
 - [ ] Phase 3 — Membership, payments, finance, meetings, minutes, post mortem, venues
 - [ ] Phase 4 — AGM, elections, Annual Activities Report
