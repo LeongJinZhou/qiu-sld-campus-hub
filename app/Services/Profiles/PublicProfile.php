@@ -2,46 +2,94 @@
 
 namespace App\Services\Profiles;
 
+use App\Enums\ScopedRole;
 use App\Enums\ScopeType;
+use App\Models\Attendance;
+use App\Models\CcaRecord;
 use App\Models\Club;
+use App\Models\Event;
 use App\Models\RoleAssignment;
 use App\Models\User;
+use App\Services\Time\SessionResolver;
 
 /**
- * Portfolio-only view of a person (CLAUDE.md §6 Lifelong profile).
- * Never includes IC, phone, address or payment data.
+ * Lifelong portfolio view of a person (CLAUDE.md §6): photo, programme, year group, clubs, positions per
+ * session, events and CCA hours. Never includes IC, phone, address or payment data.
  */
 class PublicProfile
 {
+    public function __construct(private readonly SessionResolver $sessions) {}
+
     /** @return array<string, mixed> */
     public function for(User $user, bool $includeHidden = false): array
     {
         $student = $user->student;
         $show = fn (string $section) => $includeHidden || ! $user->hidesSection($section);
+        $current = $this->sessions->current();
 
-        $assignments = $user->roleAssignments()
-            ->where('scope_type', ScopeType::Club)
-            ->with('session')
-            ->get();
-        $clubs = Club::whereIn('id', $assignments->pluck('scope_id'))->get()->keyBy('id');
+        $assignments = $user->roleAssignments()->whereIn('scope_type', [ScopeType::Club, ScopeType::Event])->with('session')->get();
+        $clubAssignments = $assignments->where('scope_type', ScopeType::Club);
+        $clubs = Club::with('category')->whereIn('id', $clubAssignments->pluck('scope_id'))->get()->keyBy('id');
+        $eventCommittees = Event::whereIn('id', $assignments->where('scope_type', ScopeType::Event)->pluck('scope_id'))->get()->keyBy('id');
+        $attended = Attendance::with('event.club')->where('user_id', $user->id)->whereNotNull('clock_in_at')->latest('clock_in_at')->get();
+        $cca = CcaRecord::with('event')->where('user_id', $user->id)->get();
 
         return [
             'name' => $user->name,
             'photo_url' => $user->photoUrl(),
-            'programme_short' => $student?->programmeShortForm(),
             'programme' => $student?->programme,
+            'programme_short' => $student?->programmeShortForm(),
             'year_group' => $student?->year_group,
+            'status' => $student?->status->value,
+            'intake' => $student ? sprintf('%02d/%d', $student->intake_month, $student->year_entry) : null,
             'title' => $user->staff?->title,
-            'clubs' => $show('clubs')
-                ? $clubs->map(fn (Club $c) => ['name' => $c->name, 'url' => route('clubs.show', $c)])->values()->all()
-                : null,
-            'positions' => $show('positions')
-                ? $assignments->sortByDesc(fn (RoleAssignment $a) => $a->session?->starts_on)->map(fn (RoleAssignment $a) => [
+            'department' => $user->staff?->department,
+            'stats' => [
+                'clubs' => $clubs->count(),
+                'positions' => $assignments->where('role', '!=', ScopedRole::Advisor)->count(),
+                'events' => $attended->count(),
+                'cca_hours' => round($cca->sum('hours'), 1),
+            ],
+            'clubs' => $show('clubs') ? $clubs->map(fn (Club $c) => [
+                'name' => $c->name,
+                'url' => route('clubs.show', $c),
+                'logo_url' => $c->logoUrl(),
+                'category' => $c->category?->name,
+                'current_position' => $clubAssignments->where('scope_id', $c->id)->firstWhere('session_id', $current->id)?->position
+                    ?? ($clubAssignments->where('scope_id', $c->id)->firstWhere('session_id', $current->id)?->role === ScopedRole::Advisor ? 'Advisor' : null),
+            ])->values()->all() : null,
+            'positions' => $show('positions') ? $assignments
+                ->sortByDesc(fn (RoleAssignment $a) => $a->session->starts_on ?? $eventCommittees[$a->scope_id]->starts_at ?? null)
+                ->map(fn (RoleAssignment $a) => $a->scope_type === ScopeType::Club ? [
                     'session' => $a->session?->name,
-                    'club' => $clubs[$a->scope_id]->name ?? null,
+                    'organisation' => $clubs[$a->scope_id]->name ?? null,
+                    'url' => isset($clubs[$a->scope_id]) ? route('clubs.show', $clubs[$a->scope_id]) : null,
                     'position' => $a->position ?? 'Advisor',
-                ])->values()->all()
-                : null,
+                    'kind' => 'club',
+                ] : [
+                    'session' => $eventCommittees[$a->scope_id]->starts_at->format('M Y') ?? null,
+                    'organisation' => $eventCommittees[$a->scope_id]->name ?? null,
+                    'url' => isset($eventCommittees[$a->scope_id]) ? route('events.show', $eventCommittees[$a->scope_id]) : null,
+                    'position' => $a->position,
+                    'kind' => 'event',
+                ])->values()->all() : null,
+            'events' => $show('events') ? $attended->map(fn (Attendance $a) => [
+                'name' => $a->event->name,
+                'url' => route('events.show', $a->event),
+                'club' => $a->event->club->name,
+                'date' => $a->event->starts_at->toFormattedDateString(),
+                'role' => $a->role,
+                'poster_url' => $a->event->posterUrl(),
+            ])->all() : null,
+            'cca' => $show('cca') ? [
+                'total' => round($cca->sum('hours'), 1),
+                'records' => $cca->sortByDesc(fn (CcaRecord $r) => $r->event->starts_at)->map(fn (CcaRecord $r) => [
+                    'event' => $r->event->name,
+                    'date' => $r->event->starts_at->toFormattedDateString(),
+                    'role' => $r->role,
+                    'hours' => $r->hours,
+                ])->values()->all(),
+            ] : null,
         ];
     }
 }

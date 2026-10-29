@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Time\SessionResolver;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -48,6 +49,13 @@ class HandleInertiaRequests extends Middleware
                     'roles' => $user->globalRoles(),
                 ] : null,
             ],
+            'nav' => fn () => $user ? [
+                'unread' => $user->unreadNotifications()->count(),
+                'isStaff' => $user->hasAnyRole(['staff', 'admin', 'superadmin']),
+                'isAdmin' => $user->isSldAdmin(),
+                'canPublish' => $user->isSldAdmin() || $user->roleAssignments()->where('scope_type', 'club')
+                    ->where('session_id', app(SessionResolver::class)->current()->id)->exists(),
+            ] : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

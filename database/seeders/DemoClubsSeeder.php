@@ -28,20 +28,21 @@ class DemoClubsSeeder extends Seeder
 
         $category = fn (string $name) => ClubCategory::where('name', $name)->value('id');
         $clubs = [
-            ['GPS Club', 'Student Consumer Movement', 'gps_qiu', 'Community Service', 2019],
-            ['Computer Science Society', 'Code, build and ship together.', 'qiu_css', 'Academic', 2016],
-            ['Music Club', 'Jams, recitals and open mics.', 'qiu_music', 'Arts & Culture', 2015],
-            ['Badminton Club', 'Weekly training and inter-varsity games.', 'qiu_badminton', 'Sports', 2014],
-            ['Debate Society', 'Think fast, speak clearly.', 'qiu_debate', 'Leadership', 2018],
-            ['Volunteer Club', 'Serving Ipoh, one project at a time.', 'qiu_volunteers', 'Community Service', 2017],
+            ['GPS Club', 'Student Consumer Movement', 'gps_qiu', 'Community Service', 2019, '🛒'],
+            ['Computer Science Society', 'Code, build and ship together.', 'qiu_css', 'Academic', 2016, '💻'],
+            ['Music Club', 'Jams, recitals and open mics.', 'qiu_music', 'Arts & Culture', 2015, '🎸'],
+            ['Badminton Club', 'Weekly training and inter-varsity games.', 'qiu_badminton', 'Sports', 2014, '🏸'],
+            ['Debate Society', 'Think fast, speak clearly.', 'qiu_debate', 'Leadership', 2018, '🎤'],
+            ['Volunteer Club', 'Serving Ipoh, one project at a time.', 'qiu_volunteers', 'Community Service', 2017, '🤝'],
         ];
 
         $session = $sessions->current();
         $active = User::whereHas('student', fn ($q) => $q->where('status', 'active'))->orderBy('id')->get()->values();
         $advisors = User::where('email', 'like', 'advisor%.demo@qiu.edu.my')->orderBy('email')->get()->values();
 
-        foreach ($clubs as $i => [$name, $bio, $handle, $categoryName, $established]) {
+        foreach ($clubs as $i => [$name, $bio, $handle, $categoryName, $established, $glyph]) {
             $club = Club::firstOrCreate(['name' => $name], [
+                'logo_path' => DemoMedia::logo($name, $i, $glyph),
                 'bio' => $bio,
                 'instagram_handle' => $handle,
                 'category_id' => $category($categoryName),
