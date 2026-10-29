@@ -31,6 +31,11 @@ defineProps<{ document: PresentedDocument; canEdit: boolean; downloads: string[]
                     </a>
                 </div>
                 <Link v-if="canEdit && document.event" :href="`/events/${document.event.slug}/proposal`"><Button>Edit and resubmit</Button></Link>
+                <Card v-if="document.type === 'agm_report' && document.agm_id">
+                    <template #title>01 AGM Report</template>
+                    <p class="text-sm">{{ (document.data as unknown as { objectives?: string[] }).objectives?.filter((o) => o).length ?? 0 }} objectives · attendance, committee and election sections are frozen from records.</p>
+                    <Link :href="`/agms/${document.agm_id}/report`" class="mt-3 inline-block"><Button variant="secondary" size="sm">Open the full report</Button></Link>
+                </Card>
                 <ProposalView v-if="document.type === 'proposal' && document.version" :document="document" />
                 <Card v-else-if="document.type === 'fund_withdrawal'">
                     <template #title>07 Fund Withdrawal / Transfer</template>
