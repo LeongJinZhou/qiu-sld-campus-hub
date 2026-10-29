@@ -5,9 +5,9 @@ import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { dateTime } from '@/lib/format';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
-defineProps<{
+const props = defineProps<{
     event: {
         slug: string;
         name: string;
@@ -28,9 +28,13 @@ defineProps<{
     };
     committee: { position: string; name: string; photo_url: string | null; responsibility: string | null }[];
     registered: boolean;
+    indemnity: { signed: boolean; closes_at: string; closed: boolean } | null;
     registrations: number;
     can: { organise: boolean; update: boolean };
 }>();
+
+const register = (): void => router.post(`/events/${props.event.slug}/register`, {}, { preserveScroll: true });
+const unregister = (): void => router.delete(`/events/${props.event.slug}/register`, { preserveScroll: true });
 </script>
 
 <template>
@@ -66,9 +70,24 @@ defineProps<{
             <aside class="grid content-start gap-3">
                 <Card>
                     <p class="text-sm text-ink-muted">{{ registrations }} registered</p>
-                    <p v-if="registered" class="mt-2 text-sm font-medium text-success">You're registered.</p>
-                    <p v-else-if="!event.registration_open" class="mt-2 text-sm text-ink-muted">Registration opens once SLD approves the proposal.</p>
+                    <template v-if="registered">
+                        <p class="mt-2 text-sm font-medium text-success">You're registered.</p>
+                        <button type="button" class="mt-1 text-xs text-ink-muted underline" @click="unregister">Cancel registration</button>
+                    </template>
+                    <Button v-else-if="event.registration_open" block class="mt-3" @click="register">Register</Button>
+                    <p v-else class="mt-2 text-sm text-ink-muted">Registration opens once SLD approves the proposal.</p>
+                    <template v-if="indemnity && (registered || can.organise)">
+                        <p v-if="indemnity.signed" class="mt-3 text-sm text-success">✓ Indemnity signed</p>
+                        <Link v-else-if="!indemnity.closed" :href="`/events/${event.slug}/indemnity`"><Button variant="secondary" block class="mt-3">Sign indemnity (closes {{ indemnity.closes_at }})</Button></Link>
+                        <p v-else class="mt-3 text-sm text-danger">Indemnity signing has closed.</p>
+                    </template>
                 </Card>
+                <template v-if="can.organise">
+                    <Link :href="`/events/${event.slug}/attendance`"><Button block>Attendance &amp; QR</Button></Link>
+                    <Link v-if="event.is_outdoor" :href="`/events/${event.slug}/indemnities`"><Button variant="secondary" block>Indemnity list</Button></Link>
+                    <Link v-if="event.status === 'approved'" :href="`/events/${event.slug}/documents`"><Button variant="secondary" block>Post-event documents</Button></Link>
+                </template>
+                <Link v-if="can.update" :href="`/events/${event.slug}/poster`"><Button variant="ghost" block>Poster</Button></Link>
                 <template v-if="can.update && event.proposal_id">
                     <Link :href="`/events/${event.slug}/proposal`"><Button variant="secondary" block>Proposal form</Button></Link>
                     <Link :href="`/documents/${event.proposal_id}`"><Button variant="ghost" block>Approval progress</Button></Link>

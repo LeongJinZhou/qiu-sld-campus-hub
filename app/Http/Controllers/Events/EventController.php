@@ -79,6 +79,11 @@ class EventController extends Controller
                 'responsibility' => $a->responsibility,
             ]),
             'registered' => $event->registrations()->where('user_id', $user->id)->exists(),
+            'indemnity' => $event->is_outdoor ? [
+                'signed' => $event->indemnities()->where('user_id', $user->id)->exists(),
+                'closes_at' => $event->indemnityClosesAt()->toDayDateTimeString(),
+                'closed' => now()->gte($event->indemnityClosesAt()),
+            ] : null,
             'registrations' => $event->registrations()->count(),
             'can' => ['organise' => $user->can('organises', $event), 'update' => $user->can('update', $event)],
         ]);

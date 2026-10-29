@@ -8,7 +8,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import type { PresentedDocument } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 
-defineProps<{ document: PresentedDocument; canEdit: boolean }>();
+defineProps<{ document: PresentedDocument; canEdit: boolean; downloads: string[] }>();
 </script>
 
 <template>
@@ -25,6 +25,11 @@ defineProps<{ document: PresentedDocument; canEdit: boolean }>();
                         {{ document.status.replace('_', ' ') }}
                     </Badge>
                 </header>
+                <div v-if="downloads.length" class="flex flex-wrap gap-2">
+                    <a v-for="format in downloads" :key="format" :href="`/documents/${document.id}/download/${format}`">
+                        <Button variant="secondary" size="sm">Download official {{ format.toUpperCase() }}</Button>
+                    </a>
+                </div>
                 <Link v-if="canEdit && document.event" :href="`/events/${document.event.slug}/proposal`"><Button>Edit and resubmit</Button></Link>
                 <ProposalView v-if="document.type === 'proposal' && document.version" :document="document" />
             </div>

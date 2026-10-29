@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([SettingsSeeder::class, StaffSeeder::class]);
 
         if (app()->isLocal()) {
-            $this->call(DemoClubsSeeder::class);
+            $this->call([DemoClubsSeeder::class, DemoEventsSeeder::class]);
         }
     }
 }

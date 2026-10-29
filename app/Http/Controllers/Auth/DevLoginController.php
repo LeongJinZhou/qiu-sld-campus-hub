@@ -20,6 +20,9 @@ class DevLoginController extends Controller
     {
         return Inertia::render('Auth/DevLogin', [
             'accounts' => [
+                ...collect(config('sld.superadmin_emails'))->map(fn (string $email) => [
+                    'email' => $email, 'name' => $email, 'detail' => 'Super Admin',
+                ]),
                 ...Student::orderBy('name')->get()->map(fn (Student $s) => [
                     'email' => $s->email, 'name' => $s->name, 'detail' => "{$s->student_number} · {$s->year_group}",
                 ]),
