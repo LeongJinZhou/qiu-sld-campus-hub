@@ -11,13 +11,19 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 const menuOpen = ref(false);
 
-const links = [
+const links = computed(() => [
     { label: 'Clubs', href: '/admin/clubs' },
     { label: 'Staff', href: '/admin/staff' },
     { label: 'Settings', href: '/admin/settings' },
-    { label: 'Sync log', href: '/admin/sync' },
-    { label: 'Audit log', href: '/admin/audit' },
-];
+    ...(user.value?.roles.includes('superadmin')
+        ? [
+              { label: 'Roles', href: '/admin/roles' },
+              { label: 'camsys sync', href: '/admin/sync' },
+              { label: 'Audit log', href: '/admin/audit' },
+          ]
+        : []),
+    { label: '← Back to Campus Hub', href: '/clubs' },
+]);
 const isActive = (href: string): boolean => page.url.startsWith(href);
 </script>
 
