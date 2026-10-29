@@ -1,6 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\Agm\AgmController;
+use App\Http\Controllers\Agm\AgmReportController;
+use App\Http\Controllers\Agm\AnnualReportController;
+use App\Http\Controllers\Agm\ElectionController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\Auth\DevLoginController;
 use App\Http\Controllers\Auth\GoogleController;
@@ -137,6 +141,24 @@ Route::middleware('auth')->group(function () {
     Route::post('/meetings/{meeting}/minutes/submit', [MeetingController::class, 'submit'])->name('meetings.minutes.submit');
     Route::get('/google/calendar/connect', [GoogleCalendarController::class, 'connect'])->name('google.calendar.connect');
     Route::get('/google/calendar/callback', [GoogleCalendarController::class, 'callback'])->name('google.calendar.callback');
+    Route::get('/clubs/{club}/agm', [AgmController::class, 'show'])->name('agm.show');
+    Route::post('/clubs/{club}/agm', [AgmController::class, 'store'])->name('agm.store');
+    Route::get('/agms/{agm}/attend', [AgmController::class, 'attend'])->middleware('throttle:30,1')->name('agm.attend');
+    Route::post('/agms/{agm}/attendance', [AgmController::class, 'record'])->middleware('throttle:120,1')->name('agm.attendance');
+    Route::post('/agms/{agm}/package', [AgmController::class, 'submitPackage'])->name('agm.package');
+    Route::get('/agms/{agm}/report', [AgmReportController::class, 'edit'])->name('agm.report');
+    Route::put('/agms/{agm}/report', [AgmReportController::class, 'save'])->name('agm.report.save');
+    Route::post('/agms/{agm}/report/draft', [AgmReportController::class, 'draft'])->middleware('throttle:6,1')->name('agm.report.draft');
+    Route::post('/agms/{agm}/report/submit', [AgmReportController::class, 'submit'])->name('agm.report.submit');
+    Route::get('/agms/{agm}/election', [ElectionController::class, 'show'])->name('election.show');
+    Route::post('/agms/{agm}/election', [ElectionController::class, 'store'])->name('election.store');
+    Route::post('/election-positions/{position}/nominate', [ElectionController::class, 'nominate'])->middleware('throttle:10,1')->name('election.nominate');
+    Route::post('/election-positions/{position}/vote', [ElectionController::class, 'vote'])->middleware('throttle:30,1')->name('election.vote');
+    Route::post('/elections/{election}/publish', [ElectionController::class, 'publish'])->name('election.publish');
+    Route::put('/clubs/{club}/annual-report', [AnnualReportController::class, 'save'])->name('annual.save');
+    Route::post('/clubs/{club}/annual-report/draft', [AnnualReportController::class, 'draft'])->middleware('throttle:6,1')->name('annual.draft');
+    Route::post('/clubs/{club}/annual-report/generate', [AnnualReportController::class, 'generate'])->middleware('throttle:6,1')->name('annual.generate');
+    Route::get('/clubs/{club}/annual-report/{format}', [AnnualReportController::class, 'download'])->name('annual.download');
     Route::get('/clubs/{club}/venues', [VenueController::class, 'index'])->name('venues.index');
     Route::post('/clubs/{club}/venues', [VenueController::class, 'store'])->middleware('throttle:10,1')->name('venues.store');
     Route::get('/clubs/{club}/payments/review', [MembershipController::class, 'reviewQueue'])->name('payments.review');
@@ -162,6 +184,10 @@ Route::middleware('auth')->group(function () {
 
         Route::get('members', [MembersController::class, 'all'])->name('members.all');
         Route::get('finance', Admin\FinanceOverviewController::class)->name('finance.index');
+        Route::get('agm', [Admin\AgmController::class, 'index'])->name('agm.index');
+        Route::post('agm/periods', [Admin\AgmController::class, 'open'])->name('agm.open');
+        Route::post('agm/periods/{period}/close', [Admin\AgmController::class, 'close'])->name('agm.close');
+        Route::post('agm/themes', [Admin\AgmController::class, 'theme'])->name('agm.themes');
         Route::get('venues', [VenueController::class, 'pending'])->name('venues.index');
         Route::post('venues/{booking}', [VenueController::class, 'decide'])->name('venues.decide');
         Route::get('fees', [FeeController::class, 'index'])->name('fees.index');

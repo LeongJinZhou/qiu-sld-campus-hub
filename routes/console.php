@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Agm\Elections;
 use App\Services\ClubStatusService;
 use App\Services\Membership\CashHandovers;
 use App\Services\Membership\MembershipLifecycle;
@@ -20,3 +21,6 @@ Schedule::call(fn () => app(CashHandovers::class)->expireStale())->hourly()->nam
 
 // Club status: Active / At-risk (2+ months without activity) / Inactive (3+ months).
 Schedule::call(fn () => app(ClubStatusService::class)->run(CarbonImmutable::today()))->dailyAt('01:00')->name('club-status');
+
+// Election winners take their positions when the new term starts (1 July).
+Schedule::call(fn () => app(Elections::class)->handOverDue(CarbonImmutable::today()))->dailyAt('00:20')->name('election-handover');

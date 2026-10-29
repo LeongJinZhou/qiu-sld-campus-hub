@@ -45,3 +45,4 @@ _ide_helper.php
 /storage/logs/*
 /storage/inertia-devtools/*
 /bootstrap/cache/*.php
+/tools/pptx/.venv
