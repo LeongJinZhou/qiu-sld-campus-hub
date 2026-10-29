@@ -34,3 +34,14 @@ npm-debug.log*
 /storage/pail
 auth.json
 _ide_helper.php
+
+# Laravel runtime storage (uploads, signatures, generated documents, caches) — never commit
+/storage/app/private/*
+/storage/app/public/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+/storage/inertia-devtools/*
+/bootstrap/cache/*.php
