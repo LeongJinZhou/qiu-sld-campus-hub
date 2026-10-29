@@ -40,6 +40,7 @@ defineProps<{ devLogin: boolean }>();
                     </svg>
                     Continue with Google
                 </a>
+                <a href="/auth/google/alumni" class="text-sm text-ink-muted hover:underline">Graduated? Sign in with the personal email you linked</a>
                 <Link v-if="devLogin" href="/dev/login-as" class="text-sm font-medium text-brand-blue">Local dev: log in as a demo account</Link>
             </div>
         </section>

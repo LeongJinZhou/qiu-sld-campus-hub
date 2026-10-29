@@ -19,17 +19,32 @@ class GoogleController extends Controller
             ->redirect();
     }
 
+    /** Alumni sign in with the personal Google account they linked on their profile. */
+    public function alumni(): SymfonyRedirect
+    {
+        session()->put('alumni_sign_in', true);
+
+        return Socialite::driver('google')->with(['prompt' => 'select_account'])->redirect();
+    }
+
     public function callback(SignInService $signIn): RedirectResponse
     {
         $google = Socialite::driver('google')->user();
-
-        // `hd` on the redirect is only a hint; the hosted-domain claim is checked server-side too.
-        if (($google->user['hd'] ?? null) !== config('services.google.hosted_domain')) {
-            return to_route('not-in-records');
-        }
+        $alumni = (bool) session()->pull('alumni_sign_in', false);
 
         try {
-            $user = $signIn->signIn((string) $google->getEmail(), (string) $google->getName(), $google->getAvatar(), (string) $google->getId());
+            if ($alumni) {
+                // Google must have verified the address before it can stand in for the QIU account.
+                if (($google->user['email_verified'] ?? false) !== true) {
+                    return to_route('not-in-records');
+                }
+                $user = $signIn->signInWithPersonalEmail((string) $google->getEmail());
+            } elseif (($google->user['hd'] ?? null) !== config('services.google.hosted_domain')) {
+                // `hd` on the redirect is only a hint; the hosted-domain claim is checked server-side too.
+                return to_route('not-in-records');
+            } else {
+                $user = $signIn->signIn((string) $google->getEmail(), (string) $google->getName(), $google->getAvatar(), (string) $google->getId());
+            }
         } catch (NotInRecordsException) {
             return to_route('not-in-records');
         }
