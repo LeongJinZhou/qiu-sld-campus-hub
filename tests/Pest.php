@@ -12,9 +12,12 @@ use App\Services\Camsys\CamsysSync;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Roles\RoleService;
 use App\Services\Time\SessionResolver;
+use BaconQrCode\Common\ErrorCorrectionLevel;
+use BaconQrCode\Encoder\Encoder;
 use Database\Seeders\SettingsSeeder;
 use Database\Seeders\StaffSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
@@ -115,4 +118,28 @@ function signatureStrokes(string $device = 'touch'): string
     $stroke = array_map(fn (int $i) => [10.0 + $i * 8, 60.0 - ($i % 5) * 6, $i * 16, 0.6], range(0, 24));
 
     return (string) json_encode(['w' => 400, 'h' => 180, 'device' => $device, 'strokes' => [$stroke]]);
+}
+
+/** A camera-style JPEG containing a QR code for $text (for the cash handover photo check). */
+function qrPhoto(string $text): UploadedFile
+{
+    $matrix = Encoder::encode($text, ErrorCorrectionLevel::M())->getMatrix();
+    $n = $matrix->getWidth();
+    $qr = imagecreatetruecolor($n * 8 + 64, $n * 8 + 64);
+    imagefill($qr, 0, 0, imagecolorallocate($qr, 255, 255, 255));
+    $black = imagecolorallocate($qr, 0, 0, 0);
+    for ($y = 0; $y < $n; $y++) {
+        for ($x = 0; $x < $n; $x++) {
+            if ($matrix->get($x, $y) === 1) {
+                imagefilledrectangle($qr, 32 + $x * 8, 32 + $y * 8, 39 + $x * 8, 39 + $y * 8, $black);
+            }
+        }
+    }
+    $photo = imagecreatetruecolor(1000, 750);
+    imagefill($photo, 0, 0, imagecolorallocate($photo, 60, 130, 70)); // "cash" green background
+    imagecopyresampled($photo, $qr, 180, 120, 0, 0, 480, 480, imagesx($qr), imagesy($qr));
+    $path = tempnam(sys_get_temp_dir(), 'qr').'.jpg';
+    imagejpeg($photo, $path, 85);
+
+    return new UploadedFile($path, 'handover.jpg', 'image/jpeg', null, true);
 }

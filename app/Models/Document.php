@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['type', 'club_id', 'event_id', 'session_id', 'status', 'created_by', 'submitted_at', 'decided_at'])]
+#[Fillable(['type', 'club_id', 'event_id', 'meeting_id', 'session_id', 'status', 'created_by', 'submitted_at', 'decided_at'])]
 class Document extends Model
 {
     /** @var array<string, mixed> */

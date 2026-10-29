@@ -16,6 +16,9 @@ use App\Http\Controllers\Events\EventRegistrationController;
 use App\Http\Controllers\Events\IndemnityController;
 use App\Http\Controllers\Events\PosterController;
 use App\Http\Controllers\Events\ProposalController;
+use App\Http\Controllers\Membership\FeeController;
+use App\Http\Controllers\Membership\HandoverController;
+use App\Http\Controllers\Membership\MembershipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
@@ -97,6 +100,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/approvals/{approval}', [ApprovalController::class, 'decide'])->name('approvals.decide');
 
     Route::get('/notifications', NotificationController::class)->name('notifications');
+
+    Route::get('/clubs/{club}/join', [MembershipController::class, 'show'])->name('membership.join');
+    Route::post('/clubs/{club}/join', [MembershipController::class, 'join'])->middleware('throttle:10,1')->name('membership.store');
+    Route::post('/clubs/{club}/join/receipt', [MembershipController::class, 'receipt'])->middleware('throttle:10,1')->name('membership.receipt');
+    Route::post('/clubs/{club}/join/cash', [MembershipController::class, 'cash'])->middleware('throttle:10,1')->name('membership.cash');
+    Route::get('/clubs/{club}/payments/review', [MembershipController::class, 'reviewQueue'])->name('payments.review');
+    Route::post('/payments/{payment}/decide', [MembershipController::class, 'decide'])->name('payments.decide');
+    Route::get('/payments/{payment}/receipt', [MembershipController::class, 'receiptFile'])->name('payments.receipt');
+    Route::post('/clubs/{club}/fee', [FeeController::class, 'store'])->name('fees.store');
+    Route::get('/handovers/{handover}', [HandoverController::class, 'show'])->name('handovers.show');
+    Route::post('/handovers/{handover}', [HandoverController::class, 'act'])->middleware('throttle:60,1')->name('handovers.act');
     Route::get('/me', [ProfileController::class, 'show'])->name('profile.me');
     Route::post('/me', [ProfileController::class, 'update'])->name('profile.update');
 
@@ -111,6 +125,10 @@ Route::middleware('auth')->group(function () {
         Route::get('staff', [Admin\StaffController::class, 'index'])->name('staff.index');
         Route::post('staff', [Admin\StaffController::class, 'store'])->name('staff.store');
         Route::put('staff/{staff}', [Admin\StaffController::class, 'update'])->name('staff.update');
+
+        Route::get('fees', [FeeController::class, 'index'])->name('fees.index');
+        Route::post('fees/{fee}/approve', [FeeController::class, 'approve'])->name('fees.approve');
+        Route::post('drives', [FeeController::class, 'drive'])->name('drives.store');
 
         Route::get('moderation', [Admin\ModerationController::class, 'index'])->name('moderation.index');
         Route::post('moderation/posts/{post}/pin', [Admin\ModerationController::class, 'togglePin'])->name('moderation.pin');
