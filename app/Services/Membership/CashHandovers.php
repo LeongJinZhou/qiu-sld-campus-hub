@@ -185,7 +185,8 @@ class CashHandovers
     private function decode(string $path): ?string
     {
         try {
-            $text = (new QrReader($path))->text();
+            // TRY_HARDER: without it ~1 in 10 clean phone photos of the QR fail to decode.
+            $text = (new QrReader($path))->text(['TRY_HARDER' => true]);
 
             return is_string($text) && $text !== '' ? $text : null;
         } catch (\Throwable) {
