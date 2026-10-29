@@ -32,6 +32,7 @@ const form = useForm({
     address: '',
     consent: false,
     signature: null as string | null,
+    signature_strokes: null as string | null,
 });
 </script>
 
@@ -85,7 +86,7 @@ const form = useForm({
                     <LockedField label="Date" value="Server date when you sign" />
                     <Checkbox v-model="form.consent" label="I have read and agree to the participant consent above." />
                     <p v-if="form.errors.consent" class="text-xs text-danger">{{ form.errors.consent }}</p>
-                    <SignaturePad v-model="form.signature" label="Signature" />
+                    <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Signature" :signer="student.name" />
                 </FormSection>
 
                 <Button v-if="!signedAt && !event.closed && mustSign" type="submit" size="lg" :disabled="!form.consent || !form.signature" :loading="form.processing">Sign indemnity</Button>

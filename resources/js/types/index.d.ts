@@ -98,6 +98,7 @@ export interface ApprovalStep {
     decided_at: string | null;
     due_at: string | null;
     verification_code: string | null;
+    waiting_on: string[];
 }
 
 export interface PresentedDocument {
@@ -114,6 +115,7 @@ export interface PresentedDocument {
     totals: { revenue_sen: number; expenses_sen: number; profit_sen: number; covers_expenses: boolean } | null;
     committee: { name: string; position: string; responsibility: string | null }[];
     options: { natures?: Record<string, string>; sdgs?: Record<number, string>; fundSources?: Record<string, string> };
+    progress: ApprovalProgress;
     steps: ApprovalStep[];
 }
 
@@ -164,4 +166,14 @@ export interface ProfileData {
     positions: { session: string | null; organisation: string | null; url: string | null; position: string; kind: 'club' | 'event' }[] | null;
     events: { name: string; url: string; club: string; date: string; role: string; poster_url: string | null }[] | null;
     cca: { total: number; records: { event: string; date: string; role: string; hours: number }[] } | null;
+}
+
+export interface ApprovalProgress {
+    done: number;
+    total: number;
+    status: 'draft' | 'in_review' | 'returned' | 'rejected' | 'approved';
+    current_role: string | null;
+    waiting_on: string[];
+    due_at: string | null;
+    overdue: boolean;
 }

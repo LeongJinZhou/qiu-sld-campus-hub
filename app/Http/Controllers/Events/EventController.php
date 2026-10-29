@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Events;
 
+use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Events\StoreEventRequest;
@@ -9,6 +10,7 @@ use App\Models\Club;
 use App\Models\Document;
 use App\Models\Event;
 use App\Models\RoleAssignment;
+use App\Services\Documents\DocumentPresenter;
 use App\Services\Events\ProposalRules;
 use App\Services\Time\SessionResolver;
 use Illuminate\Http\RedirectResponse;
@@ -57,7 +59,7 @@ class EventController extends Controller
         return to_route('proposals.edit', $event)->with('success', 'Event created. Fill in the proposal and the event committee.');
     }
 
-    public function show(Request $request, Event $event): Response
+    public function show(Request $request, Event $event, DocumentPresenter $presenter): Response
     {
         Gate::authorize('view', $event);
         $user = $request->user();
@@ -85,6 +87,9 @@ class EventController extends Controller
                 'closed' => now()->gte($event->indemnityClosesAt()),
             ] : null,
             'registrations' => $event->registrations()->count(),
+            'approval' => $event->proposal && $event->proposal->status !== DocumentStatus::Draft && $user->can('organises', $event)
+                ? ['progress' => $presenter->progress($event->proposal), 'steps' => $presenter->present($event->proposal)['steps']]
+                : null,
             'can' => ['organise' => $user->can('organises', $event), 'update' => $user->can('update', $event)],
         ]);
     }

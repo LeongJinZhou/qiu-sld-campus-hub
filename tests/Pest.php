@@ -108,3 +108,11 @@ function approveRemainingSteps(Document $document): void
         $engine->approve($step, $resolver->candidates($document, $step->role)->firstOrFail(), signaturePng());
     }
 }
+
+/** A recorded e-signature as the pad sends it: {w, h, device, strokes: [[[x, y, t, pressure], ...]]}. */
+function signatureStrokes(string $device = 'touch'): string
+{
+    $stroke = array_map(fn (int $i) => [10.0 + $i * 8, 60.0 - ($i % 5) * 6, $i * 16, 0.6], range(0, 24));
+
+    return (string) json_encode(['w' => 400, 'h' => 180, 'device' => $device, 'strokes' => [$stroke]]);
+}

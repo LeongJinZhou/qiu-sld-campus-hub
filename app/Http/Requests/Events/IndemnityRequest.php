@@ -21,12 +21,13 @@ class IndemnityRequest extends FormRequest
             'address' => ['required', 'string', 'max:500'],
             'consent' => ['accepted'],
             'signature' => ['required', 'string'],
+            'signature_strokes' => ['required', 'string', 'max:307200'],
         ];
     }
 
     /** @return array<string, string|null> */
     public function fields(): array
     {
-        return collect($this->validated())->except(['consent', 'signature'])->all();
+        return collect($this->validated())->except(['consent', 'signature', 'signature_strokes'])->all();
     }
 }

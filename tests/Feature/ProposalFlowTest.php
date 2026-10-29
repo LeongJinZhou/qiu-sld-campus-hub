@@ -54,18 +54,18 @@ it('enforces the lead-time rule on submit', function () {
     $data = completeProposal($this->f, ['starts_at' => now()->addWeeks(2)->format('Y-m-d\TH:i'), 'ends_at' => now()->addWeeks(2)->addHours(3)->format('Y-m-d\TH:i')]);
 
     $this->actingAs($this->f['president'])
-        ->post("/events/{$this->f['event']->slug}/proposal/submit", [...$data, 'signature' => signaturePng()])
+        ->post("/events/{$this->f['event']->slug}/proposal/submit", [...$data, 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])
         ->assertSessionHas('error', fn (string $m) => str_contains($m, '1.5 months'));
 });
 
 it('submits, runs the chain over HTTP and lands in the feed', function () {
     $this->actingAs($this->f['president'])
-        ->post("/events/{$this->f['event']->slug}/proposal/submit", [...completeProposal($this->f), 'signature' => signaturePng()])
+        ->post("/events/{$this->f['event']->slug}/proposal/submit", [...completeProposal($this->f), 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])
         ->assertRedirect(route('documents.show', $this->f['document']));
 
     $step = app(ApprovalEngine::class)->currentStep($this->f['document']->fresh());
     $this->actingAs($this->f['advisor'])->get('/approvals')->assertInertia(fn (Assert $p) => $p->has('items', 1));
-    $this->actingAs($this->f['advisor'])->post("/approvals/{$step->id}", ['decision' => 'approve', 'signature' => signaturePng()])->assertRedirect('/approvals');
+    $this->actingAs($this->f['advisor'])->post("/approvals/{$step->id}", ['decision' => 'approve', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])->assertRedirect('/approvals');
 
     approveRemainingSteps($this->f['document']);
 
