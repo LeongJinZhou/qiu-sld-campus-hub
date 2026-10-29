@@ -10,7 +10,7 @@ const props = defineProps<{
     session: string;
     clubs_by_status: { active: number; at_risk: number; inactive: number };
     approvals: { role: string; waiting: number; overdue: number }[];
-    overdue: { approvals: number; post_event: number };
+    overdue: { approvals: number; post_event: number; sld_requests: number };
     events_this_month: { slug: string; name: string; club: string; date: string; status: string }[];
     agm: { session: string; clubs: number; scheduled: number; reports: number; packages: number } | null;
     members: Record<'pending' | 'active' | 'grace' | 'terminated' | 'alumni', number>;
@@ -53,6 +53,7 @@ const pct = (n: number, of: number): string => `${of ? Math.round((n / of) * 100
                     <p class="text-xs text-ink-muted">Overdue post-event documents</p>
                     <p class="text-3xl font-bold tabular-nums" :class="overdue.post_event ? 'text-danger' : ''">{{ overdue.post_event }}</p>
                     <p class="text-xs text-ink-muted">finance, receipts, post mortem, reel…</p>
+                    <Link href="/admin/requests" class="text-xs" :class="overdue.sld_requests ? 'text-danger' : 'text-ink-muted'">{{ overdue.sld_requests }} overdue replies to SLD</Link>
                 </div>
             </section>
 
