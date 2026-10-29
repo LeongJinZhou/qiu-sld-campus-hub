@@ -16,7 +16,7 @@ use App\Services\Time\SessionResolver;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 
-/** Joining, paying and activation. No refund, no exit: there is no leave action (CLAUDE.md §6). */
+/** Joining, paying and activation. No refund, no exit: there is no leave action. */
 class MembershipService
 {
     public const LENGTH_DAYS = 365;

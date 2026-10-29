@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Mirror of the allowed camsys columns only (CLAUDE.md §3); sensitive columns never land here.
+        // Mirror of the allowed camsys columns only; sensitive columns never land here.
         Schema::create('students', function (Blueprint $table) {
             $table->id();
             $table->string('student_number', 50)->unique();

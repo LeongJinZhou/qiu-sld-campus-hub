@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
-/** Feed order: SLD-pinned first, then clubs the viewer follows, then newest (CLAUDE.md §6 Social). */
+/** Feed order: SLD-pinned first, then clubs the viewer follows, then newest. */
 class FeedQuery
 {
     public function __construct(private readonly PostPresenter $posts) {}

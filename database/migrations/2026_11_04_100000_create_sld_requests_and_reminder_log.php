@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Requests from SLD that a club must answer within 7 working days (CLAUDE.md §6 Club status).
+        // Requests from SLD that a club must answer within 7 working days.
         Schema::create('sld_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('club_id')->constrained()->cascadeOnDelete();
