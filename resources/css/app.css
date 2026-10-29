@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../js/**/*.vue';
+
+/* Design tokens: QIU Student Activity palette (CLAUDE.md §8) + neutral UI scale. */
+@theme {
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+
+    --color-brand-yellow: #fdda1a;
+    --color-brand-cyan: #1cbdfd;
+    --color-brand-magenta: #e01ceb;
+    --color-brand-orange: #fd8f1a;
+    --color-brand-coral: #ff5e62;
+    --color-brand-blue: #1f6fff;
+
+    --color-ink: #1a1a1f;
+    --color-ink-muted: #6b6b76;
+    --color-line: #e4e4ea;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f6f6f9;
+
+    --color-success: #16a34a;
+    --color-warning: #d97706;
+    --color-danger: #dc2626;
+
+    --radius-card: 1rem;
+    --radius-control: 0.75rem;
+
+    --shadow-card: 0 1px 2px rgb(16 16 24 / 0.04), 0 4px 16px rgb(16 16 24 / 0.06);
+    --shadow-pop: 0 12px 40px rgb(16 16 24 / 0.18);
+}
+
+@utility text-gradient-warm {
+    background-image: linear-gradient(90deg, var(--color-brand-orange), var(--color-brand-coral));
+    background-clip: text;
+    color: transparent;
+}
+
+@utility text-gradient-cool {
+    background-image: linear-gradient(90deg, var(--color-brand-cyan), var(--color-brand-blue));
+    background-clip: text;
+    color: transparent;
+}
+
+@utility ring-story {
+    background-image: conic-gradient(
+        var(--color-brand-yellow),
+        var(--color-brand-orange),
+        var(--color-brand-magenta),
+        var(--color-brand-cyan),
+        var(--color-brand-yellow)
+    );
+}

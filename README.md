@@ -1,32 +1,46 @@
-# SLD
+# QIU SLD Campus Hub
 
-## Tech Stack
-- **Frontend**: Next.js / React / Tailwind CSS *(or HTML5 / CSS3 / JS)*
-- **Backend**: Node.js / TypeScript *(or PHP 8+ PSR-12)*
-- **Database**: Supabase / PostgreSQL *(or MySQL / PDO SQLite local fallback)*
+Student Life Division portal for Quest International University: an Instagram-style social face (feed, club profiles, stories, lifelong student profiles) and a back-office portal that turns every official SLD template into a web form printed back in the exact official layout.
 
-## Quick Start
+Decisions and business rules: [`CLAUDE.md`](CLAUDE.md). Phase plan: [`docs/BUILD_PROMPT.md`](docs/BUILD_PROMPT.md).
+
+## Stack
+
+Laravel 13 · PHP 8.3+ · Vue 3 (TypeScript) + Inertia · Tailwind CSS 4 · MariaDB/MySQL (SQLite locally) · Pest
+
+## Quick start
 
 ```bash
-# 1. Configure environment variables
-cp .env.example .env
-
-# 2. Run locally
-# Personal Stack (Next.js):
-npm install && npm run dev
-
-# University Stack (PHP 8):
-php -S localhost:8000 -t public
+composer install && npm install
+cp .env.example .env && php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+composer run dev            # or: php artisan serve + npm run dev
 ```
 
-## Project Structure
+## Tests
+
+```bash
+composer test               # Pest
+npm run build               # vue-tsc type-check + Vite build
+```
+
+## Status
+
+- [x] Phase 0 — Laravel setup, two DB connections, design tokens, UI components, layouts *(Stitch design import pending: no Stitch tool available)*
+- [ ] Phase 1 — Login, camsys sync, roles, clubs, profiles
+- [ ] Phase 2 — Feed, events, proposals, approvals, attendance, indemnity
+- [ ] Phase 3 — Membership, payments, finance, meetings, minutes, post mortem, venues
+- [ ] Phase 4 — AGM, elections, Annual Activities Report
+- [ ] Phase 5 — Dashboards, reminders, hardening, pilot
+
+## Layout
+
 ```text
-SLD/
-├── public/           # Public entry points & static assets
-├── src/
-│   ├── components/   # Reusable UI components
-│   ├── services/     # Business logic layer
-│   └── repositories/ # Database access layer (PDO / Supabase)
-├── .env.example      # Environment variable template
-└── README.md         # Project documentation
+app/Services/            business rules (Camsys, Time, Roles, Documents, …)
+database/camsys/         camsys sample dump (read-only source)
+resources/templates/     original/ official files (never edited), filled/ placeholders, maps/
+resources/js/            Components/ui design system, Layouts, Pages
+public/brand/            QIU Student Activity logos and guides
+docs/reference/          Club & Society briefing
 ```
