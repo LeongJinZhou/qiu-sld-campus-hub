@@ -12,6 +12,7 @@ const user = computed(() => page.props.auth.user);
 const menuOpen = ref(false);
 
 const links = computed(() => [
+    { label: 'Dashboard', href: '/admin' },
     { label: 'Clubs', href: '/admin/clubs' },
     { label: 'Staff', href: '/admin/staff' },
     { label: 'All members', href: '/admin/members' },
@@ -30,7 +31,7 @@ const links = computed(() => [
         : []),
     { label: '← Back to Campus Hub', href: '/clubs' },
 ]);
-const isActive = (href: string): boolean => page.url.startsWith(href);
+const isActive = (href: string): boolean => (href === '/admin' ? page.url === '/admin' : page.url.startsWith(href));
 </script>
 
 <template>
