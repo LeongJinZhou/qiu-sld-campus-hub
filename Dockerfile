@@ -15,7 +15,8 @@ WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --no-autoloader --ignore-platform-reqs
 COPY . .
-RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative \
+    && rm -f bootstrap/cache/*.php
 
 # --- Runtime ---
 FROM php:8.4-apache-bookworm
