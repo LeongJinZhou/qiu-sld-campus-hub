@@ -19,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             SecurityHeaders::class,
         ]);
+        // Behind Firebase Hosting / Cloud Run the request arrives through Google's proxies (HTTPS, client IP).
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : explode(',', $proxies));
+        }
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);

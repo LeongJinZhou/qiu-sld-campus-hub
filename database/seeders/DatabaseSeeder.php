@@ -10,7 +10,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([SettingsSeeder::class, StaffSeeder::class]);
 
-        if (app()->isLocal()) {
+        // Demo clubs and events: locally, and on a hosted demo (DEMO_LOGIN=true). Never in a pilot.
+        if (app()->isLocal() || config('sld.demo_login')) {
             $this->call([DemoClubsSeeder::class, DemoEventsSeeder::class]);
         }
     }
