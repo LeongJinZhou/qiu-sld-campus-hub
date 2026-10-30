@@ -43,12 +43,12 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware('guest')->group(function () {
-    Route::get('/', fn () => Inertia::render('Auth/Login', ['devLogin' => app()->isLocal()]))->name('login');
+    Route::get('/', fn () => Inertia::render('Auth/Login', ['devLogin' => config('sld.demo_login')]))->name('login');
     Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('auth.google');
     Route::get('/auth/google/alumni', [GoogleController::class, 'alumni'])->name('auth.google.alumni');
     Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->middleware('throttle:10,1');
 
-    if (app()->isLocal()) {
+    if (config('sld.demo_login')) {
         Route::get('/dev/login-as', [DevLoginController::class, 'index'])->name('dev.login');
         Route::post('/dev/login-as', [DevLoginController::class, 'store'])->middleware('throttle:30,1');
     }

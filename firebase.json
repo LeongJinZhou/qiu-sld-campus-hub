@@ -1,0 +1,9 @@
+{
+    "hosting": {
+        "public": "deploy/firebase-public",
+        "ignore": ["firebase.json", "**/.*"],
+        "rewrites": [
+            { "source": "**", "run": { "serviceId": "campus-hub", "region": "asia-southeast1" } }
+        ]
+    }
+}
