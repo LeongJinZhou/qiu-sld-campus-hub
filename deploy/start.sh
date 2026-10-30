@@ -22,8 +22,10 @@ if [ "${DB_CONNECTION:-mysql}" = "sqlite" ]; then
     touch "$DB_FILE" && chown www-data:www-data "$DB_FILE"
 fi
 
-su -s /bin/sh www-data -c "php artisan migrate --force --no-interaction"
-if [ "${SEED_DEMO:-false}" = "true" ] && [ "$(su -s /bin/sh www-data -c "php artisan tinker --execute='echo App\\Models\\Club::count();'" 2>/dev/null | tail -1)" = "0" ]; then
+MIGRATED=$(su -s /bin/sh www-data -c "php artisan migrate --force --no-interaction")
+echo "$MIGRATED"
+# A brand-new database (the clubs table was just created) gets the demo data when SEED_DEMO=true.
+if [ "${SEED_DEMO:-false}" = "true" ] && echo "$MIGRATED" | grep -q "create_clubs_table"; then
     su -s /bin/sh www-data -c "php artisan db:seed --force --no-interaction"
 fi
 su -s /bin/sh www-data -c "php artisan config:cache && php artisan route:cache && php artisan view:cache"
