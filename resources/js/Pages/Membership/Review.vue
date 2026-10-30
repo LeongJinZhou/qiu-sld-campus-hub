@@ -57,7 +57,7 @@ function decide(id: number, approve: boolean): void {
                             <tr><td>Confidence</td><td>≥ 80%</td><td>{{ p.ai.confidence !== null ? `${Math.round(p.ai.confidence * 100)}%` : '—' }}</td></tr>
                         </tbody>
                     </table>
-                    <div v-if="p.status === 'pending_review'" class="flex gap-2">
+                    <div v-if="p.status === 'pending_review'" class="flex flex-wrap gap-2">
                         <Button @click="decide(p.id, true)">Confirm payment</Button>
                         <Button variant="secondary" @click="decide(p.id, false)">Reject</Button>
                     </div>

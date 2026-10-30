@@ -4,6 +4,16 @@
 @source '../../storage/framework/views/*.php';
 @source '../js/**/*.vue';
 
+/*
+ * Grid items default to min-width: auto, so one wide child (a table, the approval steps, a row of chips) widens
+ * the whole column past the phone screen. Let grid items shrink; wide parts then scroll inside their own box.
+ */
+@layer base {
+    :where(.grid) > * {
+        min-width: 0;
+    }
+}
+
 /* Design tokens: QIU Student Activity palette + neutral UI scale. */
 @theme {
     --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';

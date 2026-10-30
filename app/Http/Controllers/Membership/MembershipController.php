@@ -41,8 +41,8 @@ class MembershipController extends Controller
             'drive' => MembershipDrive::running()->where(fn ($q) => $q->whereNull('club_id')->orWhere('club_id', $club->id))->first(['title', 'ends_at']),
             'membership' => $membership ? [
                 'status' => $membership->status->value,
-                'expires_on' => $membership->expires_on?->toFormattedDateString(),
-                'grace_ends_on' => $membership->grace_ends_on?->toFormattedDateString(),
+                'expires_on' => $membership->expires_on?->format('j M Y'),
+                'grace_ends_on' => $membership->grace_ends_on?->format('j M Y'),
             ] : null,
             'payment' => $latest ? [
                 'method' => $latest->method,

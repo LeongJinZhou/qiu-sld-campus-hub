@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { date } from '@/lib/format';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
@@ -63,7 +64,7 @@ const submit = (): void => form.post(`/clubs/${props.club.slug}/venues`, { prese
                         <Input v-model="form.starts_at" type="time" label="From" :error="form.errors.starts_at" />
                         <Input v-model="form.ends_at" type="time" label="To" :error="form.errors.ends_at" />
                     </div>
-                    <p v-if="form.type === 'big_room'" class="text-xs text-ink-muted">Big rooms need at least 1 week's notice (earliest {{ earliestBigRoom }}).</p>
+                    <p v-if="form.type === 'big_room'" class="text-xs text-ink-muted">Big rooms need at least 1 week's notice (earliest {{ date(earliestBigRoom) }}).</p>
                     <Input v-model="form.purpose" label="Purpose" placeholder="Membership drive booth" :error="form.errors.purpose" />
                     <Input v-if="form.type === 'la_place'" v-model="form.items" label="Items sold or promoted" placeholder="Club T-shirts, flyers" :error="form.errors.items" />
                     <Textarea v-model="form.activity" label="Activity" :rows="3" placeholder="What will happen at the venue?" :error="form.errors.activity" />

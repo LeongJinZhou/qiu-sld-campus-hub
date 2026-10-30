@@ -56,7 +56,7 @@ class AgmController extends Controller
                 'present' => $agm->attendees->pluck('id'),
                 'report' => $agm->report ? $presenter->progress($agm->report) : null,
                 'election' => $agm->election?->phase(),
-                'package_submitted_at' => $agm->package_submitted_at?->toDayDateTimeString(),
+                'package_submitted_at' => $agm->package_submitted_at?->format('D, j M Y, g:i A'),
                 'checklist' => $package->checklist($agm),
             ] : null,
             'people' => $agm ? $meetings->committee($club)
@@ -67,7 +67,7 @@ class AgmController extends Controller
                     'id' => $e->id, 'name' => $e->name, 'date' => $e->starts_at->format('j M Y'), 'details' => $file->data['details'][$e->id] ?? '',
                 ])->values(),
                 'theme_id' => $file->report_theme_id,
-                'generated_at' => $file->generated_at?->toDayDateTimeString(),
+                'generated_at' => $file->generated_at?->format('D, j M Y, g:i A'),
                 'ai' => Cache::get(DraftAnnualReport::statusKey($file->id)),
                 'ai_available' => (bool) config('services.anthropic.key'),
             ] : null,

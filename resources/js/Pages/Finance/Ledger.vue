@@ -9,7 +9,7 @@ import Icon from '@/Components/ui/Icon.vue';
 import Input from '@/Components/ui/Input.vue';
 import Select from '@/Components/ui/Select.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { rm } from '@/lib/format';
+import { date, rm } from '@/lib/format';
 import type { ApprovalProgress } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
@@ -75,7 +75,7 @@ const payee = useForm({ kind: 'vendor', name: '', email: '', contact_no: '', ban
                         </thead>
                         <tbody>
                             <tr v-for="(r, i) in rows" :key="i" class="border-t border-line" :class="r.id === null ? 'bg-surface-muted/60 font-medium' : ''">
-                                <td class="px-3 py-2 tabular-nums">{{ r.date }}</td>
+                                <td class="whitespace-nowrap px-3 py-2 tabular-nums">{{ date(r.date) }}</td>
                                 <td class="px-3 py-2">{{ r.description }}</td>
                                 <td class="px-3 py-2 text-right tabular-nums text-success">{{ r.income_sen ? rm(r.income_sen) : '' }}</td>
                                 <td class="px-3 py-2 text-right tabular-nums text-danger">{{ r.expense_sen ? rm(r.expense_sen) : '' }}</td>

@@ -72,7 +72,7 @@ class AttendanceService
         $opens = $event->starts_at->copy()->subMinutes(self::OPENS_BEFORE_MINUTES);
         $closes = $event->ends_at->copy()->addMinutes(self::CLOSES_AFTER_MINUTES);
         if (now()->lt($opens) || now()->gt($closes)) {
-            throw new DomainException("Attendance is open from {$opens->format('j M g:ia')} to {$closes->format('j M g:ia')}.");
+            throw new DomainException("Attendance is open from {$opens->format('j M, g:i A')} to {$closes->format('j M, g:i A')}.");
         }
     }
 
