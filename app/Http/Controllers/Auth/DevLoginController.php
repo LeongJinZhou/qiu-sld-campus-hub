@@ -39,7 +39,7 @@ class DevLoginController extends Controller
         try {
             // Google supplies the real name; locally, "jinzhou.leong@…" becomes "Jinzhou Leong".
             $email = $request->validated('email');
-            $user = $signIn->signIn($email, Str::headline(Str::before($email, '@')), null, null, enforceDomain: false);
+            $user = $signIn->signIn($email, Str::headline(str_replace('.', ' ', Str::before($email, '@'))), null, null, enforceDomain: false);
         } catch (NotInRecordsException) {
             return to_route('not-in-records');
         }
