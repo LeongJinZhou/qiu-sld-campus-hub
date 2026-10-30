@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql gd zip intl exif bcmath opcache \
     && python3 -m venv /opt/pptx && /opt/pptx/bin/pip install --no-cache-dir python-pptx \
     && a2enmod rewrite headers \
+    && sed -ri 's!^(\s*Alias /icons/)!#\1!' /etc/apache2/mods-available/alias.conf \
     && rm -rf /var/lib/apt/lists/*
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public \
