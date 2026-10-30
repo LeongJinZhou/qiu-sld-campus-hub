@@ -66,7 +66,7 @@ async function share(): Promise<void> {
                 <Button variant="secondary" size="sm" @click="share"><Icon name="send" :size="16" /> {{ copied ? 'Copied!' : 'Share' }}</Button>
             </template>
             <template #meta>
-                <p class="text-xs text-ink-muted">{{ account.student_number }} · {{ account.email }}</p>
+                <p class="text-xs text-ink-muted">{{ [account.student_number, account.email].filter(Boolean).join(" · ") }}</p>
             </template>
             <template #tab-certificates>
                 <EmptyState v-if="!certificates.length" title="No certificates yet" description="Committee positions and events you attend (clock in and out) appear here as downloadable certificates." />
