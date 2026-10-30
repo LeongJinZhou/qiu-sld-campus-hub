@@ -60,3 +60,6 @@ _ide_helper.php
 /docs/BUILD_PROMPT.md
 /docs/reference/
 /storage/inertia-devtools
+
+# Firebase CLI state
+/.firebase
