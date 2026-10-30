@@ -8,7 +8,8 @@ sed -ri "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-avai
 cd /var/www/html
 # storage/app may be a mounted volume (Cloud Storage on Cloud Run); make sure the folders exist.
 mkdir -p storage/app/public storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
-chown -R www-data:www-data storage/framework storage/logs bootstrap/cache 2>/dev/null || true
+# The web server runs as www-data and must be able to write uploads, signatures and generated files.
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
 # Dummy camsys copy for the demo (read-only source of student records).
 if [ "${CAMSYS_DRIVER:-sqlite}" = "sqlite" ]; then
