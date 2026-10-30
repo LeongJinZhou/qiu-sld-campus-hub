@@ -11,7 +11,7 @@ import Input from '@/Components/ui/Input.vue';
 import Select from '@/Components/ui/Select.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { dateTime } from '@/lib/format';
+import { date, dateTime } from '@/lib/format';
 import type { ApprovalProgress } from '@/types';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -73,8 +73,8 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
             <template v-else>
                 <section class="grid gap-3 rounded-card bg-gradient-to-r from-brand-cyan/15 via-brand-blue/10 to-brand-magenta/15 p-5 sm:grid-cols-3">
                     <div><p class="text-xs text-ink-muted">Session</p><p class="text-lg font-bold">{{ period.session }}</p></div>
-                    <div><p class="text-xs text-ink-muted">Hold the AGM by {{ period.agm_deadline }}</p><p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.agm_deadline)) }} days left</p></div>
-                    <div><p class="text-xs text-ink-muted">Submit the package by {{ period.report_deadline }}</p><p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.report_deadline)) }} days left</p></div>
+                    <div><p class="text-xs text-ink-muted">Hold the AGM by {{ date(period.agm_deadline) }}</p><p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.agm_deadline)) }} days left</p></div>
+                    <div><p class="text-xs text-ink-muted">Submit the package by {{ date(period.report_deadline) }}</p><p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.report_deadline)) }} days left</p></div>
                 </section>
 
                 <Card v-if="!agm">

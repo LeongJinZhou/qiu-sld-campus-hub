@@ -102,7 +102,7 @@ class ClubController extends Controller
             'faqs' => $club->faqs()->get(['id', 'question', 'answer']),
             'sldRequests' => $user?->can('viewInternal', $club)
                 ? SldRequest::where('club_id', $club->id)->where(fn ($q) => $q->whereNull('replied_at')->orWhere('replied_at', '>', now()->subDays(30)))->latest()->get()
-                    ->map(fn (SldRequest $r) => ['id' => $r->id, 'subject' => $r->subject, 'body' => $r->body, 'due_on' => $r->due_on->toFormattedDateString(), 'overdue' => $r->isOverdue(), 'reply' => $r->reply])
+                    ->map(fn (SldRequest $r) => ['id' => $r->id, 'subject' => $r->subject, 'body' => $r->body, 'due_on' => $r->due_on->format('j M Y'), 'overdue' => $r->isOverdue(), 'reply' => $r->reply])
                 : [],
             // AGM countdown for the club's own people while the period is open.
             'agm' => $user?->can('viewInternal', $club) && ($period = app(AgmPeriods::class)->current())
@@ -110,7 +110,7 @@ class ClubController extends Controller
                 : null,
             'documents' => $user->can('viewInternal', $club)
                 ? Inertia::defer(fn () => $club->documents()->with('event', 'approvals')->latest()->get()->map(fn (Document $d) => [
-                    'id' => $d->id, 'type' => $d->type->label(), 'event' => $d->event?->name, 'status' => $d->status->value, 'updated' => $d->updated_at?->toFormattedDateString(),
+                    'id' => $d->id, 'type' => $d->type->label(), 'event' => $d->event?->name, 'status' => $d->status->value, 'updated' => $d->updated_at?->format('j M Y'),
                     'progress' => $presenter->progress($d),
                 ]))
                 : null,

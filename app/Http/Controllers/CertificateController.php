@@ -29,7 +29,7 @@ class CertificateController extends Controller
             'code' => strtoupper($code),
             'certificate' => $certificate ? [
                 'title' => $certificate->title, 'name' => $certificate->user->name,
-                'statement' => $certificate->statement, 'issued_at' => $certificate->issued_at->toFormattedDateString(),
+                'statement' => $certificate->statement, 'issued_at' => $certificate->issued_at->format('j M Y'),
             ] : null,
         ]);
     }

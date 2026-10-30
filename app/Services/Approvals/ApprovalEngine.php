@@ -196,7 +196,7 @@ class ApprovalEngine
         $next->update(['due_at' => now()->addWeekdays(self::STEP_WORKING_DAYS)]);
         Notification::send($this->approvers->candidates($document, $next->role), new DocumentNotification(
             "{$document->type->label()} waiting for you",
-            "{$document->club->name}: step {$next->step_no} ({$next->role->label()}). Due {$next->due_at->toFormattedDateString()}.",
+            "{$document->club->name}: step {$next->step_no} ({$next->role->label()}). Due {$next->due_at->format('j M Y')}.",
             route('approvals.show', $next),
         ));
     }

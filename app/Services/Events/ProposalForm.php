@@ -102,7 +102,7 @@ class ProposalForm
         return [
             'to' => $coo ? "{$coo->name}, COO" : 'COO',
             'from' => $document->club->name,
-            'submitted_on' => $document->submitted_at?->toFormattedDateString(),
+            'submitted_on' => $document->submitted_at?->format('j M Y'),
         ];
     }
 }

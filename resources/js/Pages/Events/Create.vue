@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { date } from '@/lib/format';
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
 import Input from '@/Components/ui/Input.vue';
@@ -22,7 +23,7 @@ const minDate = computed(() => (form.expected_participants >= props.largeThresho
                 <Input v-model="form.expected_participants" type="number" label="Expected participants" required :error="form.errors.expected_participants" />
                 <p class="rounded-control bg-brand-cyan/10 px-3 py-2 text-sm">
                     {{ form.expected_participants >= largeThreshold ? `${largeThreshold} or more` : `Under ${largeThreshold}` }} participants: submit at least
-                    {{ form.expected_participants >= largeThreshold ? '3 months' : '1.5 months' }} ahead. Earliest event date if you submit today: <strong>{{ minDate }}</strong>.
+                    {{ form.expected_participants >= largeThreshold ? '3 months' : '1.5 months' }} ahead. Earliest event date if you submit today: <strong>{{ date(minDate) }}</strong>.
                 </p>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <Input v-model="form.starts_at" type="datetime-local" label="Starts" required :error="form.errors.starts_at" />

@@ -64,7 +64,7 @@ const columns = [
                     <h1 class="text-xl font-bold">Attendance</h1>
                     <p class="text-sm text-ink-muted">{{ event.name }} · {{ counts.present }} present / {{ counts.registered }} registered</p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                     <Button v-if="canSubmit && event.attendance_open" @click="signing = true">Sign &amp; submit attendance list</Button>
                     <a :href="`/events/${event.slug}/attendance/export`"><Button variant="secondary">Download 03 Attendance List (XLSX)</Button></a>
                     <Link v-if="signOff" :href="`/documents/${signOff.id}`"><Button variant="ghost">Signed copy (PDF)</Button></Link>
@@ -84,7 +84,7 @@ const columns = [
                     <template #title>Show this to participants</template>
                     <template #actions>
                         <div class="flex gap-1 rounded-control bg-surface-muted p-1 text-sm">
-                            <button v-for="a in ['in', 'out'] as const" :key="a" type="button" class="rounded-control px-3 py-1" :class="action === a ? 'bg-surface font-semibold shadow-card' : ''" @click="setAction(a)">Clock {{ a }}</button>
+                            <button v-for="a in ['in', 'out'] as const" :key="a" type="button" class="whitespace-nowrap rounded-control px-3 py-1" :class="action === a ? 'bg-surface font-semibold shadow-card' : ''" @click="setAction(a)">Clock {{ a }}</button>
                         </div>
                     </template>
                     <QrCode v-if="qrSvg" :svg="qrSvg" :label="`Scan to clock ${action} · refreshes every minute`" />

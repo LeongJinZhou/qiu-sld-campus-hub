@@ -90,7 +90,7 @@ class MembershipService
 
         $payment->user->notify(new DocumentNotification(
             "Welcome to {$payment->membership->club->name}",
-            'Your membership is active until '.$payment->membership->fresh()->expires_on->toFormattedDateString().'.',
+            'Your membership is active until '.$payment->membership->fresh()->expires_on->format('j M Y').'.',
             route('clubs.show', $payment->membership->club),
         ));
     }

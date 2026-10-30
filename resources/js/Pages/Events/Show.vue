@@ -56,8 +56,8 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                     </div>
                 </header>
                 <dl class="grid gap-1 text-sm">
-                    <div class="flex gap-2"><dt class="w-16 text-ink-muted">When</dt><dd>{{ dateTime(event.starts_at) }} – {{ dateTime(event.ends_at) }}</dd></div>
-                    <div class="flex gap-2"><dt class="w-16 text-ink-muted">Where</dt><dd>{{ event.venue }} <span class="capitalize text-ink-muted">({{ event.mode }})</span></dd></div>
+                    <div class="flex flex-wrap gap-2"><dt class="w-16 text-ink-muted">When</dt><dd>{{ dateTime(event.starts_at) }} – {{ dateTime(event.ends_at) }}</dd></div>
+                    <div class="flex flex-wrap gap-2"><dt class="w-16 text-ink-muted">Where</dt><dd>{{ event.venue }} <span class="capitalize text-ink-muted">({{ event.mode }})</span></dd></div>
                 </dl>
                 <p v-if="event.summary" class="whitespace-pre-line text-sm">{{ event.summary }}</p>
                 <Card v-if="approval">

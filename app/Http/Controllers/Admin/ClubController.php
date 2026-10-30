@@ -38,7 +38,7 @@ class ClubController extends Controller
                 'category' => $club->category?->name,
                 'managed_by' => $club->managed_by,
                 'status' => $club->status,
-                'last_activity' => app(ClubStatusService::class)->lastActivity($club)?->toFormattedDateString(),
+                'last_activity' => app(ClubStatusService::class)->lastActivity($club)?->format('j M Y'),
                 'missing' => $compulsory->missing(ScopeType::Club, $club->id, $session->id),
             ]),
         ]);
@@ -66,7 +66,7 @@ class ClubController extends Controller
             'club' => [
                 ...$club->only('id', 'slug', 'name', 'category_id', 'established_year', 'bio', 'instagram_handle', 'managed_by'),
                 'logo_url' => $club->logoUrl(),
-                'transferred_at' => $club->transferred_at?->toDayDateTimeString(),
+                'transferred_at' => $club->transferred_at?->format('D, j M Y, g:i A'),
             ],
             'categories' => $this->categories(),
             'session' => $session->name,

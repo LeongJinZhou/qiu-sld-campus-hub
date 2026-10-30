@@ -78,7 +78,7 @@ class PublicProfile
                 'name' => $a->event->name,
                 'url' => route('events.show', $a->event),
                 'club' => $a->event->club->name,
-                'date' => $a->event->starts_at->toFormattedDateString(),
+                'date' => $a->event->starts_at->format('j M Y'),
                 'role' => $a->role,
                 'poster_url' => $a->event->posterUrl(),
             ])->all() : null,
@@ -87,7 +87,7 @@ class PublicProfile
                 // Event CCA, or weekly-activity CCA claimed through a meeting.
                 'records' => $cca->sortByDesc(fn (CcaRecord $r) => ($r->event ?? $r->meeting)?->starts_at)->map(fn (CcaRecord $r) => [
                     'event' => $r->event->name ?? ($r->meeting ? "{$r->meeting->club->name}: {$r->meeting->title}" : ''),
-                    'date' => ($r->event ?? $r->meeting)?->starts_at->toFormattedDateString(),
+                    'date' => ($r->event ?? $r->meeting)?->starts_at->format('j M Y'),
                     'role' => $r->role,
                     'hours' => $r->hours,
                 ])->values()->all(),

@@ -94,7 +94,7 @@ const tone = (a?: string): 'success' | 'neutral' | 'info' => (a === 'present' ? 
                     <p class="text-sm text-ink-muted">Session {{ record.session }} · locked fields come from records and cannot be changed.</p>
                 </header>
 
-                <div v-if="document.downloads.length" class="flex gap-2">
+                <div v-if="document.downloads.length" class="flex flex-wrap gap-2">
                     <a v-for="f in document.downloads" :key="f" :href="`/documents/${document.id}/download/${f}`"><Button variant="secondary" size="sm">Official 01 AGM Report ({{ f.toUpperCase() }})</Button></a>
                 </div>
 

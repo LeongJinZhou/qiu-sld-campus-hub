@@ -26,9 +26,9 @@ class EventDocumentController extends Controller
             'items' => $event->documentItems()->orderBy('due_on')->orderBy('id')->get()->map(fn (EventDocumentItem $i) => [
                 'id' => $i->id,
                 'label' => $i->label(),
-                'due_on' => $i->due_on->toFormattedDateString(),
+                'due_on' => $i->due_on->format('j M Y'),
                 'overdue' => ! $i->submitted_at && $i->due_on->endOfDay()->isPast(),
-                'submitted_at' => $i->submitted_at?->toFormattedDateString(),
+                'submitted_at' => $i->submitted_at?->format('j M Y'),
                 'file_name' => $i->file_path ? basename($i->file_path) : null,
                 'file_url' => $i->file_path ? URL::temporarySignedRoute('events.documents.download', now()->addMinutes(30), [$event, $i]) : null,
             ]),

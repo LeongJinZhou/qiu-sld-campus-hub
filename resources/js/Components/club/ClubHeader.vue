@@ -52,16 +52,17 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
             </dl>
             <p v-if="club.bio" class="whitespace-pre-line text-sm">{{ club.bio }}</p>
             <div class="flex flex-wrap items-center gap-4 text-sm">
+                <!-- Join is always offered to non-members; the join page explains if the fee is not approved yet. -->
                 <Link
-                    v-if="membership.fee_sen !== null && !['active', 'alumni'].includes(membership.status ?? '')"
+                    v-if="!['active', 'alumni'].includes(membership.status ?? '')"
                     :href="`/clubs/${club.slug}/join`"
-                    class="rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-4 py-1.5 font-semibold text-white shadow-card"
+                    class="inline-flex h-9 items-center rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-4 font-semibold text-white shadow-card"
                     :class="membership.drive ? 'animate-tracker-pulse' : ''"
                 >
-                    {{ membership.status === 'grace' ? 'Renew' : 'Join' }} · {{ membership.fee_sen ? `RM ${(membership.fee_sen / 100).toFixed(2)}` : 'Free' }}
+                    {{ membership.status === 'grace' ? 'Renew membership' : membership.status === 'pending' ? 'Continue joining' : 'Join club' }}<template v-if="membership.fee_sen !== null"> · {{ membership.fee_sen ? `RM ${(membership.fee_sen / 100).toFixed(2)}` : 'Free' }}</template>
                 </Link>
-                <span v-else-if="membership.status === 'active' || membership.status === 'alumni'" class="rounded-control bg-success/10 px-3 py-1.5 font-semibold text-success">✓ Member</span>
-                <button type="button" class="rounded-control px-4 py-1.5 font-semibold" :class="following ? 'bg-surface-muted' : 'bg-ink text-white'" @click="follow">
+                <span v-else class="inline-flex h-9 items-center rounded-control bg-success/10 px-3 font-semibold text-success">✓ {{ membership.status === 'alumni' ? 'Alumni member' : 'Member' }}</span>
+                <button type="button" class="inline-flex h-9 items-center rounded-control px-4 font-semibold" :class="following ? 'border border-line bg-surface-muted' : 'bg-ink text-white'" @click="follow">
                     {{ following ? 'Following' : 'Follow' }}
                 </button>
                 <a v-if="club.instagram_handle" :href="`https://instagram.com/${club.instagram_handle}`" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 font-medium text-brand-blue">
