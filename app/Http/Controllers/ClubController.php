@@ -80,6 +80,8 @@ class ClubController extends Controller
             ]),
             'membership' => [
                 'status' => $club->memberships()->where('user_id', $user->id)->first()?->status->value,
+                // Only current students can join (staff and alumni cannot), so only they see the Join button.
+                'can_join' => (bool) $user->student?->isActive(),
                 'fee_sen' => app(MembershipService::class)->fee($club)?->amount_sen,
                 'drive' => MembershipDrive::running()->where(fn ($q) => $q->whereNull('club_id')->orWhere('club_id', $club->id))->value('title'),
             ],

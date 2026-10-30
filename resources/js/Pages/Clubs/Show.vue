@@ -35,7 +35,7 @@ const props = defineProps<{
     stories: Story[];
     highlights: { id: number; title: string; items: string[] }[];
     counts: { followers: number; events: number; members: number };
-    membership: { status: string | null; fee_sen: number | null; drive: string | null };
+    membership: { status: string | null; fee_sen: number | null; drive: string | null; can_join: boolean };
     following: boolean;
     tab: string;
     posts?: { id: number; url: string; image: string | null; caption: string | null; count: number }[];

@@ -20,7 +20,7 @@ const props = defineProps<{
         status: string;
     };
     counts: { committee: number; followers: number; events: number; members: number };
-    membership: { status: string | null; fee_sen: number | null; drive: string | null };
+    membership: { status: string | null; fee_sen: number | null; drive: string | null; can_join: boolean };
     following: boolean;
     hasStories: boolean;
 }>();
@@ -54,14 +54,14 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
             <div class="flex flex-wrap items-center gap-4 text-sm">
                 <!-- Join is always offered to non-members; the join page explains if the fee is not approved yet. -->
                 <Link
-                    v-if="!['active', 'alumni'].includes(membership.status ?? '')"
+                    v-if="membership.can_join && !['active', 'alumni'].includes(membership.status ?? '')"
                     :href="`/clubs/${club.slug}/join`"
                     class="inline-flex h-9 items-center rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-4 font-semibold text-white shadow-card"
                     :class="membership.drive ? 'animate-tracker-pulse' : ''"
                 >
                     {{ membership.status === 'grace' ? 'Renew membership' : membership.status === 'pending' ? 'Continue joining' : 'Join club' }}<template v-if="membership.fee_sen !== null"> · {{ membership.fee_sen ? `RM ${(membership.fee_sen / 100).toFixed(2)}` : 'Free' }}</template>
                 </Link>
-                <span v-else class="inline-flex h-9 items-center rounded-control bg-success/10 px-3 font-semibold text-success">✓ {{ membership.status === 'alumni' ? 'Alumni member' : 'Member' }}</span>
+                <span v-else-if="membership.status === 'active' || membership.status === 'alumni'" class="inline-flex h-9 items-center rounded-control bg-success/10 px-3 font-semibold text-success">✓ {{ membership.status === 'alumni' ? 'Alumni member' : 'Member' }}</span>
                 <button type="button" class="inline-flex h-9 items-center rounded-control px-4 font-semibold" :class="following ? 'border border-line bg-surface-muted' : 'bg-ink text-white'" @click="follow">
                     {{ following ? 'Following' : 'Follow' }}
                 </button>
