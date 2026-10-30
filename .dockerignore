@@ -30,3 +30,4 @@ docs/BUILD_PROMPT.md
 docs/reference
 firebase-public
 .firebase
+bootstrap/cache/*.php
