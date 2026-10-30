@@ -25,7 +25,7 @@ class ProposalRules
         $earliest = $this->earliestStart($expectedParticipants, $submittedOn);
         if ($startsAt->lt($earliest)) {
             $lead = $expectedParticipants >= self::LARGE_EVENT_PARTICIPANTS ? '3 months' : '1.5 months';
-            throw new DomainException("Events with this many participants must be submitted at least {$lead} ahead. The earliest date is {$earliest->toFormattedDateString()}.");
+            throw new DomainException("Events with this many participants must be submitted at least {$lead} ahead. The earliest date is {$earliest->format('j M Y')}.");
         }
     }
 

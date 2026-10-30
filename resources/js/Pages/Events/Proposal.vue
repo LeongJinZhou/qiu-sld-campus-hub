@@ -14,7 +14,7 @@ import Select from '@/Components/ui/Select.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { hoursBetween, rm } from '@/lib/format';
+import { date, hoursBetween, rm } from '@/lib/format';
 import type { ApprovalProgress, ApprovalStep, ProposalData } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
@@ -103,7 +103,7 @@ const positionOptions = computed(() => props.options.compulsoryPositions.filter(
                 <Textarea v-model="form.summary" label="Event Summary" :rows="3" :readonly="readOnly" :error="form.errors.summary" />
                 <div class="grid gap-4 sm:grid-cols-3">
                     <Input v-model="form.expected_participants" type="number" label="Expected participants" :readonly="readOnly" :error="form.errors.expected_participants" />
-                    <Input v-model="form.starts_at" type="datetime-local" label="Event starts" :readonly="readOnly" :error="form.errors.starts_at" :hint="`Earliest: ${minStart}`" />
+                    <Input v-model="form.starts_at" type="datetime-local" label="Event starts" :readonly="readOnly" :error="form.errors.starts_at" :hint="`Earliest: ${date(minStart)}`" />
                     <Input v-model="form.ends_at" type="datetime-local" label="Event ends" :readonly="readOnly" :error="form.errors.ends_at" />
                 </div>
                 <fieldset class="grid gap-2">

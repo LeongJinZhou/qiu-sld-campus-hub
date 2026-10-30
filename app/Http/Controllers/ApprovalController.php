@@ -48,7 +48,7 @@ class ApprovalController extends Controller
             ],
             'recent' => $mine->take(8)->map(fn (Approval $a) => [
                 'document_id' => $a->document_id, 'type' => $a->document->type->label(), 'club' => $a->document->club->name,
-                'decision' => $a->decision->value, 'decided_at' => $a->decided_at?->toFormattedDateString(),
+                'decision' => $a->decision->value, 'decided_at' => $a->decided_at?->format('j M Y'),
             ])->values(),
             'items' => $waiting->map(fn (Approval $a) => [
                 'id' => $a->id,
@@ -57,7 +57,7 @@ class ApprovalController extends Controller
                 'event' => $a->document->event?->name,
                 'role' => $a->role->label(),
                 'step_no' => $a->step_no,
-                'due_at' => $a->due_at?->toFormattedDateString(),
+                'due_at' => $a->due_at?->format('j M Y'),
                 'overdue' => $a->due_at?->isPast() ?? false,
                 'progress' => app(DocumentPresenter::class)->progress($a->document),
             ]),

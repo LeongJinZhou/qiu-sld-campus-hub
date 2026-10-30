@@ -140,7 +140,7 @@ const takeBack = (): void => router.delete(`/admin/clubs/${props.club?.slug}/tra
                                     <span class="text-xs text-ink-muted">{{ holders.get(position)?.name ?? 'Vacant' }}</span>
                                 </div>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex flex-wrap gap-2">
                                 <Button size="sm" variant="secondary" @click="assignTo(position)">{{ holders.get(position) ? 'Replace' : 'Assign' }}</Button>
                                 <Button v-if="holders.get(position)" size="sm" variant="ghost" @click="remove(holders.get(position)!)">Remove</Button>
                             </div>

@@ -8,7 +8,7 @@ import Select from '@/Components/ui/Select.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { rm } from '@/lib/format';
+import { date, rm } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
@@ -66,7 +66,7 @@ const setPayee = (row: { amount_sen: number }, value: string): void => {
                 <Select v-model="form.event_id" label="For" :options="[{ value: '', label: 'Weekly activity (no event)' }, ...events.map((e) => ({ value: e.id, label: `${e.name} · ${e.date}` }))]" />
                 <template v-if="!event">
                     <Input v-model="form.purpose" label="To cover" placeholder="weekly training equipment" :error="form.errors.purpose" />
-                    <Input v-model="form.needed_by" type="date" label="Money needed by" :hint="`At least 2 weeks ahead: ${earliestWeekly} or later`" :error="form.errors.needed_by" />
+                    <Input v-model="form.needed_by" type="date" label="Money needed by" :hint="`At least 2 weeks ahead: ${date(earliestWeekly)} or later`" :error="form.errors.needed_by" />
                 </template>
             </FormSection>
 

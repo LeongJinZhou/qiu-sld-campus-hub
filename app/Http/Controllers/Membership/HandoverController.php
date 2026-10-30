@@ -37,7 +37,7 @@ class HandoverController extends Controller
                 'committee_ready' => $handover->committee_ready_at !== null,
                 'student_done' => $handover->student_done_at !== null,
                 'committee_done' => $handover->committee_done_at !== null,
-                'expires_at' => $handover->expires_at->toDayDateTimeString(),
+                'expires_at' => $handover->expires_at->format('D, j M Y, g:i A'),
             ],
             'qrSvg' => $token ? $qr->svg($token) : null,
         ]);

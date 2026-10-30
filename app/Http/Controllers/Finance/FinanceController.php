@@ -137,7 +137,7 @@ class FinanceController extends Controller
         return Inertia::render('Finance/FundRequest', [
             'club' => $club->only('slug', 'name'),
             'events' => Event::where('club_id', $club->id)->where('status', DocumentStatus::Approved)->orderByDesc('starts_at')->get()
-                ->map(fn (Event $e) => ['id' => $e->id, 'name' => $e->name, 'date' => $e->starts_at->toFormattedDateString(), 'lines' => $funds->budgetLines($e)]),
+                ->map(fn (Event $e) => ['id' => $e->id, 'name' => $e->name, 'date' => $e->starts_at->format('j M Y'), 'lines' => $funds->budgetLines($e)]),
             'payees' => Payee::where('club_id', $club->id)->get()->map(fn (Payee $p) => ['id' => $p->id, 'label' => "{$p->name} · {$p->bank_name} {$p->maskedAccount()} ({$p->kind})"]),
             'selectedEvent' => $request->integer('event') ?: null,
             'earliestWeekly' => today()->addDays(FundWithdrawals::WEEKLY_LEAD_DAYS)->toDateString(),

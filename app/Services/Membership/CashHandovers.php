@@ -139,7 +139,7 @@ class CashHandovers
             }
             $receipt = new DocumentNotification(
                 'Cash payment receipt',
-                sprintf('RM %s received by %s from %s for %s on %s. Ref: CASH-%d.', number_format($handover->payment->amount_sen / 100, 2), $handover->committee->name, $handover->student->name, $handover->payment->club->name, now()->toDayDateTimeString(), $handover->payment_id),
+                sprintf('RM %s received by %s from %s for %s on %s. Ref: CASH-%d.', number_format($handover->payment->amount_sen / 100, 2), $handover->committee->name, $handover->student->name, $handover->payment->club->name, now()->format('D, j M Y, g:i A'), $handover->payment_id),
                 route('handovers.show', $handover),
             );
             $handover->student->notify($receipt);

@@ -9,6 +9,7 @@ import Modal from '@/Components/ui/Modal.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
+import { copy } from '@/lib/clone';
 import { Head, Link, useForm, usePoll } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -25,14 +26,14 @@ const props = defineProps<{
     document: { id: number; status: string; editable: boolean; data: Data; approval: { progress: ApprovalProgress; steps: ApprovalStep[] } | null; downloads: string[]; ai: string | null; ai_available: boolean };
 }>();
 
-const form = useForm({ rows: structuredClone(props.document.data.rows), recommendations: [...props.document.data.recommendations], signature: null as string | null, signature_strokes: null as string | null });
+const form = useForm({ rows: copy(props.document.data.rows), recommendations: [...props.document.data.recommendations], signature: null as string | null, signature_strokes: null as string | null });
 const readOnly = computed(() => !props.document.editable);
 const url = `/events/${props.event.slug}/post-mortem`;
 const body = () => ({ rows: form.rows, recommendations: form.recommendations });
 const save = (): void => form.transform(body).put(url, { preserveScroll: true });
 const suggest = (): void => form.transform(body).post(`${url}/suggest`, { preserveScroll: true });
 const suggesting = computed(() => props.document.ai === 'pending');
-usePoll(2500, { only: ['document'], onSuccess: () => { if (!suggesting.value) { form.rows = structuredClone(props.document.data.rows); form.recommendations = [...props.document.data.recommendations]; } } }, { autoStart: suggesting.value });
+usePoll(2500, { only: ['document'], onSuccess: () => { if (!suggesting.value) { form.rows = copy(props.document.data.rows); form.recommendations = [...props.document.data.recommendations]; } } }, { autoStart: suggesting.value });
 
 const recRows = computed({
     get: () => form.recommendations.map((text) => ({ text })),
@@ -55,7 +56,7 @@ const submit = (): void => form.post(`${url}/submit`, { preserveScroll: true, on
             <section v-if="document.approval" class="rounded-card border border-line bg-surface p-5 shadow-card">
                 <ApprovalTracker :progress="document.approval.progress" :steps="document.approval.steps" />
             </section>
-            <div v-if="document.downloads.length" class="flex gap-2">
+            <div v-if="document.downloads.length" class="flex flex-wrap gap-2">
                 <a v-for="f in document.downloads" :key="f" :href="`/documents/${document.id}/download/${f}`"><Button variant="secondary" size="sm">Official 09 Post Mortem ({{ f.toUpperCase() }})</Button></a>
             </div>
 

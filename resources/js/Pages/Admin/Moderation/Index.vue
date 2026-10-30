@@ -38,7 +38,7 @@ const act = (url: string): void => router.post(url, {}, { preserveScroll: true }
                 <ul class="grid gap-2">
                     <li v-for="p in recent" :key="p.id" class="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2 text-sm">
                         <span><strong>{{ p.club }}</strong> · {{ p.type }} · {{ p.caption?.slice(0, 80) ?? '' }}</span>
-                        <span class="flex gap-2">
+                        <span class="flex flex-wrap gap-2">
                             <Badge v-if="p.hidden" tone="danger">Hidden</Badge>
                             <Button size="sm" variant="secondary" @click="act(`/admin/moderation/posts/${p.id}/pin`)">{{ p.pinned ? 'Unpin' : 'Pin' }}</Button>
                             <Button size="sm" variant="ghost" @click="act(`/admin/moderation/posts/${p.id}/hide`)">{{ p.hidden ? 'Restore' : 'Hide' }}</Button>

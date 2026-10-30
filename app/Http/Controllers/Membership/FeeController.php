@@ -48,7 +48,7 @@ class FeeController extends Controller
                 ->get(['club_fees.*', 'clubs.name as club', 'sessions_academic.name as session'])
                 ->map(fn ($f) => ['id' => $f->id, 'club' => $f->club, 'session' => $f->session, 'amount_sen' => $f->amount_sen, 'account_name' => $f->account_name, 'payment_url' => $f->payment_url, 'approved' => $f->approved_at !== null]),
             'drives' => MembershipDrive::with('club:id,name')->latest('starts_at')->limit(20)->get()
-                ->map(fn ($d) => ['id' => $d->id, 'title' => $d->title, 'club' => $d->club->name ?? 'All clubs', 'starts_at' => $d->starts_at->toDayDateTimeString(), 'ends_at' => $d->ends_at->toDayDateTimeString()]),
+                ->map(fn ($d) => ['id' => $d->id, 'title' => $d->title, 'club' => $d->club->name ?? 'All clubs', 'starts_at' => $d->starts_at->format('D, j M Y, g:i A'), 'ends_at' => $d->ends_at->format('D, j M Y, g:i A')]),
             'clubs' => Club::orderBy('name')->get(['id', 'name'])->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]),
         ]);
     }

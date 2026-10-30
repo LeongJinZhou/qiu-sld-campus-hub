@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { date } from '@/lib/format';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
@@ -51,7 +52,7 @@ const flagText: Record<string, string> = { no_candidate: 'no candidate', unconte
         <div class="grid gap-6">
             <Card v-if="period">
                 <template #title>AGM period {{ period.session }} is open</template>
-                <p class="text-sm">From {{ period.starts_on }} · AGMs by {{ period.agm_deadline }} · packages due {{ period.report_deadline }}</p>
+                <p class="text-sm">Opened {{ date(period.starts_on) }} · AGMs by {{ date(period.agm_deadline) }} · packages due {{ date(period.report_deadline) }}</p>
                 <Button variant="secondary" size="sm" class="mt-3" @click="close">Close period</Button>
             </Card>
             <Card v-else>
@@ -125,7 +126,7 @@ const flagText: Record<string, string> = { no_candidate: 'no candidate', unconte
             <Card v-if="history.length">
                 <template #title>Past periods</template>
                 <ul class="grid gap-1 text-sm">
-                    <li v-for="h in history" :key="h.id">{{ h.session }} · {{ h.starts_on }} → {{ h.report_deadline }} <Badge v-if="h.closed">closed</Badge></li>
+                    <li v-for="h in history" :key="h.id">{{ h.session }} · {{ date(h.starts_on) }} – {{ date(h.report_deadline) }} <Badge v-if="h.closed">closed</Badge></li>
                 </ul>
             </Card>
         </div>
