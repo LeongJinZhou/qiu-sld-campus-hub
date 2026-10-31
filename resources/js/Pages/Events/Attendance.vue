@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { matchesSearch } from '@/lib/search';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Badge from '@/Components/ui/Badge.vue';
@@ -106,10 +107,9 @@ useIntervalFn(() => router.reload({ only: ['people', 'counts'] }), 15_000);
 const filter = ref<'all' | 'paid' | 'unpaid' | 'in' | 'notin'>('all');
 const search = ref('');
 const filtered = computed(() => {
-    const q = search.value.trim().toLowerCase();
     return props.people.filter((p) => {
         const ok = { all: true, paid: ['paid', 'free'].includes(p.status), unpaid: ['unpaid', 'checking'].includes(p.status), in: !!p.in, notin: !p.in }[filter.value];
-        return ok && (!q || `${p.name} ${p.student_number ?? ''} ${p.order_id ?? ''}`.toLowerCase().includes(q));
+        return ok && matchesSearch(search.value, p.name, p.student_number, p.order_id);
     });
 });
 

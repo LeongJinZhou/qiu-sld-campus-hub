@@ -5,6 +5,7 @@ namespace App\Services\Finance;
 use App\Models\AcademicSession;
 use App\Models\Club;
 use App\Models\LedgerEntry;
+use App\Support\SearchTokens;
 use Illuminate\Support\Collection;
 
 /**
@@ -38,7 +39,7 @@ class FinanceReport
             && (empty($filters['category']) || $r['category'] === $filters['category'])
             && (empty($filters['event_id']) || (int) $r['event_id'] === (int) $filters['event_id'])
             && (empty($filters['method']) || $r['method'] === $filters['method'])
-            && (empty($filters['search']) || str_contains(mb_strtolower($r['description'].' '.$r['event'].' '.$r['handled_by'].' '.$r['order_id']), mb_strtolower($filters['search']))));
+            && (empty($filters['search']) || SearchTokens::matches($filters['search'], $r['description'].' '.$r['event'].' '.$r['handled_by'].' '.$r['order_id'])));
         $rows = $this->sort($rows, $filters['sort'] ?? 'date_asc');
 
         return [

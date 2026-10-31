@@ -219,3 +219,11 @@ function approvedEventWithBudget(object $t): void
     app(ApprovalEngine::class)->submit($t->f['document'], $t->f['president'], $data, signaturePng());
     approveRemainingSteps($t->f['document']);
 }
+
+/** A second ordinary active student (not on any committee), copied from the sample student. */
+function otherStudent(string $number = 'STD20249998', string $name = 'Other Student'): User
+{
+    $template = Student::where('student_number', 'STD20240010')->first();
+
+    return Student::create([...$template->only($template->getFillable()), 'student_number' => $number, 'email' => strtolower($number).'@qiu.edu.my', 'name' => $name, 'user_id' => null])->ensureUser();
+}

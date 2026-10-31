@@ -45,9 +45,9 @@ it('confirms an online event payment, files it under that event with an order ID
 
     $entry = LedgerEntry::where('club_id', $this->club->id)->sole();
     expect($payment->status)->toBe(PaymentStatus::AutoConfirmed)
-        ->and($payment->order_id)->toBe('FIXTURE-CLUB_BEACH-CLEANUP_0001')
+        ->and($payment->order_id)->toMatch('/^FIXTURE-CLUB_BEACH-CLEANUP_STD20240010_[A-Z-]+_\d{8}_\d{4}_TXNEV1$/')
         ->and($registration->fresh()->status)->toBe('registered')
-        ->and($entry->only('category', 'event_id', 'income_sen', 'order_id'))->toBe(['category' => 'event', 'event_id' => $this->event->id, 'income_sen' => 1500, 'order_id' => 'FIXTURE-CLUB_BEACH-CLEANUP_0001']);
+        ->and($entry->only('category', 'event_id', 'income_sen', 'order_id'))->toBe(['category' => 'event', 'event_id' => $this->event->id, 'income_sen' => 1500, 'order_id' => $payment->order_id]);
 });
 
 it('takes event cash through the QR handover and keeps two events apart', function () {
@@ -69,7 +69,7 @@ it('takes event cash through the QR handover and keeps two events apart', functi
     }
 
     expect(LedgerEntry::where('event_id', $this->event->id)->pluck('income_sen')->all())->toBe([1500])
-        ->and(LedgerEntry::where('event_id', $other->id)->pluck('order_id')->all())->toBe(['FIXTURE-CLUB_MOVIE-NIGHT_0001'])
+        ->and(LedgerEntry::where('event_id', $other->id)->value('order_id'))->toMatch('/^FIXTURE-CLUB_MOVIE-NIGHT_STD20240010_.+_T\d{4}$/')
         ->and(LedgerEntry::where('event_id', $other->id)->value('handled_by'))->toBe($this->treasurer->id);
 });
 
@@ -77,7 +77,7 @@ it('gives membership payments their own running order number', function () {
     $m = $this->club->memberships()->create(['user_id' => $this->student->id, 'status' => 'pending']);
     $payment = $m->payments()->create(['club_id' => $this->club->id, 'user_id' => $this->student->id, 'method' => 'cash', 'amount_sen' => 3000, 'status' => PaymentStatus::CashPending]);
 
-    expect($payment->order_id)->toBe('FIXTURE-CLUB_MEMBERSHIP_0001');
+    expect($payment->order_id)->toMatch('/^FIXTURE-CLUB_NORMALREGISTER_STD20240010_[A-Z-]+_'.now()->format('Ymd').'_\d{4}_T0001$/');
 });
 
 it('allows at most two uploaded payment QR codes per event', function () {
@@ -122,5 +122,17 @@ it('counts membership joins by drive with the money collected', function () {
 
     expect($b['groups'][0]['items'][0])->toBe(['label' => 'Welcome Week ('.now()->subDay()->format('j M').' – '.now()->addDays(6)->format('j M').')', 'count' => 1, 'sen' => 3000])
         ->and($b['check']['ok'])->toBeTrue()
-        ->and($b['rows'][0]['order_id'])->toBe('FIXTURE-CLUB_MEMBERSHIP_0001');
+        ->and($b['rows'][0]['order_id'])->toStartWith('FIXTURE-CLUB_MEMBERSHIPDRIVE-WELCOME-WEEK_STD20240010_');
+});
+
+it('lets SLD find a transaction by any parts of its ID as they type', function () {
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'MBB-4242', 'FIXTURE CLUB QIU', 0.97));
+    $registration = app(EventRegistrations::class)->register($this->event->fresh(), $this->student);
+    app(EventPayments::class)->submitOnline($registration, UploadedFile::fake()->image('receipt.jpg'));
+
+    $this->actingAs(sldOfficer())->get('/admin/finance?q='.urlencode(today()->format('d/m/Y').' kavitha mbb4242'))
+        ->assertInertia(fn ($p) => $p->component('Admin/Finance/Index')->has('transactions', 1)->where('transactions.0.reference', 'MBB-4242'));
+    $this->actingAs(sldOfficer())->get('/admin/finance?q=kavitha+'.today()->addDay()->format('Y-m-d'))
+        ->assertInertia(fn ($p) => $p->has('transactions', 0));
+    $this->actingAs($this->student)->get('/admin/finance?q=kavitha')->assertForbidden();
 });

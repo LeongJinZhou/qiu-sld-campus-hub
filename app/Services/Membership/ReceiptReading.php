@@ -11,5 +11,6 @@ final readonly class ReceiptReading
         public ?string $reference,
         public ?string $payee,
         public float $confidence,
+        public ?string $payer = null,
     ) {}
 }

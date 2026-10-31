@@ -5,16 +5,22 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Services\Finance\Ledger;
+use App\Services\Finance\TransactionSearch;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** SLD: every club's balance at a glance. */
+/** SLD: every club's balance at a glance, and a finder for any transaction by any part of its ID. */
 class FinanceOverviewController extends Controller
 {
-    public function __invoke(Ledger $ledger): Response
+    public function __invoke(Request $request, Ledger $ledger, TransactionSearch $search): Response
     {
+        $q = mb_substr(trim((string) $request->query('q', '')), 0, 200);
+
         return Inertia::render('Admin/Finance/Index', [
-            'clubs' => Club::with('openingBalance')->orderBy('name')->get()->map(fn (Club $c) => [
+            'q' => $q,
+            'transactions' => $q === '' ? [] : $search->find($q),
+            'clubs' => fn () => Club::with('openingBalance')->orderBy('name')->get()->map(fn (Club $c) => [
                 'slug' => $c->slug,
                 'name' => $c->name,
                 'ready' => $c->openingBalance !== null,

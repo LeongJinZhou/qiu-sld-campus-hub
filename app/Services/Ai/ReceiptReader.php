@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\Log;
 class ReceiptReader
 {
     private const PROMPT = <<<'TXT'
-    This is a payment receipt or bank-transfer confirmation submitted as proof of a club membership fee.
+    This is a payment receipt or bank-transfer confirmation submitted as proof of a club fee or a
+    reimbursement transfer.
     Read it and report: the amount paid in Malaysian ringgit, the transaction date (YYYY-MM-DD), the
-    transaction reference or ID, and the recipient/payee name exactly as printed. Use null for anything
+    transaction reference or ID, the recipient/payee name exactly as printed, and the sender/payer name
+    (the account the money came from) exactly as printed. Use null for anything
     you cannot read clearly. Set confidence between 0 and 1 for how sure you are of all four values together;
     use a low value for screenshots that are blurry, cropped, edited-looking, or not a payment receipt.
     TXT;
@@ -24,9 +26,10 @@ class ReceiptReader
             'date' => ['type' => ['string', 'null']],
             'reference' => ['type' => ['string', 'null']],
             'payee' => ['type' => ['string', 'null']],
+            'payer' => ['type' => ['string', 'null']],
             'confidence' => ['type' => 'number'],
         ],
-        'required' => ['amount_rm', 'date', 'reference', 'payee', 'confidence'],
+        'required' => ['amount_rm', 'date', 'reference', 'payee', 'payer', 'confidence'],
         'additionalProperties' => false,
     ];
 
@@ -75,6 +78,7 @@ class ReceiptReader
                     $data['reference'] ?? null,
                     $data['payee'] ?? null,
                     (float) ($data['confidence'] ?? 0),
+                    $data['payer'] ?? null,
                 );
             }
         }

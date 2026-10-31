@@ -27,7 +27,7 @@ beforeEach(function () {
 it('gives a free registration a ticket with its own order ID, shown only to its owner and the door', function () {
     $r = app(EventRegistrations::class)->register($this->event->fresh(), $this->student);
 
-    expect($r->ticket_code)->toHaveLength(32)->and($r->order_id)->toBe('FIXTURE-CLUB_BEACH-CLEANUP_0001');
+    expect($r->ticket_code)->toHaveLength(32)->and($r->order_id)->toStartWith('FIXTURE-CLUB_BEACH-CLEANUP_STD20240010_');
 
     $this->actingAs($this->student)->get("/tickets/{$r->ticket_code}")->assertInertia(fn (Assert $p) => $p
         ->component('Tickets/Show')->where('ticket.status', 'free')->where('ticket.order_id', $r->order_id)->where('mine', true));

@@ -13,6 +13,7 @@ use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
 use App\Services\Events\EventPayments;
 use App\Services\Finance\Ledger;
+use App\Services\Finance\OrderIds;
 use App\Services\Time\SessionResolver;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -105,8 +106,11 @@ class MembershipService
     }
 
     /** Treasurer decision on a payment in the review queue. */
-    public function review(MembershipPayment $payment, User $treasurer, bool $approve, ?string $note): void
+    public function review(MembershipPayment $payment, User $treasurer, bool $approve, ?string $note, ?string $reference = null): void
     {
+        if ($approve && $payment->method === 'online') {
+            $this->claimReference($payment, $reference);
+        }
         // Conditional update: only one reviewer can move it out of the queue, even with stale copies.
         $moved = MembershipPayment::whereKey($payment->id)->where('status', PaymentStatus::PendingReview)->update([
             'status' => $approve ? PaymentStatus::Confirmed : PaymentStatus::Rejected,
@@ -123,11 +127,35 @@ class MembershipService
         if ($approve) {
             $this->activate($payment);
         } else {
-            $payment->user->notify(new DocumentNotification(
-                ($payment->event_id ? "{$payment->purpose()} payment" : 'Membership payment').' not accepted',
-                $note ?: 'Please check your receipt and try again.',
-                $payment->event_id ? route('events.pay', $payment->event) : route('membership.join', $payment->club),
-            ));
+            $this->notifyRejected($payment);
         }
+    }
+
+    /**
+     * Approving an online payment needs its transaction ID on record, unused by anyone else: the one the AI read,
+     * or the one the Treasurer types from the receipt.
+     */
+    private function claimReference(MembershipPayment $payment, ?string $typed): void
+    {
+        $guard = app(ReceiptGuard::class);
+        $key = $guard->key($typed) ?? $payment->reference_key;
+        if ($key === null) {
+            throw new DomainException('Type the transaction ID shown on the receipt before confirming.');
+        }
+        if ($guard->referenceTaken($key, $payment)) {
+            throw new DomainException('This transaction ID has already been used for another payment. Reject this receipt.');
+        }
+        if ($key !== $payment->reference_key) {
+            $payment->update(['reference' => $typed, 'reference_key' => $key, 'order_id' => app(OrderIds::class)->withReference((string) $payment->order_id, $key)]);
+        }
+    }
+
+    public function notifyRejected(MembershipPayment $payment): void
+    {
+        $payment->user->notify(new DocumentNotification(
+            ($payment->event_id ? "{$payment->purpose()} payment" : 'Membership payment').' not accepted',
+            $payment->review_note ?: 'Please check your receipt and try again.',
+            $payment->event_id ? route('events.pay', $payment->event) : route('membership.join', $payment->club),
+        ));
     }
 }

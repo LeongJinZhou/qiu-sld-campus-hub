@@ -90,6 +90,41 @@ it('queues unclear receipts for the Treasurer, who confirms or rejects', functio
     expect($m->fresh()->status)->toBe(MembershipStatus::Active);
 });
 
+it('rejects a screenshot another student already used, and a reused transaction ID', function () {
+    Storage::fake('local');
+    setFee($this, 3000);
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(3000, today()->toDateString(), 'TXN-555', 'FIXTURE CLUB QIU', 0.97));
+    $screenshot = UploadedFile::fake()->image('receipt.jpg');
+    $first = app(OnlinePayments::class)->submit($this->service->join($this->club, $this->student, true), $screenshot);
+    $other = otherStudent();
+
+    // Same file: refused at upload.
+    expect(fn () => app(OnlinePayments::class)->submit($this->service->join($this->club, $other, true), $screenshot))
+        ->toThrow(DomainException::class, 'already been used');
+
+    // A different file (cropped, re-saved) with the same transaction ID: rejected after reading, the student told.
+    $copy = app(OnlinePayments::class)->submit($other->memberships()->where('club_id', $this->club->id)->first(), UploadedFile::fake()->image('cropped.jpg', 300, 500))->fresh();
+
+    expect($first->fresh()->status)->toBe(PaymentStatus::AutoConfirmed)
+        ->and($first->fresh()->order_id)->toEndWith('_TXN555')
+        ->and($copy->status)->toBe(PaymentStatus::Rejected)
+        ->and($copy->flags)->toBe(['duplicate_reference'])
+        ->and($other->memberships()->first()->status)->not->toBe(MembershipStatus::Active)
+        ->and($other->notifications()->count())->toBe(1);
+});
+
+it('needs the transaction ID typed in to confirm a receipt the AI could not read', function () {
+    Storage::fake('local');
+    setFee($this, 3000);
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(null);
+    $payment = app(OnlinePayments::class)->submit($this->service->join($this->club, $this->student, true), UploadedFile::fake()->image('receipt.jpg'))->fresh();
+
+    expect(fn () => $this->service->review($payment, $this->treasurer, true, null))->toThrow(DomainException::class, 'Type the transaction ID');
+
+    $this->service->review($payment->fresh(), $this->treasurer, true, null, 'mbb 9988');
+    expect($payment->fresh()->order_id)->toEndWith('_MBB9988');
+});
+
 it('completes a cash handover only with the student\'s own QR and the cash confirmed, filed as membership cash', function () {
     Storage::fake('local');
     setFee($this, 3000);

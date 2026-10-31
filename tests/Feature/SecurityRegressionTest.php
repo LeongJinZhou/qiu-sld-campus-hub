@@ -39,9 +39,9 @@ it('records ledger income once even if two reviewers approve the same payment', 
     $payment = $membership->payments()->create(['club_id' => $f['club']->id, 'user_id' => $student->id, 'method' => 'online', 'amount_sen' => 3000, 'status' => PaymentStatus::PendingReview]);
     $stale = $payment->fresh();
 
-    $service->review($payment, $f['president'], true, null);
+    $service->review($payment, $f['president'], true, null, 'TXN-9');
 
-    expect(fn () => $service->review($stale, $f['president'], true, null))->toThrow(DomainException::class)
+    expect(fn () => $service->review($stale, $f['president'], true, null, 'TXN-9'))->toThrow(DomainException::class)
         ->and(LedgerEntry::where('source_id', $payment->id)->count())->toBe(1);
 });
 

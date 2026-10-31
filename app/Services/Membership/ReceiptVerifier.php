@@ -7,7 +7,8 @@ use Carbon\CarbonImmutable;
 
 /**
  * Decides whether an online payment can be confirmed automatically: amount, date, reference
- * and payee must all match; reused references are rejected; receipts older than 7 days are flagged.
+ * and payee must all match; reused references are rejected; receipts older than 7 days are flagged; a sender
+ * name that is not the student's goes to review (someone else's screenshot, or a parent paying).
  */
 class ReceiptVerifier
 {
@@ -19,7 +20,7 @@ class ReceiptVerifier
      * @param  list<string>  $usedReferences  references already on accepted payments
      * @return array{status: PaymentStatus, flags: list<string>}
      */
-    public function assess(?ReceiptReading $reading, int $feeSen, ?string $accountName, array $usedReferences, CarbonImmutable $today): array
+    public function assess(?ReceiptReading $reading, int $feeSen, ?string $accountName, array $usedReferences, CarbonImmutable $today, ?string $studentName = null): array
     {
         if ($reading === null) {
             return ['status' => PaymentStatus::PendingReview, 'flags' => ['unreadable']];
@@ -40,6 +41,10 @@ class ReceiptVerifier
             $flags[] = 'payee_mismatch';
         }
 
+        if ($studentName !== null && $reading->payer !== null && ! $this->namesMatch($reading->payer, $studentName)) {
+            $flags[] = 'payer_mismatch';
+        }
+
         $date = $this->date($reading->date);
         if ($date === null) {
             $flags[] = 'no_date';
@@ -53,6 +58,24 @@ class ReceiptVerifier
         }
 
         return ['status' => $flags === [] ? PaymentStatus::AutoConfirmed : PaymentStatus::PendingReview, 'flags' => $flags];
+    }
+
+    /** "LEONG JIN ZHOU" matches "Jinzhou Leong": most words of the name appear in the printed name, in any order or spacing. */
+    public function namesMatch(?string $printed, string $name): bool
+    {
+        $haystack = $this->normalise($printed);
+        $words = array_values(array_filter(array_map(fn ($w) => $this->normalise($w), preg_split('/\s+/', $this->stripTitles($name)) ?: []), fn ($w) => strlen($w) >= 2));
+        if ($haystack === '' || $words === []) {
+            return false;
+        }
+        $found = count(array_filter($words, fn ($w) => str_contains($haystack, $w)));
+
+        return $found >= max(1, (int) ceil(count($words) / 2));
+    }
+
+    private function stripTitles(string $name): string
+    {
+        return (string) preg_replace('/\b(bin|binti|bt|b|a\/l|a\/p|al|ap)\b/i', ' ', $name);
     }
 
     private function normalise(?string $value): string

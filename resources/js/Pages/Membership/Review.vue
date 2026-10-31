@@ -5,6 +5,7 @@ import EmptyState from '@/Components/ui/EmptyState.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { rm } from '@/lib/format';
 import { Head, router } from '@inertiajs/vue3';
+import { reactive } from 'vue';
 
 defineProps<{
     club: { slug: string; name: string };
@@ -15,17 +16,21 @@ defineProps<{
         student_number: string | null;
         status: string;
         amount_sen: number;
-        ai: { amount_sen: number | null; date: string | null; reference: string | null; payee: string | null; confidence: number | null };
+        ai: { amount_sen: number | null; date: string | null; reference: string | null; payee: string | null; payer: string | null; confidence: number | null };
         flags: string[];
+        has_reference: boolean;
+        order_id: string | null;
         receipt_url: string;
         at: string | null;
     }[];
 }>();
 
+const references = reactive<Record<number, string>>({});
+
 function decide(id: number, approve: boolean): void {
     const note = approve ? null : prompt('Reason for rejecting (sent to the student)');
     if (!approve && !note) return;
-    router.post(`/payments/${id}/decide`, { approve, note }, { preserveScroll: true });
+    router.post(`/payments/${id}/decide`, { approve, note, reference: references[id] || null }, { preserveScroll: true });
 }
 </script>
 
@@ -53,10 +58,17 @@ function decide(id: number, approve: boolean): void {
                             <tr><td>Amount</td><td>{{ rm(p.amount_sen) }}</td><td :class="p.flags.includes('amount_mismatch') ? 'font-semibold text-danger' : ''">{{ p.ai.amount_sen !== null ? rm(p.ai.amount_sen) : '—' }}</td></tr>
                             <tr><td>Date</td><td>within 7 days</td><td :class="p.flags.some((f) => ['old_receipt', 'future_date', 'no_date'].includes(f)) ? 'font-semibold text-danger' : ''">{{ p.ai.date ?? '—' }}</td></tr>
                             <tr><td>Reference</td><td>unique</td><td :class="p.flags.includes('no_reference') ? 'font-semibold text-danger' : ''">{{ p.ai.reference ?? '—' }}</td></tr>
+                            <tr><td>Sender</td><td>{{ p.student }}</td><td :class="p.flags.includes('payer_mismatch') ? 'font-semibold text-danger' : ''">{{ p.ai.payer ?? '—' }}</td></tr>
                             <tr><td>Payee</td><td>club account</td><td :class="p.flags.includes('payee_mismatch') ? 'font-semibold text-danger' : ''">{{ p.ai.payee ?? '—' }}</td></tr>
                             <tr><td>Confidence</td><td>≥ 80%</td><td>{{ p.ai.confidence !== null ? `${Math.round(p.ai.confidence * 100)}%` : '—' }}</td></tr>
                         </tbody>
                     </table>
+                    <p v-if="p.flags.includes('duplicate_reference')" class="rounded-control bg-danger/10 p-2 text-sm font-semibold text-danger">This transaction ID was already used for another payment.</p>
+                    <p v-if="p.order_id" class="break-all font-mono text-xs text-ink-muted">{{ p.order_id }}</p>
+                    <label v-if="p.status === 'pending_review' && !p.has_reference" class="grid gap-1 text-sm">
+                        <span class="font-medium">Transaction ID on the receipt <span class="text-ink-muted">(needed to confirm; checked against every payment)</span></span>
+                        <input v-model="references[p.id]" class="rounded-control border border-line bg-surface px-3 py-2" placeholder="e.g. 2026110112345678" />
+                    </label>
                     <div v-if="p.status === 'pending_review'" class="flex flex-wrap gap-2">
                         <Button @click="decide(p.id, true)">Confirm payment</Button>
                         <Button variant="secondary" @click="decide(p.id, false)">Reject</Button>
