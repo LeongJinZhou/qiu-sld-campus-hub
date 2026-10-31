@@ -5,11 +5,9 @@ use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Models\Document;
 use App\Models\Payee;
-use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\DocumentExporter;
 use App\Services\Documents\DocxRenderer;
 use App\Services\Documents\FinanceRecordExport;
-use App\Services\Events\ProposalForm;
 use App\Services\Finance\FundWithdrawals;
 use App\Services\Finance\Ledger;
 use Carbon\CarbonImmutable;
@@ -25,17 +23,6 @@ beforeEach(function () {
     $this->treasurer = $this->club->roleAssignments()->where('position', 'Treasurer')->first()->user;
     $this->secretary = $this->club->roleAssignments()->where('position', 'Secretary')->first()->user;
 });
-
-function approvedEventWithBudget(object $t): void
-{
-    $data = array_replace(app(ProposalForm::class)->defaults($t->f['event']), [
-        'budget' => ['revenue' => [['description' => 'Club fund', 'price_sen' => 60000, 'quantity' => 1]], 'expenses' => [
-            ['description' => 'Gloves', 'price_sen' => 500, 'quantity' => 40], ['description' => 'Refreshments & water', 'price_sen' => 1000, 'quantity' => 30],
-        ]],
-    ]);
-    app(ApprovalEngine::class)->submit($t->f['document'], $t->f['president'], $data, signaturePng());
-    approveRemainingSteps($t->f['document']);
-}
 
 it('locks the ledger until SLD enters the opening balance', function () {
     expect(fn () => $this->ledger->manual($this->club, today(), 'Snacks', 0, 500, UploadedFile::fake()->image('r.jpg'), $this->treasurer))

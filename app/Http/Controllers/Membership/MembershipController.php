@@ -137,7 +137,7 @@ class MembershipController extends Controller
     /** Receipts are private: the payer, the Treasurer and SLD only. */
     public function receiptFile(Request $request, MembershipPayment $payment): StreamedResponse
     {
-        abort_unless($payment->user_id === $request->user()->id || $request->user()->can('treasure', $payment->club), 403);
+        abort_unless($payment->user_id === $request->user()->id || $request->user()->can('viewInternal', $payment->club), 403);
 
         return Storage::disk('local')->response((string) $payment->receipt_path);
     }
