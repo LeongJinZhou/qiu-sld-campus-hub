@@ -55,12 +55,12 @@ class OnlinePayments
         }
         $path = Storage::disk('local')->path((string) $payment->receipt_path);
         $reading = $this->reader->read($path, (string) (mime_content_type($path) ?: 'image/jpeg'));
-        $fee = $this->memberships->fee($payment->club);
+        $payee = $payment->event_id ? $payment->event?->payment_account_name : $this->memberships->fee($payment->club)?->account_name;
 
         $used = MembershipPayment::where('club_id', $payment->club_id)->whereKeyNot($payment->id)
             ->whereIn('status', [PaymentStatus::AutoConfirmed, PaymentStatus::Confirmed, PaymentStatus::PendingReview])
             ->whereNotNull('reference')->pluck('reference')->all();
-        $decision = $this->verifier->assess($reading, $payment->amount_sen, $fee?->account_name, $used, CarbonImmutable::today());
+        $decision = $this->verifier->assess($reading, $payment->amount_sen, $payee, $used, CarbonImmutable::today());
 
         $payment->update([
             'ai_amount_sen' => $reading?->amountSen,

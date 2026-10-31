@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Services\Finance\OrderIds;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-#[Fillable(['club_id', 'entry_date', 'description', 'income_sen', 'expense_sen', 'category', 'event_id', 'method', 'handled_by', 'source_type', 'source_id', 'receipt_id', 'created_by'])]
+#[Fillable(['order_id', 'club_id', 'entry_date', 'description', 'income_sen', 'expense_sen', 'category', 'event_id', 'method', 'handled_by', 'source_type', 'source_id', 'receipt_id', 'created_by'])]
 class LedgerEntry extends Model
 {
     /** What a transaction is for. Filed automatically for system entries; chosen for manual ones. */
@@ -48,5 +49,22 @@ class LedgerEntry extends Model
     public function source(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /** Same order ID as the payment it records; otherwise one under its event, or WITHDRAWAL / GENERAL. */
+    protected static function booted(): void
+    {
+        static::creating(function (LedgerEntry $entry): void {
+            if ($entry->order_id) {
+                return;
+            }
+            if ($entry->source_type === (new MembershipPayment)->getMorphClass() && $entry->source_id) {
+                $entry->order_id = MembershipPayment::whereKey($entry->source_id)->value('order_id');
+            }
+            $ids = app(OrderIds::class);
+            $entry->order_id ??= $entry->event_id
+                ? $ids->forEvent(Event::with('club')->findOrFail($entry->event_id))
+                : $ids->forClub(Club::findOrFail($entry->club_id), $entry->category === 'withdrawal' ? 'withdrawal' : 'general');
+        });
     }
 }

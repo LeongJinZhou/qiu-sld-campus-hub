@@ -7,14 +7,18 @@ use App\Enums\PaymentStatus;
 use App\Enums\ScopedRole;
 use App\Enums\ScopeType;
 use App\Models\CashHandover;
+use App\Models\EventRegistration;
 use App\Models\Membership;
+use App\Models\MembershipPayment;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\Ai\CashPhotoChecker;
 use App\Services\AuditLogger;
+use App\Services\Events\EventPayments;
 use App\Services\Time\SessionResolver;
 use DomainException;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -36,29 +40,51 @@ class CashHandovers
         private readonly CashPhotoChecker $cashChecker,
     ) {}
 
+    /** Membership fee in cash. */
     public function request(Membership $membership, User $committee): CashHandover
     {
         $fee = $this->memberships->fee($membership->club) ?? throw new DomainException('This club has no approved fee.');
-        if (! $this->isCommittee($committee, $membership)) {
+        $this->assertCanStart($membership->club_id, $committee, $membership->payments());
+
+        return DB::transaction(fn (): CashHandover => $this->start($membership->payments()->create([
+            'club_id' => $membership->club_id, 'user_id' => $membership->user_id, 'method' => 'cash',
+            'amount_sen' => $fee->amount_sen, 'status' => PaymentStatus::CashPending, 'collected_by' => $committee->id,
+        ]), $committee));
+    }
+
+    /** Event fee in cash: the same handover, filed under the event when done. */
+    public function requestForEvent(EventRegistration $registration, User $committee): CashHandover
+    {
+        $this->assertCanStart($registration->event->club_id, $committee, $registration->payments());
+
+        return DB::transaction(fn (): CashHandover => $this->start(app(EventPayments::class)->cashPayment($registration, $committee), $committee));
+    }
+
+    private function start(MembershipPayment $payment, User $committee): CashHandover
+    {
+        $payment->loadMissing('user', 'club', 'event');
+        $handover = CashHandover::create([
+            'payment_id' => $payment->id, 'student_id' => $payment->user_id, 'committee_user_id' => $committee->id,
+            'status' => HandoverStatus::Requested, 'expires_at' => now()->addDays(CashHandover::LIFETIME_DAYS),
+        ]);
+        $committee->notify(new DocumentNotification(
+            'Cash payment request · '.$payment->purpose(),
+            "{$payment->user->name} wants to pay {$payment->club->name} RM ".number_format($payment->amount_sen / 100, 2).' in cash ('.$payment->purpose().').',
+            route('handovers.show', $handover),
+        ));
+
+        return $handover;
+    }
+
+    /** @param HasMany<MembershipPayment, *> $payments */
+    private function assertCanStart(int $clubId, User $committee, $payments): void
+    {
+        if (! $this->isCommittee($committee, $clubId)) {
             throw new DomainException('Choose a committee member of this club.');
         }
-        if ($membership->payments()->whereHas('handover', fn ($q) => $q->whereNotIn('status', [HandoverStatus::Declined, HandoverStatus::Completed, HandoverStatus::Expired]))->exists()) {
+        if ($payments->whereHas('handover', fn ($q) => $q->whereNotIn('status', [HandoverStatus::Declined, HandoverStatus::Completed, HandoverStatus::Expired]))->exists()) {
             throw new DomainException('You already have a cash handover in progress.');
         }
-
-        return DB::transaction(function () use ($membership, $committee, $fee): CashHandover {
-            $payment = $membership->payments()->create([
-                'club_id' => $membership->club_id, 'user_id' => $membership->user_id, 'method' => 'cash',
-                'amount_sen' => $fee->amount_sen, 'status' => PaymentStatus::CashPending, 'collected_by' => $committee->id,
-            ]);
-            $handover = CashHandover::create([
-                'payment_id' => $payment->id, 'student_id' => $membership->user_id, 'committee_user_id' => $committee->id,
-                'status' => HandoverStatus::Requested, 'expires_at' => now()->addDays(CashHandover::LIFETIME_DAYS),
-            ]);
-            $committee->notify(new DocumentNotification('Cash membership payment request', "{$membership->user->name} wants to pay {$membership->club->name}'s fee in cash.", route('handovers.show', $handover)));
-
-            return $handover;
-        });
     }
 
     public function respond(CashHandover $handover, User $committee, bool $accept): void
@@ -168,7 +194,7 @@ class CashHandovers
                 }
                 $payment = $handover->payment;
                 $payment->update(['status' => PaymentStatus::Confirmed, 'verified_by' => $handover->committee_user_id, 'verified_at' => now()]);
-                $this->memberships->activate($payment, "Membership fee (cash) – {$handover->student->name}");
+                $this->memberships->activate($payment, $payment->event_id ? null : "Membership fee (cash) – {$handover->student->name}");
                 $this->audit->log('payment.cash_completed', $payment->club, ['payment_id' => $payment->id, 'collected_by' => $handover->committee_user_id]);
 
                 return true;
@@ -208,9 +234,9 @@ class CashHandovers
         };
     }
 
-    private function isCommittee(User $user, Membership $membership): bool
+    private function isCommittee(User $user, int $clubId): bool
     {
-        return RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $membership->club_id)
+        return RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $clubId)
             ->where('session_id', $this->sessions->current()->id)->where('role', ScopedRole::ClubCommittee)
             ->where('user_id', $user->id)->exists();
     }

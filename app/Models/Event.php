@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 #[Fillable([
     'club_id', 'session_id', 'name', 'summary', 'starts_at', 'ends_at', 'venue', 'mode', 'expected_participants',
     'is_outdoor', 'is_faculty_event', 'cca_participant', 'cca_committee', 'status', 'poster_path', 'poster_checklist',
-    'registration_open', 'attendance_open', 'approved_at',
+    'registration_open', 'attendance_open', 'approved_at', 'fee_sen', 'payment_url', 'payment_account_name', 'payment_qr_paths',
 ])]
 #[Hidden(['attendance_secret'])]
 class Event extends Model
@@ -42,6 +42,8 @@ class Event extends Model
             'cca_participant' => 'float',
             'cca_committee' => 'float',
             'poster_checklist' => 'array',
+            'payment_qr_paths' => 'array',
+            'fee_sen' => 'integer',
             'status' => DocumentStatus::class,
         ];
     }

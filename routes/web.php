@@ -17,6 +17,7 @@ use App\Http\Controllers\Events\AttendanceController;
 use App\Http\Controllers\Events\EventCommitteeController;
 use App\Http\Controllers\Events\EventController;
 use App\Http\Controllers\Events\EventDocumentController;
+use App\Http\Controllers\Events\EventPaymentController;
 use App\Http\Controllers\Events\EventRegistrationController;
 use App\Http\Controllers\Events\IndemnityController;
 use App\Http\Controllers\Events\PosterController;
@@ -87,6 +88,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/events', [EventController::class, 'store'])->name('events.store');
     Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
     Route::post('/events/{event}/register', [EventRegistrationController::class, 'store'])->name('events.register');
+    Route::put('/events/{event}/payment-settings', [EventPaymentController::class, 'settings'])->name('events.payment-settings');
+    Route::get('/events/{event}/pay', [EventPaymentController::class, 'show'])->name('events.pay');
+    Route::post('/events/{event}/pay/receipt', [EventPaymentController::class, 'receipt'])->middleware('throttle:10,1')->name('events.pay.receipt');
+    Route::post('/events/{event}/pay/cash', [EventPaymentController::class, 'cash'])->middleware('throttle:10,1')->name('events.pay.cash');
     Route::delete('/events/{event}/register', [EventRegistrationController::class, 'destroy'])->name('events.unregister');
     Route::get('/events/{event}/attend', [AttendanceController::class, 'attend'])->middleware('throttle:20,1')->name('events.attend');
     Route::get('/events/{event}/attendance', [AttendanceController::class, 'index'])->name('events.attendance');

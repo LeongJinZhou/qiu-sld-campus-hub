@@ -12,6 +12,7 @@ use App\Enums\ScopeType;
 use App\Models\Approval;
 use App\Models\CashHandover;
 use App\Models\Event;
+use App\Models\EventRegistration;
 use App\Models\Membership;
 use App\Models\MembershipPayment;
 use App\Models\RoleAssignment;
@@ -31,7 +32,7 @@ class ActionItems
     /** @return list<array{key: string, kind: string, title: string, body: string, url: string, since: ?string}> */
     public function for(User $user): array
     {
-        return [...$this->payments($user), ...$this->handovers($user), ...$this->receiptsToReview($user), ...$this->indemnities($user), ...$this->approvals($user)];
+        return [...$this->payments($user), ...$this->eventPayments($user), ...$this->handovers($user), ...$this->receiptsToReview($user), ...$this->indemnities($user), ...$this->approvals($user)];
     }
 
     /** Short-lived cache for the badge count shown on every page. */
@@ -54,6 +55,19 @@ class ActionItems
                 'key' => "payment:{$m->id}", 'kind' => 'payment', 'title' => "Finish paying for {$m->club->name}",
                 'body' => 'You started joining but have not paid yet. Pay online or in cash to activate your membership.',
                 'url' => route('membership.join', $m->club), 'since' => $m->updated_at?->toIso8601String(),
+            ])->values()->all();
+    }
+
+    /** Reserved a place at a paid event but not paid yet (and no payment being checked). */
+    private function eventPayments(User $user): array
+    {
+        return EventRegistration::with('event')->where('user_id', $user->id)->where('status', 'pending_payment')
+            ->whereHas('event', fn ($q) => $q->where('ends_at', '>', now()))->get()
+            ->reject(fn (EventRegistration $r) => $r->payments()->whereIn('status', [PaymentStatus::Reading, PaymentStatus::PendingReview, PaymentStatus::CashPending])->exists())
+            ->map(fn (EventRegistration $r) => [
+                'key' => "event-payment:{$r->id}", 'kind' => 'payment', 'title' => "Pay for {$r->event->name}",
+                'body' => 'Your place is reserved but not confirmed until the fee is paid.', 'url' => route('events.pay', $r->event),
+                'since' => $r->updated_at?->toIso8601String(),
             ])->values()->all();
     }
 

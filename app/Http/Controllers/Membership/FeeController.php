@@ -8,6 +8,7 @@ use App\Models\ClubFee;
 use App\Models\MembershipDrive;
 use App\Services\AuditLogger;
 use App\Services\Time\SessionResolver;
+use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -26,11 +27,24 @@ class FeeController extends Controller
             'amount_rm' => ['required', 'numeric', 'min:0', 'max:1000'],
             'payment_url' => ['nullable', 'url:https', 'max:1024', 'required_unless:amount_rm,0'],
             'account_name' => ['nullable', 'string', 'max:255', 'required_unless:amount_rm,0'],
+            'qr' => ['nullable', 'array', 'max:2'],
+            'qr.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'remove_qr' => ['nullable', 'array'],
+            'remove_qr.*' => ['string'],
         ]);
+        $current = ClubFee::where('club_id', $club->id)->where('session_id', $sessions->current()->id)->first();
+        $paths = array_values(array_diff($current?->payment_qr_paths ?? [], $data['remove_qr'] ?? []));
+        if (count($paths) + count($request->file('qr', [])) > 2) {
+            return back()->with('error', 'Upload at most 2 payment QR codes.');
+        }
+        foreach ($request->file('qr', []) as $upload) {
+            $paths[] = app(ImageUpload::class)->store($upload, "payment-qr/clubs/{$club->id}");
+        }
         $fee = ClubFee::updateOrCreate(['club_id' => $club->id, 'session_id' => $sessions->current()->id], [
             'amount_sen' => (int) round($data['amount_rm'] * 100),
             'payment_url' => $data['payment_url'] ?? null,
             'account_name' => $data['account_name'] ?? null,
+            'payment_qr_paths' => $paths,
             'set_by' => $request->user()->id,
             'approved_by' => null,
             'approved_at' => null,

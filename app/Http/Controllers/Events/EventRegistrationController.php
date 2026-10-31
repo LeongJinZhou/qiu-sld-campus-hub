@@ -19,7 +19,11 @@ class EventRegistrationController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        // Outdoor events need the indemnity before anyone can clock in, so go straight to it.
+        // Paid events go to the payment page; outdoor events need the indemnity before anyone can clock in.
+        if ($event->fee_sen > 0) {
+            return to_route('events.pay', $event)->with('success', 'Place reserved. Pay the fee to confirm your registration.');
+        }
+
         return $event->is_outdoor
             ? to_route('events.indemnity', $event)->with('success', 'Registered! One more step: sign the indemnity form for this outdoor event.')
             : back()->with('success', 'Registered. See you there!');

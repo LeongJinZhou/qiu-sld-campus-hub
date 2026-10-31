@@ -10,6 +10,7 @@ use App\Models\Membership;
 use App\Models\MembershipDrive;
 use App\Models\MembershipPayment;
 use App\Models\User;
+use App\Services\Finance\PaymentQrCodes;
 use App\Services\Membership\CashHandovers;
 use App\Services\Membership\MembershipService;
 use App\Services\Membership\OnlinePayments;
@@ -28,7 +29,7 @@ class MembershipController extends Controller
 {
     public function __construct(private readonly MembershipService $memberships) {}
 
-    public function show(Request $request, Club $club, SessionResolver $sessions): Response
+    public function show(Request $request, Club $club, SessionResolver $sessions, PaymentQrCodes $qr): Response
     {
         $user = $request->user();
         $membership = Membership::where('club_id', $club->id)->where('user_id', $user->id)->first();
@@ -38,6 +39,7 @@ class MembershipController extends Controller
         return Inertia::render('Membership/Join', [
             'club' => ['slug' => $club->slug, 'name' => $club->name, 'logo_url' => $club->logoUrl()],
             'fee' => $fee ? ['amount_sen' => $fee->amount_sen, 'payment_url' => $fee->payment_url, 'account_name' => $fee->account_name] : null,
+            'qrCodes' => $fee ? $qr->for($fee->payment_url, $fee->payment_qr_paths) : [],
             'drive' => MembershipDrive::running()->where(fn ($q) => $q->whereNull('club_id')->orWhere('club_id', $club->id))->first(['title', 'ends_at']),
             'membership' => $membership ? [
                 'status' => $membership->status->value,
