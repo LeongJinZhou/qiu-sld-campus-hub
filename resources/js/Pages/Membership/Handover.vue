@@ -17,6 +17,8 @@ const props = defineProps<{
         id: number;
         status: string;
         club: string;
+        purpose: string;
+        order_id: string | null;
         club_slug: string;
         amount_sen: number;
         student: { name: string; photo_url: string | null };
@@ -68,7 +70,7 @@ const steps = computed(() =>
     <AppLayout>
         <div class="mx-auto grid max-w-md gap-5">
             <header class="grid gap-1 rounded-card border border-line bg-surface p-5 text-center shadow-card">
-                <p class="text-sm text-ink-muted">Cash membership payment · {{ h.club }}</p>
+                <p class="text-sm text-ink-muted">Cash payment · {{ h.purpose }} · {{ h.club }}</p>
                 <p class="text-3xl font-bold tabular-nums">{{ amount }}</p>
                 <div class="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm">
                     <span class="grid justify-items-center gap-1"><Avatar :src="h.student.photo_url" :name="h.student.name" size="sm" /><span class="line-clamp-2">{{ h.student.name }}</span><span class="text-xs text-ink-muted">pays</span></span>
@@ -160,10 +162,11 @@ const steps = computed(() =>
                         <dt class="text-ink-muted">Amount</dt><dd class="font-medium">{{ amount }} (cash)</dd>
                         <dt class="text-ink-muted">Paid by</dt><dd>{{ h.student.name }}</dd>
                         <dt class="text-ink-muted">Received by</dt><dd>{{ h.committee.name }}</dd>
-                        <dt class="text-ink-muted">Club</dt><dd>{{ h.club }}</dd>
+                        <dt class="text-ink-muted">For</dt><dd>{{ h.purpose }} · {{ h.club }}</dd>
+                        <dt v-if="h.order_id" class="text-ink-muted">Reference</dt><dd v-if="h.order_id" class="font-mono text-xs">{{ h.order_id }}</dd>
                     </dl>
                     <a v-if="h.photo_url" :href="h.photo_url" target="_blank" class="text-center text-sm font-medium text-brand-blue">View the payment photo</a>
-                    <p class="text-center text-sm text-ink-muted">Membership is active and the club's finance has recorded it. A receipt was sent to both of you.</p>
+                    <p class="text-center text-sm text-ink-muted">{{ h.purpose === 'Membership' ? 'Membership is active' : 'The registration is confirmed' }} and the club's finance has recorded it. A receipt was sent to both of you.</p>
                     <Link :href="`/clubs/${h.club_slug}`" class="justify-self-center"><Button variant="secondary">Back to club</Button></Link>
                 </template>
 

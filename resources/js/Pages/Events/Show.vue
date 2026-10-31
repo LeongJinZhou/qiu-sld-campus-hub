@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import Input from '@/Components/ui/Input.vue';
+import FileUpload from '@/Components/ui/FileUpload.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import Card from '@/Components/ui/Card.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { dateTime } from '@/lib/format';
+import { dateTime, rm } from '@/lib/format';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps<{
     event: {
@@ -31,12 +33,23 @@ const props = defineProps<{
     committee: { position: string; name: string; photo_url: string | null; responsibility: string | null }[];
     approval: { progress: ApprovalProgress; steps: ApprovalStep[] } | null;
     registered: boolean;
+    registrationStatus: string | null;
+    payment: { fee_sen: number; payment_url: string | null; payment_account_name: string | null; qr: { path: string; url: string }[] };
     indemnity: { signed: boolean; closes_at: string; closed: boolean } | null;
     registrations: number;
     can: { organise: boolean; update: boolean };
 }>();
 
 const register = (): void => router.post(`/events/${props.event.slug}/register`, {}, { preserveScroll: true });
+
+// Committee: fee, account, link and up to two own payment QR codes.
+const pay = useForm({ fee_rm: props.payment.fee_sen / 100, payment_account_name: props.payment.payment_account_name ?? '', payment_url: props.payment.payment_url ?? '', qr: [] as File[], remove_qr: [] as string[] });
+const toggleRemove = (path: string): void => {
+    pay.remove_qr = pay.remove_qr.includes(path) ? pay.remove_qr.filter((p) => p !== path) : [...pay.remove_qr, path];
+};
+const savePayment = (): void => {
+    pay.transform((d) => ({ ...d, _method: 'put' })).post(`/events/${props.event.slug}/payment-settings`, { preserveScroll: true, forceFormData: true, onSuccess: () => pay.reset('qr', 'remove_qr') });
+};
 const unregister = (): void => router.delete(`/events/${props.event.slug}/register`, { preserveScroll: true });
 </script>
 
@@ -76,18 +89,41 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
             </div>
             <aside class="grid content-start gap-3">
                 <Card>
-                    <p class="text-sm text-ink-muted">{{ registrations }} registered</p>
-                    <template v-if="registered">
+                    <p class="text-sm text-ink-muted">{{ registrations }} registered<template v-if="payment.fee_sen"> · fee {{ rm(payment.fee_sen) }}</template></p>
+                    <template v-if="registrationStatus === 'pending_payment'">
+                        <p class="mt-2 text-sm font-medium text-warning">Place reserved — payment pending.</p>
+                        <Link :href="`/events/${event.slug}/pay`"><Button block class="mt-2">Pay {{ rm(payment.fee_sen) }}</Button></Link>
+                        <button type="button" class="mt-1 text-xs text-ink-muted underline" @click="unregister">Cancel</button>
+                    </template>
+                    <template v-else-if="registered">
                         <p class="mt-2 text-sm font-medium text-success">You're registered.</p>
                         <button type="button" class="mt-1 text-xs text-ink-muted underline" @click="unregister">Cancel registration</button>
                     </template>
-                    <Button v-else-if="event.registration_open" block class="mt-3" @click="register">Register</Button>
+                    <Button v-else-if="event.registration_open" block class="mt-3" @click="register">{{ payment.fee_sen ? `Register · ${rm(payment.fee_sen)}` : 'Register' }}</Button>
                     <p v-else class="mt-2 text-sm text-ink-muted">Registration opens once SLD approves the proposal.</p>
                     <template v-if="indemnity && (registered || can.organise)">
                         <p v-if="indemnity.signed" class="mt-3 text-sm text-success">✓ Indemnity signed</p>
                         <Link v-else-if="!indemnity.closed" :href="`/events/${event.slug}/indemnity`"><Button variant="secondary" block class="mt-3">Sign indemnity (closes {{ indemnity.closes_at }})</Button></Link>
                         <p v-else class="mt-3 text-sm text-danger">Indemnity signing has closed.</p>
                     </template>
+                </Card>
+                <Card v-if="can.update">
+                    <template #title>Event payment</template>
+                    <form class="grid gap-3" @submit.prevent="savePayment">
+                        <Input v-model="pay.fee_rm" type="number" label="Fee (RM, 0 = free)" :error="pay.errors.fee_rm" />
+                        <template v-if="Number(pay.fee_rm) > 0">
+                            <Input v-model="pay.payment_account_name" label="Pay to (account name)" :error="pay.errors.payment_account_name" />
+                            <Input v-model="pay.payment_url" label="Payment link" placeholder="https://…" hint="A QR code of this link is shown to payers automatically." :error="pay.errors.payment_url" />
+                            <div v-if="payment.qr.length" class="flex flex-wrap gap-2">
+                                <span v-for="q in payment.qr" :key="q.path" class="relative">
+                                    <img :src="q.url" alt="Payment QR" class="size-20 rounded-control border border-line object-cover" :class="pay.remove_qr.includes(q.path) ? 'opacity-30' : ''" />
+                                    <button type="button" class="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-ink text-xs text-white" :aria-label="pay.remove_qr.includes(q.path) ? 'Keep this QR' : 'Remove this QR'" @click="toggleRemove(q.path)">{{ pay.remove_qr.includes(q.path) ? '↺' : '×' }}</button>
+                                </span>
+                            </div>
+                            <FileUpload v-if="payment.qr.length - pay.remove_qr.length < 2" v-model="pay.qr" multiple label="Your own payment QR codes (up to 2, optional)" accept="image/png,image/jpeg,image/webp" :error="pay.errors.qr" />
+                        </template>
+                        <Button type="submit" :loading="pay.processing">Save payment settings</Button>
+                    </form>
                 </Card>
                 <template v-if="can.organise">
                     <Link :href="`/events/${event.slug}/attendance`"><Button block>Attendance &amp; QR</Button></Link>
