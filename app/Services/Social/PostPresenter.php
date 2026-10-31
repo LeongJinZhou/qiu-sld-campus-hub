@@ -60,6 +60,7 @@ class PostPresenter
             'body' => $comment->body,
             'user' => $comment->user->name,
             'photo_url' => $comment->user->photoUrl(),
+            'profile_url' => route('profile.public', $comment->user->qr_token),
             'at' => $comment->created_at?->diffForHumans(),
         ];
     }

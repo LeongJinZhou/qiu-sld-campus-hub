@@ -19,9 +19,11 @@ class TicketController extends Controller
         $registration = EventRegistration::with('event')->where('ticket_code', $code)->firstOrFail();
         abort_unless($registration->user_id === $request->user()->id || $request->user()->can('checkIn', $registration->event), 403);
 
+        $ticket = $tickets->present($registration);
+
         return Inertia::render('Tickets/Show', [
-            'ticket' => $tickets->present($registration),
-            'qrSvg' => $qr->svg(route('tickets.scan', $code)),
+            'ticket' => $ticket,
+            'qrSvg' => $ticket['code'] ? $qr->svg(route('tickets.scan', $code)) : null,
             'mine' => $registration->user_id === $request->user()->id,
         ]);
     }

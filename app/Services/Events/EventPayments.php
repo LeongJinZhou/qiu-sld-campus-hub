@@ -27,7 +27,7 @@ class EventPayments
 {
     public const MAX_QR = 2;
 
-    public function __construct(private readonly Ledger $ledger, private readonly AuditLogger $audit, private readonly ImageUpload $images, private readonly ReceiptGuard $guard) {}
+    public function __construct(private readonly Ledger $ledger, private readonly AuditLogger $audit, private readonly ImageUpload $images, private readonly ReceiptGuard $guard, private readonly IndemnityService $indemnities) {}
 
     /**
      * @param  array{fee_rm: float|int|string, payment_url: ?string, payment_account_name: ?string}  $data
@@ -93,10 +93,16 @@ class EventPayments
                 handledBy: $payment->method === 'cash' ? $payment->collector : null);
             $registration->event->club->forceFill(['last_activity_at' => now()])->save();
         });
+        $registration = $registration->fresh(['event', 'user']);
+        if ($this->indemnities->blocksTicket($registration)) {
+            $this->indemnities->askToSign($registration, "Payment received (ref {$payment->order_id}).");
+
+            return;
+        }
         $registration->user->notify(new DocumentNotification(
             "You're registered for {$registration->event->name}",
-            "Payment received (ref {$payment->order_id}).".($registration->event->is_outdoor ? ' Remember to sign the indemnity form.' : ''),
-            $registration->event->is_outdoor ? route('events.indemnity', $registration->event) : route('tickets.show', $registration->fresh()->ticket_code),
+            "Payment received (ref {$payment->order_id}). Your ticket is ready.",
+            route('tickets.show', $registration->ticket_code),
         ));
     }
 

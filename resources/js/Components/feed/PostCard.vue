@@ -85,6 +85,7 @@ const register = (): void => router.post(`/events/${props.post.event?.slug}/regi
                 <input v-model="comment.body" maxlength="1000" placeholder="Add a comment…" aria-label="Add a comment" class="flex-1 bg-transparent text-sm outline-none" />
                 <button type="submit" :disabled="!comment.body.trim() || comment.processing" class="text-sm font-semibold text-brand-blue disabled:opacity-40">Post</button>
             </form>
+            <p v-if="comment.errors.body" role="alert" class="-mt-1 text-xs text-danger">{{ comment.errors.body }}</p>
         </div>
     </article>
 </template>

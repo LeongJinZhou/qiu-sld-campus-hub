@@ -23,7 +23,7 @@ class User extends Authenticatable
     use HasFactory, HasRoles, Notifiable;
 
     /** Social notifications a person may mute. Things that need action (payments, approvals) cannot be muted. */
-    public const MUTABLE_NOTIFICATIONS = ['likes' => 'Likes', 'comments' => 'Comments', 'saves' => 'Saves', 'follows' => 'New followers'];
+    public const MUTABLE_NOTIFICATIONS = ['likes' => 'Likes', 'comments' => 'Comments', 'saves' => 'Saves', 'follows' => 'New followers', 'club_posts' => 'New posts and events from clubs I follow'];
 
     public function hasMuted(string $category): bool
     {

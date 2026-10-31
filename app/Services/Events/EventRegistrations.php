@@ -26,7 +26,12 @@ class EventRegistrations
         }
 
         // A paid event keeps the place as "payment pending" until the fee is confirmed.
-        return $event->registrations()->firstOrCreate(['user_id' => $user->id], ['status' => $event->fee_sen > 0 ? 'pending_payment' : 'registered']);
+        $registration = $event->registrations()->firstOrCreate(['user_id' => $user->id], ['status' => $event->fee_sen > 0 ? 'pending_payment' : 'registered']);
+        if ($registration->wasRecentlyCreated) {
+            app(IndemnityService::class)->askToSign($registration, "You're in for {$event->name}!");
+        }
+
+        return $registration;
     }
 
     /** Members-only events take the club's members (active or renewing) and its committee; open events take anyone. */

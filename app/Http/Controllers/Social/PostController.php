@@ -7,9 +7,12 @@ use App\Http\Requests\Social\StorePostRequest;
 use App\Models\Club;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Models\User;
+use App\Services\Social\PostingRules;
 use App\Services\Social\PostPresenter;
 use App\Services\Social\SocialNotifier;
 use App\Services\Uploads\ImageUpload;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,11 +28,14 @@ class PostController extends Controller
         return Inertia::render('Feed/Post', [
             'post' => $presenter->card($post),
             'comments' => $post->comments()->whereNull('hidden_at')->with('user')->oldest()->get()->map(fn (Comment $c) => $presenter->comment($c)),
+            // Who liked it, newest first: everyone sees names and photos only (as on the public profile).
+            'likers' => $post->likers()->orderByPivot('created_at', 'desc')->limit(100)->get()
+                ->map(fn (User $u) => ['name' => $u->name, 'photo_url' => $u->photoUrl(), 'url' => route('profile.public', $u->qr_token)]),
         ]);
     }
 
     /** Club posts and post-event recaps with a photo carousel. */
-    public function store(StorePostRequest $request, Club $club): RedirectResponse
+    public function store(StorePostRequest $request, Club $club, SocialNotifier $notifier): RedirectResponse
     {
         $post = $club->posts()->create([
             ...$request->safe()->only('type', 'caption', 'event_id'),
@@ -39,6 +45,7 @@ class PostController extends Controller
         foreach ($request->file('photos') as $i => $photo) {
             $post->media()->create(['path' => app(ImageUpload::class)->store($photo, "posts/{$club->id}"), 'sort' => $i]);
         }
+        $notifier->tellFollowers($post, $request->user());
 
         return to_route('feed')->with('success', 'Posted.');
     }
@@ -61,9 +68,13 @@ class PostController extends Controller
         return back();
     }
 
-    public function comment(Request $request, Post $post, SocialNotifier $notifier): RedirectResponse
+    public function comment(Request $request, Post $post, SocialNotifier $notifier, PostingRules $rules): RedirectResponse
     {
-        $data = $request->validate(['body' => ['required', 'string', 'max:1000']]);
+        $data = $request->validate(['body' => ['required', 'string', 'max:1000', function (string $attribute, mixed $value, Closure $fail) use ($request, $post, $rules): void {
+            if (is_string($value) && ($problem = $rules->commentProblem($request->user(), $post, $value))) {
+                $fail($problem);
+            }
+        }]]);
         $post->comments()->create(['user_id' => $request->user()->id, 'body' => $data['body']]);
         if ($post->club) {
             $notifier->notify($post->club, $request->user(), 'comments', 'your post', route('posts.show', $post), "comments:post:{$post->id}");

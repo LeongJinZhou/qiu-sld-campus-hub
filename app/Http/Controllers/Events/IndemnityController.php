@@ -27,7 +27,6 @@ class IndemnityController extends Controller
         Gate::authorize('view', $event);
         $user = $request->user();
         $student = $user->student;
-        $contact = $user->emergencyContact;
         $advisor = $event->club->roleAssignments()->where('session_id', $event->session_id)->where('role', ScopedRole::Advisor)->first()?->user;
 
         return Inertia::render('Events/Indemnity', [
@@ -45,14 +44,7 @@ class IndemnityController extends Controller
                 'programme' => $student?->programme,
                 'contact_number' => $student?->mobile_no,
             ],
-            'saved' => $contact ? [
-                'emergency_name' => $contact->name,
-                'emergency_mobile_phone' => $contact->mobile_phone,
-                'emergency_work_phone' => $contact->work_phone,
-                'emergency_relationship' => $contact->relationship,
-                'alternate_name' => $contact->alternate_name,
-                'alternate_phone' => $contact->alternate_phone,
-            ] : null,
+            'saved' => $this->indemnities->savedDetails($user),
             'signedAt' => $event->indemnities()->where('user_id', $user->id)->first()?->signed_at?->format('D, j M Y, g:i A'),
             'mustSign' => $this->indemnities->mustSign($event)->contains('id', $user->id),
         ]);
@@ -67,7 +59,11 @@ class IndemnityController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return to_route('events.show', $event)->with('success', 'Indemnity signed. You can now clock in at the event.');
+        $registration = $event->registrations()->where('user_id', $request->user()->id)->first();
+
+        return $registration?->isPaidUp() && $registration->ensureTicket()->ticket_code
+            ? to_route('tickets.show', $registration->ticket_code)->with('success', 'Signed. Here is your ticket!')
+            : to_route('events.show', $event)->with('success', 'Indemnity signed.');
     }
 
     /** Signed / not-signed list for the event committee, club committee, advisor and SLD. */

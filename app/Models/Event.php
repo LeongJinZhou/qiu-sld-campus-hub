@@ -134,4 +134,10 @@ class Event extends Model
     {
         return $this->starts_at->copy()->subDays(3);
     }
+
+    /** @return HasMany<Post, $this> */
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
 }

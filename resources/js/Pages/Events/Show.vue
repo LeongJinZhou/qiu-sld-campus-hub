@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IndemnityPrompt from '@/Components/events/IndemnityPrompt.vue';
 import Icon from '@/Components/ui/Icon.vue';
 import Input from '@/Components/ui/Input.vue';
 import FileUpload from '@/Components/ui/FileUpload.vue';
@@ -102,7 +103,8 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                     </template>
                     <template v-else-if="registered">
                         <p class="mt-2 text-sm font-medium text-success">You're registered.</p>
-                        <Link v-if="ticketUrl" :href="ticketUrl"><Button block class="mt-2">View my ticket</Button></Link>
+                        <IndemnityPrompt v-if="registrationStatus === 'registered' && indemnity && !indemnity.signed && !indemnity.closed" :slug="event.slug" :name="event.name" :closes-at="indemnity.closes_at" class="mt-2" />
+                        <Link v-else-if="ticketUrl" :href="ticketUrl"><Button block class="mt-2">View my ticket</Button></Link>
                         <button type="button" class="mt-1 text-xs text-ink-muted underline" @click="unregister">Cancel registration</button>
                     </template>
                     <template v-else-if="event.registration_open && !mayJoin">
