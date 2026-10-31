@@ -13,7 +13,7 @@ export interface Flash {
 
 export interface SharedProps {
     auth: { user: AuthUser | null };
-    nav: { unread: number; isStaff: boolean; isAdmin: boolean; canPublish: boolean } | null;
+    nav: { unread: number; actions: number; isStaff: boolean; isAdmin: boolean; canPublish: boolean } | null;
     flash: Flash;
     [key: string]: unknown;
 }

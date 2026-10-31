@@ -19,7 +19,10 @@ class EventRegistrationController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', $event->is_outdoor ? 'Registered. Please sign the indemnity form before the event.' : 'Registered. See you there!');
+        // Outdoor events need the indemnity before anyone can clock in, so go straight to it.
+        return $event->is_outdoor
+            ? to_route('events.indemnity', $event)->with('success', 'Registered! One more step: sign the indemnity form for this outdoor event.')
+            : back()->with('success', 'Registered. See you there!');
     }
 
     public function destroy(Request $request, Event $event): RedirectResponse

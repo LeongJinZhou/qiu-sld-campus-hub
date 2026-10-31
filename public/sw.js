@@ -1,6 +1,6 @@
 // Campus Hub service worker: an offline shell only. Pages and data always come from the network, so no
 // personal data is ever cached; built assets (hashed file names) and the brand icons are cached for speed.
-const CACHE = 'campus-hub-v1';
+const CACHE = 'campus-hub-v2';
 const SHELL = ['/offline.html', '/icons/icon-192.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
@@ -36,4 +36,16 @@ self.addEventListener('fetch', (event) => {
             ),
         );
     }
+});
+
+// Tapping a reminder ("you have half-way done this") opens the page where the person left off.
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const url = event.notification.data?.url ?? '/notifications';
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+            const open = windows.find((w) => new URL(w.url).origin === self.location.origin);
+            return open ? open.navigate(url).then((w) => w?.focus()) : self.clients.openWindow(url);
+        }),
+    );
 });
