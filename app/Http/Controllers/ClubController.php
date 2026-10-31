@@ -30,25 +30,6 @@ use Inertia\Response;
 
 class ClubController extends Controller
 {
-    public function index(Request $request): Response
-    {
-        $search = trim((string) $request->query('search', ''));
-
-        return Inertia::render('Clubs/Index', [
-            'search' => $search,
-            'clubs' => Club::with('category')
-                ->when($search !== '', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                ->orderBy('name')
-                ->get()
-                ->map(fn (Club $club) => [
-                    'slug' => $club->slug,
-                    'name' => $club->name,
-                    'logo_url' => $club->logoUrl(),
-                    'category' => $club->category?->name,
-                ]),
-        ]);
-    }
-
     public function show(Request $request, Club $club, SessionResolver $sessions, CommitteeBoard $board, CompulsoryPositionsCheck $compulsory, QrCodes $qr, DocumentPresenter $presenter): Response
     {
         $current = $sessions->current();

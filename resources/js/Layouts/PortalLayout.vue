@@ -30,7 +30,7 @@ const links = computed(() => [
               { label: 'Audit log', href: '/admin/audit' },
           ]
         : []),
-    { label: '← Back to Campus Hub', href: '/clubs' },
+    { label: '← Back to Campus Hub', href: '/feed' },
 ]);
 const isActive = (href: string): boolean => (href === '/admin' ? page.url === '/admin' : page.url.startsWith(href));
 </script>

@@ -31,7 +31,7 @@ const props = defineProps<{
 // First steps for a new student; the card disappears once every step is done.
 const steps = computed(() => [
     { label: 'Add a profile photo', done: props.account.has_photo_override || !!props.profile.photo_url, action: () => (photo.value = true) },
-    { label: 'Join a club', done: (props.profile.clubs?.length ?? 0) > 0, href: '/clubs' },
+    { label: 'Join a club', done: (props.profile.clubs?.length ?? 0) > 0, href: '/search?type=clubs' },
     { label: 'Sign up for an event', done: props.upcoming.length > 0 || (props.profile.events?.length ?? 0) > 0, href: '/feed' },
     { label: 'Link a personal email (keeps your login after graduation)', done: !!props.account.personal_email, action: () => (editing.value = true) },
 ]);
