@@ -16,8 +16,10 @@ use App\Models\Receipt;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Documents\FinanceRecordExport;
+use App\Services\Documents\FinanceWorkbookExport;
 use App\Services\Documents\PdfConverter;
 use App\Services\Finance\FinanceReport;
+use App\Services\Finance\FinanceSections;
 use App\Services\Finance\FundWithdrawals;
 use App\Services\Finance\Ledger;
 use App\Services\Time\SessionResolver;
@@ -40,7 +42,7 @@ class FinanceController extends Controller
 {
     public function __construct(private readonly Ledger $ledger) {}
 
-    public function show(Request $request, Club $club, DocumentPresenter $presenter, FundWithdrawals $funds, FinanceReport $reports, SessionResolver $sessions): Response
+    public function show(Request $request, Club $club, DocumentPresenter $presenter, FundWithdrawals $funds, FinanceReport $reports, SessionResolver $sessions, FinanceSections $sections): Response
     {
         Gate::authorize('viewInternal', $club);
         $user = $request->user();
@@ -76,7 +78,33 @@ class FinanceController extends Controller
                 'qr' => collect($fee->payment_qr_paths ?? [])->map(fn (string $p) => ['path' => $p, 'url' => Storage::disk('public')->url($p)])->values(),
             ] : null,
             'can' => ['edit' => $user->can('treasure', $club), 'sld' => $user->isSldAdmin()],
+            // Workbook export: the sections a committee can tick, for this session and for the whole history.
+            'workbook' => fn () => [
+                'session' => $sections->choices($club, $session),
+                'all' => $sections->choices($club, null),
+            ],
         ]);
+    }
+
+    /**
+     * The finance workbook (Excel or PDF): Overview, then one sheet per chosen section. "period=all" covers every
+     * transaction; otherwise the chosen session (the current committee's by default).
+     */
+    public function workbook(Request $request, Club $club, string $format, FinanceSections $sections, FinanceWorkbookExport $export, PdfConverter $pdf, SessionResolver $sessions): BinaryFileResponse
+    {
+        Gate::authorize('viewInternal', $club);
+        abort_unless(in_array($format, ['xlsx', 'pdf'], true), 404);
+        $input = $request->validate(['period' => ['nullable', 'in:session,all'], 'sections' => ['nullable', 'array', 'max:200'], 'sections.*' => ['string', 'regex:/^(none|drive|normal|other|event:\d+)$/']]);
+        $session = ($input['period'] ?? 'session') === 'all' ? null : $this->session($request, $sessions);
+        $file = $export->render($club, $sections->build($club, $session), $input['sections'] ?? null);
+        if ($format === 'pdf') {
+            $converted = $pdf->convert($file);
+            @unlink($file);
+            $file = $converted;
+        }
+        $label = $session ? str_replace('/', '-', $session->name) : 'All';
+
+        return response()->download($file, "{$club->name} - Finance {$label}.{$format}")->deleteFileAfterSend();
     }
 
     public function opening(Request $request, Club $club): RedirectResponse

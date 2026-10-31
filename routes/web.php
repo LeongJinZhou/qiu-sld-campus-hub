@@ -155,6 +155,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/finance/entries', [FinanceController::class, 'entry'])->name('finance.entry');
     Route::get('/clubs/{club}/finance/receipts/{receipt}', [FinanceController::class, 'receipt'])->middleware('signed')->name('finance.receipt');
     Route::get('/clubs/{club}/finance/export/{format}', [FinanceController::class, 'export'])->name('finance.export');
+    Route::get('/clubs/{club}/finance/workbook/{format}', [FinanceController::class, 'workbook'])->name('finance.workbook');
     Route::get('/clubs/{club}/finance/membership', [PaymentBreakdownController::class, 'membership'])->name('finance.membership');
     Route::get('/clubs/{club}/finance/membership/export/{format}', [PaymentBreakdownController::class, 'exportMembership'])->name('finance.membership.export');
     Route::get('/clubs/{club}/finance/events/{event}', [PaymentBreakdownController::class, 'event'])->name('finance.event');
