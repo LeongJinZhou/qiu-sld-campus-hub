@@ -31,6 +31,7 @@ class ProfileController extends Controller
                 'student_number' => $student?->student_number,
                 'status' => $student?->status->value,
                 'has_photo_override' => $user->avatar_path !== null,
+                'has_cover' => $user->cover_path !== null,
                 'personal_email' => $user->personal_email,
                 'hidden_sections' => $user->hidden_sections ?? [],
             ],
@@ -61,6 +62,13 @@ class ProfileController extends Controller
                 Storage::disk('public')->delete($user->avatar_path);
             }
             $user->avatar_path = $request->hasFile('photo') ? app(ImageUpload::class)->store($request->file('photo'), 'avatars') : null;
+        }
+
+        if ($request->hasFile('cover') || $request->boolean('remove_cover')) {
+            if ($user->cover_path) {
+                Storage::disk('public')->delete($user->cover_path);
+            }
+            $user->cover_path = $request->hasFile('cover') ? app(ImageUpload::class)->store($request->file('cover'), 'covers') : null;
         }
 
         // Photo-only saves must not wipe the other settings.
