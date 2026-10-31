@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'personal_email', 'hidden_sections', 'notification_mutes', 'last_login_at'])]
+#[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'cover_path', 'personal_email', 'hidden_sections', 'notification_mutes', 'last_login_at'])]
 #[Hidden(['remember_token', 'google_id', 'google_token', 'google_refresh_token'])]
 class User extends Authenticatable
 {
@@ -102,6 +102,11 @@ class User extends Authenticatable
     public function photoUrl(): ?string
     {
         return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : $this->avatar_url;
+    }
+
+    public function coverUrl(): ?string
+    {
+        return $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null;
     }
 
     /** @return list<string> */

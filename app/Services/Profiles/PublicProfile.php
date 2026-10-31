@@ -41,6 +41,7 @@ class PublicProfile
         return [
             'name' => $user->name,
             'photo_url' => $user->photoUrl(),
+            'cover_url' => $user->coverUrl(),
             'programme' => $student?->programme,
             'programme_short' => $student?->programmeShortForm(),
             'year_group' => $student?->year_group,

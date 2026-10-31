@@ -19,7 +19,7 @@ import { computed, ref } from 'vue';
 
 const props = defineProps<{
     profile: ProfileData;
-    account: { email: string; student_number: string | null; status: string | null; has_photo_override: boolean; personal_email: string | null; hidden_sections: string[] };
+    account: { email: string; student_number: string | null; status: string | null; has_photo_override: boolean; has_cover: boolean; personal_email: string | null; hidden_sections: string[] };
     hideableSections: string[];
     saved?: { id: number; url: string; image: string | null; caption: string | null }[];
     publicUrl: string;
@@ -40,6 +40,7 @@ const stepsDone = computed(() => steps.value.filter((s) => s.done).length);
 const nav = computed(() => usePage().props.nav);
 const editing = ref(false);
 const photo = ref(false);
+const cover = ref(false);
 const qr = ref(false);
 const copied = ref(false);
 
@@ -84,6 +85,11 @@ async function share(): Promise<void> {
         </section>
 
         <ProfileView :profile="profile" :extra-tabs="[{ key: 'upcoming', label: 'Coming up', icon: 'clock' }, { key: 'certificates', label: 'Certificates', icon: 'check' }, { key: 'saved', label: 'Saved', icon: 'bookmark' }]">
+            <template #cover-actions>
+                <button type="button" class="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur hover:bg-black/60" @click="cover = true">
+                    <Icon name="camera" :size="14" /> {{ account.has_cover ? 'Edit cover' : 'Add cover' }}
+                </button>
+            </template>
             <template #avatar-action>
                 <button type="button" class="absolute bottom-1 right-1 grid size-9 place-items-center rounded-full border-2 border-surface bg-ink text-white shadow-pop" aria-label="Change photo" @click="photo = true">
                     <Icon name="camera" :size="18" />
@@ -150,6 +156,7 @@ async function share(): Promise<void> {
         </section>
 
         <PhotoEditor v-model:open="photo" :current="profile.photo_url" :name="profile.name" :has-override="account.has_photo_override" />
+        <PhotoEditor v-model:open="cover" kind="cover" :current="profile.cover_url" :name="profile.name" :has-override="account.has_cover" />
 
         <Modal v-model:open="qr" title="My QIU profile QR">
             <div class="grid justify-items-center gap-3">

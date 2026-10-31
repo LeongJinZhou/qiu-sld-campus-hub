@@ -57,6 +57,19 @@ it('keeps profile settings when only the photo changes', function () {
         ->and($fresh->personal_email)->toBe('me@gmail.com');
 });
 
+it('saves a cover picture on the public profile and can remove it again', function () {
+    Storage::fake('public');
+
+    $this->actingAs($this->student)->post('/me', ['cover' => UploadedFile::fake()->image('cover.jpg', 1500, 500)])->assertSessionHasNoErrors();
+    $path = $this->student->fresh()->cover_path;
+    Storage::disk('public')->assertExists($path);
+    $this->get("/p/{$this->student->qr_token}")->assertInertia(fn (Assert $p) => $p->where('profile.cover_url', Storage::disk('public')->url($path)));
+
+    $this->actingAs($this->student)->post('/me', ['remove_cover' => 1])->assertSessionHasNoErrors();
+    expect($this->student->fresh()->cover_path)->toBeNull();
+    Storage::disk('public')->assertMissing($path);
+});
+
 it('lists notifications, shows the unread badge and marks them read', function () {
     $this->student->notify(new DocumentNotification('Proposal approved', 'All signed', '/feed'));
 
