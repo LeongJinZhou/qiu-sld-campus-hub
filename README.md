@@ -17,7 +17,9 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 - Club profiles with logo, category, bio, Instagram, permanent club QR
 - Committee tab with session selector: photo, position, course short form, year group; tap for profile card
 - Lifelong student profile with a personal permanent QR (portfolio fields only)
-- *Coming:* news feed with auto-posts for approved events, stories, highlights, gallery
+- News feed: last 7 days in full, older posts folded into 8–14 days, months and years; followers notified of new posts and events; likes and comments (who liked, who commented) notify the committee
+- Feed hygiene: bad-word and insult filter (English, Malay, Manglish, leet/spaced spellings), per-club and per-event posting limits, no repeat captions or comment floods
+- Committee year timeline on the club page
 
 **Portal (committees, advisors, SLD)**
 - Google sign-in restricted to `@qiu.edu.my`, matched against the university student system (camsys)
@@ -29,6 +31,11 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 - Installable PWA (manifest, offline shell); photos re-encoded on upload; private files behind signed, expiring links
 - Event proposals with approval chains and e-signatures, QR attendance, indemnity, posters, post mortem (09)
 - Membership and payments (online receipt check, cash handover), finance ledger (02) and fund withdrawal (07)
+- One receipt pays once: screenshot fingerprint and bank transaction ID checked across every club; sender name checked
+- Transaction IDs `CLUB_EVENT|MEMBERSHIPDRIVE-<drive>|NORMALREGISTER_MATRIC_NAME_YYYYMMDD_HHMM_TRANSACTION`; SLD finds any transaction by any parts as they type
+- Finance workbook (Excel/PDF): Overview, then membership drive, normal registration, each event, other; this session or all years; pick the sheets
+- Event purchases and claims: snap the receipt (AI reads items and prices), budget vs spending, helpers claim back, event committee verifies, pay back by cash (QR photo) or transfer (name checked)
+- Outdoor events: indemnity pre-filled, sign once registered or paid, ticket appears after signing
 - Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA
 - Venue booking (La Place, semester venues, big rooms) with SLD confirmation; daily club status (Active / At risk / Inactive)
 - AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance

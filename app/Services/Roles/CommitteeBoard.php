@@ -32,12 +32,14 @@ class CommitteeBoard
     /** @return list<array{id: int, name: string}> sessions this club has records for, plus the current one, newest first */
     public function sessions(Club $club, AcademicSession $current): array
     {
+        $sizes = $club->roleAssignments()->selectRaw('session_id, COUNT(*) AS size')->groupBy('session_id')->pluck('size', 'session_id');
+
         return AcademicSession::query()
             ->whereIn('id', $club->roleAssignments()->select('session_id'))
             ->orWhere('id', $current->id)
             ->orderByDesc('starts_on')
             ->get(['id', 'name'])
-            ->map(fn (AcademicSession $s) => ['id' => $s->id, 'name' => $s->name])
+            ->map(fn (AcademicSession $s) => ['id' => $s->id, 'name' => $s->name, 'current' => $s->is($current), 'size' => (int) ($sizes[$s->id] ?? 0)])
             ->all();
     }
 
