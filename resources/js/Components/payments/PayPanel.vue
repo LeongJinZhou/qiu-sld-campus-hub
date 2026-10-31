@@ -39,7 +39,8 @@ const flagText: Record<string, string> = {
     no_date: 'No date found',
     low_confidence: 'Receipt is hard to read',
     unreadable: 'Receipt could not be read automatically',
-    duplicate_reference: 'This reference was already used',
+    duplicate_reference: 'This transaction ID was already used for another payment',
+    payer_mismatch: 'Sender name is not yours',
 };
 </script>
 

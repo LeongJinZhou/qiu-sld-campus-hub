@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
 use App\Services\Finance\Ledger;
+use App\Services\Membership\ReceiptGuard;
 use App\Services\Uploads\ImageUpload;
 use DomainException;
 use Illuminate\Http\UploadedFile;
@@ -26,7 +27,7 @@ class EventPayments
 {
     public const MAX_QR = 2;
 
-    public function __construct(private readonly Ledger $ledger, private readonly AuditLogger $audit, private readonly ImageUpload $images) {}
+    public function __construct(private readonly Ledger $ledger, private readonly AuditLogger $audit, private readonly ImageUpload $images, private readonly ReceiptGuard $guard) {}
 
     /**
      * @param  array{fee_rm: float|int|string, payment_url: ?string, payment_account_name: ?string}  $data
@@ -57,10 +58,12 @@ class EventPayments
         if ($registration->payments()->whereIn('status', [PaymentStatus::Reading, PaymentStatus::PendingReview, PaymentStatus::CashPending])->exists()) {
             throw new DomainException('Your previous payment is still being checked.');
         }
+        $hash = $this->guard->fingerprint($receipt);
+        $this->guard->assertUnusedFile($hash, $registration->user_id);
         $payment = MembershipPayment::create([
             'club_id' => $event->club_id, 'user_id' => $registration->user_id, 'event_id' => $event->id, 'event_registration_id' => $registration->id,
             'method' => 'online', 'amount_sen' => $event->fee_sen, 'status' => PaymentStatus::Reading,
-            'receipt_path' => $receipt->store("payment-receipts/{$event->club_id}", 'local'),
+            'receipt_path' => $receipt->store("payment-receipts/{$event->club_id}", 'local'), 'receipt_hash' => $hash,
         ]);
         ReadReceipt::dispatch($payment->id);
 

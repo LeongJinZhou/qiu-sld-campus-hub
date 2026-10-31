@@ -28,7 +28,7 @@ class EventRegistration extends Model
         static::saving(function (EventRegistration $registration): void {
             if ($registration->status === 'registered') {
                 $registration->ticket_code ??= Str::random(32);
-                $registration->order_id ??= app(OrderIds::class)->forEvent($registration->event);
+                $registration->order_id ??= app(OrderIds::class)->forStudent($registration->event->club, $registration->event, $registration->user, $registration->created_at ?? now());
             }
         });
     }
