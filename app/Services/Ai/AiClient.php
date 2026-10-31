@@ -24,10 +24,11 @@ class AiClient
     /**
      * One structured-output call: the reply is JSON matching $schema, or null when AI is off or the call fails.
      *
+     * @param  string|list<array<string, mixed>>  $prompt  text, or content blocks (e.g. an image then the question)
      * @param  array<string, mixed>  $schema
      * @return array<string, mixed>|null
      */
-    public function json(string $prompt, array $schema, int $maxTokens = 4000): ?array
+    public function json(string|array $prompt, array $schema, int $maxTokens = 4000): ?array
     {
         $client = $this->client();
         if (! $client) {

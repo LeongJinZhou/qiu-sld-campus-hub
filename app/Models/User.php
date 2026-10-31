@@ -15,12 +15,20 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'personal_email', 'hidden_sections', 'last_login_at'])]
+#[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'cover_path', 'personal_email', 'hidden_sections', 'notification_mutes', 'last_login_at'])]
 #[Hidden(['remember_token', 'google_id', 'google_token', 'google_refresh_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable;
+
+    /** Social notifications a person may mute. Things that need action (payments, approvals) cannot be muted. */
+    public const MUTABLE_NOTIFICATIONS = ['likes' => 'Likes', 'comments' => 'Comments', 'saves' => 'Saves', 'follows' => 'New followers'];
+
+    public function hasMuted(string $category): bool
+    {
+        return in_array($category, $this->notification_mutes ?? [], true);
+    }
 
     /** Profile sections a student may hide from their public profile. */
     public const HIDEABLE_SECTIONS = ['clubs', 'positions', 'events', 'cca'];
@@ -29,6 +37,7 @@ class User extends Authenticatable
     {
         return [
             'hidden_sections' => 'array',
+            'notification_mutes' => 'array',
             'last_login_at' => 'datetime',
             'google_token' => 'encrypted',
             'google_refresh_token' => 'encrypted',
@@ -93,6 +102,17 @@ class User extends Authenticatable
     public function photoUrl(): ?string
     {
         return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : $this->avatar_url;
+    }
+
+    /** Events this student was added to as a door helper. @return BelongsToMany<Event, $this> */
+    public function helpingEvents(): BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'event_helpers')->withTimestamps();
+    }
+
+    public function coverUrl(): ?string
+    {
+        return $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null;
     }
 
     /** @return list<string> */

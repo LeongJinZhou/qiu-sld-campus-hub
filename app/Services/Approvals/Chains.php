@@ -27,10 +27,11 @@ class Chains
                 ChainRole::Coo,
             ])),
             DocumentType::FundWithdrawal => [
-                ChainRole::Secretary, ChainRole::President, ChainRole::Advisor,
+                ChainRole::Preparer, ChainRole::President, ChainRole::Advisor,
                 ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo,
             ],
-            DocumentType::AgmReport => [ChainRole::Secretary, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer],
+            // The first signature on every form is whoever prepares and submits it, with their own position.
+            DocumentType::AgmReport => [ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer],
             // The official 13 template is signed by the preparer, the President and the Advisor.
             DocumentType::Minutes => [ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer],
             DocumentType::FinanceRecord, DocumentType::AttendanceList, DocumentType::PostMortem => [

@@ -8,7 +8,7 @@ class DevLoginRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return app()->isLocal();
+        return (bool) config('sld.demo_login');
     }
 
     /** @return array<string, list<string>> */

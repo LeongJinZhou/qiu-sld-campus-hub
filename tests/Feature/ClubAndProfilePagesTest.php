@@ -4,6 +4,7 @@ use App\Models\Club;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Camsys\CamsysSync;
+use App\Services\Profiles\PublicProfile;
 use App\Services\Roles\RoleService;
 use App\Services\Time\SessionResolver;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -86,4 +87,22 @@ it('lets a Super Admin grant SLD Officer but not change their own roles', functi
     expect($this->user->fresh()->hasRole('admin'))->toBeTrue();
 
     $this->actingAs($boss)->put("/admin/roles/{$boss->id}", ['roles' => []])->assertForbidden();
+});
+
+it('lists clubs a student simply joined on their profile, and keeps hidden members off the club member wall', function () {
+    $plain = Student::where('student_number', 'STD20240002')->first()->ensureUser();
+    $shy = Student::where('student_number', 'STD20240003')->first()->ensureUser();
+    $shy->update(['hidden_sections' => ['clubs']]);
+    foreach ([$plain, $shy] as $member) {
+        $this->club->memberships()->create(['user_id' => $member->id, 'status' => 'active', 'starts_on' => today(), 'expires_on' => today()->addDays(365)]);
+    }
+
+    expect(app(PublicProfile::class)->for($plain)['clubs'])
+        ->toMatchArray([['name' => 'GPS Club', 'url' => route('clubs.show', $this->club), 'logo_url' => $this->club->logoUrl(), 'category' => null, 'current_position' => null, 'membership' => 'Member since Oct 2026']]);
+
+    $this->actingAs($this->user)->get("/clubs/{$this->club->slug}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('counts.members', 2)
+            ->has('memberWall', 1)
+            ->where('memberWall.0.name', $plain->name));
 });

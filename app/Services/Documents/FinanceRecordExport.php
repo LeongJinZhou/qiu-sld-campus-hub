@@ -17,9 +17,10 @@ class FinanceRecordExport
 
     public function __construct(private readonly XlsxRenderer $xlsx, private readonly Ledger $ledger, private readonly SessionResolver $sessions) {}
 
-    public function render(Club $club): string
+    /** @param list<array<string, mixed>>|null $rows rows to print (default: the whole ledger) */
+    public function render(Club $club, ?array $rows = null): string
     {
-        $rows = $this->ledger->rows($club);
+        $rows ??= $this->ledger->rows($club);
         $session = $this->sessions->current();
         $treasurer = $club->roleAssignments()->where('session_id', $session->id)->where('position', 'Treasurer')->with('user')->first()?->user;
         $advisor = $club->roleAssignments()->where('session_id', $session->id)->where('role', ScopedRole::Advisor)->with('user')->first()?->user;

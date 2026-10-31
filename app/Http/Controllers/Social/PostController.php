@@ -8,6 +8,7 @@ use App\Models\Club;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Services\Social\PostPresenter;
+use App\Services\Social\SocialNotifier;
 use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,24 +43,31 @@ class PostController extends Controller
         return to_route('feed')->with('success', 'Posted.');
     }
 
-    public function like(Request $request, Post $post): RedirectResponse
+    public function like(Request $request, Post $post, SocialNotifier $notifier): RedirectResponse
     {
-        $post->likers()->toggle($request->user()->id);
+        if ($post->likers()->toggle($request->user()->id)['attached'] !== [] && $post->club) {
+            $notifier->notify($post->club, $request->user(), 'likes', 'your post', route('posts.show', $post), "likes:post:{$post->id}");
+        }
 
         return back();
     }
 
-    public function save(Request $request, Post $post): RedirectResponse
+    public function save(Request $request, Post $post, SocialNotifier $notifier): RedirectResponse
     {
-        $post->savers()->toggle($request->user()->id);
+        if ($post->savers()->toggle($request->user()->id)['attached'] !== [] && $post->club) {
+            $notifier->notify($post->club, $request->user(), 'saves', 'your post', route('posts.show', $post), "saves:post:{$post->id}");
+        }
 
         return back();
     }
 
-    public function comment(Request $request, Post $post): RedirectResponse
+    public function comment(Request $request, Post $post, SocialNotifier $notifier): RedirectResponse
     {
         $data = $request->validate(['body' => ['required', 'string', 'max:1000']]);
         $post->comments()->create(['user_id' => $request->user()->id, 'body' => $data['body']]);
+        if ($post->club) {
+            $notifier->notify($post->club, $request->user(), 'comments', 'your post', route('posts.show', $post), "comments:post:{$post->id}");
+        }
 
         return back();
     }

@@ -38,7 +38,7 @@ class DocumentPresenter
             'club' => $document->club->only('slug', 'name'),
             'event' => $document->event?->only('slug', 'name'),
             'agm_id' => $document->agm_id,
-            'submitted_at' => $document->submitted_at?->toDayDateTimeString(),
+            'submitted_at' => $document->submitted_at?->format('D, j M Y, g:i A'),
             'data' => $data,
             'locked' => $document->type === DocumentType::Proposal ? $this->proposals->lockedFields($document) : [],
             'totals' => isset($data['budget']) ? $this->rules->budgetTotals($data['budget']) : null,
@@ -58,8 +58,8 @@ class DocumentPresenter
                 'approver' => $a->approver?->name,
                 'position' => $a->signature?->position_at_time,
                 'comment' => $a->comment,
-                'decided_at' => $a->decided_at?->toDayDateTimeString(),
-                'due_at' => $a->due_at?->toFormattedDateString(),
+                'decided_at' => $a->decided_at?->format('D, j M Y, g:i A'),
+                'due_at' => $a->due_at?->format('j M Y'),
                 'verification_code' => $a->signature?->verification_code,
                 'waiting_on' => $current?->is($a) ? $this->approvers->candidates($document, $a->role)->pluck('name')->all() : [],
             ]),
@@ -82,7 +82,7 @@ class DocumentPresenter
             'status' => $document->status->value,
             'current_role' => $current?->role->label(),
             'waiting_on' => $current ? $this->approvers->candidates($document, $current->role)->pluck('name')->all() : [],
-            'due_at' => $current?->due_at?->toFormattedDateString(),
+            'due_at' => $current?->due_at?->format('j M Y'),
             'overdue' => (bool) $current?->due_at?->isPast(),
         ];
     }

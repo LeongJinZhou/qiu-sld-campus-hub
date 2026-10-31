@@ -207,3 +207,15 @@ function completeProposal(array $f, array $overrides = []): array
         'conclusion' => 'Good for all.',
     ], $overrides);
 }
+
+/** Submits and fully approves the fixture proposal with a budget (gloves and refreshments). */
+function approvedEventWithBudget(object $t): void
+{
+    $data = array_replace(app(ProposalForm::class)->defaults($t->f['event']), [
+        'budget' => ['revenue' => [['description' => 'Club fund', 'price_sen' => 60000, 'quantity' => 1]], 'expenses' => [
+            ['description' => 'Gloves', 'price_sen' => 500, 'quantity' => 40], ['description' => 'Refreshments & water', 'price_sen' => 1000, 'quantity' => 30],
+        ]],
+    ]);
+    app(ApprovalEngine::class)->submit($t->f['document'], $t->f['president'], $data, signaturePng());
+    approveRemainingSteps($t->f['document']);
+}

@@ -38,7 +38,7 @@ const form = useForm({ kind: 'committee', title: '', starts_at: '', ends_at: '',
                         <Link :href="`/meetings/${m.id}`" class="grid gap-2 rounded-card border border-line bg-surface p-4 shadow-card transition hover:shadow-pop">
                             <span class="flex flex-wrap items-center justify-between gap-2">
                                 <strong>{{ m.title }}</strong>
-                                <span class="flex gap-2"><Badge tone="info">{{ kinds[m.kind] }}</Badge><Badge v-if="m.upcoming" tone="success">Upcoming</Badge></span>
+                                <span class="flex flex-wrap gap-2"><Badge tone="info">{{ kinds[m.kind] }}</Badge><Badge v-if="m.upcoming" tone="success">Upcoming</Badge></span>
                             </span>
                             <span class="flex items-center gap-2 text-sm text-ink-muted"><Icon name="calendar" :size="16" />{{ dateTime(m.starts_at) }} · {{ m.meet_link ? 'Google Meet' : m.venue }}</span>
                             <ApprovalTracker v-if="m.minutes && m.minutes.total" :progress="m.minutes" compact />

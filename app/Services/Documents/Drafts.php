@@ -21,6 +21,7 @@ class Drafts
     /** @param array<string, mixed> $data */
     public function save(Document $document, array $data, int $userId): void
     {
-        $document->versions()->updateOrCreate(['number' => 0], ['data' => $data, 'created_by' => $userId]);
+        // The draft row is shared and reused: its author and time are "last saved by … at …".
+        $document->versions()->updateOrCreate(['number' => 0], ['data' => $data, 'created_by' => $userId, 'created_at' => now()]);
     }
 }

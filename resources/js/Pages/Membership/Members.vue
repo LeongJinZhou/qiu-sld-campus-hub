@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { date } from '@/lib/format';
 import CheckboxGroup from '@/Components/forms/CheckboxGroup.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
@@ -8,6 +9,7 @@ import Icon from '@/Components/ui/Icon.vue';
 import Input from '@/Components/ui/Input.vue';
 import Select from '@/Components/ui/Select.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { copy } from '@/lib/clone';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { watchDebounced } from '@vueuse/core';
 import { computed, reactive, ref } from 'vue';
@@ -53,7 +55,7 @@ const props = defineProps<{
 }>();
 
 const url = props.club ? `/clubs/${props.club.slug}/members` : '/admin/members';
-const f = reactive<Filters>({ status: [], position: [], payment: [], method: [], collected_by: [], year_group: [], programme_short: [], intake: [], club_id: [], category: [], club_status: [], ...(JSON.parse(JSON.stringify(props.filters)) as Partial<Filters>) });
+const f = reactive<Filters>({ status: [], position: [], payment: [], method: [], collected_by: [], year_group: [], programme_short: [], intake: [], club_id: [], category: [], club_status: [], ...(copy(props.filters) as Partial<Filters>) });
 const sort = ref<string[][]>(Array.isArray(props.filters.sort) ? (props.filters.sort as string[][]) : [['name', 'asc']]);
 const search = ref(typeof props.filters.search === 'string' ? props.filters.search : '');
 const open = ref(false);
@@ -124,19 +126,19 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 
             <div class="overflow-x-auto rounded-card border border-line bg-surface">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-surface-muted text-xs uppercase text-ink-muted">
+                    <thead class="bg-surface-muted text-left text-xs uppercase tracking-wide text-ink-muted">
                         <tr>
-                            <th v-if="!club" class="px-3 py-3"><button type="button" @click="toggleSort('club')">Club</button></th>
-                            <th class="px-3 py-3"><button type="button" @click="toggleSort('name')">Name</button></th>
-                            <th class="px-3 py-3"><button type="button" @click="toggleSort('student_number')">Student ID</button></th>
-                            <th class="px-3 py-3">Position</th>
-                            <th class="px-3 py-3"><button type="button" @click="toggleSort('programme')">Programme</button></th>
-                            <th class="px-3 py-3"><button type="button" @click="toggleSort('year_group')">Year</button></th>
-                            <th class="px-3 py-3"><button type="button" @click="toggleSort('status')">Status</button></th>
-                            <th class="px-3 py-3">Payment</th>
-                            <th class="px-3 py-3"><button type="button" @click="toggleSort('expires')">Expires</button></th>
-                            <th class="px-3 py-3 text-right"><button type="button" @click="toggleSort('events')">Events</button></th>
-                            <th class="px-3 py-3 text-right"><button type="button" @click="toggleSort('cca')">CCA</button></th>
+                            <th v-if="!club" class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('club')">Club</button></th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('name')">Name</button></th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('student_number')">Student ID</button></th>
+                            <th class="px-3 py-3 font-medium">Position</th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('programme')">Programme</button></th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('year_group')">Year</button></th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('status')">Status</button></th>
+                            <th class="px-3 py-3 font-medium">Payment</th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('expires')">Expires</button></th>
+                            <th class="px-3 py-3 text-right"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('events')">Events</button></th>
+                            <th class="px-3 py-3 text-right"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('cca')">CCA</button></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -149,7 +151,7 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
                             <td class="px-3 py-2">{{ r.year_group }}</td>
                             <td class="px-3 py-2"><Badge :tone="tone[r.status] ?? 'neutral'">{{ r.status }}</Badge></td>
                             <td class="px-3 py-2"><Badge :tone="tone[r.payment] ?? 'neutral'">{{ r.payment }}</Badge><span v-if="r.method" class="ml-1 text-xs text-ink-muted">{{ r.method }}<template v-if="r.collected_by"> · {{ r.collected_by }}</template></span></td>
-                            <td class="px-3 py-2 text-xs">{{ r.expires ?? '—' }}</td>
+                            <td class="px-3 py-2 text-xs">{{ r.expires ? date(r.expires) : '—' }}</td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ r.events }}</td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ r.cca }}</td>
                         </tr>

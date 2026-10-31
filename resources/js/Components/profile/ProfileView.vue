@@ -34,8 +34,9 @@ const ccaBySession = computed(() => props.profile.cca?.records ?? []);
 <template>
     <article class="overflow-hidden rounded-card border border-line bg-surface shadow-card">
         <!-- Cover -->
-        <div class="relative h-32 bg-gradient-to-r from-brand-yellow via-brand-orange to-brand-magenta sm:h-44">
-            <div class="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_40%),radial-gradient(circle_at_80%_60%,#1CBDFD_0,transparent_45%)]" />
+        <div class="relative aspect-[3/1] max-h-56 w-full bg-gradient-to-r from-brand-yellow via-brand-orange to-brand-magenta">
+            <img v-if="profile.cover_url" :src="profile.cover_url" alt="" class="absolute inset-0 size-full object-cover" />
+            <div v-else class="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_40%),radial-gradient(circle_at_80%_60%,#1CBDFD_0,transparent_45%)]" />
             <div class="absolute right-3 top-3 flex gap-2"><slot name="cover-actions" /></div>
         </div>
 
@@ -97,6 +98,7 @@ const ccaBySession = computed(() => props.profile.cca?.records ?? []);
                                     <strong class="truncate">{{ c.name }}</strong>
                                     <span class="text-xs text-ink-muted">{{ c.category }}</span>
                                     <span v-if="c.current_position" class="text-xs font-semibold text-brand-blue">{{ c.current_position }}</span>
+                                    <span v-else-if="c.membership" class="text-xs font-medium text-success">{{ c.membership }}</span>
                                 </span>
                             </Link>
                         </li>

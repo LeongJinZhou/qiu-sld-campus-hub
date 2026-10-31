@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { watchDebounced } from '@vueuse/core';
+import { useLeaveReminder } from '@/composables/useLeaveReminder';
 import BudgetTable from '@/Components/forms/BudgetTable.vue';
 import CheckboxGroup from '@/Components/forms/CheckboxGroup.vue';
 import DynamicTable from '@/Components/forms/DynamicTable.vue';
@@ -14,7 +16,7 @@ import Select from '@/Components/ui/Select.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { hoursBetween, rm } from '@/lib/format';
+import { date, dateTime, hoursBetween, rm } from '@/lib/format';
 import type { ApprovalProgress, ApprovalStep, ProposalData } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
@@ -33,6 +35,9 @@ const props = defineProps<{
     returnComment: string | null;
     options: { natures: Record<string, string>; sdgs: Record<number, string>; fundSources: Record<string, string>; compulsoryPositions: string[] };
     leadTime: { threshold: number; small: string; large: string };
+    lastEdit: { by: string | null; at: string | null };
+    clubCommittee: { id: number; name: string }[];
+    canDiscard: boolean;
 }>();
 
 const form = useForm<ProposalData & { signature: string | null; signature_strokes: string | null }>({ ...props.data, signature: null, signature_strokes: null });
@@ -54,6 +59,34 @@ const objectiveRows = computed({
 
 const save = (): void => {
     form.transform(({ signature: _signature, signature_strokes: _strokes, ...data }) => data).put(`/events/${props.event.slug}/proposal`, { preserveScroll: true });
+};
+
+// Shared draft: saves itself a moment after anyone stops typing, so another committee member can carry on later.
+const saving = ref<'idle' | 'saving' | 'saved' | 'error'>('idle');
+const autosave = (): void => {
+    if (!props.editable || form.processing) return;
+    const { signature: _s, signature_strokes: _t, ...data } = form.data();
+    saving.value = 'saving';
+    router.put(`/events/${props.event.slug}/proposal`, { ...data, autosave: 1 } as never, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['lastEdit'],
+        errorBag: 'autosave', // half-typed fields must not flash errors while autosaving
+        onSuccess: () => (saving.value = 'saved'),
+        onError: () => (saving.value = 'error'),
+    });
+};
+watchDebounced(() => JSON.stringify({ ...form.data(), signature: null, signature_strokes: null }), autosave, { debounce: 2000 });
+useLeaveReminder(() => `The proposal for ${props.event.name}`, () => props.editable);
+
+const asking = ref(false);
+const ask = useForm({ user_ids: [] as number[], note: '' });
+const toggleAsk = (id: number): void => {
+    ask.user_ids = ask.user_ids.includes(id) ? ask.user_ids.filter((x) => x !== id) : [...ask.user_ids, id];
+};
+const sendAsk = (): void => ask.post(`/events/${props.event.slug}/proposal/ask`, { preserveScroll: true, onSuccess: () => ((asking.value = false), ask.reset()) });
+const discard = (): void => {
+    if (confirm('Discard this draft? It cannot be undone.')) router.delete(`/events/${props.event.slug}/proposal`);
 };
 
 const signing = ref(false);
@@ -103,7 +136,7 @@ const positionOptions = computed(() => props.options.compulsoryPositions.filter(
                 <Textarea v-model="form.summary" label="Event Summary" :rows="3" :readonly="readOnly" :error="form.errors.summary" />
                 <div class="grid gap-4 sm:grid-cols-3">
                     <Input v-model="form.expected_participants" type="number" label="Expected participants" :readonly="readOnly" :error="form.errors.expected_participants" />
-                    <Input v-model="form.starts_at" type="datetime-local" label="Event starts" :readonly="readOnly" :error="form.errors.starts_at" :hint="`Earliest: ${minStart}`" />
+                    <Input v-model="form.starts_at" type="datetime-local" label="Event starts" :readonly="readOnly" :error="form.errors.starts_at" :hint="`Earliest: ${date(minStart)}`" />
                     <Input v-model="form.ends_at" type="datetime-local" label="Event ends" :readonly="readOnly" :error="form.errors.ends_at" />
                 </div>
                 <fieldset class="grid gap-2">
@@ -224,12 +257,33 @@ const positionOptions = computed(() => props.options.compulsoryPositions.filter(
 
             <div v-if="editable" class="fixed inset-x-0 bottom-16 z-20 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur md:bottom-0">
                 <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-end gap-3">
-                    <p v-if="blockers.length" class="mr-auto text-xs text-warning">Before submitting: {{ blockers.join(' · ') }}</p>
-                    <Button type="submit" variant="secondary" :loading="form.processing">Save draft</Button>
+                    <div class="mr-auto grid text-xs">
+                        <span class="text-ink-muted">
+                            <template v-if="saving === 'saving'">Saving…</template>
+                            <template v-else-if="saving === 'error'">Not saved yet — finish the highlighted field</template>
+                            <template v-else-if="lastEdit.at">Saved · last edited by {{ lastEdit.by }} {{ dateTime(lastEdit.at) }}</template>
+                            <template v-else>Saves automatically</template>
+                        </span>
+                        <span v-if="blockers.length" class="text-warning">Before submitting: {{ blockers.join(' · ') }}</span>
+                    </div>
+                    <Button v-if="canDiscard" variant="ghost" @click="discard">Discard</Button>
+                    <Button v-if="clubCommittee.length" variant="secondary" @click="asking = true">Ask someone to submit</Button>
                     <Button :disabled="blockers.length > 0" @click="signing = true">Sign &amp; submit</Button>
                 </div>
             </div>
         </form>
+
+        <Modal v-model:open="asking" title="Ask someone to submit">
+            <div class="grid gap-4">
+                <p class="text-sm text-ink-muted">They get a notification with a link to this proposal. Whoever signs and submits is printed as "Prepared by" with their position.</p>
+                <div class="grid gap-2">
+                    <Checkbox v-for="c in clubCommittee" :key="c.id" :model-value="ask.user_ids.includes(c.id)" :label="c.name" @update:model-value="toggleAsk(c.id)" />
+                </div>
+                <Textarea v-model="ask.note" label="Note (optional)" :rows="2" placeholder="Budget is done, please check the itinerary and submit." />
+                <p v-if="ask.errors.user_ids" class="text-xs text-danger">{{ ask.errors.user_ids }}</p>
+                <Button :disabled="!ask.user_ids.length" :loading="ask.processing" @click="sendAsk">Notify</Button>
+            </div>
+        </Modal>
 
         <Modal v-model:open="signing" title="Sign as preparer">
             <div class="grid gap-4">

@@ -50,7 +50,7 @@ class MembershipLifecycle
                         if (in_array($day, self::REMINDER_DAYS, true) && ! $m->last_reminded_at?->isSameDay($today)) {
                             $m->user->notify(new DocumentNotification(
                                 "Renew your {$m->club->name} membership",
-                                'Your membership expired on '.$m->expires_on->toFormattedDateString().'. Renew by '.$m->grace_ends_on->subDay()->toFormattedDateString().' to stay a member.',
+                                'Your membership expired on '.$m->expires_on->format('j M Y').'. Renew by '.$m->grace_ends_on->subDay()->format('j M Y').' to stay a member.',
                                 route('membership.join', $m->club),
                             ));
                             $m->update(['last_reminded_at' => $today]);

@@ -18,7 +18,7 @@ class VerifyController extends Controller
             'record' => $signature ? [
                 'signer' => $signature->signer_name,
                 'position' => $signature->position_at_time,
-                'signed_at' => $signature->signed_at->toDayDateTimeString(),
+                'signed_at' => $signature->signed_at->format('D, j M Y, g:i A'),
                 'document' => $signature->document?->type->label(),
                 'club' => $signature->document?->club->name,
                 'event' => $signature->document?->event?->name,

@@ -19,8 +19,8 @@ const props = defineProps<{
         qr_svg: string;
         status: string;
     };
-    counts: { committee: number; followers: number; events: number; members: number };
-    membership: { status: string | null; fee_sen: number | null; drive: string | null };
+    counts: { committee: number; followers: number; events: number; members: number; alumni: number };
+    membership: { status: string | null; fee_sen: number | null; drive: string | null; can_join: boolean };
     following: boolean;
     hasStories: boolean;
 }>();
@@ -43,25 +43,26 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
                 <Badge v-if="club.category" tone="info">{{ club.category }}</Badge>
                 <Badge v-if="club.status !== 'active'" :tone="club.status === 'inactive' ? 'danger' : 'warning'">{{ club.status === 'inactive' ? 'Inactive' : 'At risk' }}</Badge>
             </div>
-            <dl class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                <div><dt class="sr-only">Members</dt><dd><strong>{{ counts.members }}</strong> {{ counts.members === 1 ? 'member' : 'members' }}</dd></div>
-                <div><dt class="sr-only">Events</dt><dd><strong>{{ counts.events }}</strong> {{ counts.events === 1 ? 'event' : 'events' }}</dd></div>
-                <div><dt class="sr-only">Followers</dt><dd><strong>{{ counts.followers }}</strong> {{ counts.followers === 1 ? 'follower' : 'followers' }}</dd></div>
-                <div><dt class="sr-only">Committee</dt><dd><strong>{{ counts.committee }}</strong> committee</dd></div>
-                <div v-if="club.established_year"><dt class="sr-only">Established</dt><dd>Est. <strong>{{ club.established_year }}</strong></dd></div>
+            <dl class="grid grid-cols-4 divide-x divide-line rounded-card border border-line text-center sm:max-w-md">
+                <div v-for="s in [{ label: 'Members', value: counts.members }, { label: 'Alumni', value: counts.alumni }, { label: 'Events', value: counts.events }, { label: 'Followers', value: counts.followers }]" :key="s.label" class="py-2">
+                    <dd class="text-lg font-bold tabular-nums">{{ s.value }}</dd>
+                    <dt class="text-[11px] text-ink-muted">{{ s.label }}</dt>
+                </div>
             </dl>
+            <p v-if="club.established_year" class="text-xs text-ink-muted">Est. {{ club.established_year }} · {{ counts.committee }} on the committee</p>
             <p v-if="club.bio" class="whitespace-pre-line text-sm">{{ club.bio }}</p>
             <div class="flex flex-wrap items-center gap-4 text-sm">
+                <!-- Join is always offered to non-members; the join page explains if the fee is not approved yet. -->
                 <Link
-                    v-if="membership.fee_sen !== null && !['active', 'alumni'].includes(membership.status ?? '')"
+                    v-if="membership.can_join && !['active', 'alumni'].includes(membership.status ?? '')"
                     :href="`/clubs/${club.slug}/join`"
-                    class="rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-4 py-1.5 font-semibold text-white shadow-card"
+                    class="inline-flex h-9 items-center rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-4 font-semibold text-white shadow-card"
                     :class="membership.drive ? 'animate-tracker-pulse' : ''"
                 >
-                    {{ membership.status === 'grace' ? 'Renew' : 'Join' }} · {{ membership.fee_sen ? `RM ${(membership.fee_sen / 100).toFixed(2)}` : 'Free' }}
+                    {{ membership.status === 'grace' ? 'Renew membership' : membership.status === 'pending' ? 'Continue joining' : 'Join club' }}<template v-if="membership.fee_sen !== null"> · {{ membership.fee_sen ? `RM ${(membership.fee_sen / 100).toFixed(2)}` : 'Free' }}</template>
                 </Link>
-                <span v-else-if="membership.status === 'active' || membership.status === 'alumni'" class="rounded-control bg-success/10 px-3 py-1.5 font-semibold text-success">✓ Member</span>
-                <button type="button" class="rounded-control px-4 py-1.5 font-semibold" :class="following ? 'bg-surface-muted' : 'bg-ink text-white'" @click="follow">
+                <span v-else-if="membership.status === 'active' || membership.status === 'alumni'" class="inline-flex h-9 items-center rounded-control bg-success/10 px-3 font-semibold text-success">✓ {{ membership.status === 'alumni' ? 'Alumni member' : 'Member' }}</span>
+                <button type="button" class="inline-flex h-9 items-center rounded-control px-4 font-semibold" :class="following ? 'border border-line bg-surface-muted' : 'bg-ink text-white'" @click="follow">
                     {{ following ? 'Following' : 'Follow' }}
                 </button>
                 <a v-if="club.instagram_handle" :href="`https://instagram.com/${club.instagram_handle}`" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 font-medium text-brand-blue">

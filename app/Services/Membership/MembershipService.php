@@ -11,6 +11,7 @@ use App\Models\MembershipPayment;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
+use App\Services\Events\EventPayments;
 use App\Services\Finance\Ledger;
 use App\Services\Time\SessionResolver;
 use DomainException;
@@ -73,6 +74,12 @@ class MembershipService
     /** 365 days from confirmation; renewing starts a new 365 days. Records ledger income for paid fees. */
     public function activate(MembershipPayment $payment, ?string $ledgerDescription = null): void
     {
+        // The same payment flow serves paid events: confirm the registration instead of a membership.
+        if ($payment->event_registration_id) {
+            app(EventPayments::class)->confirm($payment, $ledgerDescription);
+
+            return;
+        }
         DB::transaction(function () use ($payment, $ledgerDescription): void {
             $membership = $payment->membership;
             $membership->update([
@@ -83,14 +90,16 @@ class MembershipService
                 'last_reminded_at' => null,
             ]);
             if ($payment->amount_sen > 0) {
-                $this->ledger->income($membership->club, today(), $ledgerDescription ?? "Membership fee (online) – {$payment->user->name}", $payment->amount_sen, $payment);
+                // Filed under Membership, with how it was paid and (for cash) who received it.
+                $this->ledger->income($membership->club, today(), $ledgerDescription ?? "Membership fee (online) – {$payment->user->name}", $payment->amount_sen, $payment,
+                    category: 'membership', method: $payment->method, handledBy: $payment->method === 'cash' ? $payment->collector : null);
             }
             $membership->club->forceFill(['last_activity_at' => now()])->save();
         });
 
         $payment->user->notify(new DocumentNotification(
             "Welcome to {$payment->membership->club->name}",
-            'Your membership is active until '.$payment->membership->fresh()->expires_on->toFormattedDateString().'.',
+            'Your membership is active until '.$payment->membership->fresh()->expires_on->format('j M Y').'.',
             route('clubs.show', $payment->membership->club),
         ));
     }
@@ -109,12 +118,16 @@ class MembershipService
             throw new DomainException('This payment is not waiting for review.');
         }
         $payment->refresh();
-        $this->audit->log($approve ? 'payment.confirmed' : 'payment.rejected', $payment->membership->club, ['payment_id' => $payment->id, 'note' => $note]);
+        $this->audit->log($approve ? 'payment.confirmed' : 'payment.rejected', $payment->club, ['payment_id' => $payment->id, 'note' => $note]);
 
         if ($approve) {
             $this->activate($payment);
         } else {
-            $payment->user->notify(new DocumentNotification('Membership payment not accepted', $note ?: 'Please check your receipt and try again.', route('membership.join', $payment->membership->club)));
+            $payment->user->notify(new DocumentNotification(
+                ($payment->event_id ? "{$payment->purpose()} payment" : 'Membership payment').' not accepted',
+                $note ?: 'Please check your receipt and try again.',
+                $payment->event_id ? route('events.pay', $payment->event) : route('membership.join', $payment->club),
+            ));
         }
     }
 }

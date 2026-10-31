@@ -27,7 +27,7 @@ class SendEventReminders extends Command
         foreach ($items->groupBy('event_id') as $eventItems) {
             $event = $eventItems->first()->event;
             $people = User::whereIn('id', RoleAssignment::where('scope_type', ScopeType::Event)->where('scope_id', $event->id)->select('user_id'))->get();
-            $list = $eventItems->map(fn (EventDocumentItem $i) => "{$i->label()} (due {$i->due_on->toFormattedDateString()})")->implode(', ');
+            $list = $eventItems->map(fn (EventDocumentItem $i) => "{$i->label()} (due {$i->due_on->format('j M Y')})")->implode(', ');
             Notification::send($people, new DocumentNotification(
                 "Post-event documents due: {$event->name}",
                 "Please upload: {$list}.",

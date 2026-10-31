@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\GlobalRole;
 use App\Models\Club;
 use App\Models\ClubCategory;
+use App\Models\ClubFee;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Camsys\CamsysSync;
@@ -16,6 +17,9 @@ use Illuminate\Database\Seeder;
 /** Six demo clubs with committees drawn from the 10 dummy camsys students. */
 class DemoClubsSeeder extends Seeder
 {
+    /** Membership fee per club for the demo session, in sen (0 = free). */
+    private const FEES = [1000, 1500, 0, 2000, 0, 0];
+
     /** Name, bio, Instagram handle, category, established year, logo glyph. */
     public const CLUBS = [
         ['GPS Club', 'Student Consumer Movement', 'gps_qiu', 'Community Service', 2019, '🛒'],
@@ -41,6 +45,7 @@ class DemoClubsSeeder extends Seeder
         $session = $sessions->current();
         $active = User::whereHas('student', fn ($q) => $q->where('status', 'active'))->orderBy('id')->get()->values();
         $advisors = User::where('email', 'like', 'advisor%.demo@qiu.edu.my')->orderBy('email')->get()->values();
+        $sld = User::where('email', 'sld.officer.demo@qiu.edu.my')->first();
 
         foreach (self::CLUBS as $i => [$name, $bio, $handle, $categoryName, $established, $glyph]) {
             $club = Club::firstOrCreate(['name' => $name], [
@@ -60,6 +65,16 @@ class DemoClubsSeeder extends Seeder
             if (! $roles->belongsToClub($advisor, $club, $session)) {
                 $roles->addAdvisor($club, $session, $advisor);
             }
+
+            // An SLD-approved fee for the session so students can join straight away (some clubs free, some paid).
+            $treasurer = $club->roleAssignments()->where('session_id', $session->id)->where('position', 'Treasurer')->first()?->user;
+            ClubFee::firstOrCreate(['club_id' => $club->id, 'session_id' => $session->id], [
+                'amount_sen' => self::FEES[$i] ?? 0,
+                'account_name' => (self::FEES[$i] ?? 0) > 0 ? "{$name} (QIU)" : null,
+                'set_by' => $treasurer?->id,
+                'approved_by' => $sld?->id,
+                'approved_at' => now(),
+            ]);
         }
     }
 }
