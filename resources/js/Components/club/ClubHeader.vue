@@ -19,7 +19,7 @@ const props = defineProps<{
         qr_svg: string;
         status: string;
     };
-    counts: { committee: number; followers: number; events: number; members: number };
+    counts: { committee: number; followers: number; events: number; members: number; alumni: number };
     membership: { status: string | null; fee_sen: number | null; drive: string | null; can_join: boolean };
     following: boolean;
     hasStories: boolean;
@@ -43,13 +43,13 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
                 <Badge v-if="club.category" tone="info">{{ club.category }}</Badge>
                 <Badge v-if="club.status !== 'active'" :tone="club.status === 'inactive' ? 'danger' : 'warning'">{{ club.status === 'inactive' ? 'Inactive' : 'At risk' }}</Badge>
             </div>
-            <dl class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                <div><dt class="sr-only">Members</dt><dd><strong>{{ counts.members }}</strong> {{ counts.members === 1 ? 'member' : 'members' }}</dd></div>
-                <div><dt class="sr-only">Events</dt><dd><strong>{{ counts.events }}</strong> {{ counts.events === 1 ? 'event' : 'events' }}</dd></div>
-                <div><dt class="sr-only">Followers</dt><dd><strong>{{ counts.followers }}</strong> {{ counts.followers === 1 ? 'follower' : 'followers' }}</dd></div>
-                <div><dt class="sr-only">Committee</dt><dd><strong>{{ counts.committee }}</strong> committee</dd></div>
-                <div v-if="club.established_year"><dt class="sr-only">Established</dt><dd>Est. <strong>{{ club.established_year }}</strong></dd></div>
+            <dl class="grid grid-cols-4 divide-x divide-line rounded-card border border-line text-center sm:max-w-md">
+                <div v-for="s in [{ label: 'Members', value: counts.members }, { label: 'Alumni', value: counts.alumni }, { label: 'Events', value: counts.events }, { label: 'Followers', value: counts.followers }]" :key="s.label" class="py-2">
+                    <dd class="text-lg font-bold tabular-nums">{{ s.value }}</dd>
+                    <dt class="text-[11px] text-ink-muted">{{ s.label }}</dt>
+                </div>
             </dl>
+            <p v-if="club.established_year" class="text-xs text-ink-muted">Est. {{ club.established_year }} · {{ counts.committee }} on the committee</p>
             <p v-if="club.bio" class="whitespace-pre-line text-sm">{{ club.bio }}</p>
             <div class="flex flex-wrap items-center gap-4 text-sm">
                 <!-- Join is always offered to non-members; the join page explains if the fee is not approved yet. -->

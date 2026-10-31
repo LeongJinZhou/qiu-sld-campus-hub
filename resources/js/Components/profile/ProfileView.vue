@@ -97,6 +97,7 @@ const ccaBySession = computed(() => props.profile.cca?.records ?? []);
                                     <strong class="truncate">{{ c.name }}</strong>
                                     <span class="text-xs text-ink-muted">{{ c.category }}</span>
                                     <span v-if="c.current_position" class="text-xs font-semibold text-brand-blue">{{ c.current_position }}</span>
+                                    <span v-else-if="c.membership" class="text-xs font-medium text-success">{{ c.membership }}</span>
                                 </span>
                             </Link>
                         </li>
