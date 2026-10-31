@@ -205,3 +205,22 @@ it('turns graduates into alumni who stay in the club', function () {
 
     expect(Membership::where('user_id', $this->student->id)->first()->status)->toBe(MembershipStatus::Alumni);
 });
+
+it('sends both phones back to the QR step when the committee member retakes the photo', function () {
+    Storage::fake('local');
+    setFee($this, 3000);
+    $handovers = app(CashHandovers::class);
+    $h = $handovers->request($this->service->join($this->club, $this->student, true), $this->treasurer);
+    $handovers->respond($h, $this->treasurer, true);
+    $handovers->ready($h->fresh(), $this->student);
+    $handovers->ready($h->fresh(), $this->treasurer);
+    $handovers->photo($h->fresh(), $this->treasurer, qrPhoto(route('profile.public', $this->student->qr_token)));
+    $path = $h->fresh()->photo_path;
+
+    expect(fn () => $handovers->retake($h->fresh(), $this->student))->toThrow(DomainException::class);
+    $handovers->retake($h->fresh(), $this->treasurer);
+    expect($h->fresh()->status)->toBe(HandoverStatus::BothReady)
+        ->and($h->fresh()->photo_path)->toBeNull()
+        ->and(Storage::disk('local')->exists($path))->toBeFalse()
+        ->and($handovers->qrPayload($h->fresh(), $this->student))->not->toBeNull();
+});

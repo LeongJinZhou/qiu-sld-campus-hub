@@ -17,7 +17,7 @@ class FundWithdrawalDocx
 {
     public const TEMPLATE = '07. Student Organization Fund Withdrawal and Transfer Form template.docx';
 
-    private const SIGNERS = [ChainRole::Secretary, ChainRole::President, ChainRole::Advisor, ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo];
+    private const SIGNERS = [ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo];
 
     public function __construct(private readonly DocxRenderer $docx) {}
 

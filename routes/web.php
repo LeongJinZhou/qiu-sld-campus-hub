@@ -29,6 +29,7 @@ use App\Http\Controllers\Membership\FeeController;
 use App\Http\Controllers\Membership\HandoverController;
 use App\Http\Controllers\Membership\MembersController;
 use App\Http\Controllers\Membership\MembershipController;
+use App\Http\Controllers\MyClubsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
@@ -174,6 +175,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/handovers/{handover}', [HandoverController::class, 'show'])->name('handovers.show');
     Route::post('/handovers/{handover}', [HandoverController::class, 'act'])->middleware('throttle:60,1')->name('handovers.act');
     Route::get('/handovers/{handover}/photo', [HandoverController::class, 'photo'])->middleware('signed')->name('handovers.photo');
+    Route::get('/my-clubs', MyClubsController::class)->name('my-clubs');
     Route::get('/me', [ProfileController::class, 'show'])->name('profile.me');
     Route::get('/me/certificates/{kind}/{source}', [CertificateController::class, 'download'])->middleware('throttle:20,1')->whereNumber('source')->name('certificates.download');
     Route::post('/me', [ProfileController::class, 'update'])->name('profile.update');

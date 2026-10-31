@@ -100,3 +100,11 @@ it('keeps club management, finance and AGM pages to the committee, advisor and S
         $this->actingAs($staffOrCommittee)->get("/clubs/{$slug}/agm")->assertOk();
     }
 });
+
+it('shows My clubs with management shortcuts for committee and memberships for members', function () {
+    $this->actingAs($this->treasurer)->get('/my-clubs')->assertOk()
+        ->assertInertia(fn ($p) => $p->component('MyClubs/Index')->where('clubs.0.manages', true)->where('clubs.0.role', 'Treasurer'));
+    // Every committee member can now do club money tasks, not only the Treasurer.
+    $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/finance/entries", ['date' => today()->toDateString(), 'description' => 'Donation', 'kind' => 'income', 'amount_rm' => 20])
+        ->assertSessionHas('success');
+});
