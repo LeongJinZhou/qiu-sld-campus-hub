@@ -15,7 +15,7 @@ const props = defineProps<{
     q: string;
     type: Type;
     clubs: { slug: string; name: string; logo_url: string | null; category: string | null }[];
-    events: { slug: string; name: string; club: string; starts_at: string; venue: string | null; poster_url: string | null; past: boolean; fee_sen: number }[];
+    events: { slug: string; name: string; club: string; starts_at: string; venue: string | null; poster_url: string | null; past: boolean; fee_sen: number; members_only: boolean }[];
     people: { name: string; photo_url: string | null; url: string; subtitle: string }[];
 }>();
 
@@ -88,7 +88,7 @@ const peopleHint = computed(() => show('people') && q.value.trim().length < 2);
                             <span class="grid min-w-0 flex-1 gap-0.5 text-sm">
                                 <strong class="truncate">{{ e.name }}</strong>
                                 <span class="truncate text-xs text-ink-muted">{{ dateTime(e.starts_at) }}<template v-if="e.venue"> · {{ e.venue }}</template></span>
-                                <span class="truncate text-xs text-ink-muted">{{ e.club }}</span>
+                                <span class="truncate text-xs text-ink-muted">{{ e.club }}<template v-if="e.members_only"> · <span class="font-medium text-warning">Members only</span></template></span>
                             </span>
                             <Badge v-if="e.past">Past</Badge>
                             <Badge v-else :tone="e.fee_sen ? 'warning' : 'success'">{{ e.fee_sen ? rm(e.fee_sen) : 'Free' }}</Badge>

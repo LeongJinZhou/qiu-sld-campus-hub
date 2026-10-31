@@ -33,6 +33,7 @@ use App\Http\Controllers\Membership\FeeController;
 use App\Http\Controllers\Membership\HandoverController;
 use App\Http\Controllers\Membership\MembersController;
 use App\Http\Controllers\Membership\MembershipController;
+use App\Http\Controllers\Membership\ParticipantsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
@@ -98,6 +99,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/pay/receipt', [EventPaymentController::class, 'receipt'])->middleware('throttle:10,1')->name('events.pay.receipt');
     Route::post('/events/{event}/pay/cash', [EventPaymentController::class, 'cash'])->middleware('throttle:10,1')->name('events.pay.cash');
     Route::delete('/events/{event}/register', [EventRegistrationController::class, 'destroy'])->name('events.unregister');
+    Route::put('/events/{event}/registration-settings', [EventRegistrationController::class, 'settings'])->name('events.registration.settings');
     Route::get('/events/{event}/attend', [AttendanceController::class, 'attend'])->middleware('throttle:20,1')->name('events.attend');
     Route::get('/events/{event}/attendance', [AttendanceController::class, 'index'])->name('events.attendance');
     Route::post('/events/{event}/attendance', [AttendanceController::class, 'record'])->middleware('throttle:120,1')->name('events.attendance.record');
@@ -141,6 +143,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/join', [MembershipController::class, 'join'])->middleware('throttle:10,1')->name('membership.store');
     Route::post('/clubs/{club}/join/receipt', [MembershipController::class, 'receipt'])->middleware('throttle:10,1')->name('membership.receipt');
     Route::post('/clubs/{club}/join/cash', [MembershipController::class, 'cash'])->middleware('throttle:10,1')->name('membership.cash');
+    Route::get('/clubs/{club}/participants', [ParticipantsController::class, 'index'])->name('clubs.participants');
+    Route::get('/clubs/{club}/participants/export/{format}', [ParticipantsController::class, 'export'])->name('clubs.participants.export');
     Route::get('/clubs/{club}/members', [MembersController::class, 'club'])->name('members.club');
     Route::get('/clubs/{club}/members/export/{format}', [MembersController::class, 'export'])->name('members.export');
     Route::post('/clubs/{club}/members/remind', [MembersController::class, 'remind'])->middleware('throttle:5,1')->name('members.remind');

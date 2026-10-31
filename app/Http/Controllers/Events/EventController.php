@@ -11,6 +11,7 @@ use App\Models\Document;
 use App\Models\Event;
 use App\Models\RoleAssignment;
 use App\Services\Documents\DocumentPresenter;
+use App\Services\Events\EventRegistrations;
 use App\Services\Events\ProposalDrafts;
 use App\Services\Events\ProposalRules;
 use App\Services\Time\SessionResolver;
@@ -76,7 +77,7 @@ class EventController extends Controller
 
         return Inertia::render('Events/Show', [
             'event' => [
-                ...$event->only('slug', 'name', 'summary', 'venue', 'mode', 'is_outdoor', 'cca_participant', 'cca_committee', 'registration_open', 'attendance_open'),
+                ...$event->only('slug', 'name', 'summary', 'venue', 'mode', 'is_outdoor', 'cca_participant', 'cca_committee', 'registration_open', 'members_only', 'attendance_open'),
                 'status' => $event->status->value,
                 'starts_at' => $event->starts_at->toIso8601String(),
                 'ends_at' => $event->ends_at->toIso8601String(),
@@ -92,6 +93,8 @@ class EventController extends Controller
             ]),
             'registered' => $event->registrations()->where('user_id', $user->id)->exists(),
             'registrationStatus' => ($mine = $event->registrations()->where('user_id', $user->id)->first())?->status,
+            // Members-only events: non-members are sent to join the club first.
+            'mayJoin' => app(EventRegistrations::class)->mayJoin($event, $user),
             'ticketUrl' => $mine?->ensureTicket()->ticket_code ? route('tickets.show', $mine->ticket_code) : null,
             'payment' => [
                 'fee_sen' => $event->fee_sen, 'payment_url' => $event->payment_url, 'payment_account_name' => $event->payment_account_name,
