@@ -133,6 +133,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/finance/entries', [FinanceController::class, 'entry'])->name('finance.entry');
     Route::get('/clubs/{club}/finance/receipts/{receipt}', [FinanceController::class, 'receipt'])->middleware('signed')->name('finance.receipt');
     Route::get('/clubs/{club}/finance/export/{format}', [FinanceController::class, 'export'])->name('finance.export');
+    Route::post('/clubs/{club}/finance/entries/{entry}/receipt', [FinanceController::class, 'attachReceipt'])->name('finance.entry.receipt');
     Route::post('/clubs/{club}/finance/payees', [FinanceController::class, 'payee'])->name('finance.payees');
     Route::get('/clubs/{club}/fund-requests/create', [FinanceController::class, 'requestForm'])->name('fund.create');
     Route::post('/clubs/{club}/fund-requests', [FinanceController::class, 'submitRequest'])->name('fund.store');
@@ -172,6 +173,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/fee', [FeeController::class, 'store'])->name('fees.store');
     Route::get('/handovers/{handover}', [HandoverController::class, 'show'])->name('handovers.show');
     Route::post('/handovers/{handover}', [HandoverController::class, 'act'])->middleware('throttle:60,1')->name('handovers.act');
+    Route::get('/handovers/{handover}/photo', [HandoverController::class, 'photo'])->middleware('signed')->name('handovers.photo');
     Route::get('/me', [ProfileController::class, 'show'])->name('profile.me');
     Route::get('/me/certificates/{kind}/{source}', [CertificateController::class, 'download'])->middleware('throttle:20,1')->whereNumber('source')->name('certificates.download');
     Route::post('/me', [ProfileController::class, 'update'])->name('profile.update');

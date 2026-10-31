@@ -34,12 +34,15 @@ useIntervalFn(() => router.reload({ only: ['qrSvg', 'rows', 'counts'] }), 30_000
 
 const setAction = (action: 'in' | 'out'): void => router.get(`/events/${props.event.slug}/attendance`, { action }, { preserveState: true, replace: true });
 
+// Scanning a student's personal QR can register them for the event, or clock them in or out.
 const scanning = ref(false);
+const scanMode = ref<'register' | 'in' | 'out'>(props.action);
+const scanLabels = { register: 'Register', in: 'Clock in', out: 'Clock out' } as const;
 let lastScan = '';
 function onScan(code: string): void {
     if (code === lastScan) return;
     lastScan = code;
-    router.post(`/events/${props.event.slug}/attendance`, { action: props.action, code }, { preserveScroll: true, onFinish: () => setTimeout(() => (lastScan = ''), 3000) });
+    router.post(`/events/${props.event.slug}/attendance`, { action: scanMode.value, code }, { preserveScroll: true, onFinish: () => setTimeout(() => (lastScan = ''), 3000) });
 }
 
 const manual = useForm({ action: 'manual', student_number: '' });
@@ -92,10 +95,14 @@ const columns = [
                 </Card>
 
                 <Card>
-                    <template #title>Scan a student's profile QR</template>
+                    <template #title>Scan a student's personal QR</template>
                     <div class="grid gap-4">
+                        <p class="text-sm text-ink-muted">Every student has their own QR on their profile. Scan it to register them, or to clock them in or out.</p>
+                        <div class="grid grid-cols-3 gap-1 rounded-control bg-surface-muted p-1 text-sm" role="radiogroup" aria-label="What the scan does">
+                            <button v-for="(label, mode) in scanLabels" :key="mode" type="button" role="radio" :aria-checked="scanMode === mode" class="whitespace-nowrap rounded-control px-2 py-1.5" :class="scanMode === mode ? 'bg-surface font-semibold shadow-card' : ''" @click="scanMode = mode">{{ label }}</button>
+                        </div>
                         <QrScanner v-if="scanning" @scan="onScan" />
-                        <Button :variant="scanning ? 'secondary' : 'primary'" @click="scanning = !scanning">{{ scanning ? 'Stop camera' : `Start scanner (clock ${action})` }}</Button>
+                        <Button :variant="scanning ? 'secondary' : 'primary'" @click="scanning = !scanning">{{ scanning ? 'Stop camera' : `Start scanner · ${scanLabels[scanMode]}` }}</Button>
                         <form class="flex items-end gap-2" @submit.prevent="addManual">
                             <Input v-model="manual.student_number" label="Add by student ID" placeholder="QIU-202407-0001" class="flex-1" />
                             <Button type="submit" variant="secondary" :loading="manual.processing">Add</Button>

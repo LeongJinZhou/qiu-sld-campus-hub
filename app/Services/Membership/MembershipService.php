@@ -83,7 +83,9 @@ class MembershipService
                 'last_reminded_at' => null,
             ]);
             if ($payment->amount_sen > 0) {
-                $this->ledger->income($membership->club, today(), $ledgerDescription ?? "Membership fee (online) – {$payment->user->name}", $payment->amount_sen, $payment);
+                // Filed under Membership, with how it was paid and (for cash) who received it.
+                $this->ledger->income($membership->club, today(), $ledgerDescription ?? "Membership fee (online) – {$payment->user->name}", $payment->amount_sen, $payment,
+                    category: 'membership', method: $payment->method, handledBy: $payment->method === 'cash' ? $payment->collector : null);
             }
             $membership->club->forceFill(['last_activity_at' => now()])->save();
         });

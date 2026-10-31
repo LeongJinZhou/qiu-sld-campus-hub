@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Avatar from '@/Components/ui/Avatar.vue';
-import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
 import Checkbox from '@/Components/ui/Checkbox.vue';
@@ -101,16 +100,20 @@ const flagText: Record<string, string> = {
                             <ul class="list-disc pl-5 text-ink-muted"><li v-for="f in payment.flags" :key="f">{{ flagText[f] ?? f }}</li></ul>
                         </template>
                         <template v-else-if="payment.handover_id">
-                            <p class="font-medium">Cash handover in progress ({{ payment.handover_status?.replace('_', ' ') }}).</p>
-                            <Link :href="`/handovers/${payment.handover_id}`"><Button size="sm">Open handover</Button></Link>
+                            <p class="flex items-center gap-2 font-medium"><span class="size-2 animate-ping rounded-full bg-brand-magenta" /> Your cash payment is in progress</p>
+                            <p class="text-ink-muted">Open it to follow each step with the committee member.</p>
+                            <Link :href="`/handovers/${payment.handover_id}`"><Button block>Continue cash payment</Button></Link>
                         </template>
                     </div>
                     <p v-if="payment?.status === 'rejected'" class="mb-4 rounded-control bg-danger/10 p-3 text-sm text-danger">
                         Previous payment not accepted: {{ payment.review_note ?? (payment.flags.map((f) => flagText[f] ?? f).join(', ') || 'please try again') }}
                     </p>
 
-                    <div class="mb-4 grid grid-cols-2 gap-1 rounded-control bg-surface-muted p-1 text-sm">
-                        <button v-for="m in ['online', 'cash'] as const" :key="m" type="button" class="rounded-control py-2 font-medium capitalize" :class="method === m ? 'bg-surface shadow-card' : 'text-ink-muted'" @click="method = m">{{ m }}</button>
+                    <div class="mb-4 grid grid-cols-2 gap-2" role="radiogroup" aria-label="How do you want to pay?">
+                        <button v-for="m in (['online', 'cash'] as const)" :key="m" type="button" role="radio" :aria-checked="method === m" class="grid gap-1 rounded-card border-2 p-3 text-left transition" :class="method === m ? 'border-ink bg-surface-muted' : 'border-line hover:border-ink/30'" @click="method = m">
+                            <span class="flex items-center gap-2 font-semibold"><Icon :name="m === 'online' ? 'send' : 'qr'" :size="18" />{{ m === 'online' ? 'Pay online' : 'Pay in cash' }}</span>
+                            <span class="text-xs text-ink-muted">{{ m === 'online' ? 'Transfer, then upload the receipt' : 'Hand cash to a committee member' }}</span>
+                        </button>
                     </div>
 
                     <div v-if="method === 'online'" class="grid gap-4">
@@ -122,15 +125,26 @@ const flagText: Record<string, string> = {
                         <Button :disabled="!receipt.receipt.length" :loading="receipt.processing" @click="sendReceipt">Upload receipt</Button>
                     </div>
 
-                    <div v-else class="grid gap-3">
-                        <p class="text-sm text-ink-muted">Choose a committee member to hand the cash to. You'll both confirm each step on your phones.</p>
-                        <label v-for="c in committee" :key="c.id" class="flex cursor-pointer items-center gap-3 rounded-control border p-3 transition" :class="cash.committee_user_id === c.id ? 'border-ink bg-surface-muted' : 'border-line'">
-                            <input v-model="cash.committee_user_id" type="radio" :value="c.id" class="sr-only" />
-                            <Avatar :src="c.photo_url" :name="c.name" size="sm" />
-                            <span class="grid text-sm"><strong>{{ c.name }}</strong><span class="text-ink-muted">{{ c.position }}</span></span>
-                            <Badge v-if="cash.committee_user_id === c.id" tone="info" class="ml-auto">Selected</Badge>
-                        </label>
-                        <Button :disabled="!cash.committee_user_id" :loading="cash.processing" @click="requestCash">Request cash handover</Button>
+                    <div v-else class="grid gap-4">
+                        <div class="grid gap-2 rounded-control bg-surface-muted p-4 text-sm">
+                            <p class="font-semibold">How paying in cash works</p>
+                            <ol class="grid gap-1.5 text-ink-muted">
+                                <li>1. Choose who you'll pay below. They accept on their phone.</li>
+                                <li>2. Meet them with exactly <strong class="text-ink">{{ rm(fee.amount_sen) }}</strong>. You both tap <strong class="text-ink">Ready</strong>.</li>
+                                <li>3. Your personal QR code appears. Hold it next to the cash; their camera takes the photo automatically.</li>
+                                <li>4. Hand over the cash and both tap <strong class="text-ink">Transaction done</strong>. Your membership starts at once and the club records it.</li>
+                            </ol>
+                        </div>
+                        <fieldset class="grid gap-2">
+                            <legend class="mb-2 text-sm font-medium">Pay to</legend>
+                            <label v-for="c in committee" :key="c.id" class="flex cursor-pointer items-center gap-3 rounded-card border-2 p-3 transition" :class="cash.committee_user_id === c.id ? 'border-ink bg-surface-muted' : 'border-line hover:border-ink/30'">
+                                <input v-model="cash.committee_user_id" type="radio" name="committee" :value="c.id" class="sr-only" />
+                                <Avatar :src="c.photo_url" :name="c.name" size="sm" />
+                                <span class="grid min-w-0 flex-1 text-sm"><strong class="truncate">{{ c.name }}</strong><span class="text-ink-muted">{{ c.position }}</span></span>
+                                <span class="grid size-5 shrink-0 place-items-center rounded-full border-2" :class="cash.committee_user_id === c.id ? 'border-ink bg-ink text-white' : 'border-line'"><Icon v-if="cash.committee_user_id === c.id" name="check" :size="12" :stroke-width="3" /></span>
+                            </label>
+                        </fieldset>
+                        <Button size="lg" block :disabled="!cash.committee_user_id" :loading="cash.processing" @click="requestCash">Send cash payment request</Button>
                     </div>
                 </Card>
             </template>

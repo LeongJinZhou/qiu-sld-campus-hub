@@ -14,6 +14,7 @@ use App\Services\Documents\AttendanceListExport;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Events\AttendanceQr;
 use App\Services\Events\AttendanceService;
+use App\Services\Events\EventRegistrations;
 use App\Services\QrCodes;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -99,12 +100,12 @@ class AttendanceController extends Controller
         return to_route('events.show', $event)->with('success', $action === 'in' ? 'Clocked in. Enjoy!' : 'Clocked out. CCA recorded.');
     }
 
-    /** Committee scanned a student's personal profile QR, or typed a student ID. */
-    public function record(Request $request, Event $event): RedirectResponse
+    /** Committee scanned a student's personal profile QR (to register, clock in or out), or typed a student ID. */
+    public function record(Request $request, Event $event, EventRegistrations $registrations): RedirectResponse
     {
         Gate::authorize('organises', $event);
         $data = $request->validate([
-            'action' => ['required', Rule::in(['in', 'out', 'manual'])],
+            'action' => ['required', Rule::in(['register', 'in', 'out', 'manual'])],
             'code' => ['nullable', 'required_without:student_number', 'string', 'max:500'],
             'student_number' => ['nullable', 'string', 'max:50'],
         ]);
@@ -117,14 +118,18 @@ class AttendanceController extends Controller
         }
 
         try {
-            $data['action'] === 'manual'
-                ? $this->attendance->addManually($event, $user, $request->user())
-                : $this->attendance->clock($event, $user, $data['action'], 'scan', $request->user());
+            match ($data['action']) {
+                'register' => $registrations->register($event, $user),
+                'manual' => $this->attendance->addManually($event, $user, $request->user()),
+                default => $this->attendance->clock($event, $user, $data['action'], 'scan', $request->user()),
+            };
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', "{$user->name}: ".($data['action'] === 'out' ? 'clocked out' : 'present').'.');
+        return back()->with('success', "{$user->name}: ".match ($data['action']) {
+            'register' => 'registered', 'out' => 'clocked out', default => 'present'
+        }.'.');
     }
 
     public function export(Event $event, AttendanceListExport $export): BinaryFileResponse

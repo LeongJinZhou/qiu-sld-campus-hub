@@ -5,17 +5,21 @@ namespace App\Http\Controllers\Finance;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Http\Controllers\Controller;
+use App\Models\AcademicSession;
 use App\Models\Club;
 use App\Models\Document;
 use App\Models\Event;
+use App\Models\LedgerEntry;
 use App\Models\Payee;
 use App\Models\Receipt;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Documents\FinanceRecordExport;
 use App\Services\Documents\PdfConverter;
+use App\Services\Finance\FinanceReport;
 use App\Services\Finance\FundWithdrawals;
 use App\Services\Finance\Ledger;
+use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -34,17 +39,26 @@ class FinanceController extends Controller
 {
     public function __construct(private readonly Ledger $ledger) {}
 
-    public function show(Request $request, Club $club, DocumentPresenter $presenter, FundWithdrawals $funds): Response
+    public function show(Request $request, Club $club, DocumentPresenter $presenter, FundWithdrawals $funds, FinanceReport $reports, SessionResolver $sessions): Response
     {
         Gate::authorize('viewInternal', $club);
         $user = $request->user();
+        $filters = $this->filters($request);
+        $session = $this->session($request, $sessions);
+        $report = $reports->build($club, $session, $filters);
+        $report['rows'] = array_map(fn (array $r) => [...$r, ...$this->evidence($club, $r)], $report['rows']);
 
         return Inertia::render('Finance/Ledger', [
             'club' => $club->only('slug', 'name'),
             'ready' => $this->ledger->isReady($club),
             'opening' => $club->openingBalance ? ['amount_sen' => $club->openingBalance->amount_sen, 'as_of' => $club->openingBalance->as_of->toDateString(), 'note' => $club->openingBalance->note] : null,
-            // Receipts are private: each link is signed and expires after 30 minutes.
-            'rows' => array_map(fn (array $r) => [...$r, 'receipt_url' => $r['receipt_id'] ? URL::temporarySignedRoute('finance.receipt', now()->addMinutes(30), [$club, $r['receipt_id']]) : null], $this->ledger->rows($club)),
+            'report' => $report,
+            'filters' => (object) $filters,
+            'sessions' => AcademicSession::orderByDesc('starts_on')->where('starts_on', '<=', now())->pluck('name'),
+            'categories' => LedgerEntry::CATEGORIES,
+            'methods' => LedgerEntry::METHODS,
+            'clubEvents' => Event::where('club_id', $club->id)->orderByDesc('starts_at')->get(['id', 'name', 'starts_at'])
+                ->map(fn (Event $e) => ['value' => $e->id, 'label' => "{$e->name} · {$e->starts_at->format('j M Y')}"]),
             'balance_sen' => $this->ledger->balance($club),
             'payees' => Payee::where('club_id', $club->id)->orderBy('kind')->get()->map(fn (Payee $p) => [
                 'id' => $p->id, 'kind' => $p->kind, 'name' => $p->name, 'bank_name' => $p->bank_name, 'account' => $p->maskedAccount(),
@@ -75,6 +89,8 @@ class FinanceController extends Controller
         $data = $request->validate([
             'date' => ['required', 'date', 'before_or_equal:today'],
             'description' => ['required', 'string', 'max:255'],
+            'event_id' => ['nullable', Rule::exists('events', 'id')->where('club_id', $club->id)],
+            'method' => ['nullable', Rule::in(array_keys(LedgerEntry::METHODS))],
             'kind' => ['required', 'in:income,expense'],
             'amount_rm' => ['required', 'numeric', 'gt:0', 'max:1000000'],
             'receipt' => ['nullable', 'required_if:kind,expense', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:8192'],
@@ -83,7 +99,8 @@ class FinanceController extends Controller
         $sen = (int) round($data['amount_rm'] * 100);
 
         try {
-            $this->ledger->manual($club, CarbonImmutable::parse($data['date']), $data['description'], $data['kind'] === 'income' ? $sen : 0, $data['kind'] === 'expense' ? $sen : 0, $request->file('receipt'), $request->user());
+            $this->ledger->manual($club, CarbonImmutable::parse($data['date']), $data['description'], $data['kind'] === 'income' ? $sen : 0, $data['kind'] === 'expense' ? $sen : 0,
+                $request->file('receipt'), $request->user(), eventId: $data['event_id'] ?? null, method: $data['method'] ?? null);
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -99,18 +116,31 @@ class FinanceController extends Controller
         return Storage::disk('local')->response($receipt->path, $receipt->original_name);
     }
 
-    public function export(Club $club, string $format, FinanceRecordExport $export, PdfConverter $pdf): BinaryFileResponse
+    /** Attach the original receipt to a transaction afterwards (e.g. purchases paid by a fund withdrawal). */
+    public function attachReceipt(Request $request, Club $club, LedgerEntry $entry): RedirectResponse
+    {
+        Gate::authorize('treasure', $club);
+        abort_unless($entry->club_id === $club->id, 404);
+        $data = $request->validate(['receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:8192']]);
+        $this->ledger->attachReceipt($entry, $data['receipt'], $request->user());
+
+        return back()->with('success', 'Receipt attached.');
+    }
+
+    /** The official 02 Finance Record for the chosen session, exactly as filtered on screen. */
+    public function export(Request $request, Club $club, string $format, FinanceRecordExport $export, PdfConverter $pdf, FinanceReport $reports, SessionResolver $sessions): BinaryFileResponse
     {
         Gate::authorize('viewInternal', $club);
         abort_unless(in_array($format, ['xlsx', 'pdf'], true), 404);
-        $file = $export->render($club);
+        $report = $reports->build($club, $this->session($request, $sessions), $this->filters($request));
+        $file = $export->render($club, $reports->exportRows($report));
         if ($format === 'pdf') {
             $converted = $pdf->convert($file);
             @unlink($file);
             $file = $converted;
         }
 
-        return response()->download($file, "{$club->name} - Finance Record.{$format}")->deleteFileAfterSend();
+        return response()->download($file, "{$club->name} - Finance Record ".str_replace('/', '-', $report['session']).".{$format}")->deleteFileAfterSend();
     }
 
     public function payee(Request $request, Club $club): RedirectResponse
@@ -177,5 +207,45 @@ class FinanceController extends Controller
         }
 
         return to_route('documents.show', $document)->with('success', 'Fund withdrawal signed and sent to your President.');
+    }
+
+    /** @return array<string, mixed> */
+    private function filters(Request $request): array
+    {
+        return array_filter($request->validate([
+            'category' => ['nullable', Rule::in(array_keys(LedgerEntry::CATEGORIES))],
+            'event_id' => ['nullable', 'integer'],
+            'method' => ['nullable', Rule::in(array_keys(LedgerEntry::METHODS))],
+            'search' => ['nullable', 'string', 'max:100'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+            'sort' => ['nullable', Rule::in(FinanceReport::SORTS)],
+        ]), fn ($v) => $v !== null && $v !== '');
+    }
+
+    private function session(Request $request, SessionResolver $sessions): AcademicSession
+    {
+        $name = $request->validate(['session' => ['nullable', 'regex:/^\d{4}\/\d{4}$/']])['session'] ?? null;
+
+        return $name ? AcademicSession::where('name', $name)->firstOrFail() : $sessions->current();
+    }
+
+    /**
+     * Private evidence for one transaction, as links that expire after 30 minutes: the uploaded receipt, the
+     * student's online payment receipt, the cash handover photo, or the fund withdrawal form.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, ?string>
+     */
+    private function evidence(Club $club, array $row): array
+    {
+        $signed = fn (string $route, array $params) => URL::temporarySignedRoute($route, now()->addMinutes(30), $params);
+
+        return [
+            'receipt_url' => $row['receipt_id'] ? $signed('finance.receipt', [$club, $row['receipt_id']]) : null,
+            'payment_receipt_url' => $row['has_payment_receipt'] ? $signed('payments.receipt', [$row['payment_id']]) : null,
+            'photo_url' => $row['has_photo'] ? $signed('handovers.photo', [$row['handover_id']]) : null,
+            'document_url' => $row['document_id'] ? route('documents.show', $row['document_id']) : null,
+        ];
     }
 }
