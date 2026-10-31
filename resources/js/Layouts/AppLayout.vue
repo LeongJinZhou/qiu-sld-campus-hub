@@ -25,7 +25,7 @@ const items = computed<NavItem[]>(() => [
     { label: 'Feed', icon: 'home', href: '/feed', match: '/feed' },
     { label: 'Clubs', icon: 'search', href: '/clubs', match: '/clubs' },
     { label: 'My clubs', icon: 'users', href: '/my-clubs', match: '/my-clubs' },
-    { label: 'Notifications', icon: 'bell', href: '/notifications', match: '/notifications', badge: nav.value?.unread ?? 0 },
+    { label: 'Notifications', icon: 'bell', href: '/notifications', match: '/notifications', badge: (nav.value?.unread ?? 0) + (nav.value?.actions ?? 0) },
     ...(nav.value?.isStaff ? [{ label: 'Approvals', icon: 'check' as const, href: '/approvals', match: '/approvals' }] : []),
     { label: 'Profile', icon: 'user', href: '/me', match: '/me' },
 ]);

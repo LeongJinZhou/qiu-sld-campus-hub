@@ -6,6 +6,7 @@ import Checkbox from '@/Components/ui/Checkbox.vue';
 import FileUpload from '@/Components/ui/FileUpload.vue';
 import Icon from '@/Components/ui/Icon.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useLeaveReminder } from '@/composables/useLeaveReminder';
 import { rm } from '@/lib/format';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -26,6 +27,9 @@ const awaitingPayment = computed(() => props.membership && ['pending', 'grace', 
 const reading = computed(() => props.payment?.status === 'reading');
 // While the AI reads the receipt, refresh until it finishes.
 usePoll(3000, { only: ['payment', 'membership'] }, { autoStart: reading.value });
+
+// Started joining a paid club but left before paying: remind them where they stopped.
+useLeaveReminder(() => `Paying for ${props.club.name}`, () => Boolean(awaitingPayment.value));
 
 const method = ref<'online' | 'cash'>('online');
 const receipt = useForm({ receipt: [] as File[] });
