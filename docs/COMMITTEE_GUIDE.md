@@ -17,7 +17,8 @@ The club page shows the advisor, the four executive offices, the rest of the com
    - The event committee needs its own President, Vice President, Secretary and Treasurer.
 2. **Sign and submit.** Draw your signature with a mouse or finger. The tracker then shows where the proposal is and whose approval it is waiting for: Advisor → (Dean for faculty events) → SLD → Assistant Registrar → Registrar → Bursar → COO.
    - If it is **returned**, fix what was asked and resubmit; earlier approvals are kept unless you changed the budget or dates.
-3. **When approved**, the event is posted to the feed, the poster checklist and QR attendance unlock, and you can request funds.
+3. **Who can register.** On the event page choose **Anyone at QIU** or **Club members only**. Non-members of a members-only event are asked to join the club first.
+4. **When approved**, the event is posted to the feed, the poster checklist and QR attendance unlock, and you can request funds.
    - **Paid event?** In **Event payment** on the event page set the fee, the account name and payment link (a QR of the link is generated for you), and optionally upload up to **2** of your own payment QR codes. Students who register get a reserved place and pay online (receipt checked like membership) or in cash with the QR handover. Their place is confirmed once paid; unpaid participants cannot clock in.
 4. **Poster.** Tick every item on the checklist (logos, title, date, time, venue, registration, CCA, contact) and upload it. Use real QIU photos only.
 5. **Outdoor / off-campus?** Everyone attending must sign the indemnity form; signing closes 3 days before the event. People who haven't signed get a reminder, and cannot clock in.
@@ -45,6 +46,8 @@ The club page shows the advisor, the four executive offices, the rest of the com
 Create a meeting (in person, or online with a Google Meet link from your own QIU calendar — connect it once). After the meeting, jot notes; AI can turn them into the 13 Minutes, which you then edit, sign and submit (President → Advisor → SLD). For a weekly activity, take attendance too — CCA is awarded when the minutes are approved.
 
 ## Members
+
+**Event participants** (club page or Activities) lists everyone who registered for or attended your events in a session, marked *Member* or *Not a member*, with how many events each attended, when, and their CCA hours. Tap a person for their event-by-event history. Use *Not members* to find regulars worth inviting to join. Exports to Excel and PDF.
 
 **Members** has search, filters, multi-level sort, saved views and Excel/PDF export (including the 10 Full Member List). Memberships last 365 days, then 7 days of grace with reminders. There is no refund and no leave button.
 

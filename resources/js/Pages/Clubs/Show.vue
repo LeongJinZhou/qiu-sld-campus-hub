@@ -37,7 +37,7 @@ const props = defineProps<{
     highlights: { id: number; title: string; items: string[] }[];
     counts: { followers: number; events: number; members: number; alumni: number };
     memberWall: { name: string; photo_url: string | null; profile_url: string }[];
-    upcoming: { slug: string; name: string; starts_at: string; venue: string | null; poster_url: string | null; fee_sen: number; registration_open: boolean }[];
+    upcoming: { slug: string; name: string; starts_at: string; venue: string | null; poster_url: string | null; fee_sen: number; registration_open: boolean; members_only: boolean }[];
     membership: { status: string | null; fee_sen: number | null; drive: string | null; can_join: boolean };
     following: boolean;
     tab: string;
@@ -115,6 +115,7 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
                 <Link v-if="can.createEvent" :href="`/clubs/${club.slug}/events/create`"><Button size="sm">＋ New event proposal</Button></Link>
                 <Button v-if="can.publish" size="sm" variant="secondary" @click="creating = true">＋ Post / story</Button>
                 <Link v-if="can.internal" :href="`/clubs/${club.slug}/members`"><Button size="sm" variant="secondary">Members</Button></Link>
+                <Link v-if="can.internal" :href="`/clubs/${club.slug}/participants`"><Button size="sm" variant="secondary">Event participants</Button></Link>
                 <Link v-if="can.treasure" :href="`/clubs/${club.slug}/finance`"><Button size="sm" variant="secondary">Finance</Button></Link>
                 <Link v-if="can.treasure" :href="`/clubs/${club.slug}/payments/review`"><Button size="sm" variant="secondary">Payment review</Button></Link>
                 <Link v-if="can.internal" :href="`/clubs/${club.slug}/meetings`"><Button size="sm" variant="secondary">Meetings</Button></Link>
@@ -151,7 +152,7 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
                                         <span class="grid gap-1 p-3 text-sm">
                                             <strong class="line-clamp-2">{{ e.name }}</strong>
                                             <span class="truncate text-xs text-ink-muted">{{ dateTime(e.starts_at) }}<template v-if="e.venue"> · {{ e.venue }}</template></span>
-                                            <span v-if="e.registration_open" class="text-xs font-semibold text-brand-blue">Register · {{ e.fee_sen ? rm(e.fee_sen) : 'Free' }}</span>
+                                            <span v-if="e.registration_open" class="text-xs font-semibold text-brand-blue">Register · {{ e.fee_sen ? rm(e.fee_sen) : 'Free' }}<template v-if="e.members_only"> · members only</template></span>
                                         </span>
                                     </Link>
                                 </li>

@@ -23,6 +23,7 @@ const props = defineProps<{
         cca_participant: number;
         cca_committee: number;
         registration_open: boolean;
+        members_only: boolean;
         attendance_open: boolean;
         status: string;
         starts_at: string;
@@ -36,6 +37,7 @@ const props = defineProps<{
     registered: boolean;
     registrationStatus: string | null;
     ticketUrl: string | null;
+    mayJoin: boolean;
     payment: { fee_sen: number; payment_url: string | null; payment_account_name: string | null; qr: { path: string; url: string }[] };
     indemnity: { signed: boolean; closes_at: string; closed: boolean } | null;
     registrations: number;
@@ -68,6 +70,7 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                         <Badge :tone="event.status === 'approved' ? 'success' : 'neutral'">{{ event.status.replace('_', ' ') }}</Badge>
                         <Badge v-if="event.is_outdoor" tone="warning">Outdoor / off-campus · indemnity required</Badge>
                         <Badge tone="info">{{ event.cca_participant }} CCA</Badge>
+                        <Badge :tone="event.members_only ? 'warning' : 'success'">{{ event.members_only ? `${event.club.name} members only` : 'Open to all QIU students' }}</Badge>
                     </div>
                 </header>
                 <dl class="grid gap-1 text-sm">
@@ -102,6 +105,10 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                         <Link v-if="ticketUrl" :href="ticketUrl"><Button block class="mt-2">View my ticket</Button></Link>
                         <button type="button" class="mt-1 text-xs text-ink-muted underline" @click="unregister">Cancel registration</button>
                     </template>
+                    <template v-else-if="event.registration_open && !mayJoin">
+                        <p class="mt-2 text-sm">This event is for <strong>{{ event.club.name }}</strong> members only.</p>
+                        <Link :href="`/clubs/${event.club.slug}/join`"><Button block class="mt-2">Join {{ event.club.name }} to register</Button></Link>
+                    </template>
                     <Button v-else-if="event.registration_open" block class="mt-3" @click="register">{{ payment.fee_sen ? `Register · ${rm(payment.fee_sen)}` : 'Register' }}</Button>
                     <p v-else class="mt-2 text-sm text-ink-muted">Registration opens once SLD approves the proposal.</p>
                     <template v-if="indemnity && (registered || can.organise)">
@@ -109,6 +116,15 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                         <Link v-else-if="!indemnity.closed" :href="`/events/${event.slug}/indemnity`"><Button variant="secondary" block class="mt-3">Sign indemnity (closes {{ indemnity.closes_at }})</Button></Link>
                         <p v-else class="mt-3 text-sm text-danger">Indemnity signing has closed.</p>
                     </template>
+                </Card>
+                <Card v-if="can.update">
+                    <template #title>Who can register</template>
+                    <div class="grid gap-2" role="radiogroup" aria-label="Who can register">
+                        <button v-for="o in [{ v: false, l: 'Anyone at QIU', d: 'Members and non-members can register.' }, { v: true, l: 'Club members only', d: `Only ${event.club.name} members (and the committee). Others are asked to join first.` }]" :key="String(o.v)" type="button" role="radio" :aria-checked="event.members_only === o.v" class="grid gap-0.5 rounded-control border p-3 text-left text-sm transition" :class="event.members_only === o.v ? 'border-ink bg-surface-muted' : 'border-line hover:bg-surface-muted'" @click="router.put(`/events/${event.slug}/registration-settings`, { members_only: o.v }, { preserveScroll: true })">
+                            <span class="flex items-center gap-2 font-semibold"><span class="grid size-4 place-items-center rounded-full border-2" :class="event.members_only === o.v ? 'border-ink' : 'border-line'"><span v-if="event.members_only === o.v" class="size-2 rounded-full bg-ink" /></span>{{ o.l }}</span>
+                            <span class="pl-6 text-xs text-ink-muted">{{ o.d }}</span>
+                        </button>
+                    </div>
                 </Card>
                 <Card v-if="can.update">
                     <template #title>Event payment</template>

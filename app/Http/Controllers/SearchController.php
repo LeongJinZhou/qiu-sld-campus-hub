@@ -44,7 +44,7 @@ class SearchController extends Controller
                 ->orderByRaw('ends_at < ?', [now()])->orderBy('starts_at')->limit(self::LIMIT)->get()
                 ->map(fn (Event $e) => [
                     'slug' => $e->slug, 'name' => $e->name, 'club' => $e->club->name, 'starts_at' => $e->starts_at->toIso8601String(),
-                    'venue' => $e->venue, 'poster_url' => $e->posterUrl(), 'past' => $e->ends_at->isPast(), 'fee_sen' => $e->fee_sen,
+                    'venue' => $e->venue, 'poster_url' => $e->posterUrl(), 'past' => $e->ends_at->isPast(), 'fee_sen' => $e->fee_sen, 'members_only' => $e->members_only,
                 ]) : [],
             'people' => $wants('people') && mb_strlen($q) >= 2 ? User::with(['student', 'staff'])
                 ->where('name', 'like', $like)->where(fn (Builder $b) => $b->whereHas('student')->orWhereHas('staff'))

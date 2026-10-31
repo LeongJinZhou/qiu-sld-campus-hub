@@ -44,11 +44,11 @@ const tools = (slug: string): { label: string; icon: IconName; href: string }[] 
     { label: 'New event', icon: 'plus', href: `/clubs/${slug}/events/create` },
     { label: 'Finance', icon: 'file', href: `/clubs/${slug}/finance` },
     { label: 'Members', icon: 'users', href: `/clubs/${slug}/members` },
+    { label: 'Participants', icon: 'ticket', href: `/clubs/${slug}/participants` },
     { label: 'Payments', icon: 'check', href: `/clubs/${slug}/payments/review` },
     { label: 'Meetings', icon: 'calendar', href: `/clubs/${slug}/meetings` },
     { label: 'AGM', icon: 'award', href: `/clubs/${slug}/agm` },
     { label: 'Venues', icon: 'pin', href: `/clubs/${slug}/venues` },
-    { label: 'Club page', icon: 'home', href: `/clubs/${slug}` },
 ];
 const statusTone = (s: string): 'success' | 'warning' | 'info' | 'neutral' => (s === 'active' ? 'success' : s === 'grace' || s === 'pending' ? 'warning' : s === 'alumni' ? 'info' : 'neutral');
 const statusLabel: Record<string, string> = { active: 'Member', grace: 'Renew soon', pending: 'Payment pending', alumni: 'Alumni' };
