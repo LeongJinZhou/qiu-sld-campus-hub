@@ -7,6 +7,7 @@ use App\Enums\DocumentType;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicSession;
 use App\Models\Club;
+use App\Models\ClubFee;
 use App\Models\Document;
 use App\Models\Event;
 use App\Models\LedgerEntry;
@@ -70,6 +71,10 @@ class FinanceController extends Controller
                 ]),
             'events' => Event::where('club_id', $club->id)->where('status', DocumentStatus::Approved)->orderByDesc('starts_at')->get()
                 ->map(fn (Event $e) => ['id' => $e->id, 'name' => $e->name, 'lines' => $funds->budgetLines($e)]),
+            'fee' => ($fee = ClubFee::where('club_id', $club->id)->where('session_id', $sessions->current()->id)->first()) ? [
+                'amount_sen' => $fee->amount_sen, 'payment_url' => $fee->payment_url, 'account_name' => $fee->account_name, 'approved' => $fee->approved_at !== null,
+                'qr' => collect($fee->payment_qr_paths ?? [])->map(fn (string $p) => ['path' => $p, 'url' => Storage::disk('public')->url($p)])->values(),
+            ] : null,
             'can' => ['edit' => $user->can('treasure', $club), 'sld' => $user->isSldAdmin()],
         ]);
     }

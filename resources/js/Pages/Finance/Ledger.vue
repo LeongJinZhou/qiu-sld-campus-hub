@@ -69,6 +69,7 @@ const props = defineProps<{
     payees: { id: number; kind: string; name: string; bank_name: string; account: string }[];
     requests: { id: number; event: string | null; purpose: string | null; total_sen: number; status: string; progress: ApprovalProgress }[];
     events: { id: number; name: string }[];
+    fee: { amount_sen: number; payment_url: string | null; account_name: string | null; approved: boolean; qr: { path: string; url: string }[] } | null;
     can: { edit: boolean; sld: boolean };
 }>();
 
@@ -102,6 +103,14 @@ const attach = (): void => {
     attachForm.transform((d) => ({ receipt: d.receipt[0] ?? null })).post(`${url}/entries/${attaching.value}/receipt`, { preserveScroll: true, forceFormData: true, onSuccess: () => ((attaching.value = null), attachForm.reset()) });
 };
 const payee = useForm({ kind: 'vendor', name: '', email: '', contact_no: '', bank_name: '', account_holder: '', account_number: '' });
+// Membership fee for this session: any committee member sets it, SLD approves before students can join.
+const feeForm = useForm({ amount_rm: (props.fee?.amount_sen ?? 0) / 100, payment_url: props.fee?.payment_url ?? '', account_name: props.fee?.account_name ?? '', qr: [] as File[], remove_qr: [] as string[] });
+const toggleFeeQr = (path: string): void => {
+    feeForm.remove_qr = feeForm.remove_qr.includes(path) ? feeForm.remove_qr.filter((p) => p !== path) : [...feeForm.remove_qr, path];
+};
+const saveFee = (): void => {
+    feeForm.post(`/clubs/${props.club.slug}/fee`, { preserveScroll: true, forceFormData: true, onSuccess: () => feeForm.reset('qr', 'remove_qr') });
+};
 const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, ...Object.entries(rec).map(([value, label]) => ({ value, label }))];
 </script>
 
@@ -253,6 +262,30 @@ const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, .
                     </form>
                 </Card>
             </template>
+
+            <Card v-if="can.edit">
+                <template #title>Membership fee &amp; payment</template>
+                <p class="mb-3 text-sm text-ink-muted">
+                    <template v-if="!fee">No fee set for this session yet. Students can join once SLD approves it.</template>
+                    <template v-else>Current fee {{ rm(fee.amount_sen) }} · <Badge :tone="fee.approved ? 'success' : 'warning'">{{ fee.approved ? 'Approved by SLD' : 'Waiting for SLD' }}</Badge></template>
+                    Changing it sends it back to SLD for approval.
+                </p>
+                <form class="grid gap-3" @submit.prevent="saveFee">
+                    <div class="grid gap-3 sm:grid-cols-[10rem_1fr_1fr]">
+                        <Input v-model="feeForm.amount_rm" type="number" label="Fee (RM, 0 = free)" :error="feeForm.errors.amount_rm" />
+                        <Input v-model="feeForm.account_name" label="Pay to (account name)" :error="feeForm.errors.account_name" />
+                        <Input v-model="feeForm.payment_url" label="Payment link" placeholder="https://…" :error="feeForm.errors.payment_url" />
+                    </div>
+                    <div v-if="fee?.qr.length" class="flex flex-wrap gap-2">
+                        <span v-for="q in fee.qr" :key="q.path" class="relative">
+                            <img :src="q.url" alt="Payment QR" class="size-20 rounded-control border border-line object-cover" :class="feeForm.remove_qr.includes(q.path) ? 'opacity-30' : ''" />
+                            <button type="button" class="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-ink text-xs text-white" :aria-label="feeForm.remove_qr.includes(q.path) ? 'Keep this QR' : 'Remove this QR'" @click="toggleFeeQr(q.path)">{{ feeForm.remove_qr.includes(q.path) ? '↺' : '×' }}</button>
+                        </span>
+                    </div>
+                    <FileUpload v-if="(fee?.qr.length ?? 0) - feeForm.remove_qr.length < 2" v-model="feeForm.qr" multiple label="Your own payment QR codes (up to 2, optional — a QR of the link is generated anyway)" accept="image/png,image/jpeg,image/webp" :error="feeForm.errors.qr" />
+                    <div><Button type="submit" :loading="feeForm.processing">Save and send to SLD</Button></div>
+                </form>
+            </Card>
 
             <div class="grid gap-6 lg:grid-cols-2">
                 <Card>

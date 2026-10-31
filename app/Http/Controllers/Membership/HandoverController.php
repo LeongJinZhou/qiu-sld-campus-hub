@@ -33,6 +33,8 @@ class HandoverController extends Controller
                 'id' => $handover->id,
                 'status' => $handover->status->value,
                 'club' => $handover->payment->club->name,
+                'purpose' => $handover->payment->purpose(),
+                'order_id' => $handover->payment->order_id,
                 'club_slug' => $handover->payment->club->slug,
                 'amount_sen' => $handover->payment->amount_sen,
                 'student' => ['name' => $handover->student->name, 'photo_url' => $handover->student->photoUrl()],

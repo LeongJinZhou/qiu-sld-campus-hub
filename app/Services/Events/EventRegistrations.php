@@ -19,6 +19,7 @@ class EventRegistrations
             throw new DomainException("{$user->name} is not an active QIU student, so cannot register.");
         }
 
-        return $event->registrations()->firstOrCreate(['user_id' => $user->id]);
+        // A paid event keeps the place as "payment pending" until the fee is confirmed.
+        return $event->registrations()->firstOrCreate(['user_id' => $user->id], ['status' => $event->fee_sen > 0 ? 'pending_payment' : 'registered']);
     }
 }

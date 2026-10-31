@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -90,6 +91,11 @@ class EventController extends Controller
                 'responsibility' => $a->responsibility,
             ]),
             'registered' => $event->registrations()->where('user_id', $user->id)->exists(),
+            'registrationStatus' => $event->registrations()->where('user_id', $user->id)->value('status'),
+            'payment' => [
+                'fee_sen' => $event->fee_sen, 'payment_url' => $event->payment_url, 'payment_account_name' => $event->payment_account_name,
+                'qr' => collect($event->payment_qr_paths ?? [])->map(fn (string $p) => ['path' => $p, 'url' => Storage::disk('public')->url($p)])->values(),
+            ],
             'indemnity' => $event->is_outdoor ? [
                 'signed' => $event->indemnities()->where('user_id', $user->id)->exists(),
                 'closes_at' => $event->indemnityClosesAt()->format('D, j M Y, g:i A'),
