@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PersonPicker from '@/Components/ui/PersonPicker.vue';
+import PositionPicker from '@/Components/ui/PositionPicker.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
@@ -157,9 +159,9 @@ const takeBack = (): void => router.delete(`/admin/clubs/${props.club?.slug}/tra
                         </li>
                     </ul>
 
-                    <form class="mt-5 grid gap-3 rounded-control bg-surface-muted p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end" @submit.prevent="submitAssign">
-                        <Input v-model="assign.position" label="Position" placeholder="e.g. Publicity Director" required :error="assign.errors.position" />
-                        <Input v-model="assign.student_number" label="Student ID" placeholder="QIU-202404-0001" required :error="assign.errors.student_number" />
+                    <form class="mt-5 grid gap-3 rounded-control bg-surface-muted p-4 sm:grid-cols-[1.4fr_1fr_auto] sm:items-end" @submit.prevent="submitAssign">
+                        <PersonPicker v-model="assign.student_number" required :error="assign.errors.student_number" />
+                        <PositionPicker v-model="assign.position" :required="compulsoryPositions" :taken="(committee ?? []).flatMap((m) => (m.position ? [m.position] : []))" :error="assign.errors.position" />
                         <Button type="submit" :loading="assign.processing">Assign</Button>
                     </form>
                     <p v-if="missingCompulsory?.length" class="mt-3 text-sm text-warning">Still missing: {{ missingCompulsory.join(', ') }}</p>

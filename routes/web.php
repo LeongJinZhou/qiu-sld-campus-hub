@@ -35,6 +35,7 @@ use App\Http\Controllers\Membership\MembersController;
 use App\Http\Controllers\Membership\MembershipController;
 use App\Http\Controllers\Membership\ParticipantsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PeopleLookupController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SearchController;
@@ -77,6 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/report', [PostController::class, 'report'])->middleware('throttle:10,1')->name('posts.report');
 
     Route::get('/search', SearchController::class)->name('search');
+    Route::get('/people/lookup', PeopleLookupController::class)->middleware('throttle:120,1')->name('people.lookup');
     Route::get('/clubs', fn (Request $request) => to_route('search', ['type' => 'clubs', 'q' => $request->query('search')]))->name('clubs.index');
     Route::post('/clubs/{club}/posts', [PostController::class, 'store'])->name('clubs.posts.store');
     Route::post('/clubs/{club}/follow', [ClubSocialController::class, 'follow'])->name('clubs.follow');
