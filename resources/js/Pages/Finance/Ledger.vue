@@ -22,6 +22,7 @@ interface Row {
     id: number;
     date: string;
     description: string;
+    order_id: string | null;
     income_sen: number;
     expense_sen: number;
     balance_sen: number;
@@ -56,7 +57,7 @@ const props = defineProps<{
         closing_sen: number;
         totals: { income_sen: number; expense_sen: number };
         by_category: { key: string; label: string; income_sen: number; expense_sen: number; count: number }[];
-        by_event: { event_id: number; event: string; income_sen: number; expense_sen: number; count: number }[];
+        by_event: { event_id: number; event: string; slug: string; income_sen: number; expense_sen: number; count: number }[];
         rows: Row[];
         filtered: boolean;
     };
@@ -176,12 +177,14 @@ const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, .
                         </Card>
                         <Card>
                             <template #title>By event</template>
+                            <template #actions><Link :href="`/clubs/${club.slug}/finance/membership?session=${encodeURIComponent(report.session)}`" class="text-sm font-medium text-brand-blue">Membership fees →</Link></template>
                             <ul v-if="report.by_event.length" class="grid gap-1 text-sm">
-                                <li v-for="e in report.by_event" :key="e.event_id">
+                                <li v-for="e in report.by_event" :key="e.event_id" class="grid grid-cols-[1fr_auto] items-center gap-1">
                                     <button type="button" class="grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-control px-2 py-2 text-left hover:bg-surface-muted" :class="Number(f.event_id) === e.event_id ? 'bg-surface-muted' : ''" @click="apply({ event_id: Number(f.event_id) === e.event_id ? '' : e.event_id, category: '' })">
                                         <span class="min-w-0"><span class="block truncate font-medium">{{ e.event }}</span><span class="text-xs text-ink-muted">{{ e.count }} {{ e.count === 1 ? 'item' : 'items' }} · in {{ rm(e.income_sen) }} · out {{ rm(e.expense_sen) }}</span></span>
                                         <span class="text-right font-semibold tabular-nums" :class="net(e) < 0 ? 'text-danger' : 'text-success'">{{ rm(net(e)) }}</span>
                                     </button>
+                                    <Link :href="`/clubs/${club.slug}/finance/events/${e.slug}`" class="rounded-control px-2 py-2 text-xs font-medium text-brand-blue hover:bg-surface-muted" :aria-label="`Who paid for ${e.event}`">Who paid →</Link>
                                 </li>
                             </ul>
                             <p v-else class="text-sm text-ink-muted">No event transactions this session yet. Fund withdrawals and event expenses appear here automatically.</p>
@@ -191,7 +194,7 @@ const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, .
 
                 <section class="grid gap-3">
                     <div class="grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
-                        <div class="sm:col-span-2"><Input v-model="f.search" label="Search" placeholder="Description, event or name" /></div>
+                        <div class="sm:col-span-2"><Input v-model="f.search" label="Search" placeholder="Description, event, name or order ID" /></div>
                         <Select v-model="f.category" label="Type" :options="options(categories)" @update:model-value="apply()" />
                         <Select v-model="f.event_id" label="Event" :options="[{ value: '', label: 'All' }, ...clubEvents]" @update:model-value="apply()" />
                         <Select v-model="f.method" label="Paid by" :options="options(methods)" @update:model-value="apply()" />
@@ -216,7 +219,7 @@ const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, .
                             <tbody>
                                 <tr v-for="r in report.rows" :key="r.id" class="border-t border-line align-top">
                                     <td class="whitespace-nowrap px-3 py-2.5 tabular-nums">{{ date(r.date) }}</td>
-                                    <td class="min-w-44 px-3 py-2.5">{{ r.description }}</td>
+                                    <td class="min-w-44 px-3 py-2.5">{{ r.description }}<span v-if="r.order_id" class="mt-0.5 block font-mono text-xs text-ink-muted">{{ r.order_id }}</span></td>
                                     <td class="px-3 py-2.5"><Badge :tone="tone[r.category] ?? 'neutral'">{{ categories[r.category] ?? r.category }}</Badge><span v-if="r.event" class="mt-1 block text-xs text-ink-muted">{{ r.event }}</span></td>
                                     <td class="whitespace-nowrap px-3 py-2.5 text-xs">{{ r.method ? methods[r.method] ?? r.method : '—' }}<span v-if="r.handled_by" class="block text-ink-muted">{{ r.handled_by }}</span></td>
                                     <td class="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-success">{{ r.income_sen ? rm(r.income_sen) : '' }}</td>

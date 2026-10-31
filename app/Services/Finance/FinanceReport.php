@@ -38,7 +38,7 @@ class FinanceReport
             && (empty($filters['category']) || $r['category'] === $filters['category'])
             && (empty($filters['event_id']) || (int) $r['event_id'] === (int) $filters['event_id'])
             && (empty($filters['method']) || $r['method'] === $filters['method'])
-            && (empty($filters['search']) || str_contains(mb_strtolower($r['description'].' '.$r['event'].' '.$r['handled_by']), mb_strtolower($filters['search']))));
+            && (empty($filters['search']) || str_contains(mb_strtolower($r['description'].' '.$r['event'].' '.$r['handled_by'].' '.$r['order_id']), mb_strtolower($filters['search']))));
         $rows = $this->sort($rows, $filters['sort'] ?? 'date_asc');
 
         return [
@@ -53,7 +53,7 @@ class FinanceReport
                 'count' => $inSession->where('category', $key)->count(),
             ])->values()->all(),
             'by_event' => $inSession->whereNotNull('event_id')->groupBy('event_id')->map(fn (Collection $g, $id) => [
-                'event_id' => (int) $id, 'event' => $g->first()['event'],
+                'event_id' => (int) $id, 'event' => $g->first()['event'], 'slug' => $g->first()['event_slug'],
                 'income_sen' => $g->sum('income_sen'), 'expense_sen' => $g->sum('expense_sen'), 'count' => $g->count(),
             ])->sortBy('event')->values()->all(),
             'rows' => $rows->values()->all(),
@@ -74,7 +74,11 @@ class FinanceReport
             ? ['date' => $report['rows'][0]['date'] ?? now()->toDateString(), 'description' => 'Filtered view (running total below)', 'income_sen' => 0, 'expense_sen' => 0, 'balance_sen' => 0]
             : ['date' => collect($report['rows'])->min('date') ?? now()->toDateString(), 'description' => "Balance brought forward ({$report['session']})", 'income_sen' => 0, 'expense_sen' => 0, 'balance_sen' => $report['brought_forward_sen']];
 
-        return [$first, ...collect($report['rows'])->sortBy([['date', 'asc'], ['id', 'asc']])->values()->all()];
+        // The template has no reference column, so the order ID rides on the description for traceability.
+        $rows = collect($report['rows'])->sortBy([['date', 'asc'], ['id', 'asc']])
+            ->map(fn (array $r) => $r['order_id'] ? [...$r, 'description' => "{$r['description']} [{$r['order_id']}]"] : $r);
+
+        return [$first, ...$rows->values()->all()];
     }
 
     /** @param array<string, mixed> $filters */

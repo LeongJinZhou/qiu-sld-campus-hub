@@ -24,6 +24,7 @@ use App\Http\Controllers\Events\PosterController;
 use App\Http\Controllers\Events\PostMortemController;
 use App\Http\Controllers\Events\ProposalController;
 use App\Http\Controllers\Finance\FinanceController;
+use App\Http\Controllers\Finance\PaymentBreakdownController;
 use App\Http\Controllers\Meetings\GoogleCalendarController;
 use App\Http\Controllers\Meetings\MeetingController;
 use App\Http\Controllers\Membership\FeeController;
@@ -141,6 +142,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/finance/entries', [FinanceController::class, 'entry'])->name('finance.entry');
     Route::get('/clubs/{club}/finance/receipts/{receipt}', [FinanceController::class, 'receipt'])->middleware('signed')->name('finance.receipt');
     Route::get('/clubs/{club}/finance/export/{format}', [FinanceController::class, 'export'])->name('finance.export');
+    Route::get('/clubs/{club}/finance/membership', [PaymentBreakdownController::class, 'membership'])->name('finance.membership');
+    Route::get('/clubs/{club}/finance/membership/export/{format}', [PaymentBreakdownController::class, 'exportMembership'])->name('finance.membership.export');
+    Route::get('/clubs/{club}/finance/events/{event}', [PaymentBreakdownController::class, 'event'])->name('finance.event');
+    Route::get('/clubs/{club}/finance/events/{event}/export/{format}', [PaymentBreakdownController::class, 'exportEvent'])->name('finance.event.export');
     Route::post('/clubs/{club}/finance/entries/{entry}/receipt', [FinanceController::class, 'attachReceipt'])->name('finance.entry.receipt');
     Route::post('/clubs/{club}/finance/payees', [FinanceController::class, 'payee'])->name('finance.payees');
     Route::get('/clubs/{club}/fund-requests/create', [FinanceController::class, 'requestForm'])->name('fund.create');
