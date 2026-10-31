@@ -35,6 +35,7 @@ use App\Http\Controllers\MyClubsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SldRequestController;
 use App\Http\Controllers\Social\ClubSocialController;
 use App\Http\Controllers\Social\FeedController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\Social\PostController;
 use App\Http\Controllers\Venues\VenueController;
 use App\Http\Controllers\VerifyController;
 use App\Models\Club;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -72,7 +74,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/comments', [PostController::class, 'comment'])->middleware('throttle:20,1')->name('posts.comment');
     Route::post('/posts/{post}/report', [PostController::class, 'report'])->middleware('throttle:10,1')->name('posts.report');
 
-    Route::get('/clubs', [ClubController::class, 'index'])->name('clubs.index');
+    Route::get('/search', SearchController::class)->name('search');
+    Route::get('/clubs', fn (Request $request) => to_route('search', ['type' => 'clubs', 'q' => $request->query('search')]))->name('clubs.index');
     Route::post('/clubs/{club}/posts', [PostController::class, 'store'])->name('clubs.posts.store');
     Route::post('/clubs/{club}/follow', [ClubSocialController::class, 'follow'])->name('clubs.follow');
     Route::post('/clubs/{club}/stories', [ClubSocialController::class, 'storeStory'])->name('clubs.stories.store');
