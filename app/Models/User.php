@@ -104,6 +104,12 @@ class User extends Authenticatable
         return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : $this->avatar_url;
     }
 
+    /** Events this student was added to as a door helper. @return BelongsToMany<Event, $this> */
+    public function helpingEvents(): BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'event_helpers')->withTimestamps();
+    }
+
     public function coverUrl(): ?string
     {
         return $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null;

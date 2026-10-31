@@ -52,7 +52,10 @@ class EventPaymentController extends Controller
 
         return Inertia::render('Events/Pay', [
             'event' => [...$event->only('slug', 'name', 'fee_sen', 'payment_url', 'payment_account_name', 'is_outdoor'), 'club' => $event->club->only('slug', 'name'), 'starts_at' => $event->starts_at->toIso8601String()],
-            'registration' => ['status' => $registration->status, 'paid_at' => $registration->paid_at?->format('D, j M Y, g:i A')],
+            'registration' => [
+                'status' => $registration->status, 'paid_at' => $registration->paid_at?->format('D, j M Y, g:i A'),
+                'ticket_url' => $registration->ensureTicket()->ticket_code ? route('tickets.show', $registration->ticket_code) : null,
+            ],
             'qrCodes' => $qr->for($event->payment_url, $event->payment_qr_paths),
             'payment' => $latest ? [
                 'order_id' => $latest->order_id, 'method' => $latest->method, 'status' => $latest->status->value, 'flags' => $latest->flags ?? [],

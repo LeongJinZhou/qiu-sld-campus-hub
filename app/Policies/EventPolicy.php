@@ -36,6 +36,12 @@ class EventPolicy
             || ($event->session_id === $this->sessions->current()->id && $this->organises($user, $event));
     }
 
+    /** Scanning tickets and attendance: organisers plus the student helpers they added. */
+    public function checkIn(User $user, Event $event): bool
+    {
+        return $this->organises($user, $event) || $event->helpers()->whereKey($user->id)->exists();
+    }
+
     /** Club committee, advisor, event committee or SLD. */
     public function organises(User $user, Event $event): bool
     {

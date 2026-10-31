@@ -6,7 +6,7 @@ You never type what the university already knows. Your name, student ID, program
 
 ## Your club page
 
-Open **My clubs** (bottom bar on phones) to jump straight to the clubs you run and their tools. **Every committee member** can use all club management and finance; whatever you prepare and sign carries **your own name and position**. Requests from SLD appear at the top of the club page — reply there within 7 working days.
+Open **Activities** (ticket icon in the bottom bar) for your event tickets, the clubs you run with their tools and current events (tap **Door** for an event's check-in desk), events you help at, and the clubs you've joined. **Search** finds clubs, events and people. **Every committee member** can use all club management and finance; whatever you prepare and sign carries **your own name and position**. Requests from SLD appear at the top of the club page — reply there within 7 working days.
 
 The club page shows the advisor, the four executive offices, the rest of the committee, upcoming events and a wall of members (students who hide their clubs on their profile are left out).
 
@@ -21,7 +21,11 @@ The club page shows the advisor, the four executive offices, the rest of the com
    - **Paid event?** In **Event payment** on the event page set the fee, the account name and payment link (a QR of the link is generated for you), and optionally upload up to **2** of your own payment QR codes. Students who register get a reserved place and pay online (receipt checked like membership) or in cash with the QR handover. Their place is confirmed once paid; unpaid participants cannot clock in.
 4. **Poster.** Tick every item on the checklist (logos, title, date, time, venue, registration, CCA, contact) and upload it. Use real QIU photos only.
 5. **Outdoor / off-campus?** Everyone attending must sign the indemnity form; signing closes 3 days before the event. People who haven't signed get a reminder, and cannot clock in.
-6. **On the day.** Show the rotating QR on a screen; participants scan to clock in and out. You can also scan a student's **personal QR** to **register** them for the event or clock them in or out, or type a student ID.
+6. **On the day — Door & attendance.** Everyone confirmed gets a **ticket** with a QR and their ticket/transaction ID (in Activities). At the door choose **Scan people**, **Show QR** or **Both**, and **Clock in** or **Clock out**:
+   - *Scan people:* scan a ticket or personal QR (or type a name, ticket ID or student ID). The card shows **Paid / NOT PAID**, check-in times and buttons to clock in or out. Set the scan to *Check only* to just verify.
+   - *Show QR:* participants scan the screen. Pick how often it changes (10 s – 10 min); a photo of an old code stops working.
+   - **People** lists everyone with filters (paid, not paid, in, not in) — use it after the event to chase who hasn't paid.
+   - **Student helpers:** add students by student ID; they can scan and clock people in/out for that event only.
 7. **Afterwards.** Within **1 week**: finance record and receipts. Within **2 weeks**: post mortem, attendance list, survey, reel. The post mortem header (participants, committee) fills itself; AI can suggest improvements. Reminders are automatic.
 
 ## Money (Treasurer)
@@ -61,4 +65,4 @@ When SLD opens the AGM period, your club page shows a countdown.
 
 ## Your profile
 
-Your lifelong profile shows the clubs you joined or serve, positions, events and CCA hours, and has a personal QR anyone can scan. **Coming up** lists events you registered for, with *Pay now* or *Sign indemnity* if something is still needed. Payments or forms you leave half-way stay under **Action needed** in Notifications until done; mute likes, comments, saves or follows there. Hide any section in **Edit profile**. Download **certificates** for each committee position and each event you attended. Before you graduate, add a **personal email** so you can keep signing in as alumni.
+Add a **cover picture** and adjust it or your profile photo (drag and zoom) before saving. Your lifelong profile shows the clubs you joined or serve, positions, events and CCA hours, and has a personal QR anyone can scan. **Coming up** lists events you registered for, with *Pay now* or *Sign indemnity* if something is still needed. Payments or forms you leave half-way stay under **Action needed** in Notifications until done; mute likes, comments, saves or follows there. Hide any section in **Edit profile**. Download **certificates** for each committee position and each event you attended. Before you graduate, add a **personal email** so you can keep signing in as alumni.

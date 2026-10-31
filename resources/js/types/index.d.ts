@@ -179,3 +179,17 @@ export interface ApprovalProgress {
     due_at: string | null;
     overdue: boolean;
 }
+
+export interface Ticket {
+    code: string | null;
+    url: string | null;
+    status: 'paid' | 'free' | 'unpaid' | 'checking';
+    order_id: string | null;
+    amount_sen: number;
+    method: string | null;
+    attendee: { name: string; student_number: string | null; photo_url: string | null };
+    event: { slug: string; name: string; club: string; club_logo: string | null; starts_at: string; ends_at: string; venue: string | null; poster_url: string | null; past: boolean; needs_indemnity: boolean };
+    theme: 'party' | 'nature' | 'online';
+    clock_in: string | null;
+    clock_out: string | null;
+}
