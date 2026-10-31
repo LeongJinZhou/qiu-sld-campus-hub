@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\ScopedRole;
 use App\Models\Club;
 use App\Models\RoleAssignment;
 use App\Models\User;
@@ -44,16 +45,14 @@ class ClubPolicy
         return $this->viewInternal($user, $club);
     }
 
-    /** Fees, payment review and the ledger: the Treasurer (current session) and SLD. */
+    /**
+     * Fees, payment review and the ledger: any committee member of the current session (not only the Treasurer)
+     * and SLD. Every action is recorded against the person who did it.
+     */
     public function treasure(User $user, Club $club): bool
     {
-        return $user->isSldAdmin() || $this->holds($user, $club, 'Treasurer');
-    }
-
-    private function holds(User $user, Club $club, string $position): bool
-    {
-        return RoleAssignment::where('scope_type', 'club')->where('scope_id', $club->id)
-            ->where('session_id', $this->sessions->current()->id)->where('position', $position)->where('user_id', $user->id)->exists();
+        return $user->isSldAdmin() || RoleAssignment::where('scope_type', 'club')->where('scope_id', $club->id)
+            ->where('session_id', $this->sessions->current()->id)->where('role', ScopedRole::ClubCommittee)->where('user_id', $user->id)->exists();
     }
 
     /** Members, documents and finance tabs (later phases): committee, advisor and SLD only. */

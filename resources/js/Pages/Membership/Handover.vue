@@ -36,15 +36,13 @@ const props = defineProps<{
 usePoll(2000, { only: ['handover', 'qrSvg'] });
 
 const busy = ref(false);
-const retaking = ref(false);
 const act = (action: string, data: Record<string, unknown> = {}): void => {
     busy.value = true;
     router.post(`/handovers/${props.handover.id}`, { action, ...data }, { preserveScroll: true, forceFormData: 'photo' in data, onFinish: () => (busy.value = false) });
 };
-const onPhoto = (photo: Blob): void => {
-    retaking.value = false;
-    act('photo', { photo: new File([photo], 'handover.jpg', { type: 'image/jpeg' }) });
-};
+const onPhoto = (photo: Blob): void => act('photo', { photo: new File([photo], 'handover.jpg', { type: 'image/jpeg' }) });
+// Retake goes back to the QR step on the server, so the student's phone shows their QR again too.
+const retake = (): void => act('retake');
 
 const h = computed(() => props.handover);
 const amount = computed(() => rm(h.value.amount_sen));
@@ -126,7 +124,7 @@ const steps = computed(() =>
                     </template>
 
                     <template v-else>
-                        <LiveQrCapture v-if="(h.status === 'both_ready' || retaking) && expectToken" :expect-token="expectToken" :person-name="other.name" @capture="onPhoto" />
+                        <LiveQrCapture v-if="h.status === 'both_ready' && expectToken" :expect-token="expectToken" :person-name="other.name" @capture="onPhoto" />
                         <template v-else>
                             <img v-if="h.photo_url" :src="h.photo_url" alt="Cash payment photo" class="w-full rounded-card border border-line" />
                             <ul class="grid gap-1 text-sm">
@@ -137,14 +135,14 @@ const steps = computed(() =>
                             <div v-if="h.cash_check === 'needs_confirmation'" class="grid gap-2 rounded-control bg-warning/10 p-3 text-sm">
                                 <p class="font-medium">Is {{ amount }} in cash clearly visible next to the QR?</p>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <Button variant="secondary" @click="retaking = true">Retake</Button>
+                                    <Button variant="secondary" :loading="busy" @click="retake">Retake</Button>
                                     <Button :loading="busy" @click="act('confirm_cash')">Cash is correct</Button>
                                 </div>
                             </div>
                             <template v-else>
                                 <Button v-if="!me.done" size="lg" block :loading="busy" @click="act('done')">Transaction done</Button>
                                 <p v-else class="text-center text-sm text-ink-muted">Waiting for {{ other.name }} to confirm…</p>
-                                <button v-if="!me.done" type="button" class="justify-self-center text-sm text-ink-muted underline" @click="retaking = true">Retake photo</button>
+                                <button v-if="!me.done" type="button" class="justify-self-center text-sm text-ink-muted underline" @click="retake">Retake photo</button>
                             </template>
                         </template>
                     </template>

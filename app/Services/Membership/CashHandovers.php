@@ -131,6 +131,17 @@ class CashHandovers
         ]);
     }
 
+    /** The member wants another photo: back to the QR step on both phones, earlier photo discarded. */
+    public function retake(CashHandover $handover, User $committee): void
+    {
+        $this->assertParty($handover, $committee, 'committee');
+        $this->assertStatus($handover, [HandoverStatus::PhotoTaken]);
+        if ($handover->photo_path) {
+            Storage::disk('local')->delete($handover->photo_path);
+        }
+        $handover->update(['status' => HandoverStatus::BothReady, 'photo_path' => null, 'cash_check' => null, 'photo_taken_at' => null, 'student_done_at' => null, 'committee_done_at' => null]);
+    }
+
     /** Without AI, the member confirms the cash in the photo matches the fee. */
     public function confirmCash(CashHandover $handover, User $committee): void
     {
