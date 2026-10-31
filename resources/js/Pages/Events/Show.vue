@@ -147,6 +147,7 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                     </form>
                 </Card>
                 <Link v-if="can.checkIn && !can.organise" :href="`/events/${event.slug}/attendance`"><Button block><Icon name="scan" :size="18" /> Door helper: scan tickets</Button></Link>
+                <Link v-if="can.checkIn && event.status === 'approved'" :href="`/events/${event.slug}/purchases`"><Button block variant="secondary"><Icon name="receipt" :size="18" /> Purchases &amp; claims</Button></Link>
                 <template v-if="can.organise">
                     <Link :href="`/events/${event.slug}/attendance`"><Button block>Door &amp; attendance</Button></Link>
                     <Link v-if="payment.fee_sen" :href="`/clubs/${event.club.slug}/finance/events/${event.slug}`"><Button block variant="secondary">Who paid · money tally</Button></Link>
