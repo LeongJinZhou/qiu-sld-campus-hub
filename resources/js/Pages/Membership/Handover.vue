@@ -6,6 +6,7 @@ import LiveQrCapture from '@/Components/ui/LiveQrCapture.vue';
 import QrCode from '@/Components/ui/QrCode.vue';
 import StepIndicator from '@/Components/ui/StepIndicator.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useLeaveReminder } from '@/composables/useLeaveReminder';
 import { rm } from '@/lib/format';
 import { Head, Link, router, usePoll } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -31,6 +32,9 @@ const props = defineProps<{
     qrSvg: string | null;
     expectToken: string | null;
 }>();
+
+// Leaving mid-way (home button, app switch) leaves a reminder that brings the person back here.
+useLeaveReminder(() => `Your cash payment for ${props.handover.club}`, () => !['completed', 'declined', 'expired'].includes(props.handover.status));
 
 // Both screens poll so each side sees the other's taps within seconds.
 usePoll(2000, { only: ['handover', 'qrSvg'] });

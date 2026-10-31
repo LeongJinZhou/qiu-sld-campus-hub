@@ -5,12 +5,17 @@ namespace App\Services\Reminders;
 use App\Enums\ApprovalDecision;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
+use App\Enums\HandoverStatus;
+use App\Enums\MembershipStatus;
 use App\Enums\ScopeType;
 use App\Models\Agm;
 use App\Models\Approval;
+use App\Models\CashHandover;
 use App\Models\Club;
 use App\Models\Document;
 use App\Models\Event;
+use App\Models\EventRegistration;
+use App\Models\Membership;
 use App\Models\RoleAssignment;
 use App\Models\SldRequest;
 use App\Models\User;
@@ -20,6 +25,7 @@ use App\Services\Approvals\ApproverResolver;
 use App\Services\Events\IndemnityService;
 use App\Services\Events\ProposalRules;
 use App\Services\Meetings\Meetings;
+use App\Services\Notifications\ActionItems;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +49,7 @@ class Reminders
         private readonly IndemnityService $indemnities,
         private readonly AgmPeriods $periods,
         private readonly Meetings $meetings,
+        private readonly ActionItems $actions,
     ) {}
 
     public function run(CarbonImmutable $today): int
@@ -53,6 +60,7 @@ class Reminders
         $this->indemnityClosing($today);
         $this->agmDeadlines($today);
         $this->sldRequests($today);
+        $this->halfway();
 
         return $this->sent;
     }
@@ -144,6 +152,27 @@ class Reminders
                 ($overdue ? 'Overdue reply to SLD: ' : 'Reply to SLD by tomorrow: ').$request->subject,
                 "SLD asked on {$request->created_at->format('j M')}; replies are due within 7 working days.",
                 route('clubs.show', $request->club));
+        }
+    }
+
+    /**
+     * "It seems you have half-way done this": anything left unfinished for over an hour (payment not made, cash
+     * handover stuck, indemnity not signed) is chased once a day until it is done, for students and committee alike.
+     */
+    private function halfway(): void
+    {
+        $people = User::whereIn('id', Membership::where('status', MembershipStatus::Pending)->select('user_id'))
+            ->orWhereIn('id', CashHandover::whereNotIn('status', [HandoverStatus::Completed, HandoverStatus::Declined, HandoverStatus::Expired])->select('student_id'))
+            ->orWhereIn('id', CashHandover::whereNotIn('status', [HandoverStatus::Completed, HandoverStatus::Declined, HandoverStatus::Expired])->select('committee_user_id'))
+            ->orWhereIn('id', EventRegistration::select('user_id'))->get();
+        foreach ($people as $person) {
+            foreach ($this->actions->for($person) as $item) {
+                if (! in_array($item['kind'], ['payment', 'handover', 'indemnity'], true) || ($item['since'] && CarbonImmutable::parse($item['since'])->gt(now()->subHour()))) {
+                    continue;
+                }
+                $this->send("halfway:{$item['key']}:{$person->id}:".today()->toDateString(), collect([$person]),
+                    'It seems you have half-way done this', "{$item['title']}. {$item['body']}", $item['url']);
+            }
         }
     }
 
