@@ -11,6 +11,7 @@ use App\Models\Membership;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
+use App\Services\Ai\CashPhotoChecker;
 use App\Services\AuditLogger;
 use App\Services\Time\SessionResolver;
 use DomainException;
@@ -20,9 +21,11 @@ use Illuminate\Support\Facades\Storage;
 use Zxing\QrReader;
 
 /**
- * Cash payment handover: student picks a committee member → Accept/Decline → both tap ready →
- * student shows a one-time QR → member photographs the QR with the cash → server decodes the QR in the photo
- * → both tap done → membership active, ledger income credited to that member, receipts to both. 7-day expiry.
+ * Cash payment handover: student picks a committee member → Accept/Decline → both tap ready → the student shows
+ * their own profile QR → the member's camera captures it automatically with the cash in view → the server reads
+ * the QR in the photo (must be this student's) and checks the cash (AI, or the member confirms) → both tap done →
+ * membership active, ledger income filed under Membership as cash received by that member, receipts to both.
+ * Requests expire after 7 days.
  */
 class CashHandovers
 {
@@ -30,6 +33,7 @@ class CashHandovers
         private readonly MembershipService $memberships,
         private readonly SessionResolver $sessions,
         private readonly AuditLogger $audit,
+        private readonly CashPhotoChecker $cashChecker,
     ) {}
 
     public function request(Membership $membership, User $committee): CashHandover
@@ -69,7 +73,7 @@ class CashHandovers
         }
     }
 
-    /** Each side taps "ready"; once both have, the student's screen shows the one-time QR. */
+    /** Each side taps "ready"; once both have, the student shows their profile QR to the member's camera. */
     public function ready(CashHandover $handover, User $user): void
     {
         $side = $this->assertParty($handover, $user);
@@ -78,28 +82,40 @@ class CashHandovers
         $both = $handover->student_ready_at && $handover->committee_ready_at;
         $handover->status = $both ? HandoverStatus::BothReady : ($side === 'student' ? HandoverStatus::StudentReady : HandoverStatus::CommitteeReady);
         if ($both) {
-            $handover->qr_token_hash = hash('sha256', $this->token($handover));
+            $handover->qr_token_hash = hash('sha256', (string) $handover->student->qr_token);
         }
         $handover->save();
     }
 
-    /** The one-time token shown as a QR on the student's screen; only once both sides are ready. */
+    /** What the student's screen shows: their own profile QR (the same one on their profile page). */
     public function qrPayload(CashHandover $handover, User $student): ?string
     {
         $this->assertParty($handover, $student, 'student');
 
-        return in_array($handover->status, [HandoverStatus::BothReady, HandoverStatus::PhotoTaken], true) ? $this->token($handover) : null;
+        return in_array($handover->status, [HandoverStatus::BothReady, HandoverStatus::PhotoTaken], true) ? route('profile.public', $student->qr_token) : null;
     }
 
-    /** The committee member's photo must contain this handover's QR (decoded server-side). Retakes allowed. */
+    /**
+     * The member's photo must contain this student's profile QR (read on the server) and the cash. AI checks the
+     * cash when available; otherwise the member confirms it on the next screen. Retakes allowed.
+     */
     public function photo(CashHandover $handover, User $committee, UploadedFile $photo): void
     {
         $this->assertParty($handover, $committee, 'committee');
         $this->assertStatus($handover, [HandoverStatus::BothReady, HandoverStatus::PhotoTaken]);
 
         $decoded = $this->decode($photo->getRealPath());
-        if ($decoded === null || ! hash_equals((string) $handover->qr_token_hash, hash('sha256', $decoded))) {
-            throw new DomainException("The photo doesn't show this payment's QR code clearly. Retake it with the student's screen and the cash in view.");
+        $token = $decoded !== null && preg_match('#/p/([A-Za-z0-9_-]+)#', $decoded, $m) ? $m[1] : null;
+        if ($token === null) {
+            throw new DomainException("The photo doesn't show the student's QR code clearly. Retake it with the student's phone and the cash in view.");
+        }
+        if (! hash_equals((string) $handover->qr_token_hash, hash('sha256', $token))) {
+            throw new DomainException("That QR code belongs to someone else. Scan {$handover->student->name}'s own QR code.");
+        }
+
+        $cash = $this->cashChecker->check($photo->getRealPath(), $handover->payment->amount_sen);
+        if ($cash !== null && ! $cash['cash_visible']) {
+            throw new DomainException('No cash can be seen in the photo. Retake it with the cash next to the student\'s phone.');
         }
 
         if ($handover->photo_path) {
@@ -107,6 +123,7 @@ class CashHandovers
         }
         $handover->update([
             'photo_path' => $photo->store("cash-handovers/{$handover->id}", 'local'),
+            'cash_check' => $cash !== null ? 'ai' : 'needs_confirmation',
             'status' => HandoverStatus::PhotoTaken,
             'photo_taken_at' => now(),
             'student_done_at' => null,
@@ -114,11 +131,22 @@ class CashHandovers
         ]);
     }
 
+    /** Without AI, the member confirms the cash in the photo matches the fee. */
+    public function confirmCash(CashHandover $handover, User $committee): void
+    {
+        $this->assertParty($handover, $committee, 'committee');
+        $this->assertStatus($handover, [HandoverStatus::PhotoTaken]);
+        $handover->update(['cash_check' => 'committee']);
+    }
+
     /** Both tap "Transaction done" → membership active, ledger income, receipts to both. */
     public function done(CashHandover $handover, User $user): void
     {
         $side = $this->assertParty($handover, $user);
         $this->assertStatus($handover, [HandoverStatus::PhotoTaken]);
+        if (! in_array($handover->cash_check, ['ai', 'committee'], true)) {
+            throw new DomainException('The committee member must confirm the cash in the photo first.');
+        }
         $handover->update([$side === 'student' ? 'student_done_at' : 'committee_done_at' => now()]);
 
         if ($handover->student_done_at && $handover->committee_done_at) {
@@ -129,7 +157,7 @@ class CashHandovers
                 }
                 $payment = $handover->payment;
                 $payment->update(['status' => PaymentStatus::Confirmed, 'verified_by' => $handover->committee_user_id, 'verified_at' => now()]);
-                $this->memberships->activate($payment, "Membership fee (cash) – collected by {$handover->committee->name}");
+                $this->memberships->activate($payment, "Membership fee (cash) – {$handover->student->name}");
                 $this->audit->log('payment.cash_completed', $payment->club, ['payment_id' => $payment->id, 'collected_by' => $handover->committee_user_id]);
 
                 return true;
@@ -174,12 +202,6 @@ class CashHandovers
         return RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $membership->club_id)
             ->where('session_id', $this->sessions->current()->id)->where('role', ScopedRole::ClubCommittee)
             ->where('user_id', $user->id)->exists();
-    }
-
-    /** Derived, never stored: changes if either "ready" is re-tapped, and dies with the handover. */
-    private function token(CashHandover $handover): string
-    {
-        return 'QIU-CASH:'.substr(hash_hmac('sha256', "{$handover->id}|{$handover->student_ready_at?->timestamp}|{$handover->committee_ready_at?->timestamp}", (string) config('app.key')), 0, 32);
     }
 
     private function decode(string $path): ?string

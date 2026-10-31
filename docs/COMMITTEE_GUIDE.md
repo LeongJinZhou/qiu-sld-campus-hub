@@ -18,15 +18,17 @@ Open your club from **Clubs**. As committee you see extra buttons: **New event p
 3. **When approved**, the event is posted to the feed, the poster checklist and QR attendance unlock, and you can request funds.
 4. **Poster.** Tick every item on the checklist (logos, title, date, time, venue, registration, CCA, contact) and upload it. Use real QIU photos only.
 5. **Outdoor / off-campus?** Everyone attending must sign the indemnity form; signing closes 3 days before the event. People who haven't signed get a reminder, and cannot clock in.
-6. **On the day.** Show the rotating QR on a screen; participants scan to clock in and out. You can also scan their profile QR or type a student ID.
+6. **On the day.** Show the rotating QR on a screen; participants scan to clock in and out. You can also scan a student's **personal QR** to **register** them for the event or clock them in or out, or type a student ID.
 7. **Afterwards.** Within **1 week**: finance record and receipts. Within **2 weeks**: post mortem, attendance list, survey, reel. The post mortem header (participants, committee) fills itself; AI can suggest improvements. Reminders are automatic.
 
 ## Money (Treasurer)
 
 - **Fee.** Set the membership fee for the session; SLD approves it.
 - **Online payments.** Students upload a receipt. AI reads the amount, date, reference and payee and confirms it automatically when everything matches. Anything unclear lands in **Payment review** with the AI reading beside the image.
-- **Cash.** The student picks you, you accept, both tap ready, their screen shows a one-time QR, you take one photo of the QR and the cash, then both tap done. The receipt goes to both of you.
-- **Ledger.** SLD enters the opening balance first. Every expense needs the original receipt (not a bank screenshot). Export the 02 Finance Record any time.
+- **Cash.** The student picks you and you accept. Meet, both tap **Ready**, and the student's phone shows their **personal QR** (the same as on their profile). Point your camera at it with the cash in the same picture: it **captures by itself** once it sees that student's QR (someone else's QR is refused). The photo is checked for cash (by AI when enabled, otherwise you confirm), you can **Retake**, then both tap **Transaction done**. Membership starts at once; the club's finance records it as *Membership · Cash · received by you*, with the photo attached.
+- **Finance sorts itself.** Every transaction is filed automatically: membership fees under *Membership* (with the method and who received the cash), approved fund withdrawals under their *event*, and anything you add under the event you pick. Nobody needs to re-sort the ledger.
+- **Finance page = the year's report.** Pick the session to see brought forward, income, expenses and closing balance, a breakdown *by type* and *by event*, and every transaction with its evidence (receipt, online payment receipt, cash photo or 07 form). Filter by type, event, payment method, dates or text, sort it, and export the official 02 Finance Record exactly as filtered — this is the AGM Financial Report.
+- **Ledger rules.** SLD enters the opening balance first. Every expense needs the original receipt (not a bank screenshot); a receipt can also be attached to a transaction afterwards.
 - **Fund withdrawal (07).** Items come from the approved budget. For events, request right after approval; for weekly activities, at least 2 weeks ahead. Chain: Secretary → President → Advisor → Assistant Registrar → Bursar → COO.
 
 ## Meetings and minutes (Secretary)

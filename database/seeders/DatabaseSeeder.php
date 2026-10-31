@@ -12,7 +12,7 @@ class DatabaseSeeder extends Seeder
 
         // Demo clubs and events: locally, and on a hosted demo (DEMO_LOGIN=true). Never in a pilot.
         if (app()->isLocal() || config('sld.demo_login')) {
-            $this->call([DemoClubsSeeder::class, DemoEventsSeeder::class]);
+            $this->call([DemoClubsSeeder::class, DemoEventsSeeder::class, DemoFinanceSeeder::class]);
         }
     }
 }
