@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PersonPicker from '@/Components/ui/PersonPicker.vue';
+import PositionPicker from '@/Components/ui/PositionPicker.vue';
 import { watchDebounced } from '@vueuse/core';
 import { useLeaveReminder } from '@/composables/useLeaveReminder';
 import BudgetTable from '@/Components/forms/BudgetTable.vue';
@@ -103,9 +105,16 @@ const submit = (): void => {
 };
 
 const member = useForm({ student_number: '', position: '', responsibility: '' });
-const addMember = (): void => member.post(`/events/${props.event.slug}/committee`, { preserveScroll: true, onSuccess: () => member.reset() });
+const memberPicker = ref<InstanceType<typeof PersonPicker> | null>(null);
+const addMember = (): void =>
+    member.post(`/events/${props.event.slug}/committee`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            member.reset();
+            memberPicker.value?.clear();
+        },
+    });
 const removeMember = (id: number): void => router.delete(`/events/${props.event.slug}/committee/${id}`, { preserveScroll: true });
-const positionOptions = computed(() => props.options.compulsoryPositions.filter((p) => !props.committee.some((c) => c.position === p)));
 </script>
 
 <template>
@@ -231,9 +240,9 @@ const positionOptions = computed(() => props.options.compulsoryPositions.filter(
                     </li>
                 </ul>
                 <p v-if="missingCommittee.length" class="text-sm text-warning">Still needed: {{ missingCommittee.join(', ') }}</p>
-                <div v-if="!readOnly" class="grid gap-3 rounded-control bg-surface-muted p-4 sm:grid-cols-[1fr_1fr_1.5fr_auto] sm:items-end">
-                    <Input v-model="member.position" label="Position" :placeholder="positionOptions[0] ?? 'e.g. Logistics Head'" :error="member.errors.position" />
-                    <Input v-model="member.student_number" label="Student ID" placeholder="QIU-202407-0001" :error="member.errors.student_number" />
+                <div v-if="!readOnly" class="grid gap-3 rounded-control bg-surface-muted p-4 sm:grid-cols-[1.4fr_1fr_1.2fr_auto] sm:items-end">
+                    <PersonPicker ref="memberPicker" v-model="member.student_number" label="Name, email or student ID" :error="member.errors.student_number" />
+                    <PositionPicker v-model="member.position" :required="options.compulsoryPositions" :taken="committee.map((c) => c.position)" :error="member.errors.position" />
                     <Input v-model="member.responsibility" label="Responsibility" :error="member.errors.responsibility" />
                     <Button variant="secondary" :loading="member.processing" @click="addMember">Add</Button>
                 </div>

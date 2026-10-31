@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PersonPicker from '@/Components/ui/PersonPicker.vue';
 import { matchesSearch } from '@/lib/search';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
@@ -115,7 +116,15 @@ const filtered = computed(() => {
 
 /* ---------- Helpers & sign-off (organisers) ---------- */
 const helper = useForm({ student_number: '' });
-const addHelper = (): void => helper.post(`/events/${props.event.slug}/helpers`, { preserveScroll: true, onSuccess: () => helper.reset() });
+const helperPicker = ref<InstanceType<typeof PersonPicker> | null>(null);
+const addHelper = (): void =>
+    helper.post(`/events/${props.event.slug}/helpers`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            helper.reset();
+            helperPicker.value?.clear();
+        },
+    });
 const removeHelper = (id: number): void => router.delete(`/events/${props.event.slug}/helpers/${id}`, { preserveScroll: true });
 const signing = ref(false);
 const sign = useForm({ signature: null as string | null, signature_strokes: null as string | null });
@@ -272,7 +281,7 @@ const canSubmit = computed(() => props.can.manage && props.event.attendance_open
                         <li v-if="!helpers.length" class="text-sm text-ink-muted">No helpers yet.</li>
                     </ul>
                     <form class="flex items-end gap-2" @submit.prevent="addHelper">
-                        <Input v-model="helper.student_number" label="Add by student ID" placeholder="QIU-202407-0001" class="flex-1" :error="helper.errors.student_number" />
+                        <PersonPicker ref="helperPicker" v-model="helper.student_number" label="Add a helper (name, email or student ID)" class="flex-1" :error="helper.errors.student_number" />
                         <Button type="submit" variant="secondary" :loading="helper.processing">Add</Button>
                     </form>
                 </Card>
