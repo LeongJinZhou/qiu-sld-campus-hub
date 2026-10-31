@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { date } from '@/lib/format';
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
 import Input from '@/Components/ui/Input.vue';
@@ -90,7 +91,7 @@ const save = {
                 <ul class="mb-4 divide-y divide-line rounded-control border border-line text-sm">
                     <li v-for="s in sessions" :key="s.name" class="flex items-center justify-between gap-3 px-3 py-2">
                         <span class="font-medium">{{ s.name }}<span v-if="s.name === currentSession" class="ml-2 rounded-full bg-success/10 px-2 py-0.5 text-xs text-success">current</span></span>
-                        <span class="text-ink-muted">{{ s.starts_on }} → {{ s.ends_on }}</span>
+                        <span class="text-ink-muted">{{ date(s.starts_on) }} – {{ date(s.ends_on) }}</span>
                     </li>
                 </ul>
                 <form class="grid gap-2" @submit.prevent="save.session">

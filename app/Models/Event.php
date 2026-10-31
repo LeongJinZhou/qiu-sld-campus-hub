@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,7 @@ use Illuminate\Support\Str;
 #[Fillable([
     'club_id', 'session_id', 'name', 'summary', 'starts_at', 'ends_at', 'venue', 'mode', 'expected_participants',
     'is_outdoor', 'is_faculty_event', 'cca_participant', 'cca_committee', 'status', 'poster_path', 'poster_checklist',
-    'registration_open', 'attendance_open', 'approved_at',
+    'registration_open', 'members_only', 'attendance_open', 'qr_rotate_seconds', 'approved_at', 'fee_sen', 'payment_url', 'payment_account_name', 'payment_qr_paths',
 ])]
 #[Hidden(['attendance_secret'])]
 class Event extends Model
@@ -38,10 +39,14 @@ class Event extends Model
             'is_outdoor' => 'boolean',
             'is_faculty_event' => 'boolean',
             'registration_open' => 'boolean',
+            'members_only' => 'boolean',
             'attendance_open' => 'boolean',
+            'qr_rotate_seconds' => 'integer',
             'cca_participant' => 'float',
             'cca_committee' => 'float',
             'poster_checklist' => 'array',
+            'payment_qr_paths' => 'array',
+            'fee_sen' => 'integer',
             'status' => DocumentStatus::class,
         ];
     }
@@ -87,6 +92,12 @@ class Event extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(EventRegistration::class);
+    }
+
+    /** Students allowed to scan tickets and attendance for this event. @return BelongsToMany<User, $this> */
+    public function helpers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'event_helpers')->withPivot('added_by')->withTimestamps();
     }
 
     /** @return HasMany<Attendance, $this> */

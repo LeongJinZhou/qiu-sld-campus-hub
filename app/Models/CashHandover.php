@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'payment_id', 'student_id', 'committee_user_id', 'status', 'qr_token_hash', 'photo_path', 'accepted_at', 'declined_at',
+    'payment_id', 'student_id', 'committee_user_id', 'status', 'qr_token_hash', 'photo_path', 'cash_check', 'accepted_at', 'declined_at',
     'student_ready_at', 'committee_ready_at', 'photo_taken_at', 'student_done_at', 'committee_done_at', 'completed_at', 'expires_at',
 ])]
 #[Hidden(['qr_token_hash', 'photo_path'])]

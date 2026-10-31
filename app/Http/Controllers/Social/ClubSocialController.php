@@ -10,6 +10,7 @@ use App\Models\ClubFaq;
 use App\Models\Highlight;
 use App\Models\Story;
 use App\Services\Social\FeedQuery;
+use App\Services\Social\SocialNotifier;
 use App\Services\Time\SessionResolver;
 use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
@@ -22,9 +23,11 @@ use Illuminate\Validation\Rule;
 /** Follow, stories, highlights, gallery and FAQ for a club. Publishing is limited to the club's people and SLD. */
 class ClubSocialController extends Controller
 {
-    public function follow(Request $request, Club $club): RedirectResponse
+    public function follow(Request $request, Club $club, SocialNotifier $notifier): RedirectResponse
     {
-        $club->followers()->toggle($request->user()->id);
+        if ($club->followers()->toggle($request->user()->id)['attached'] !== []) {
+            $notifier->notify($club, $request->user(), 'follows', $club->name, route('clubs.show', $club), "follows:club:{$club->id}");
+        }
         Cache::forget(FeedQuery::followedKey($request->user()->id));
 
         return back();

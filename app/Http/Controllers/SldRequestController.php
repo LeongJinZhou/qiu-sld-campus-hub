@@ -24,8 +24,8 @@ class SldRequestController extends Controller
             'clubs' => Club::orderBy('name')->get(['id', 'name'])->map(fn (Club $c) => ['value' => $c->id, 'label' => $c->name]),
             'requests' => SldRequest::with(['club', 'repliedBy'])->latest()->limit(100)->get()->map(fn (SldRequest $r) => [
                 'id' => $r->id, 'club' => $r->club->name, 'subject' => $r->subject, 'body' => $r->body,
-                'due_on' => $r->due_on->toFormattedDateString(), 'overdue' => $r->isOverdue(),
-                'reply' => $r->reply, 'replied_by' => $r->repliedBy?->name, 'replied_at' => $r->replied_at?->toFormattedDateString(),
+                'due_on' => $r->due_on->format('j M Y'), 'overdue' => $r->isOverdue(),
+                'reply' => $r->reply, 'replied_by' => $r->repliedBy?->name, 'replied_at' => $r->replied_at?->format('j M Y'),
             ]),
         ]);
     }

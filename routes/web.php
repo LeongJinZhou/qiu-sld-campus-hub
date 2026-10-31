@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivitiesController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Agm\AgmController;
 use App\Http\Controllers\Agm\AgmReportController;
@@ -17,21 +18,26 @@ use App\Http\Controllers\Events\AttendanceController;
 use App\Http\Controllers\Events\EventCommitteeController;
 use App\Http\Controllers\Events\EventController;
 use App\Http\Controllers\Events\EventDocumentController;
+use App\Http\Controllers\Events\EventPaymentController;
 use App\Http\Controllers\Events\EventRegistrationController;
 use App\Http\Controllers\Events\IndemnityController;
 use App\Http\Controllers\Events\PosterController;
 use App\Http\Controllers\Events\PostMortemController;
 use App\Http\Controllers\Events\ProposalController;
+use App\Http\Controllers\Events\TicketController;
 use App\Http\Controllers\Finance\FinanceController;
+use App\Http\Controllers\Finance\PaymentBreakdownController;
 use App\Http\Controllers\Meetings\GoogleCalendarController;
 use App\Http\Controllers\Meetings\MeetingController;
 use App\Http\Controllers\Membership\FeeController;
 use App\Http\Controllers\Membership\HandoverController;
 use App\Http\Controllers\Membership\MembersController;
 use App\Http\Controllers\Membership\MembershipController;
+use App\Http\Controllers\Membership\ParticipantsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SldRequestController;
 use App\Http\Controllers\Social\ClubSocialController;
 use App\Http\Controllers\Social\FeedController;
@@ -39,16 +45,17 @@ use App\Http\Controllers\Social\PostController;
 use App\Http\Controllers\Venues\VenueController;
 use App\Http\Controllers\VerifyController;
 use App\Models\Club;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware('guest')->group(function () {
-    Route::get('/', fn () => Inertia::render('Auth/Login', ['devLogin' => app()->isLocal()]))->name('login');
+    Route::get('/', fn () => Inertia::render('Auth/Login', ['devLogin' => config('sld.demo_login')]))->name('login');
     Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('auth.google');
     Route::get('/auth/google/alumni', [GoogleController::class, 'alumni'])->name('auth.google.alumni');
     Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->middleware('throttle:10,1');
 
-    if (app()->isLocal()) {
+    if (config('sld.demo_login')) {
         Route::get('/dev/login-as', [DevLoginController::class, 'index'])->name('dev.login');
         Route::post('/dev/login-as', [DevLoginController::class, 'store'])->middleware('throttle:30,1');
     }
@@ -69,7 +76,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/comments', [PostController::class, 'comment'])->middleware('throttle:20,1')->name('posts.comment');
     Route::post('/posts/{post}/report', [PostController::class, 'report'])->middleware('throttle:10,1')->name('posts.report');
 
-    Route::get('/clubs', [ClubController::class, 'index'])->name('clubs.index');
+    Route::get('/search', SearchController::class)->name('search');
+    Route::get('/clubs', fn (Request $request) => to_route('search', ['type' => 'clubs', 'q' => $request->query('search')]))->name('clubs.index');
     Route::post('/clubs/{club}/posts', [PostController::class, 'store'])->name('clubs.posts.store');
     Route::post('/clubs/{club}/follow', [ClubSocialController::class, 'follow'])->name('clubs.follow');
     Route::post('/clubs/{club}/stories', [ClubSocialController::class, 'storeStory'])->name('clubs.stories.store');
@@ -86,12 +94,22 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/events', [EventController::class, 'store'])->name('events.store');
     Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
     Route::post('/events/{event}/register', [EventRegistrationController::class, 'store'])->name('events.register');
+    Route::put('/events/{event}/payment-settings', [EventPaymentController::class, 'settings'])->name('events.payment-settings');
+    Route::get('/events/{event}/pay', [EventPaymentController::class, 'show'])->name('events.pay');
+    Route::post('/events/{event}/pay/receipt', [EventPaymentController::class, 'receipt'])->middleware('throttle:10,1')->name('events.pay.receipt');
+    Route::post('/events/{event}/pay/cash', [EventPaymentController::class, 'cash'])->middleware('throttle:10,1')->name('events.pay.cash');
     Route::delete('/events/{event}/register', [EventRegistrationController::class, 'destroy'])->name('events.unregister');
+    Route::put('/events/{event}/registration-settings', [EventRegistrationController::class, 'settings'])->name('events.registration.settings');
     Route::get('/events/{event}/attend', [AttendanceController::class, 'attend'])->middleware('throttle:20,1')->name('events.attend');
     Route::get('/events/{event}/attendance', [AttendanceController::class, 'index'])->name('events.attendance');
     Route::post('/events/{event}/attendance', [AttendanceController::class, 'record'])->middleware('throttle:120,1')->name('events.attendance.record');
     Route::get('/events/{event}/attendance/export', [AttendanceController::class, 'export'])->name('events.attendance.export');
     Route::post('/events/{event}/attendance/submit', [AttendanceController::class, 'submit'])->name('events.attendance.submit');
+    Route::put('/events/{event}/attendance/settings', [AttendanceController::class, 'settings'])->name('events.attendance.settings');
+    Route::post('/events/{event}/helpers', [AttendanceController::class, 'addHelper'])->name('events.helpers.store');
+    Route::delete('/events/{event}/helpers/{helper}', [AttendanceController::class, 'removeHelper'])->name('events.helpers.destroy');
+    Route::get('/tickets/{code}', [TicketController::class, 'show'])->where('code', '[A-Za-z0-9]{32}')->name('tickets.show');
+    Route::get('/t/{code}', [TicketController::class, 'scan'])->where('code', '[A-Za-z0-9]{32}')->name('tickets.scan');
     Route::get('/events/{event}/poster', [PosterController::class, 'edit'])->name('events.poster');
     Route::post('/events/{event}/poster', [PosterController::class, 'update'])->name('events.poster.update');
     Route::get('/events/{event}/post-mortem', [PostMortemController::class, 'show'])->name('events.post-mortem');
@@ -108,6 +126,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/proposal', [ProposalController::class, 'edit'])->name('proposals.edit');
     Route::put('/events/{event}/proposal', [ProposalController::class, 'update'])->name('proposals.update');
     Route::post('/events/{event}/proposal/submit', [ProposalController::class, 'submit'])->name('proposals.submit');
+    Route::post('/events/{event}/proposal/ask', [ProposalController::class, 'askToSubmit'])->middleware('throttle:10,1')->name('proposals.ask');
+    Route::delete('/events/{event}/proposal', [ProposalController::class, 'discard'])->name('proposals.discard');
     Route::post('/events/{event}/committee', [EventCommitteeController::class, 'store'])->name('events.committee.store');
     Route::delete('/events/{event}/committee/{assignment}', [EventCommitteeController::class, 'destroy'])->name('events.committee.destroy');
 
@@ -123,6 +143,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/join', [MembershipController::class, 'join'])->middleware('throttle:10,1')->name('membership.store');
     Route::post('/clubs/{club}/join/receipt', [MembershipController::class, 'receipt'])->middleware('throttle:10,1')->name('membership.receipt');
     Route::post('/clubs/{club}/join/cash', [MembershipController::class, 'cash'])->middleware('throttle:10,1')->name('membership.cash');
+    Route::get('/clubs/{club}/participants', [ParticipantsController::class, 'index'])->name('clubs.participants');
+    Route::get('/clubs/{club}/participants/export/{format}', [ParticipantsController::class, 'export'])->name('clubs.participants.export');
     Route::get('/clubs/{club}/members', [MembersController::class, 'club'])->name('members.club');
     Route::get('/clubs/{club}/members/export/{format}', [MembersController::class, 'export'])->name('members.export');
     Route::post('/clubs/{club}/members/remind', [MembersController::class, 'remind'])->middleware('throttle:5,1')->name('members.remind');
@@ -133,6 +155,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/finance/entries', [FinanceController::class, 'entry'])->name('finance.entry');
     Route::get('/clubs/{club}/finance/receipts/{receipt}', [FinanceController::class, 'receipt'])->middleware('signed')->name('finance.receipt');
     Route::get('/clubs/{club}/finance/export/{format}', [FinanceController::class, 'export'])->name('finance.export');
+    Route::get('/clubs/{club}/finance/membership', [PaymentBreakdownController::class, 'membership'])->name('finance.membership');
+    Route::get('/clubs/{club}/finance/membership/export/{format}', [PaymentBreakdownController::class, 'exportMembership'])->name('finance.membership.export');
+    Route::get('/clubs/{club}/finance/events/{event}', [PaymentBreakdownController::class, 'event'])->name('finance.event');
+    Route::get('/clubs/{club}/finance/events/{event}/export/{format}', [PaymentBreakdownController::class, 'exportEvent'])->name('finance.event.export');
+    Route::post('/clubs/{club}/finance/entries/{entry}/receipt', [FinanceController::class, 'attachReceipt'])->name('finance.entry.receipt');
     Route::post('/clubs/{club}/finance/payees', [FinanceController::class, 'payee'])->name('finance.payees');
     Route::get('/clubs/{club}/fund-requests/create', [FinanceController::class, 'requestForm'])->name('fund.create');
     Route::post('/clubs/{club}/fund-requests', [FinanceController::class, 'submitRequest'])->name('fund.store');
@@ -172,6 +199,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/clubs/{club}/fee', [FeeController::class, 'store'])->name('fees.store');
     Route::get('/handovers/{handover}', [HandoverController::class, 'show'])->name('handovers.show');
     Route::post('/handovers/{handover}', [HandoverController::class, 'act'])->middleware('throttle:60,1')->name('handovers.act');
+    Route::get('/handovers/{handover}/photo', [HandoverController::class, 'photo'])->middleware('signed')->name('handovers.photo');
+    Route::get('/activities', ActivitiesController::class)->name('activities');
+    Route::redirect('/my-clubs', '/activities');
+    Route::put('/notifications/mutes', [NotificationController::class, 'mutes'])->name('notifications.mutes');
+    Route::post('/notifications/left-halfway', [NotificationController::class, 'leftHalfway'])->middleware('throttle:30,1')->name('notifications.left');
     Route::get('/me', [ProfileController::class, 'show'])->name('profile.me');
     Route::get('/me/certificates/{kind}/{source}', [CertificateController::class, 'download'])->middleware('throttle:20,1')->whereNumber('source')->name('certificates.download');
     Route::post('/me', [ProfileController::class, 'update'])->name('profile.update');

@@ -84,7 +84,7 @@ const readOnly = computed(() => !props.minutes.editable);
                     <ApprovalTracker :progress="minutes.approval.progress" :steps="minutes.approval.steps" />
                 </section>
 
-                <div v-if="minutes.downloads.length" class="flex gap-2">
+                <div v-if="minutes.downloads.length" class="flex flex-wrap gap-2">
                     <a v-for="f in minutes.downloads" :key="f" :href="`/documents/${minutes.id}/download/${f}`"><Button variant="secondary" size="sm">Official 13 Minutes ({{ f.toUpperCase() }})</Button></a>
                 </div>
 
