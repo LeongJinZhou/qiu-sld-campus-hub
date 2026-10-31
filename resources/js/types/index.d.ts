@@ -163,7 +163,7 @@ export interface ProfileData {
     title: string | null;
     department: string | null;
     stats: { clubs: number | null; positions: number | null; events: number | null; cca_hours: number | null };
-    clubs: { name: string; url: string; logo_url: string | null; category: string | null; current_position: string | null }[] | null;
+    clubs: { name: string; url: string; logo_url: string | null; category: string | null; current_position: string | null; membership: string | null }[] | null;
     positions: { session: string | null; organisation: string | null; url: string | null; position: string; kind: 'club' | 'event' }[] | null;
     events: { name: string; url: string; club: string; date: string; role: string; poster_url: string | null }[] | null;
     cca: { total: number; records: { event: string; date: string; role: string; hours: number }[] } | null;
