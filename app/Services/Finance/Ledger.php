@@ -114,17 +114,17 @@ class Ledger
         $rows = [];
         if ($opening) {
             $rows[] = ['id' => null, 'date' => $opening->as_of->toDateString(), 'description' => 'Opening Acc', 'income_sen' => 0, 'expense_sen' => 0, 'balance_sen' => $balance,
-                'category' => 'opening', 'event_id' => null, 'event' => null, 'method' => null, 'handled_by' => null, 'has_receipt' => false, 'receipt_id' => null,
+                'category' => 'opening', 'order_id' => null, 'event_id' => null, 'event_slug' => null, 'event' => null, 'method' => null, 'handled_by' => null, 'has_receipt' => false, 'receipt_id' => null,
                 'payment_id' => null, 'handover_id' => null, 'has_photo' => false, 'has_payment_receipt' => false, 'document_id' => null];
         }
-        $entries = $club->ledger()->with(['event:id,name', 'handler:id,name', 'source'])->orderBy('entry_date')->orderBy('id')->get();
+        $entries = $club->ledger()->with(['event:id,name,slug', 'handler:id,name', 'source'])->orderBy('entry_date')->orderBy('id')->get();
         foreach ($entries as $entry) {
             $balance += $entry->income_sen - $entry->expense_sen;
             $payment = $entry->source instanceof MembershipPayment ? $entry->source->loadMissing('handover') : null;
             $rows[] = [
                 'id' => $entry->id, 'date' => $entry->entry_date->toDateString(), 'description' => $entry->description,
                 'income_sen' => $entry->income_sen, 'expense_sen' => $entry->expense_sen, 'balance_sen' => $balance,
-                'category' => $entry->category, 'event_id' => $entry->event_id, 'event' => $entry->event?->name,
+                'category' => $entry->category, 'order_id' => $entry->order_id, 'event_id' => $entry->event_id, 'event_slug' => $entry->event?->slug, 'event' => $entry->event?->name,
                 'method' => $entry->method, 'handled_by' => $entry->handler?->name,
                 'has_receipt' => $entry->receipt_id !== null, 'receipt_id' => $entry->receipt_id,
                 'payment_id' => $payment?->id, 'has_payment_receipt' => (bool) $payment?->receipt_path,
