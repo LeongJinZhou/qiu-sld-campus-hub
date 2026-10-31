@@ -13,7 +13,7 @@ class AgmReportDocx
 {
     public const TEMPLATE = '01. AGM Template.docx';
 
-    private const SIGNERS = ['secretary' => 'Secretary', 'president' => 'President', 'advisor' => 'Advisor'];
+    private const SIGNERS = ['preparer' => 'Secretary', 'president' => 'President', 'advisor' => 'Advisor'];
 
     public function __construct(private readonly DocxRenderer $docx, private readonly AgmReportForm $form) {}
 

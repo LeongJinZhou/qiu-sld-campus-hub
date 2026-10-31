@@ -12,7 +12,7 @@ import Modal from '@/Components/ui/Modal.vue';
 import QrCode from '@/Components/ui/QrCode.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import type { ProfileData } from '@/types';
-import { Deferred, Head, Link, useForm } from '@inertiajs/vue3';
+import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -25,6 +25,7 @@ const props = defineProps<{
     certificates: { kind: string; source_id: number; title: string; statement: string; date: string; code: string | null }[];
 }>();
 
+const nav = computed(() => usePage().props.nav);
 const editing = ref(false);
 const photo = ref(false);
 const qr = ref(false);
@@ -94,6 +95,13 @@ async function share(): Promise<void> {
                 </Deferred>
             </template>
         </ProfileView>
+
+        <!-- Phones have no sidebar, so account actions sit at the bottom of the profile. -->
+        <section class="mt-6 grid gap-2 md:hidden">
+            <Link href="/my-clubs" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"><Icon name="users" :size="18" /> My clubs</Link>
+            <Link v-if="nav?.isAdmin" href="/admin" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"><Icon name="shield" :size="18" /> SLD Admin</Link>
+            <button type="button" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left text-sm font-medium text-danger shadow-card" @click="router.post('/logout')"><Icon name="logout" :size="18" /> Sign out</button>
+        </section>
 
         <PhotoEditor v-model:open="photo" :current="profile.photo_url" :name="profile.name" :has-override="account.has_photo_override" />
 

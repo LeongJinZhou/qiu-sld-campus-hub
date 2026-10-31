@@ -104,7 +104,7 @@ const tone = (a?: string): 'success' | 'neutral' | 'info' => (a === 'present' ? 
                         <LockedField label="Date" :value="record.date" />
                         <LockedField label="Time" :value="record.time" />
                         <LockedField label="Venue" :value="record.venue" />
-                        <LockedField label="Prepared by (Secretary)" :value="record.signers.Secretary" />
+                        <LockedField label="Prepared by" value="Whoever signs and submits (their name and position)" />
                         <LockedField label="Checked by (President)" :value="record.signers.President" />
                         <LockedField label="Reviewed by (Advisor)" :value="record.signers.Advisor" />
                     </div>
@@ -174,10 +174,10 @@ const tone = (a?: string): 'success' | 'neutral' | 'info' => (a === 'present' ? 
             </aside>
         </div>
 
-        <Modal v-model:open="signing" title="Prepared by — Secretary">
+        <Modal v-model:open="signing" title="Prepared by">
             <div class="grid gap-4">
                 <p class="text-sm text-ink-muted">Then: President → Club Advisor → SLD. Attendance, committee and election sections are frozen as they are now.</p>
-                <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Signature" :signer="record.signers.Secretary ?? undefined" />
+                <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Your signature" />
                 <p v-if="Object.keys(form.errors).length" class="text-sm text-danger">{{ Object.values(form.errors)[0] }}</p>
                 <Button :disabled="!form.signature" :loading="form.processing" @click="submit">Submit AGM Report</Button>
             </div>

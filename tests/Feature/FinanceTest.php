@@ -5,6 +5,7 @@ use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Models\Document;
 use App\Models\Payee;
+use App\Models\User;
 use App\Services\Documents\DocumentExporter;
 use App\Services\Documents\DocxRenderer;
 use App\Services\Documents\FinanceRecordExport;
@@ -98,7 +99,7 @@ it('encrypts payee bank details at rest', function () {
         ->and($payee->toArray())->not->toHaveKey('account_number');
 });
 
-it('runs a fund withdrawal through Secretary → President → Advisor → AR → Bursar → COO and prints the 07 form', function () {
+it('runs a fund withdrawal through Preparer → President → Advisor → AR → Bursar → COO and prints the 07 form', function () {
     approvedEventWithBudget($this);
     $payee = Payee::create(['club_id' => $this->club->id, 'kind' => 'treasurer', 'name' => $this->treasurer->name, 'bank_name' => 'CIMB', 'account_holder' => $this->treasurer->name, 'account_number' => '7001234567']);
 
@@ -110,7 +111,7 @@ it('runs a fund withdrawal through Secretary → President → Advisor → AR �
     ])->assertRedirect();
 
     $document = Document::where('type', DocumentType::FundWithdrawal)->firstOrFail();
-    expect($document->approvals()->pluck('role')->all())->toBe([ChainRole::Secretary, ChainRole::President, ChainRole::Advisor, ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo]);
+    expect($document->approvals()->pluck('role')->all())->toBe([ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo]);
     approveRemainingSteps($document);
     expect($document->fresh()->status)->toBe(DocumentStatus::Approved);
 
@@ -132,12 +133,17 @@ it('runs a fund withdrawal through Secretary → President → Advisor → AR �
     unlink($path);
 });
 
-it('only lets the Secretary prepare a fund withdrawal', function () {
+it('lets any committee member prepare a fund withdrawal, signed with their own position, but not outsiders', function () {
     approvedEventWithBudget($this);
-
-    $this->actingAs($this->f['president'])->post("/clubs/{$this->club->slug}/fund-requests", [
+    $payee = Payee::create(['club_id' => $this->club->id, 'kind' => 'vendor', 'name' => 'K', 'bank_name' => 'B', 'account_holder' => 'K', 'account_number' => '1234567']);
+    $request = fn () => [
         'event_id' => $this->f['event']->id, 'purpose' => 'x', 'items' => [['description' => 'Gloves', 'unit_sen' => 500, 'quantity' => 1, 'method' => 'vendor']],
-        'payees' => [['payee_id' => Payee::create(['club_id' => $this->club->id, 'kind' => 'vendor', 'name' => 'K', 'bank_name' => 'B', 'account_holder' => 'K', 'account_number' => '1234567'])->id, 'amount_sen' => 500]],
-        'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
-    ])->assertSessionHas('error', fn ($m) => str_contains($m, 'Secretary'));
+        'payees' => [['payee_id' => $payee->id, 'amount_sen' => 500]], 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
+    ];
+
+    $this->actingAs(User::factory()->create())->post("/clubs/{$this->club->slug}/fund-requests", $request())->assertForbidden();
+    $this->actingAs($this->treasurer)->post("/clubs/{$this->club->slug}/fund-requests", $request())->assertRedirect();
+
+    $first = Document::where('type', DocumentType::FundWithdrawal)->sole()->approvals()->where('step_no', 1)->with('signature')->first();
+    expect($first->approver_user_id)->toBe($this->treasurer->id)->and($first->signature->position_at_time)->toBe('Treasurer');
 });

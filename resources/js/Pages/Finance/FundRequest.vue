@@ -54,7 +54,7 @@ const setPayee = (row: { amount_sen: number }, value: string): void => {
         <div class="grid gap-6">
             <header>
                 <h1 class="text-xl font-bold">Fund Withdrawal / Transfer</h1>
-                <p class="text-sm text-ink-muted">07 template · {{ club.name }} · Secretary → President → Advisor → Assistant Registrar → Bursar (endorse) → COO</p>
+                <p class="text-sm text-ink-muted">07 template · {{ club.name }} · Prepared by you → President → Advisor → Assistant Registrar → Bursar (endorse) → COO</p>
             </header>
 
             <FormSection title="Request">
@@ -95,13 +95,13 @@ const setPayee = (row: { amount_sen: number }, value: string): void => {
             </FormSection>
 
             <div class="flex justify-end">
-                <Button :disabled="!form.items.length || payeeTotal !== total" @click="signing = true">Sign as Secretary &amp; submit</Button>
+                <Button :disabled="!form.items.length || payeeTotal !== total" @click="signing = true">Sign &amp; submit</Button>
             </div>
         </div>
 
-        <Modal v-model:open="signing" title="Prepared by (Secretary)">
+        <Modal v-model:open="signing" title="Prepared by">
             <div class="grid gap-4">
-                <p class="text-sm text-ink-muted">Only the club Secretary<template v-if="secretary"> ({{ secretary }})</template> can submit. Date and time come from the server.</p>
+                <p class="text-sm text-ink-muted">Any committee member can prepare and submit. Your name and position go on the form as "Prepared by". Date and time come from the server.</p>
                 <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Signature" />
                 <p v-if="Object.keys(form.errors).length" class="text-sm text-danger">{{ Object.values(form.errors)[0] }}</p>
                 <Button :disabled="!form.signature" :loading="form.processing" @click="submit">Submit</Button>

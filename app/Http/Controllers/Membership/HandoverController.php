@@ -54,7 +54,7 @@ class HandoverController extends Controller
     public function act(Request $request, CashHandover $handover): RedirectResponse
     {
         $data = $request->validate([
-            'action' => ['required', 'in:accept,decline,ready,photo,confirm_cash,done'],
+            'action' => ['required', 'in:accept,decline,ready,photo,retake,confirm_cash,done'],
             'photo' => ['required_if:action,photo', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288'],
         ]);
         $user = $request->user();
@@ -66,6 +66,7 @@ class HandoverController extends Controller
                 'ready' => $this->handovers->ready($handover, $user),
                 'photo' => $this->handovers->photo($handover, $user, $data['photo']),
                 'confirm_cash' => $this->handovers->confirmCash($handover, $user),
+                'retake' => $this->handovers->retake($handover, $user),
                 'done' => $this->handovers->done($handover, $user),
             };
         } catch (DomainException $e) {
