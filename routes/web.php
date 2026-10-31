@@ -109,6 +109,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/proposal', [ProposalController::class, 'edit'])->name('proposals.edit');
     Route::put('/events/{event}/proposal', [ProposalController::class, 'update'])->name('proposals.update');
     Route::post('/events/{event}/proposal/submit', [ProposalController::class, 'submit'])->name('proposals.submit');
+    Route::post('/events/{event}/proposal/ask', [ProposalController::class, 'askToSubmit'])->middleware('throttle:10,1')->name('proposals.ask');
+    Route::delete('/events/{event}/proposal', [ProposalController::class, 'discard'])->name('proposals.discard');
     Route::post('/events/{event}/committee', [EventCommitteeController::class, 'store'])->name('events.committee.store');
     Route::delete('/events/{event}/committee/{assignment}', [EventCommitteeController::class, 'destroy'])->name('events.committee.destroy');
 

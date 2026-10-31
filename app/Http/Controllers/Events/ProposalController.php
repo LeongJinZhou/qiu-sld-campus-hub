@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Events;
 use App\Enums\ScopeType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Events\ProposalRequest;
+use App\Models\Document;
 use App\Models\Event;
 use App\Models\RoleAssignment;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\DocumentPresenter;
+use App\Services\Events\ProposalDrafts;
 use App\Services\Events\ProposalForm;
 use App\Services\Events\ProposalRules;
+use App\Services\Meetings\Meetings;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use Carbon\CarbonImmutable;
 use DomainException;
@@ -38,6 +41,9 @@ class ProposalController extends Controller
             'editable' => $document->status->isEditable(),
             'approval' => $document->approvals()->exists() ? ['progress' => $presenter->progress($document), 'steps' => $presenter->present($document)['steps']] : null,
             'data' => $this->form->current($document),
+            'lastEdit' => $this->lastEdit($document),
+            'clubCommittee' => app(Meetings::class)->committee($event->club)->reject(fn ($u) => $u->is($user))->values()->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]),
+            'canDiscard' => $document->status->value === 'draft' && ! $document->versions()->where('number', '>', 0)->exists(),
             'locked' => [
                 ...$this->form->lockedFields($document),
                 'prepared_by' => $user->name,
@@ -75,7 +81,8 @@ class ProposalController extends Controller
         }
         $this->form->saveDraft($document, $request->proposalData(), $request->user()->id);
 
-        return back()->with('success', 'Draft saved.');
+        // Autosave runs every few seconds while typing: no message, just the "Saved" indicator.
+        return $request->boolean('autosave') ? back() : back()->with('success', 'Draft saved.');
     }
 
     public function submit(ProposalRequest $request, Event $event, ApprovalEngine $engine): RedirectResponse
@@ -98,5 +105,36 @@ class ProposalController extends Controller
         }
 
         return to_route('documents.show', $document)->with('success', 'Proposal submitted to your advisor.');
+    }
+
+    /** Ask committee members to review and submit (customisable: pick who, add a note). */
+    public function askToSubmit(Request $request, Event $event, ProposalDrafts $drafts): RedirectResponse
+    {
+        Gate::authorize('update', $event);
+        $data = $request->validate(['user_ids' => ['required', 'array', 'min:1'], 'user_ids.*' => ['integer'], 'note' => ['nullable', 'string', 'max:300']]);
+        $sent = $drafts->askToSubmit($event, $request->user(), array_map('intval', $data['user_ids']), $data['note'] ?? null);
+
+        return back()->with('success', $sent === 1 ? 'They have been notified.' : "{$sent} committee members notified.");
+    }
+
+    public function discard(Event $event, ProposalDrafts $drafts): RedirectResponse
+    {
+        Gate::authorize('update', $event);
+        $club = $event->club;
+        try {
+            $drafts->discard($event);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return to_route('clubs.show', $club)->with('success', 'Draft discarded.');
+    }
+
+    /** @return array{by: ?string, at: ?string} who saved the shared draft last, and when */
+    private function lastEdit(Document $document): array
+    {
+        $draft = $document->versions()->where('number', 0)->with('author')->first();
+
+        return ['by' => $draft?->author?->name, 'at' => $draft?->created_at?->toIso8601String()];
     }
 }

@@ -11,8 +11,10 @@ use App\Models\Document;
 use App\Models\Event;
 use App\Models\RoleAssignment;
 use App\Services\Documents\DocumentPresenter;
+use App\Services\Events\ProposalDrafts;
 use App\Services\Events\ProposalRules;
 use App\Services\Time\SessionResolver;
+use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,8 +38,13 @@ class EventController extends Controller
         ]);
     }
 
-    public function store(StoreEventRequest $request, Club $club, SessionResolver $sessions, ProposalRules $rules): RedirectResponse
+    public function store(StoreEventRequest $request, Club $club, SessionResolver $sessions, ProposalRules $rules, ProposalDrafts $drafts): RedirectResponse
     {
+        try {
+            $drafts->assertCanStart($club);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
         $event = DB::transaction(function () use ($request, $club, $sessions, $rules): Event {
             $event = Event::create([
                 ...$request->validated(),
@@ -56,7 +63,9 @@ class EventController extends Controller
             return $event;
         });
 
-        return to_route('proposals.edit', $event)->with('success', 'Event created. Fill in the proposal and the event committee.');
+        $drafts->started($event, $request->user());
+
+        return to_route('proposals.edit', $event)->with('success', 'Proposal started. It saves automatically, and the committee has been told.');
     }
 
     public function show(Request $request, Event $event, DocumentPresenter $presenter): Response
