@@ -94,6 +94,7 @@ const ticketHref = (t: Ticket): string => (t.status === 'unpaid' ? `/events/${t.
                             <Badge v-if="e.live" tone="danger">Live</Badge>
                             <span class="text-xs font-semibold text-brand-blue">Scan →</span>
                         </Link>
+                        <Link :href="`/events/${e.slug}/purchases`" class="mt-1 flex items-center gap-1.5 px-3 text-xs font-medium text-brand-blue"><Icon name="receipt" :size="14" /> Bought something? Claim a purchase</Link>
                     </li>
                 </ul>
             </section>
