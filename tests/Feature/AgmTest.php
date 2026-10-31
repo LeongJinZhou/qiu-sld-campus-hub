@@ -68,19 +68,19 @@ it('marks attendance by the rotating QR only for members, inside the AGM window'
     expect($agm->attendees()->pluck('users.id')->all())->toBe([$member->id]);
 });
 
-it('refuses an AGM Report with fewer than 2 objectives, then runs Secretary → President → Advisor → SLD', function () {
+it('refuses an AGM Report with fewer than 2 objectives, then runs Preparer → President → Advisor → SLD', function () {
     $agm = openPeriodAndAgm($this);
     $payload = ['objectives' => ['Review the session', '', ''], 'speech' => ['Welcome'], 'agenda' => [['start' => '4.00PM', 'end' => '4.10PM', 'item' => 'Arrival & attendance']],
         'adjournment' => 'Adjourned at 6.00 PM.', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()];
 
     $this->actingAs($this->secretary)->post("/agms/{$agm->id}/report/submit", $payload)->assertSessionHas('error', 'Write at least 2 objectives before submitting.');
-    $this->actingAs($this->f['president'])->post("/agms/{$agm->id}/report/submit", [...$payload, 'objectives' => ['A', 'B']])
-        ->assertSessionHas('error');
+    $this->actingAs(User::factory()->create())->post("/agms/{$agm->id}/report/submit", [...$payload, 'objectives' => ['A', 'B']])
+        ->assertForbidden();
 
     $this->actingAs($this->secretary)->post("/agms/{$agm->id}/report/submit", [...$payload, 'objectives' => ['Review the session', 'Elect the committee']])->assertSessionHas('success');
     $document = $agm->report()->first();
     expect($document->status)->toBe(DocumentStatus::InReview)
-        ->and($document->approvals()->orderBy('step_no')->get()->map(fn ($a) => $a->role)->all())->toBe([ChainRole::Secretary, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer])
+        ->and($document->approvals()->orderBy('step_no')->get()->map(fn ($a) => $a->role)->all())->toBe([ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer])
         ->and($document->data()['computed']['club'])->toBe($this->club->name);
     approveRemainingSteps($document);
     expect($document->fresh()->status)->toBe(DocumentStatus::Approved);

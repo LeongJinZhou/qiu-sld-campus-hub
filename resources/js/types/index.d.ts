@@ -13,7 +13,7 @@ export interface Flash {
 
 export interface SharedProps {
     auth: { user: AuthUser | null };
-    nav: { unread: number; isStaff: boolean; isAdmin: boolean; canPublish: boolean } | null;
+    nav: { unread: number; actions: number; isStaff: boolean; isAdmin: boolean; canPublish: boolean } | null;
     flash: Flash;
     [key: string]: unknown;
 }
@@ -155,6 +155,7 @@ export interface StoryGroup {
 export interface ProfileData {
     name: string;
     photo_url: string | null;
+    cover_url: string | null;
     programme: string | null;
     programme_short: string | null;
     year_group: string | null;
@@ -163,7 +164,7 @@ export interface ProfileData {
     title: string | null;
     department: string | null;
     stats: { clubs: number | null; positions: number | null; events: number | null; cca_hours: number | null };
-    clubs: { name: string; url: string; logo_url: string | null; category: string | null; current_position: string | null }[] | null;
+    clubs: { name: string; url: string; logo_url: string | null; category: string | null; current_position: string | null; membership: string | null }[] | null;
     positions: { session: string | null; organisation: string | null; url: string | null; position: string; kind: 'club' | 'event' }[] | null;
     events: { name: string; url: string; club: string; date: string; role: string; poster_url: string | null }[] | null;
     cca: { total: number; records: { event: string; date: string; role: string; hours: number }[] } | null;
@@ -177,4 +178,18 @@ export interface ApprovalProgress {
     waiting_on: string[];
     due_at: string | null;
     overdue: boolean;
+}
+
+export interface Ticket {
+    code: string | null;
+    url: string | null;
+    status: 'paid' | 'free' | 'unpaid' | 'checking';
+    order_id: string | null;
+    amount_sen: number;
+    method: string | null;
+    attendee: { name: string; student_number: string | null; photo_url: string | null };
+    event: { slug: string; name: string; club: string; club_logo: string | null; starts_at: string; ends_at: string; venue: string | null; poster_url: string | null; past: boolean; needs_indemnity: boolean };
+    theme: 'party' | 'nature' | 'online';
+    clock_in: string | null;
+    clock_out: string | null;
 }

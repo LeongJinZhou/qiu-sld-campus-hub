@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
 /** Fee per club per session, set by the Treasurer and approved by SLD. */
-#[Fillable(['club_id', 'session_id', 'amount_sen', 'payment_url', 'account_name', 'set_by', 'approved_by', 'approved_at'])]
+#[Fillable(['club_id', 'session_id', 'amount_sen', 'payment_url', 'account_name', 'payment_qr_paths', 'set_by', 'approved_by', 'approved_at'])]
 class ClubFee extends Model
 {
     protected function casts(): array
     {
-        return ['approved_at' => 'datetime'];
+        return ['approved_at' => 'datetime', 'payment_qr_paths' => 'array'];
     }
 
     public function isApproved(): bool

@@ -49,13 +49,13 @@ class AgmController extends Controller
                 return [
                     'slug' => $club->slug, 'name' => $club->name,
                     'agm' => $agm ? [
-                        'starts_at' => $agm->starts_at->toDayDateTimeString(), 'attended' => $agm->attendees_count,
+                        'starts_at' => $agm->starts_at->format('D, j M Y, g:i A'), 'attended' => $agm->attendees_count,
                         'report' => $agm->report ? $presenter->progress($agm->report) : null,
                         'report_id' => $agm->report?->id,
                         'election' => $agm->election?->phase(),
                         'flags' => $agm->election ? $elections->flags($agm->election) : [],
                         'checklist' => $package->checklist($agm),
-                        'package_submitted_at' => $agm->package_submitted_at?->toDayDateTimeString(),
+                        'package_submitted_at' => $agm->package_submitted_at?->format('D, j M Y, g:i A'),
                     ] : null,
                     'annual' => isset($annual[$club->id]),
                 ];

@@ -36,7 +36,7 @@ class IndemnityController extends Controller
                 'dates' => $event->starts_at->format('j M Y').($event->ends_at->isSameDay($event->starts_at) ? '' : ' – '.$event->ends_at->format('j M Y')),
                 'organizer' => $event->club->name,
                 'staff_in_charge' => $advisor?->name,
-                'closes_at' => $event->indemnityClosesAt()->toDayDateTimeString(),
+                'closes_at' => $event->indemnityClosesAt()->format('D, j M Y, g:i A'),
                 'closed' => now()->gte($event->indemnityClosesAt()),
             ],
             'student' => [
@@ -53,7 +53,7 @@ class IndemnityController extends Controller
                 'alternate_name' => $contact->alternate_name,
                 'alternate_phone' => $contact->alternate_phone,
             ] : null,
-            'signedAt' => $event->indemnities()->where('user_id', $user->id)->first()?->signed_at?->toDayDateTimeString(),
+            'signedAt' => $event->indemnities()->where('user_id', $user->id)->first()?->signed_at?->format('D, j M Y, g:i A'),
             'mustSign' => $this->indemnities->mustSign($event)->contains('id', $user->id),
         ]);
     }

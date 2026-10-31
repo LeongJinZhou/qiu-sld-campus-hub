@@ -26,6 +26,9 @@ class AttendanceService
             throw new DomainException("{$user->name} is not an active student.");
         }
         $role = $this->roleOf($event, $user);
+        if ($event->fee_sen > 0 && $role !== 'committee' && $event->registrations()->where('user_id', $user->id)->where('status', 'pending_payment')->exists()) {
+            throw new DomainException("{$user->name} has not paid the event fee yet, so clock-in is blocked.");
+        }
         if ($event->is_outdoor && ! $event->indemnities()->where('user_id', $user->id)->exists()) {
             throw new DomainException("{$user->name} has not signed the indemnity form, so clock-in is blocked.");
         }
@@ -72,7 +75,7 @@ class AttendanceService
         $opens = $event->starts_at->copy()->subMinutes(self::OPENS_BEFORE_MINUTES);
         $closes = $event->ends_at->copy()->addMinutes(self::CLOSES_AFTER_MINUTES);
         if (now()->lt($opens) || now()->gt($closes)) {
-            throw new DomainException("Attendance is open from {$opens->format('j M g:ia')} to {$closes->format('j M g:ia')}.");
+            throw new DomainException("Attendance is open from {$opens->format('j M, g:i A')} to {$closes->format('j M, g:i A')}.");
         }
     }
 

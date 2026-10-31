@@ -15,7 +15,7 @@ Schedule::command('camsys:sync')->dailyAt('02:00')->withoutOverlapping()
 // Post-event documents: finance + receipts within 1 week, everything else within 2 weeks.
 Schedule::command('events:send-reminders')->dailyAt('09:00');
 // Approvals, proposal lead time, indemnity closing, AGM deadlines, replies to SLD.
-Schedule::command('reminders:send')->dailyAt('09:05');
+Schedule::command('reminders:send')->hourly();
 
 // Membership: grace, reminders, termination, alumni; stale cash handovers expire after 7 days.
 Schedule::call(fn () => app(MembershipLifecycle::class)->run(CarbonImmutable::today()))->dailyAt('00:10')->name('membership-lifecycle');

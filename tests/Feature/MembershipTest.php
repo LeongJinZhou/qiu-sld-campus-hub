@@ -7,6 +7,8 @@ use App\Models\ClubFee;
 use App\Models\LedgerEntry;
 use App\Models\Membership;
 use App\Models\Student;
+use App\Models\User;
+use App\Services\Ai\CashPhotoChecker;
 use App\Services\Ai\ReceiptReader;
 use App\Services\Membership\CashHandovers;
 use App\Services\Membership\MembershipLifecycle;
@@ -88,7 +90,7 @@ it('queues unclear receipts for the Treasurer, who confirms or rejects', functio
     expect($m->fresh()->status)->toBe(MembershipStatus::Active);
 });
 
-it('completes a cash handover only when the photo contains this handover’s QR', function () {
+it('completes a cash handover only with the student\'s own QR and the cash confirmed, filed as membership cash', function () {
     Storage::fake('local');
     setFee($this, 3000);
     $handovers = app(CashHandovers::class);
@@ -99,20 +101,49 @@ it('completes a cash handover only when the photo contains this handover’s QR'
     $handovers->ready($h->fresh(), $this->student);
     expect($handovers->qrPayload($h->fresh(), $this->student))->toBeNull();
     $handovers->ready($h->fresh(), $this->treasurer);
-    $token = $handovers->qrPayload($h->fresh(), $this->student);
-    expect($token)->toStartWith('QIU-CASH:');
+    // The student shows their own profile QR, the same one as on their profile page.
+    expect($handovers->qrPayload($h->fresh(), $this->student))->toBe(route('profile.public', $this->student->qr_token));
 
-    // A photo of some other QR is refused.
-    expect(fn () => $handovers->photo($h->fresh(), $this->treasurer, qrPhoto('QIU-CASH:not-this-one')))->toThrow(DomainException::class, 'QR');
+    // Someone else's QR, or no QR at all, is refused.
+    $other = User::factory()->create();
+    expect(fn () => $handovers->photo($h->fresh(), $this->treasurer, qrPhoto(route('profile.public', $other->qr_token))))->toThrow(DomainException::class, 'belongs to someone else');
+    expect(fn () => $handovers->photo($h->fresh(), $this->treasurer, qrPhoto('hello')))->toThrow(DomainException::class, 'QR');
 
-    $handovers->photo($h->fresh(), $this->treasurer, qrPhoto($token));
+    // Without AI the member must confirm the cash before anyone can finish.
+    $handovers->photo($h->fresh(), $this->treasurer, qrPhoto(route('profile.public', $this->student->qr_token)));
+    expect($h->fresh()->cash_check)->toBe('needs_confirmation');
+    expect(fn () => $handovers->done($h->fresh(), $this->student))->toThrow(DomainException::class, 'confirm the cash');
+    $handovers->confirmCash($h->fresh(), $this->treasurer);
+
     $handovers->done($h->fresh(), $this->student);
     expect($h->fresh()->status)->toBe(HandoverStatus::PhotoTaken);
     $handovers->done($h->fresh(), $this->treasurer);
 
+    $entry = LedgerEntry::where('club_id', $this->club->id)->sole();
     expect($h->fresh()->status)->toBe(HandoverStatus::Completed)
         ->and($m->fresh()->status)->toBe(MembershipStatus::Active)
-        ->and(LedgerEntry::where('club_id', $this->club->id)->value('description'))->toBe("Membership fee (cash) – collected by {$this->treasurer->name}");
+        ->and($entry->description)->toBe("Membership fee (cash) – {$this->student->name}")
+        ->and($entry->only('category', 'method', 'handled_by', 'income_sen'))->toBe(['category' => 'membership', 'method' => 'cash', 'handled_by' => $this->treasurer->id, 'income_sen' => 3000]);
+});
+
+it('refuses a cash photo when AI sees no cash, and skips the manual check when AI sees it', function () {
+    Storage::fake('local');
+    setFee($this, 3000);
+    $handovers = app(CashHandovers::class);
+    $h = $handovers->request($this->service->join($this->club, $this->student, true), $this->treasurer);
+    $handovers->respond($h, $this->treasurer, true);
+    $handovers->ready($h->fresh(), $this->student);
+    $handovers->ready($h->fresh(), $this->treasurer);
+    $photo = fn () => qrPhoto(route('profile.public', $this->student->qr_token));
+
+    $this->mock(CashPhotoChecker::class)->shouldReceive('check')->andReturn(
+        ['cash_visible' => false, 'qr_visible' => true, 'estimated_total_rm' => null, 'note' => 'No cash'],
+        ['cash_visible' => true, 'qr_visible' => true, 'estimated_total_rm' => 30.0, 'note' => 'RM30 visible'],
+    );
+    $handovers = app(CashHandovers::class);
+    expect(fn () => $handovers->photo($h->fresh(), $this->treasurer, $photo()))->toThrow(DomainException::class, 'No cash can be seen');
+    $handovers->photo($h->fresh(), $this->treasurer, $photo());
+    expect($h->fresh()->cash_check)->toBe('ai');
 });
 
 it('only lets the chosen committee member accept, and expires after 7 days', function () {
@@ -173,4 +204,23 @@ it('turns graduates into alumni who stay in the club', function () {
     app(MembershipLifecycle::class)->run(CarbonImmutable::today());
 
     expect(Membership::where('user_id', $this->student->id)->first()->status)->toBe(MembershipStatus::Alumni);
+});
+
+it('sends both phones back to the QR step when the committee member retakes the photo', function () {
+    Storage::fake('local');
+    setFee($this, 3000);
+    $handovers = app(CashHandovers::class);
+    $h = $handovers->request($this->service->join($this->club, $this->student, true), $this->treasurer);
+    $handovers->respond($h, $this->treasurer, true);
+    $handovers->ready($h->fresh(), $this->student);
+    $handovers->ready($h->fresh(), $this->treasurer);
+    $handovers->photo($h->fresh(), $this->treasurer, qrPhoto(route('profile.public', $this->student->qr_token)));
+    $path = $h->fresh()->photo_path;
+
+    expect(fn () => $handovers->retake($h->fresh(), $this->student))->toThrow(DomainException::class);
+    $handovers->retake($h->fresh(), $this->treasurer);
+    expect($h->fresh()->status)->toBe(HandoverStatus::BothReady)
+        ->and($h->fresh()->photo_path)->toBeNull()
+        ->and(Storage::disk('local')->exists($path))->toBeFalse()
+        ->and($handovers->qrPayload($h->fresh(), $this->student))->not->toBeNull();
 });

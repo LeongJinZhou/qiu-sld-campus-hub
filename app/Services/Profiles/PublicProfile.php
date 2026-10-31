@@ -2,12 +2,14 @@
 
 namespace App\Services\Profiles;
 
+use App\Enums\MembershipStatus;
 use App\Enums\ScopedRole;
 use App\Enums\ScopeType;
 use App\Models\Attendance;
 use App\Models\CcaRecord;
 use App\Models\Club;
 use App\Models\Event;
+use App\Models\Membership;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Services\Time\SessionResolver;
@@ -29,7 +31,9 @@ class PublicProfile
 
         $assignments = $user->roleAssignments()->whereIn('scope_type', [ScopeType::Club, ScopeType::Event])->with('session')->get();
         $clubAssignments = $assignments->where('scope_type', ScopeType::Club);
-        $clubs = Club::with('category')->whereIn('id', $clubAssignments->pluck('scope_id'))->get()->keyBy('id');
+        // Clubs they serve on, plus clubs they simply joined as a member (or stayed in as alumni).
+        $memberships = Membership::where('user_id', $user->id)->whereIn('status', [MembershipStatus::Active, MembershipStatus::Grace, MembershipStatus::Alumni])->get()->keyBy('club_id');
+        $clubs = Club::with('category')->whereIn('id', $clubAssignments->pluck('scope_id')->merge($memberships->keys()))->get()->keyBy('id');
         $eventCommittees = Event::whereIn('id', $assignments->where('scope_type', ScopeType::Event)->pluck('scope_id'))->get()->keyBy('id');
         $attended = Attendance::with('event.club')->where('user_id', $user->id)->whereNotNull('clock_in_at')->latest('clock_in_at')->get();
         $cca = CcaRecord::with(['event', 'meeting.club'])->where('user_id', $user->id)->get();
@@ -37,6 +41,7 @@ class PublicProfile
         return [
             'name' => $user->name,
             'photo_url' => $user->photoUrl(),
+            'cover_url' => $user->coverUrl(),
             'programme' => $student?->programme,
             'programme_short' => $student?->programmeShortForm(),
             'year_group' => $student?->year_group,
@@ -58,7 +63,8 @@ class PublicProfile
                 'category' => $c->category?->name,
                 'current_position' => $clubAssignments->where('scope_id', $c->id)->firstWhere('session_id', $current->id)?->position
                     ?? ($clubAssignments->where('scope_id', $c->id)->firstWhere('session_id', $current->id)?->role === ScopedRole::Advisor ? 'Advisor' : null),
-            ])->values()->all() : null,
+                'membership' => $this->membershipLabel($memberships->get($c->id)),
+            ])->sortBy('name')->values()->all() : null,
             'positions' => $show('positions') ? $assignments
                 ->sortByDesc(fn (RoleAssignment $a) => $a->session->starts_on ?? $eventCommittees[$a->scope_id]->starts_at ?? null)
                 ->map(fn (RoleAssignment $a) => $a->scope_type === ScopeType::Club ? [
@@ -78,7 +84,7 @@ class PublicProfile
                 'name' => $a->event->name,
                 'url' => route('events.show', $a->event),
                 'club' => $a->event->club->name,
-                'date' => $a->event->starts_at->toFormattedDateString(),
+                'date' => $a->event->starts_at->format('j M Y'),
                 'role' => $a->role,
                 'poster_url' => $a->event->posterUrl(),
             ])->all() : null,
@@ -87,11 +93,20 @@ class PublicProfile
                 // Event CCA, or weekly-activity CCA claimed through a meeting.
                 'records' => $cca->sortByDesc(fn (CcaRecord $r) => ($r->event ?? $r->meeting)?->starts_at)->map(fn (CcaRecord $r) => [
                     'event' => $r->event->name ?? ($r->meeting ? "{$r->meeting->club->name}: {$r->meeting->title}" : ''),
-                    'date' => ($r->event ?? $r->meeting)?->starts_at->toFormattedDateString(),
+                    'date' => ($r->event ?? $r->meeting)?->starts_at->format('j M Y'),
                     'role' => $r->role,
                     'hours' => $r->hours,
                 ])->values()->all(),
             ] : null,
         ];
+    }
+
+    private function membershipLabel(?Membership $membership): ?string
+    {
+        return match ($membership?->status) {
+            null => null,
+            MembershipStatus::Alumni => 'Alumni member',
+            default => 'Member'.($membership->starts_on ? ' since '.$membership->starts_on->format('M Y') : ''),
+        };
     }
 }

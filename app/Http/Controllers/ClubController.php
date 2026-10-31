@@ -12,6 +12,7 @@ use App\Models\Document;
 use App\Models\Event;
 use App\Models\Highlight;
 use App\Models\HighlightItem;
+use App\Models\Membership;
 use App\Models\MembershipDrive;
 use App\Models\Post;
 use App\Models\SldRequest;
@@ -29,25 +30,6 @@ use Inertia\Response;
 
 class ClubController extends Controller
 {
-    public function index(Request $request): Response
-    {
-        $search = trim((string) $request->query('search', ''));
-
-        return Inertia::render('Clubs/Index', [
-            'search' => $search,
-            'clubs' => Club::with('category')
-                ->when($search !== '', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                ->orderBy('name')
-                ->get()
-                ->map(fn (Club $club) => [
-                    'slug' => $club->slug,
-                    'name' => $club->name,
-                    'logo_url' => $club->logoUrl(),
-                    'category' => $club->category?->name,
-                ]),
-        ]);
-    }
-
     public function show(Request $request, Club $club, SessionResolver $sessions, CommitteeBoard $board, CompulsoryPositionsCheck $compulsory, QrCodes $qr, DocumentPresenter $presenter): Response
     {
         $current = $sessions->current();
@@ -80,15 +62,24 @@ class ClubController extends Controller
             ]),
             'membership' => [
                 'status' => $club->memberships()->where('user_id', $user->id)->first()?->status->value,
+                // Only current students can join (staff and alumni cannot), so only they see the Join button.
+                'can_join' => (bool) $user->student?->isActive(),
                 'fee_sen' => app(MembershipService::class)->fee($club)?->amount_sen,
                 'drive' => MembershipDrive::running()->where(fn ($q) => $q->whereNull('club_id')->orWhere('club_id', $club->id))->value('title'),
             ],
             'counts' => [
                 'members' => $club->memberships()->whereIn('status', ['active', 'grace'])->count(),
+                'alumni' => $club->memberships()->where('status', 'alumni')->count(),
                 'followers' => $club->followers()->count(),
                 'events' => $club->events()->where('status', DocumentStatus::Approved)->count(),
             ],
             'following' => $club->followers()->whereKey($user->id)->exists(),
+            // Faces of the club: newest members first, leaving out anyone who hides their clubs on their profile.
+            'memberWall' => Membership::with('user')->where('club_id', $club->id)->whereIn('status', ['active', 'grace'])->latest('starts_on')->limit(60)->get()
+                ->reject(fn (Membership $m) => $m->user->hidesSection('clubs'))->take(18)->values()
+                ->map(fn (Membership $m) => ['name' => $m->user->name, 'photo_url' => $m->user->photoUrl(), 'profile_url' => route('profile.public', $m->user->qr_token)]),
+            'upcoming' => $club->events()->where('status', DocumentStatus::Approved)->where('ends_at', '>', now())->orderBy('starts_at')->limit(3)->get()
+                ->map(fn (Event $e) => ['slug' => $e->slug, 'name' => $e->name, 'starts_at' => $e->starts_at->toIso8601String(), 'venue' => $e->venue, 'poster_url' => $e->posterUrl(), 'fee_sen' => $e->fee_sen, 'registration_open' => $e->registration_open, 'members_only' => $e->members_only]),
             'tab' => $request->query('tab', 'committee'),
             'posts' => Inertia::defer(fn () => $club->posts()->visible()->with('media', 'event')->latest('published_at')->limit(30)->get()
                 ->map(fn (Post $p) => ['id' => $p->id, 'url' => route('posts.show', $p), 'image' => $p->media->first()?->url() ?? $p->event?->posterUrl(), 'caption' => $p->caption, 'count' => $p->media->count()])),
@@ -102,7 +93,7 @@ class ClubController extends Controller
             'faqs' => $club->faqs()->get(['id', 'question', 'answer']),
             'sldRequests' => $user?->can('viewInternal', $club)
                 ? SldRequest::where('club_id', $club->id)->where(fn ($q) => $q->whereNull('replied_at')->orWhere('replied_at', '>', now()->subDays(30)))->latest()->get()
-                    ->map(fn (SldRequest $r) => ['id' => $r->id, 'subject' => $r->subject, 'body' => $r->body, 'due_on' => $r->due_on->toFormattedDateString(), 'overdue' => $r->isOverdue(), 'reply' => $r->reply])
+                    ->map(fn (SldRequest $r) => ['id' => $r->id, 'subject' => $r->subject, 'body' => $r->body, 'due_on' => $r->due_on->format('j M Y'), 'overdue' => $r->isOverdue(), 'reply' => $r->reply])
                 : [],
             // AGM countdown for the club's own people while the period is open.
             'agm' => $user?->can('viewInternal', $club) && ($period = app(AgmPeriods::class)->current())
@@ -110,7 +101,7 @@ class ClubController extends Controller
                 : null,
             'documents' => $user->can('viewInternal', $club)
                 ? Inertia::defer(fn () => $club->documents()->with('event', 'approvals')->latest()->get()->map(fn (Document $d) => [
-                    'id' => $d->id, 'type' => $d->type->label(), 'event' => $d->event?->name, 'status' => $d->status->value, 'updated' => $d->updated_at?->toFormattedDateString(),
+                    'id' => $d->id, 'type' => $d->type->label(), 'event' => $d->event?->name, 'status' => $d->status->value, 'updated' => $d->updated_at?->format('j M Y'),
                     'progress' => $presenter->progress($d),
                 ]))
                 : null,

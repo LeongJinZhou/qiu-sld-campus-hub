@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Notifications\ActionItems;
 use App\Services\Time\SessionResolver;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -51,6 +52,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'nav' => fn () => $user ? [
                 'unread' => $user->unreadNotifications()->count(),
+                // Things still to do stay on the bell until they are done.
+                'actions' => app(ActionItems::class)->count($user),
                 'isStaff' => $user->hasAnyRole(['staff', 'admin', 'superadmin']),
                 'isAdmin' => $user->isSldAdmin(),
                 'canPublish' => $user->isSldAdmin() || $user->roleAssignments()->where('scope_type', 'club')

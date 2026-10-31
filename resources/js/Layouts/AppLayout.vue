@@ -3,6 +3,7 @@ import Avatar from '@/Components/ui/Avatar.vue';
 import Icon, { type IconName } from '@/Components/ui/Icon.vue';
 import Toast from '@/Components/ui/Toast.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
+import { useIntervalFn } from '@vueuse/core';
 import { computed } from 'vue';
 
 withDefaults(defineProps<{ wide?: boolean }>(), { wide: false });
@@ -19,17 +20,22 @@ interface NavItem {
     badge?: number;
 }
 
-// Mobile tab bar: Feed, Search, Create, Notifications, Profile.
+// Mobile tab bar: Feed, Search, Activities, Notifications, Profile. (Posting lives on the feed and club pages.)
 const items = computed<NavItem[]>(() => [
     { label: 'Feed', icon: 'home', href: '/feed', match: '/feed' },
-    { label: 'Clubs', icon: 'search', href: '/clubs', match: '/clubs' },
-    ...(nav.value?.canPublish ? [{ label: 'Create', icon: 'plus' as const, href: '/feed?create=1', match: '/feed?create' }] : []),
-    { label: 'Notifications', icon: 'bell', href: '/notifications', match: '/notifications', badge: nav.value?.unread ?? 0 },
+    { label: 'Search', icon: 'search', href: '/search', match: '/search' },
+    { label: 'Activities', icon: 'ticket', href: '/activities', match: '/activities' },
+    { label: 'Notifications', icon: 'bell', href: '/notifications', match: '/notifications', badge: (nav.value?.unread ?? 0) + (nav.value?.actions ?? 0) },
     ...(nav.value?.isStaff ? [{ label: 'Approvals', icon: 'check' as const, href: '/approvals', match: '/approvals' }] : []),
     { label: 'Profile', icon: 'user', href: '/me', match: '/me' },
 ]);
 const mobileItems = computed(() => items.value.filter((i) => i.label !== 'Approvals'));
-const isActive = (item: NavItem): boolean => page.url === item.href || (page.url.startsWith(item.match) && !page.url.startsWith('/feed?create'));
+const isActive = (item: NavItem): boolean => page.url === item.href || page.url.startsWith(item.match);
+
+// Live badge: refresh the unread count every 20 s while the app is on screen.
+useIntervalFn(() => {
+    if (document.visibilityState === 'visible') router.reload({ only: ['nav'] });
+}, 20_000);
 const logout = (): void => router.post('/logout');
 </script>
 
