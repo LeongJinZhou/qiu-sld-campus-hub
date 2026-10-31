@@ -39,6 +39,8 @@ export interface MemberCard {
 export interface SessionOption {
     id: number;
     name: string;
+    current?: boolean;
+    size?: number;
 }
 
 export interface Paginated<T> {
