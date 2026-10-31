@@ -6,16 +6,19 @@ You never type what the university already knows. Your name, student ID, program
 
 ## Your club page
 
-Open your club from **Clubs**. As committee you see extra buttons: **New event proposal, Post / story, Members, Finance, Payment review** (Treasurer), **Meetings, AGM, Venues**. Requests from SLD appear at the top of the page — reply there within 7 working days.
+Open **My clubs** (bottom bar on phones) to jump straight to the clubs you run and their tools. **Every committee member** can use all club management and finance; whatever you prepare and sign carries **your own name and position**. Requests from SLD appear at the top of the club page — reply there within 7 working days.
+
+The club page shows the advisor, the four executive offices, the rest of the committee, upcoming events and a wall of members (students who hide their clubs on their profile are left out).
 
 ## Running an event, start to finish
 
-1. **Propose it** (**New event proposal**). Fill the 06 Event Proposal: summary, objectives, activities, itinerary, event committee, budget. CCA hours are worked out from the event length (1 hour = 1 CCA) and you can change them.
+1. **Propose it** (**New event proposal**). Drafts **save automatically**; the committee is told a proposal has started and anyone on it can carry on, or use **Ask someone to submit** to pass it to a chosen member. A club can have at most **5** proposals in draft or returned at once (discard ones you no longer need). Fill the 06 Event Proposal: summary, objectives, activities, itinerary, event committee, budget. CCA hours are worked out from the event length (1 hour = 1 CCA) and you can change them.
    - Submit at least **1.5 months** ahead (under 60 participants) or **3 months** ahead (60 or more). The date picker enforces this, and you'll get a reminder a week before your last day.
    - The event committee needs its own President, Vice President, Secretary and Treasurer.
 2. **Sign and submit.** Draw your signature with a mouse or finger. The tracker then shows where the proposal is and whose approval it is waiting for: Advisor → (Dean for faculty events) → SLD → Assistant Registrar → Registrar → Bursar → COO.
    - If it is **returned**, fix what was asked and resubmit; earlier approvals are kept unless you changed the budget or dates.
 3. **When approved**, the event is posted to the feed, the poster checklist and QR attendance unlock, and you can request funds.
+   - **Paid event?** In **Event payment** on the event page set the fee, the account name and payment link (a QR of the link is generated for you), and optionally upload up to **2** of your own payment QR codes. Students who register get a reserved place and pay online (receipt checked like membership) or in cash with the QR handover. Their place is confirmed once paid; unpaid participants cannot clock in.
 4. **Poster.** Tick every item on the checklist (logos, title, date, time, venue, registration, CCA, contact) and upload it. Use real QIU photos only.
 5. **Outdoor / off-campus?** Everyone attending must sign the indemnity form; signing closes 3 days before the event. People who haven't signed get a reminder, and cannot clock in.
 6. **On the day.** Show the rotating QR on a screen; participants scan to clock in and out. You can also scan a student's **personal QR** to **register** them for the event or clock them in or out, or type a student ID.
@@ -23,13 +26,15 @@ Open your club from **Clubs**. As committee you see extra buttons: **New event p
 
 ## Money (Treasurer)
 
-- **Fee.** Set the membership fee for the session; SLD approves it.
+- **Fee.** Set the membership fee, account name, payment link and up to 2 payment QR codes in **Membership fee & payment** on the Finance page; SLD approves it.
+- **Order IDs.** Every payment and ledger line gets a traceable ID such as `GPS-CLUB_BEACH-CLEANUP_0001` or `GPS-CLUB_MEMBERSHIP_0001`. Search the ledger by it; it is printed on receipts and exports.
 - **Online payments.** Students upload a receipt. AI reads the amount, date, reference and payee and confirms it automatically when everything matches. Anything unclear lands in **Payment review** with the AI reading beside the image.
 - **Cash.** The student picks you and you accept. Meet, both tap **Ready**, and the student's phone shows their **personal QR** (the same as on their profile). Point your camera at it with the cash in the same picture: it **captures by itself** once it sees that student's QR (someone else's QR is refused). The photo is checked for cash (by AI when enabled, otherwise you confirm), you can **Retake**, then both tap **Transaction done**. Membership starts at once; the club's finance records it as *Membership · Cash · received by you*, with the photo attached.
 - **Finance sorts itself.** Every transaction is filed automatically: membership fees under *Membership* (with the method and who received the cash), approved fund withdrawals under their *event*, and anything you add under the event you pick. Nobody needs to re-sort the ledger.
 - **Finance page = the year's report.** Pick the session to see brought forward, income, expenses and closing balance, a breakdown *by type* and *by event*, and every transaction with its evidence (receipt, online payment receipt, cash photo or 07 form). Filter by type, event, payment method, dates or text, sort it, and export the official 02 Finance Record exactly as filtered — this is the AGM Financial Report.
+- **Who paid.** From **By event** tap **Who paid →** for any event (or **Who paid · money tally** on the event page): everyone registered, paid or still pending, method, who received the cash, and a check that payments, the ledger and *paid places × fee* agree. **Membership fees →** gives the same for membership, split by membership drive. Both export to Excel and PDF.
 - **Ledger rules.** SLD enters the opening balance first. Every expense needs the original receipt (not a bank screenshot); a receipt can also be attached to a transaction afterwards.
-- **Fund withdrawal (07).** Items come from the approved budget. For events, request right after approval; for weekly activities, at least 2 weeks ahead. Chain: Secretary → President → Advisor → Assistant Registrar → Bursar → COO.
+- **Fund withdrawal (07).** Items come from the approved budget. For events, request right after approval; for weekly activities, at least 2 weeks ahead. Chain: preparer (any committee member) → President → Advisor → Assistant Registrar → Bursar → COO.
 
 ## Meetings and minutes (Secretary)
 
@@ -56,4 +61,4 @@ When SLD opens the AGM period, your club page shows a countdown.
 
 ## Your profile
 
-Your lifelong profile shows your clubs, positions, events and CCA hours, and has a personal QR anyone can scan. Hide any section in **Edit profile**. Download **certificates** for each committee position and each event you attended. Before you graduate, add a **personal email** so you can keep signing in as alumni.
+Your lifelong profile shows the clubs you joined or serve, positions, events and CCA hours, and has a personal QR anyone can scan. **Coming up** lists events you registered for, with *Pay now* or *Sign indemnity* if something is still needed. Payments or forms you leave half-way stay under **Action needed** in Notifications until done; mute likes, comments, saves or follows there. Hide any section in **Edit profile**. Download **certificates** for each committee position and each event you attended. Before you graduate, add a **personal email** so you can keep signing in as alumni.

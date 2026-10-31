@@ -4,6 +4,7 @@ import CommitteeBoard from '@/Components/club/CommitteeBoard.vue';
 import SessionSelector from '@/Components/club/SessionSelector.vue';
 import CreatePost from '@/Components/feed/CreatePost.vue';
 import StoryViewer from '@/Components/feed/StoryViewer.vue';
+import Avatar from '@/Components/ui/Avatar.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
 import EmptyState from '@/Components/ui/EmptyState.vue';
@@ -12,7 +13,7 @@ import Input from '@/Components/ui/Input.vue';
 import Tabs from '@/Components/ui/Tabs.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { dateTime } from '@/lib/format';
+import { dateTime, rm } from '@/lib/format';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import type { ApprovalProgress, MemberCard, SessionOption } from '@/types';
 import { Deferred, Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -34,7 +35,9 @@ const props = defineProps<{
     missingCompulsory: string[];
     stories: Story[];
     highlights: { id: number; title: string; items: string[] }[];
-    counts: { followers: number; events: number; members: number };
+    counts: { followers: number; events: number; members: number; alumni: number };
+    memberWall: { name: string; photo_url: string | null; profile_url: string }[];
+    upcoming: { slug: string; name: string; starts_at: string; venue: string | null; poster_url: string | null; fee_sen: number; registration_open: boolean }[];
     membership: { status: string | null; fee_sen: number | null; drive: string | null; can_join: boolean };
     following: boolean;
     tab: string;
@@ -74,6 +77,8 @@ const highlight = (storyId: number): void => {
 const creating = ref(false);
 const album = useForm({ title: '', photos: [] as File[] });
 const faq = useForm({ question: '', answer: '' });
+const month = (iso: string): string => new Date(iso).toLocaleString('en-MY', { month: 'short', timeZone: 'Asia/Kuala_Lumpur' });
+const day = (iso: string): string => new Date(iso).toLocaleString('en-MY', { day: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
 const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returned' ? 'warning' : s === 'rejected' ? 'danger' : 'neutral');
 </script>
 
@@ -128,7 +133,54 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
                         <SessionSelector :sessions="sessions" :selected="session" :url="`/clubs/${club.slug}`" />
                         <Badge v-if="!isCurrentSession">Past session · read-only</Badge>
                     </div>
-                    <CommitteeBoard :committee="committee" :advisors="advisors" />
+                    <div class="grid gap-8">
+                        <CommitteeBoard :committee="committee" :advisors="advisors" />
+
+                        <section v-if="isCurrentSession && upcoming.length" class="grid gap-3">
+                            <h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">Coming up</h3>
+                            <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                <li v-for="e in upcoming" :key="e.slug">
+                                    <Link :href="`/events/${e.slug}`" class="group grid h-full overflow-hidden rounded-card border border-line bg-surface shadow-card transition hover:shadow-pop">
+                                        <span class="relative block aspect-[16/9] overflow-hidden bg-gradient-to-br from-brand-cyan to-brand-blue">
+                                            <img v-if="e.poster_url" :src="e.poster_url" alt="" class="size-full object-cover object-top transition group-hover:scale-105" loading="lazy" />
+                                            <span class="absolute left-3 top-3 grid min-w-12 justify-items-center rounded-control bg-surface px-2 py-1 leading-none shadow-card">
+                                                <span class="text-[10px] font-semibold uppercase text-brand-magenta">{{ month(e.starts_at) }}</span>
+                                                <span class="text-lg font-bold">{{ day(e.starts_at) }}</span>
+                                            </span>
+                                        </span>
+                                        <span class="grid gap-1 p-3 text-sm">
+                                            <strong class="line-clamp-2">{{ e.name }}</strong>
+                                            <span class="truncate text-xs text-ink-muted">{{ dateTime(e.starts_at) }}<template v-if="e.venue"> · {{ e.venue }}</template></span>
+                                            <span v-if="e.registration_open" class="text-xs font-semibold text-brand-blue">Register · {{ e.fee_sen ? rm(e.fee_sen) : 'Free' }}</span>
+                                        </span>
+                                    </Link>
+                                </li>
+                            </ul>
+                        </section>
+
+                        <section v-if="isCurrentSession && (memberWall.length || can.internal)" class="grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+                            <div class="flex flex-wrap items-end justify-between gap-2">
+                                <div>
+                                    <h3 class="font-semibold">Our members</h3>
+                                    <p class="text-sm text-ink-muted">{{ counts.members }} active<template v-if="counts.alumni"> · {{ counts.alumni }} alumni</template></p>
+                                </div>
+                                <Link v-if="can.internal" :href="`/clubs/${club.slug}/members`" class="text-sm font-medium text-brand-blue">Full members list →</Link>
+                            </div>
+                            <ul v-if="memberWall.length" class="flex flex-wrap gap-3">
+                                <li v-for="m in memberWall" :key="m.profile_url">
+                                    <a :href="m.profile_url" class="grid w-16 justify-items-center gap-1 text-center" :title="m.name">
+                                        <Avatar :src="m.photo_url" :name="m.name" size="md" />
+                                        <span class="w-full truncate text-[11px]">{{ m.name.split(' ')[0] }}</span>
+                                    </a>
+                                </li>
+                                <li v-if="counts.members > memberWall.length" class="grid w-16 justify-items-center gap-1 text-center">
+                                    <span class="grid size-14 place-items-center rounded-full bg-surface-muted text-sm font-semibold">+{{ counts.members - memberWall.length }}</span>
+                                    <span class="text-[11px] text-ink-muted">more</span>
+                                </li>
+                            </ul>
+                            <p v-else class="text-sm text-ink-muted">No members yet — share the club QR to get the first sign-ups.</p>
+                        </section>
+                    </div>
                 </template>
 
                 <template #feed>

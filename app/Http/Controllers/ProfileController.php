@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateProfileRequest;
+use App\Models\EventRegistration;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Profiles\Certificates;
@@ -37,6 +38,15 @@ class ProfileController extends Controller
             'saved' => Inertia::defer(fn () => $user->savedPosts()->visible()->with('media', 'event')->latest('saves.created_at')->limit(30)->get()
                 ->map(fn (Post $p) => ['id' => $p->id, 'url' => route('posts.show', $p), 'image' => $p->media->first()?->url() ?? $p->event?->posterUrl(), 'caption' => $p->caption])),
             'certificates' => $certificates->available($user),
+            // Events they signed up for that have not happened yet, with anything still to do.
+            'upcoming' => EventRegistration::with('event.club')->where('user_id', $user->id)
+                ->whereHas('event', fn ($q) => $q->where('ends_at', '>', now()))->get()->sortBy('event.starts_at')->values()
+                ->map(fn (EventRegistration $r) => [
+                    'name' => $r->event->name, 'slug' => $r->event->slug, 'club' => $r->event->club->name,
+                    'starts_at' => $r->event->starts_at->toIso8601String(), 'venue' => $r->event->venue, 'poster_url' => $r->event->posterUrl(),
+                    'needs_payment' => $r->status === 'pending_payment',
+                    'needs_indemnity' => $r->event->is_outdoor && ! $r->event->indemnities()->where('user_id', $user->id)->exists(),
+                ]),
             'publicUrl' => $publicUrl,
             'qrSvg' => $qr->svg($publicUrl),
         ]);
