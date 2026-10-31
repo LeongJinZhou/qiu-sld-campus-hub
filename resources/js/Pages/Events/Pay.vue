@@ -11,7 +11,7 @@ import { computed } from 'vue';
 
 const props = defineProps<{
     event: { slug: string; name: string; fee_sen: number; payment_url: string | null; payment_account_name: string | null; is_outdoor: boolean; club: { slug: string; name: string }; starts_at: string };
-    registration: { status: string; paid_at: string | null };
+    registration: { status: string; paid_at: string | null; ticket_url: string | null };
     qrCodes: { kind: 'generated' | 'uploaded'; label: string; svg?: string; url?: string }[];
     payment: { order_id: string | null; method: string; status: string; flags: string[]; review_note: string | null; handover_id: number | null } | null;
     committee: { id: number; name: string; position: string; photo_url: string | null }[];
@@ -38,7 +38,8 @@ useLeaveReminder(() => `Paying for ${props.event.name}`, () => !paid.value);
                     <span class="grid size-14 place-items-center rounded-full bg-success text-white animate-tracker-pop"><Icon name="check" :size="28" :stroke-width="3" /></span>
                     <p class="text-lg font-semibold">You're registered</p>
                     <p class="text-sm text-ink-muted">Paid {{ registration.paid_at }}<template v-if="payment?.order_id"> · ref {{ payment.order_id }}</template></p>
-                    <Link v-if="event.is_outdoor" :href="`/events/${event.slug}/indemnity`"><Button>Sign the indemnity form</Button></Link>
+                    <Link v-if="registration.ticket_url" :href="registration.ticket_url"><Button><Icon name="ticket" :size="18" /> View my ticket</Button></Link>
+                    <Link v-if="event.is_outdoor" :href="`/events/${event.slug}/indemnity`"><Button variant="secondary">Sign the indemnity form</Button></Link>
                 </div>
             </Card>
 

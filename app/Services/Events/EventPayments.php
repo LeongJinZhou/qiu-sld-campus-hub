@@ -84,7 +84,7 @@ class EventPayments
     {
         $registration = $payment->registration()->with('event.club', 'user')->firstOrFail();
         DB::transaction(function () use ($payment, $registration, $description): void {
-            $registration->update(['status' => 'registered', 'paid_at' => now()]);
+            $registration->update(['status' => 'registered', 'paid_at' => now(), 'order_id' => $registration->order_id ?? $payment->order_id]);
             $this->ledger->income($registration->event->club, today(), $description ?? "{$registration->event->name} fee ({$payment->method}) – {$registration->user->name}",
                 $payment->amount_sen, $payment, category: 'event', eventId: $registration->event_id, method: $payment->method,
                 handledBy: $payment->method === 'cash' ? $payment->collector : null);
@@ -93,7 +93,7 @@ class EventPayments
         $registration->user->notify(new DocumentNotification(
             "You're registered for {$registration->event->name}",
             "Payment received (ref {$payment->order_id}).".($registration->event->is_outdoor ? ' Remember to sign the indemnity form.' : ''),
-            route($registration->event->is_outdoor ? 'events.indemnity' : 'events.show', $registration->event),
+            $registration->event->is_outdoor ? route('events.indemnity', $registration->event) : route('tickets.show', $registration->fresh()->ticket_code),
         ));
     }
 

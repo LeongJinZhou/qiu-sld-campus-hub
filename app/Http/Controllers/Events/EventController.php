@@ -91,7 +91,8 @@ class EventController extends Controller
                 'responsibility' => $a->responsibility,
             ]),
             'registered' => $event->registrations()->where('user_id', $user->id)->exists(),
-            'registrationStatus' => $event->registrations()->where('user_id', $user->id)->value('status'),
+            'registrationStatus' => ($mine = $event->registrations()->where('user_id', $user->id)->first())?->status,
+            'ticketUrl' => $mine?->ensureTicket()->ticket_code ? route('tickets.show', $mine->ticket_code) : null,
             'payment' => [
                 'fee_sen' => $event->fee_sen, 'payment_url' => $event->payment_url, 'payment_account_name' => $event->payment_account_name,
                 'qr' => collect($event->payment_qr_paths ?? [])->map(fn (string $p) => ['path' => $p, 'url' => Storage::disk('public')->url($p)])->values(),
@@ -105,7 +106,7 @@ class EventController extends Controller
             'approval' => $event->proposal && $event->proposal->status !== DocumentStatus::Draft && $user->can('organises', $event)
                 ? ['progress' => $presenter->progress($event->proposal), 'steps' => $presenter->present($event->proposal)['steps']]
                 : null,
-            'can' => ['organise' => $user->can('organises', $event), 'update' => $user->can('update', $event)],
+            'can' => ['organise' => $user->can('organises', $event), 'update' => $user->can('update', $event), 'checkIn' => $user->can('checkIn', $event)],
         ]);
     }
 }
