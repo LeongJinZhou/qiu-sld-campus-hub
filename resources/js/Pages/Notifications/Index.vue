@@ -18,7 +18,7 @@ const props = defineProps<{
 // Live: new notifications and finished actions appear without reloading.
 usePoll(15_000, { only: ['actions', 'items'] });
 
-const icons: Record<string, IconName> = { payment: 'send', handover: 'qr', review: 'check', indemnity: 'file', approval: 'check', likes: 'heart', comments: 'message', saves: 'bookmark', follows: 'users' };
+const icons: Record<string, IconName> = { payment: 'send', handover: 'qr', review: 'check', indemnity: 'file', approval: 'check', likes: 'heart', comments: 'message', saves: 'bookmark', follows: 'users', club_posts: 'calendar' };
 
 const settings = ref(false);
 const mutes = ref<string[]>([...props.muted]);

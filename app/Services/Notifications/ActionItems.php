@@ -116,11 +116,11 @@ class ActionItems
     private function indemnities(User $user): array
     {
         return Event::where('is_outdoor', true)->where('status', DocumentStatus::Approved)->where('starts_at', '>', now()->addDays(3))
-            ->whereHas('registrations', fn ($q) => $q->where('user_id', $user->id))
+            ->whereHas('registrations', fn ($q) => $q->where('user_id', $user->id)->where('status', 'registered'))
             ->whereDoesntHave('indemnities', fn ($q) => $q->where('user_id', $user->id))->get()
             ->map(fn (Event $e) => [
-                'key' => "indemnity:{$e->id}", 'kind' => 'indemnity', 'title' => "Sign the indemnity for {$e->name}",
-                'body' => 'Required for outdoor events. Signing closes '.$e->indemnityClosesAt()->format('D, j M Y').'; without it you cannot clock in.',
+                'key' => "indemnity:{$e->id}", 'kind' => 'indemnity', 'title' => "One step left: sign the indemnity for {$e->name}",
+                'body' => 'You have not finished. Your details are filled in; just check and sign to get your ticket. Signing closes '.$e->indemnityClosesAt()->format('D, j M Y').'.',
                 'url' => route('events.indemnity', $e), 'since' => null,
             ])->values()->all();
     }

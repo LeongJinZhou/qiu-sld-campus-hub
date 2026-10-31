@@ -21,6 +21,12 @@ class FeedController extends Controller
         return Inertia::render('Feed/Index', [
             'stories' => $feed->storyBar($user),
             'posts' => Inertia::scroll(fn () => $page->through(fn (Post $p) => $presenter->card($p))),
+            'archive' => fn () => $feed->archive(),
+            // One folded group, opened on request (?group=m:2026-10).
+            'group' => Inertia::optional(fn () => [
+                'key' => (string) $request->query('group'),
+                'posts' => $feed->bucket($user, (string) $request->query('group'))->map(fn (Post $p) => $presenter->card($p))->all(),
+            ]),
             'openCreate' => $request->boolean('create'),
             'publishable' => Club::orderBy('name')->get()->filter(fn (Club $c) => $user->can('publish', $c))
                 ->map(fn (Club $c) => ['slug' => $c->slug, 'name' => $c->name])->values(),

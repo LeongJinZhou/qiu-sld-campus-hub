@@ -142,6 +142,7 @@ export interface CommentData {
     body: string;
     user: string;
     photo_url: string | null;
+    profile_url: string;
     at: string | null;
 }
 

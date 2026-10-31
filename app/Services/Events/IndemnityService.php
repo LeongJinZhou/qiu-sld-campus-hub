@@ -4,9 +4,11 @@ namespace App\Services\Events;
 
 use App\Enums\ScopeType;
 use App\Models\Event;
+use App\Models\EventRegistration;
 use App\Models\Indemnity;
 use App\Models\RoleAssignment;
 use App\Models\User;
+use App\Notifications\DocumentNotification;
 use App\Services\Approvals\SignatureStore;
 use App\Services\AuditLogger;
 use DomainException;
@@ -57,6 +59,49 @@ class IndemnityService
 
             return $indemnity;
         });
+    }
+
+    /** True while a confirmed participant of an outdoor event still has to sign before getting their ticket. */
+    public function blocksTicket(EventRegistration $registration): bool
+    {
+        $event = $registration->event;
+
+        return $event->is_outdoor && $registration->isPaidUp() && ! $event->indemnities()->where('user_id', $registration->user_id)->exists();
+    }
+
+    /** Once the place is confirmed (free sign-up or payment done): one step left, sign to get the ticket. */
+    public function askToSign(EventRegistration $registration, ?string $lead = null): void
+    {
+        $registration->loadMissing('event', 'user');
+        if (! $this->blocksTicket($registration)) {
+            return;
+        }
+        $event = $registration->event;
+        $registration->user->notify(new DocumentNotification(
+            ($lead ? "{$lead} " : '')."One step left: sign the indemnity for {$event->name}",
+            'Your details are filled in already. Check them, sign, and your ticket appears. Signing closes '.$event->indemnityClosesAt()->format('D, j M Y').'.',
+            route('events.indemnity', $event),
+        ));
+    }
+
+    /** What we already know, so the student only checks and signs. @return array<string, string|null>|null */
+    public function savedDetails(User $user): ?array
+    {
+        $contact = $user->emergencyContact;
+        $last = Indemnity::where('user_id', $user->id)->latest('signed_at')->first();
+        if (! $contact && ! $last) {
+            return null;
+        }
+
+        return [
+            'emergency_name' => $contact?->name,
+            'emergency_mobile_phone' => $contact?->mobile_phone,
+            'emergency_work_phone' => $contact?->work_phone,
+            'emergency_relationship' => $contact?->relationship,
+            'alternate_name' => $contact?->alternate_name,
+            'alternate_phone' => $contact?->alternate_phone,
+            'address' => $last?->address,
+        ];
     }
 
     /**

@@ -1,13 +1,15 @@
-import '../css/app.css';
+import "../css/app.css";
 
-import { createInertiaApp } from '@inertiajs/vue3';
-import type { DefineComponent } from 'vue';
-import { createApp, h } from 'vue';
+import { installMotion } from "./lib/motion";
+import { createInertiaApp } from "@inertiajs/vue3";
+import type { DefineComponent } from "vue";
+import { createApp, h } from "vue";
 
-const pages = import.meta.glob<DefineComponent>('./Pages/**/*.vue');
+const pages = import.meta.glob<DefineComponent>("./Pages/**/*.vue");
 
 createInertiaApp({
-    title: (title) => (title ? `${title} · QIU SLD Campus Hub` : 'QIU SLD Campus Hub'),
+    title: (title) =>
+        title ? `${title} · QIU SLD Campus Hub` : "QIU SLD Campus Hub",
     resolve: (name) => {
         const page = pages[`./Pages/${name}.vue`];
         if (!page) {
@@ -19,11 +21,17 @@ createInertiaApp({
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .mount(el);
+        installMotion();
     },
-    progress: { color: '#E01CEB' },
+    progress: { color: "#E01CEB" },
 });
 
 // Installable app: offline shell only (public/sw.js). Service workers need HTTPS, or localhost in development.
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+if (
+    "serviceWorker" in navigator &&
+    (location.protocol === "https:" || location.hostname === "localhost")
+) {
+    window.addEventListener("load", () =>
+        navigator.serviceWorker.register("/sw.js").catch(() => undefined),
+    );
 }

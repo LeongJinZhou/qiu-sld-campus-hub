@@ -92,3 +92,82 @@
 @media (prefers-reduced-motion: reduce) {
     .animate-tracker-pulse, .animate-tracker-pop, .animate-tracker-flow { animation: none; }
 }
+
+/* Scroll reveal (lib/motion.ts): cards and .reveal elements rise in as they scroll into view. */
+.motion-pending {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+}
+.motion-in {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 0.55s ease-out,
+        transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition-delay: var(--motion-delay, 0ms);
+}
+
+/* <TransitionGroup name="list">: items slide in, out and to their new place. */
+.list-enter-active,
+.list-leave-active,
+.list-move {
+    transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.list-enter-from,
+.list-leave-to {
+    opacity: 0;
+    transform: translateY(10px);
+}
+.list-leave-active {
+    position: absolute;
+}
+
+/* <Transition name="fade-up"> for panels that appear. */
+.fade-up-enter-active,
+.fade-up-leave-active {
+    transition:
+        opacity 0.25s ease,
+        transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.fade-up-enter-from,
+.fade-up-leave-to {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+/* Gentle float for decorative accents. */
+@keyframes float-soft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+@utility animate-float-soft {
+    animation: float-soft 5s ease-in-out infinite;
+}
+@keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+}
+@utility animate-shimmer {
+    background-image: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.45) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 2.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .motion-pending { opacity: 1; transform: none; }
+    .motion-in, .list-enter-active, .list-leave-active, .list-move, .fade-up-enter-active, .fade-up-leave-active { transition: none; }
+    .animate-float-soft, .animate-shimmer { animation: none; }
+}
+
+/* html5-qrcode camera views: the video fills its frame and the library's own overlay is replaced by ours. */
+.camera-frame video {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+}
+.camera-frame #qr-shaded-region,
+.camera-frame canvas {
+    display: none !important;
+}
