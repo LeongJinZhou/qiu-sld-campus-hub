@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Icon from '@/Components/ui/Icon.vue';
 import Input from '@/Components/ui/Input.vue';
 import FileUpload from '@/Components/ui/FileUpload.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
@@ -34,10 +35,11 @@ const props = defineProps<{
     approval: { progress: ApprovalProgress; steps: ApprovalStep[] } | null;
     registered: boolean;
     registrationStatus: string | null;
+    ticketUrl: string | null;
     payment: { fee_sen: number; payment_url: string | null; payment_account_name: string | null; qr: { path: string; url: string }[] };
     indemnity: { signed: boolean; closes_at: string; closed: boolean } | null;
     registrations: number;
-    can: { organise: boolean; update: boolean };
+    can: { organise: boolean; update: boolean; checkIn: boolean };
 }>();
 
 const register = (): void => router.post(`/events/${props.event.slug}/register`, {}, { preserveScroll: true });
@@ -97,6 +99,7 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                     </template>
                     <template v-else-if="registered">
                         <p class="mt-2 text-sm font-medium text-success">You're registered.</p>
+                        <Link v-if="ticketUrl" :href="ticketUrl"><Button block class="mt-2">View my ticket</Button></Link>
                         <button type="button" class="mt-1 text-xs text-ink-muted underline" @click="unregister">Cancel registration</button>
                     </template>
                     <Button v-else-if="event.registration_open" block class="mt-3" @click="register">{{ payment.fee_sen ? `Register · ${rm(payment.fee_sen)}` : 'Register' }}</Button>
@@ -125,8 +128,9 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                         <Button type="submit" :loading="pay.processing">Save payment settings</Button>
                     </form>
                 </Card>
+                <Link v-if="can.checkIn && !can.organise" :href="`/events/${event.slug}/attendance`"><Button block><Icon name="scan" :size="18" /> Door helper: scan tickets</Button></Link>
                 <template v-if="can.organise">
-                    <Link :href="`/events/${event.slug}/attendance`"><Button block>Attendance &amp; QR</Button></Link>
+                    <Link :href="`/events/${event.slug}/attendance`"><Button block>Door &amp; attendance</Button></Link>
                     <Link v-if="payment.fee_sen" :href="`/clubs/${event.club.slug}/finance/events/${event.slug}`"><Button block variant="secondary">Who paid · money tally</Button></Link>
                     <Link v-if="event.is_outdoor" :href="`/events/${event.slug}/indemnities`"><Button variant="secondary" block>Indemnity list</Button></Link>
                     <Link v-if="event.status === 'approved'" :href="`/events/${event.slug}/documents`"><Button variant="secondary" block>Post-event documents</Button></Link>

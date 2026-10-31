@@ -20,11 +20,11 @@ interface NavItem {
     badge?: number;
 }
 
-// Mobile tab bar: Feed, Search, My clubs, Notifications, Profile. (Posting lives on the feed and club pages.)
+// Mobile tab bar: Feed, Search, Activities, Notifications, Profile. (Posting lives on the feed and club pages.)
 const items = computed<NavItem[]>(() => [
     { label: 'Feed', icon: 'home', href: '/feed', match: '/feed' },
     { label: 'Search', icon: 'search', href: '/search', match: '/search' },
-    { label: 'My clubs', icon: 'users', href: '/my-clubs', match: '/my-clubs' },
+    { label: 'Activities', icon: 'ticket', href: '/activities', match: '/activities' },
     { label: 'Notifications', icon: 'bell', href: '/notifications', match: '/notifications', badge: (nav.value?.unread ?? 0) + (nav.value?.actions ?? 0) },
     ...(nav.value?.isStaff ? [{ label: 'Approvals', icon: 'check' as const, href: '/approvals', match: '/approvals' }] : []),
     { label: 'Profile', icon: 'user', href: '/me', match: '/me' },

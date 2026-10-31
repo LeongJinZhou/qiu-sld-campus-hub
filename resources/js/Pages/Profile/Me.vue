@@ -150,7 +150,7 @@ async function share(): Promise<void> {
 
         <!-- Phones have no sidebar, so account actions sit at the bottom of the profile. -->
         <section class="mt-6 grid gap-2 md:hidden">
-            <Link href="/my-clubs" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"><Icon name="users" :size="18" /> My clubs</Link>
+            <Link href="/activities" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"><Icon name="ticket" :size="18" /> Activities &amp; tickets</Link>
             <Link v-if="nav?.isAdmin" href="/admin" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"><Icon name="shield" :size="18" /> SLD Admin</Link>
             <button type="button" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left text-sm font-medium text-danger shadow-card" @click="router.post('/logout')"><Icon name="logout" :size="18" /> Sign out</button>
         </section>
