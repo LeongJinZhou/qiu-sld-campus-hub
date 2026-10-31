@@ -14,6 +14,8 @@ class UpdateProfileRequest extends FormRequest
         return [
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'remove_photo' => ['boolean'],
+            'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:6144'],
+            'remove_cover' => ['boolean'],
             'hidden_sections' => ['array'],
             'hidden_sections.*' => ['string', Rule::in(User::HIDEABLE_SECTIONS)],
             // Lets alumni keep signing in after their QIU account closes, so it must be a non-QIU address.

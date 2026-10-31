@@ -155,6 +155,7 @@ export interface StoryGroup {
 export interface ProfileData {
     name: string;
     photo_url: string | null;
+    cover_url: string | null;
     programme: string | null;
     programme_short: string | null;
     year_group: string | null;
