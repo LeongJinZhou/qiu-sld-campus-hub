@@ -39,3 +39,8 @@ it('stops reminding once the committee member has paid', function () {
 
     expect(app(CommitteeFees::class)->unpaid($this->treasurer))->toBe([]);
 });
+
+it('never asks the advisor (staff) to pay the club fee', function () {
+    expect(app(CommitteeFees::class)->unpaid($this->f['advisor']))->toBe([])
+        ->and(collect(app(ActionItems::class)->for($this->f['advisor']))->pluck('kind'))->not->toContain('payment');
+});
