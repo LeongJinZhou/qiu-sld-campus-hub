@@ -18,6 +18,7 @@ use App\Services\Google\CalendarMeetService;
 use App\Services\Meetings\Meetings;
 use App\Services\QrCodes;
 use App\Services\Reports\AnnualReports;
+use App\Support\QueryInput;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,7 +97,7 @@ class AgmController extends Controller
     /** Members scan the QR on screen at the AGM. */
     public function attend(Request $request, Agm $agm): RedirectResponse
     {
-        if (! $this->qr->isValid($agm, 'in', (string) $request->query('code'))) {
+        if (! $this->qr->isValid($agm, 'in', QueryInput::text($request, 'code', 100))) {
             return to_route('feed')->with('error', 'This QR code has expired. Scan the code on screen again.');
         }
         try {

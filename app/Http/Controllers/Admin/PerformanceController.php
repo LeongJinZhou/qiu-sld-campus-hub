@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use App\Models\Club;
 use App\Services\Dashboard\ClubPerformance;
 use App\Services\Time\SessionResolver;
+use App\Support\QueryInput;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,10 +17,10 @@ class PerformanceController extends Controller
 {
     public function __invoke(Request $request, ClubPerformance $performance, SessionResolver $sessions): Response
     {
-        $name = (string) $request->query('session', '');
+        $name = QueryInput::text($request, 'session', 9);
         $session = AcademicSession::where('name', $name)->first() ?? $sessions->current();
         $clubs = $performance->clubs($session);
-        $focus = $request->query('club') ? Club::where('slug', (string) $request->query('club'))->first() : null;
+        $focus = ($slug = QueryInput::text($request, 'club', 100)) !== '' ? Club::where('slug', $slug)->first() : null;
 
         return Inertia::render('Admin/Performance/Index', [
             'session' => $session->name,

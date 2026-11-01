@@ -33,7 +33,11 @@ const items = computed<NavItem[]>(() => [
     { label: 'Profile', icon: 'user', href: '/me', match: '/me' },
 ]);
 const mobileItems = computed(() => items.value.filter((i) => !['Approvals', 'Calendar'].includes(i.label)));
-const isActive = (item: NavItem): boolean => page.url === item.href || page.url.startsWith(item.match);
+// Whole path segments only: /meetings must not light up /me (Profile).
+const isActive = (item: NavItem): boolean => {
+    const path = page.url.split(/[?#]/)[0] ?? '';
+    return path === item.match || path.startsWith(`${item.match}/`);
+};
 
 // Live badge: refresh the unread count every 20 s while the app is on screen.
 useIntervalFn(() => {

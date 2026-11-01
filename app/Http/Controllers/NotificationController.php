@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\Notifications\ActionItems;
+use App\Support\QueryInput;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -22,12 +23,13 @@ class NotificationController extends Controller
     public function __invoke(Request $request, ActionItems $actions): Response
     {
         $user = $request->user();
-        $group = array_key_exists((string) $request->query('group'), self::GROUPS) ? (string) $request->query('group') : null;
-        $limit = min(500, max(30, (int) $request->query('limit', 30)));
+        $group = QueryInput::oneOf($request, 'group', array_keys(self::GROUPS));
+        $limit = QueryInput::int($request, 'limit', 30, 30, 500);
         $all = $user->notifications()->latest()->limit(500)->get();
         $filtered = $group ? $all->filter(fn (DatabaseNotification $n) => self::groupOf($n) === $group)->values() : $all;
         $items = $filtered->take($limit);
-        $user->unreadNotifications()->update(['read_at' => now()]);
+        // Only what is on screen counts as read; older unseen ones stay unread until shown ("Show older").
+        $user->unreadNotifications()->whereKey($items->modelKeys())->update(['read_at' => now()]);
 
         return Inertia::render('Notifications/Index', [
             'actions' => $actions->for($user),

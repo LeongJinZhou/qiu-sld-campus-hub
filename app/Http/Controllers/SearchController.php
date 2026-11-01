@@ -6,6 +6,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Club;
 use App\Models\Event;
 use App\Models\User;
+use App\Support\QueryInput;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,8 +24,8 @@ class SearchController extends Controller
 
     public function __invoke(Request $request): Response
     {
-        $q = trim((string) $request->query('q', ''));
-        $type = in_array($request->query('type'), self::TYPES, true) ? $request->query('type') : 'all';
+        $q = QueryInput::text($request, 'q', 100);
+        $type = QueryInput::oneOf($request, 'type', self::TYPES, 'all');
         $like = '%'.addcslashes($q, '%_\\').'%';
         $wants = fn (string $t): bool => $type === 'all' || $type === $t;
 

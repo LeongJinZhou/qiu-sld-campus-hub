@@ -44,8 +44,12 @@ class EventRegistrationController extends Controller
 
     public function destroy(Request $request, Event $event): RedirectResponse
     {
-        $event->registrations()->where('user_id', $request->user()->id)->delete();
+        $registration = $event->registrations()->where('user_id', $request->user()->id)->first();
+        $paid = $registration?->paid_at !== null;
+        $registration?->delete(); // kept on record (soft delete) with its payment and order ID
 
-        return back()->with('success', 'Registration cancelled.');
+        return back()->with('success', $paid
+            ? 'Registration cancelled. Fees are not refunded through the app; register again before the event to get your paid place back.'
+            : 'Registration cancelled.');
     }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Services\Documents;
 
+use App\Exceptions\PdfConversionFailed;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use RuntimeException;
 use Symfony\Component\Process\Process;
 use ZipArchive;
 
@@ -21,7 +21,7 @@ class PdfConverter
     public function convert(string $sourcePath): string
     {
         if (! is_file($sourcePath)) {
-            throw new RuntimeException("PDF conversion failed: {$sourcePath} does not exist.");
+            throw new PdfConversionFailed("PDF conversion failed: {$sourcePath} does not exist.");
         }
         $this->normaliseFonts($sourcePath);
         $outDir = dirname($sourcePath);
@@ -56,7 +56,7 @@ class PdfConverter
             'stderr' => mb_substr((string) $last?->getErrorOutput(), 0, 2000), 'stdout' => mb_substr((string) $last?->getOutput(), 0, 2000),
         ]);
 
-        throw new RuntimeException('PDF conversion failed (exit '.$last?->getExitCode().'): '.trim((string) ($last?->getErrorOutput() ?: $last?->getOutput())));
+        throw new PdfConversionFailed('PDF conversion failed (exit '.$last?->getExitCode().'): '.trim((string) ($last?->getErrorOutput() ?: $last?->getOutput())));
     }
 
     private function removeDir(string $dir): void

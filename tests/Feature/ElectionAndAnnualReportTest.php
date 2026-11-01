@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\DocumentStatus;
+use App\Exceptions\PdfConversionFailed;
 use App\Models\Election;
 use App\Models\GeneratedFile;
 use App\Models\RoleAssignment;
@@ -8,6 +9,7 @@ use App\Models\User;
 use App\Models\Vote;
 use App\Services\Agm\AgmReportForm;
 use App\Services\Agm\Elections;
+use App\Services\Documents\PdfConverter;
 use App\Services\Reports\AnnualReports;
 use App\Services\Roles\RoleService;
 use App\Services\Time\SessionResolver;
@@ -134,7 +136,8 @@ it('builds the Annual Activities Report from the official PPTX with one details 
 
     $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/annual-report/generate")->assertSessionHas('success');
     $file->refresh();
-    expect($file->pptx_path)->toBeFile()->and($file->pdf_path)->toBeFile();
+    // The PowerPoint always exists; the PDF copy exists when LibreOffice could convert it (it is optional).
+    expect($file->pptx_path)->toBeFile()->and($file->pdf_path === null || is_file($file->pdf_path))->toBeTrue();
     $zip = new ZipArchive;
     $zip->open($file->pptx_path);
     $slides = collect(range(0, $zip->numFiles - 1))->map(fn ($i) => $zip->getNameIndex($i))->filter(fn ($n) => preg_match('#^ppt/slides/slide\d+\.xml$#', $n));
@@ -176,4 +179,16 @@ it('lets the committee add and remove positions before voting, name candidates b
 
     $this->travelTo($election->voting_open_at->addMinute());
     $this->actingAs($this->secretary)->delete("/election-positions/{$sports->id}")->assertSessionHas('error', 'Positions are fixed once voting opens.');
+});
+
+it('keeps the Annual Activities Report PowerPoint when the PDF copy cannot be made', function () {
+    $this->f['event']->update(['status' => DocumentStatus::Approved, 'venue' => 'Pantai Remis']);
+    $file = app(AnnualReports::class)->for($this->club, $this->agm->session, $this->secretary);
+    $this->mock(PdfConverter::class)->shouldReceive('convert')->andThrow(new PdfConversionFailed('LibreOffice is unavailable'));
+
+    $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/annual-report/generate")->assertSessionHas('success');
+
+    expect($file->fresh()->pptx_path)->toBeFile()->and($file->fresh()->pdf_path)->toBeNull();
+    $this->actingAs($this->secretary)->get("/clubs/{$this->club->slug}/annual-report/pptx")->assertOk();
+    $this->actingAs($this->secretary)->get("/clubs/{$this->club->slug}/annual-report/pdf")->assertNotFound();
 });
