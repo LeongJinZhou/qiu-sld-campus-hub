@@ -24,6 +24,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 /** Members list: committee/advisor see their club; SLD sees every club with extra filters. */
 class MembersController extends Controller
 {
+    public const PER_PAGE = 100;
+
     public function __construct(private readonly MembersQuery $members) {}
 
     public function club(Request $request, Club $club, SessionResolver $sessions): Response
@@ -90,8 +92,10 @@ class MembersController extends Controller
             'club' => $club?->only('slug', 'name'),
             'filters' => (object) $filters, // always a JSON object, even with no filters
             'counts' => $this->members->counts($rows),
-            'rows' => $rows->take(500)->values(),
-            'truncated' => $rows->count() > 500,
+            // Every member is reachable: 100 per page, with the total shown (the export has everything at once).
+            'rows' => $rows->forPage($page = max(1, $request->integer('page', 1)), self::PER_PAGE)->values(),
+            'pagination' => ['page' => min($page, max(1, (int) ceil($rows->count() / self::PER_PAGE))), 'per_page' => self::PER_PAGE, 'total' => $rows->count(),
+                'last_page' => max(1, (int) ceil($rows->count() / self::PER_PAGE))],
             'options' => [
                 'positions' => $all->pluck('position')->unique()->sort()->values(),
                 'year_groups' => $all->pluck('year_group')->filter()->unique()->sort()->values(),

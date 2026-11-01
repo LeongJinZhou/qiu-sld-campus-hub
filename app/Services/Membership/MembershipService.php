@@ -72,6 +72,20 @@ class MembershipService
         return $membership->refresh();
     }
 
+    /**
+     * One payment per membership cycle: refused when the membership is already paid (active or alumni), or while
+     * another payment (online receipt or cash handover) is still being settled.
+     */
+    public function assertCanPay(Membership $membership): void
+    {
+        if (in_array($membership->status, [MembershipStatus::Active, MembershipStatus::Alumni], true)) {
+            throw new DomainException('Your membership is already paid'.($membership->expires_on ? ' until '.$membership->expires_on->format('j M Y') : '').'. No further payment is needed.');
+        }
+        if ($membership->payments()->whereIn('status', [PaymentStatus::Reading, PaymentStatus::PendingReview, PaymentStatus::CashPending])->exists()) {
+            throw new DomainException('A payment for this membership is already being checked. Wait for it to finish.');
+        }
+    }
+
     /** 365 days from confirmation; renewing starts a new 365 days. Records ledger income for paid fees. */
     public function activate(MembershipPayment $payment, ?string $ledgerDescription = null): void
     {
@@ -81,8 +95,15 @@ class MembershipService
 
             return;
         }
-        DB::transaction(function () use ($payment, $ledgerDescription): void {
-            $membership = $payment->membership;
+        $settled = DB::transaction(function () use ($payment, $ledgerDescription): bool {
+            // Locked re-read: if another payment already settled this cycle, this one is refused, never counted twice.
+            $membership = Membership::whereKey($payment->membership_id)->lockForUpdate()->firstOrFail();
+            if ($membership->status === MembershipStatus::Active && $membership->payments()->whereKeyNot($payment->id)
+                ->whereIn('status', [PaymentStatus::Confirmed, PaymentStatus::AutoConfirmed])->where('verified_at', '>=', $membership->starts_on ?? today())->exists()) {
+                $payment->update(['status' => PaymentStatus::Rejected, 'review_note' => 'This membership was already paid by another payment.']);
+
+                return false;
+            }
             $membership->update([
                 'status' => MembershipStatus::Active,
                 'starts_on' => today(),
@@ -96,7 +117,12 @@ class MembershipService
                     category: 'membership', method: $payment->method, handledBy: $payment->method === 'cash' ? $payment->collector : null);
             }
             $membership->club->forceFill(['last_activity_at' => now()])->save();
+
+            return true;
         });
+        if (! $settled) {
+            return;
+        }
 
         $payment->user->notify(new DocumentNotification(
             "Welcome to {$payment->membership->club->name}",

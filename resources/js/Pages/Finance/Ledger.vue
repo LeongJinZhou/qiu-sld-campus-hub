@@ -80,6 +80,7 @@ const props = defineProps<{
     methods: Record<string, string>;
     clubEvents: { value: number; label: string }[];
     balance_sen: number;
+    position: { fund_sen: number; advances_sen: number; total_sen: number; by_event: { event_id: number | null; event: string | null; advanced_sen: number; spent_sen: number; outstanding_sen: number }[] };
     payees: {
         id: number;
         kind: string;
@@ -253,12 +254,32 @@ const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, .
                     <Link :href="`/clubs/${club.slug}`" class="text-sm text-brand-blue">Back to club</Link>
                 </div>
                 <div class="text-right">
-                    <p class="text-xs uppercase tracking-wide text-ink-muted">Balance</p>
-                    <p class="text-3xl font-bold tabular-nums" :class="balance_sen < 0 ? 'text-danger' : ''">
-                        {{ rm(balance_sen) }}
+                    <p class="text-xs uppercase tracking-wide text-ink-muted">Total club money</p>
+                    <p class="text-3xl font-bold tabular-nums" :class="position.total_sen < 0 ? 'text-danger' : ''">
+                        {{ rm(position.total_sen) }}
                     </p>
                 </div>
             </header>
+
+            <!-- Where the money is: the fund held by QIU, and advances (fund withdrawals) not yet spent. -->
+            <section class="grid gap-3 sm:grid-cols-3">
+                <div class="rounded-card border border-line bg-surface p-4 shadow-card">
+                    <p class="text-xs text-ink-muted">Fund balance (held by QIU)</p>
+                    <p class="text-xl font-bold tabular-nums">{{ rm(position.fund_sen) }}</p>
+                </div>
+                <div class="rounded-card border border-line bg-surface p-4 shadow-card">
+                    <p class="text-xs text-ink-muted">Advances not yet spent</p>
+                    <p class="text-xl font-bold tabular-nums" :class="position.advances_sen ? 'text-warning' : ''">{{ rm(position.advances_sen) }}</p>
+                    <ul v-if="position.by_event.some((a) => a.outstanding_sen)" class="mt-1 grid gap-0.5 text-xs text-ink-muted">
+                        <li v-for="a in position.by_event.filter((x) => x.outstanding_sen)" :key="a.event_id ?? 0">{{ a.event ?? 'Club' }}: {{ rm(a.outstanding_sen) }} of {{ rm(a.advanced_sen) }}</li>
+                    </ul>
+                </div>
+                <div class="rounded-card border border-line bg-surface p-4 shadow-card">
+                    <p class="text-xs text-ink-muted">Total club money</p>
+                    <p class="text-xl font-bold tabular-nums">{{ rm(position.total_sen) }}</p>
+                    <p class="text-xs text-ink-muted">Fund + advances. Advances are not expenses; their purchases are.</p>
+                </div>
+            </section>
 
             <Card v-if="can.sld">
                 <template #title>Opening balance (SLD only)</template>

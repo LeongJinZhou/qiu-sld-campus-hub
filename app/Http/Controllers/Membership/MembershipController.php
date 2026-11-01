@@ -106,8 +106,10 @@ class MembershipController extends Controller
         return Inertia::render('Membership/Review', [
             'club' => $club->only('slug', 'name'),
             'fee_sen' => $this->memberships->fee($club)?->amount_sen,
-            'items' => MembershipPayment::with('user.student')->where('club_id', $club->id)
-                ->whereIn('status', [PaymentStatus::PendingReview, PaymentStatus::AutoConfirmed])->latest()->limit(50)->get()
+            // Every receipt waiting for review is listed (never cut off); the latest 50 auto-confirmed ones follow for spot checks.
+            'pending_total' => MembershipPayment::where('club_id', $club->id)->where('status', PaymentStatus::PendingReview)->count(),
+            'items' => MembershipPayment::with('user.student')->where('club_id', $club->id)->where('status', PaymentStatus::PendingReview)->oldest()->get()
+                ->concat(MembershipPayment::with('user.student')->where('club_id', $club->id)->where('status', PaymentStatus::AutoConfirmed)->latest()->limit(50)->get())
                 ->map(fn (MembershipPayment $p) => [
                     'id' => $p->id,
                     'student' => $p->user->name,

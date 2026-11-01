@@ -40,7 +40,7 @@ const props = defineProps<{
     filters: Filters;
     counts: Record<string, number>;
     rows: Row[];
-    truncated: boolean;
+    pagination: { page: number; per_page: number; total: number; last_page: number };
     options: {
         positions: string[];
         year_groups: string[];
@@ -64,6 +64,7 @@ const apply = (extra: Filters = {}): void => {
     router.get(url, { ...f, search: search.value || undefined, sort: sort.value, ...extra }, { preserveState: true, preserveScroll: true, replace: true });
 };
 watchDebounced(search, () => apply(), { debounce: 300 });
+const goPage = (page: number): void => router.get(url, { ...f, search: search.value || undefined, sort: sort.value, page }, { preserveState: true, replace: true });
 const toOptions = (list: string[]) => Object.fromEntries(list.map((v) => [v, v]));
 const activeCount = computed(() => Object.entries(props.filters).filter(([k, v]) => !['search', 'sort'].includes(k) && (Array.isArray(v) ? v.length : v !== undefined)).length);
 const clear = (): void => router.get(url, {}, { preserveScroll: true });
@@ -159,7 +160,22 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
                     </tbody>
                 </table>
             </div>
-            <p v-if="truncated" class="text-xs text-ink-muted">Showing the first 500 — narrow the filters or export to see everything.</p>
+            <nav class="flex flex-wrap items-center justify-between gap-2 text-sm" aria-label="Pages">
+                <p class="text-ink-muted">
+                    <template v-if="pagination.total">
+                        Showing {{ (pagination.page - 1) * pagination.per_page + 1 }}–{{ Math.min(pagination.page * pagination.per_page, pagination.total) }} of
+                        <strong class="text-ink">{{ pagination.total.toLocaleString() }}</strong> members
+                    </template>
+                    <template v-else>0 members</template>
+                </p>
+                <div v-if="pagination.last_page > 1" class="flex items-center gap-1">
+                    <button type="button" class="h-9 rounded-control border border-line px-3 disabled:opacity-40" :disabled="pagination.page <= 1" @click="goPage(pagination.page - 1)">‹ Previous</button>
+                    <span class="px-2 tabular-nums">Page {{ pagination.page }} of {{ pagination.last_page }}</span>
+                    <button type="button" class="h-9 rounded-control border border-line px-3 disabled:opacity-40" :disabled="pagination.page >= pagination.last_page" @click="goPage(pagination.page + 1)">
+                        Next ›
+                    </button>
+                </div>
+            </nav>
         </div>
 
         <Drawer v-model:open="open" title="Filters">
