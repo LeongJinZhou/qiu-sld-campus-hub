@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PhotoEditor from '@/Components/profile/PhotoEditor.vue';
+import SettingsPanel from '@/Components/profile/SettingsPanel.vue';
 import ProfileView from '@/Components/profile/ProfileView.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
@@ -19,7 +20,15 @@ import { computed, ref } from 'vue';
 
 const props = defineProps<{
     profile: ProfileData;
-    account: { email: string; student_number: string | null; status: string | null; has_photo_override: boolean; has_cover: boolean; personal_email: string | null; hidden_sections: string[] };
+    account: {
+        email: string;
+        student_number: string | null;
+        status: string | null;
+        has_photo_override: boolean;
+        has_cover: boolean;
+        personal_email: string | null;
+        hidden_sections: string[];
+    };
     hideableSections: string[];
     saved?: { id: number; url: string; image: string | null; caption: string | null }[];
     publicUrl: string;
@@ -73,25 +82,53 @@ async function share(): Promise<void> {
                 <h2 class="font-semibold">Make the most of Campus Hub</h2>
                 <span class="text-xs font-medium text-ink-muted">{{ stepsDone }}/{{ steps.length }} done</span>
             </div>
-            <div class="mb-3 h-1.5 overflow-hidden rounded-full bg-surface-muted"><div class="h-full rounded-full bg-gradient-to-r from-brand-orange to-brand-magenta" :style="{ width: `${(stepsDone / steps.length) * 100}%` }" /></div>
+            <div class="mb-3 h-1.5 overflow-hidden rounded-full bg-surface-muted">
+                <div class="h-full rounded-full bg-gradient-to-r from-brand-orange to-brand-magenta" :style="{ width: `${(stepsDone / steps.length) * 100}%` }" />
+            </div>
             <ul class="grid gap-1 text-sm">
                 <li v-for="s in steps" :key="s.label">
-                    <component :is="s.href && !s.done ? Link : 'button'" :href="s.href" type="button" class="flex w-full items-center gap-3 rounded-control px-2 py-2 text-left" :class="s.done ? 'text-ink-muted' : 'hover:bg-surface-muted'" :disabled="s.done" @click="!s.done && s.action?.()">
-                        <span class="grid size-5 shrink-0 place-items-center rounded-full text-[11px]" :class="s.done ? 'bg-success text-white' : 'border border-line'">{{ s.done ? '✓' : '' }}</span>
+                    <component
+                        :is="s.href && !s.done ? Link : 'button'"
+                        :href="s.href"
+                        type="button"
+                        class="flex w-full items-center gap-3 rounded-control px-2 py-2 text-left"
+                        :class="s.done ? 'text-ink-muted' : 'hover:bg-surface-muted'"
+                        :disabled="s.done"
+                        @click="!s.done && s.action?.()"
+                    >
+                        <span class="grid size-5 shrink-0 place-items-center rounded-full text-[11px]" :class="s.done ? 'bg-success text-white' : 'border border-line'">{{
+                            s.done ? '✓' : ''
+                        }}</span>
                         <span :class="s.done ? 'line-through' : 'font-medium'">{{ s.label }}</span>
                     </component>
                 </li>
             </ul>
         </section>
 
-        <ProfileView :profile="profile" :extra-tabs="[{ key: 'upcoming', label: 'Coming up', icon: 'clock' }, { key: 'certificates', label: 'Certificates', icon: 'check' }, { key: 'saved', label: 'Saved', icon: 'bookmark' }]">
+        <ProfileView
+            :profile="profile"
+            :extra-tabs="[
+                { key: 'upcoming', label: 'Coming up', icon: 'clock' },
+                { key: 'certificates', label: 'Certificates', icon: 'check' },
+                { key: 'saved', label: 'Saved', icon: 'bookmark' },
+            ]"
+        >
             <template #cover-actions>
-                <button type="button" class="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur hover:bg-black/60" @click="cover = true">
+                <button
+                    type="button"
+                    class="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur hover:bg-black/60"
+                    @click="cover = true"
+                >
                     <Icon name="camera" :size="14" /> {{ account.has_cover ? 'Edit cover' : 'Add cover' }}
                 </button>
             </template>
             <template #avatar-action>
-                <button type="button" class="absolute bottom-1 right-1 grid size-9 place-items-center rounded-full border-2 border-surface bg-ink text-white shadow-pop" aria-label="Change photo" @click="photo = true">
+                <button
+                    type="button"
+                    class="absolute bottom-1 right-1 grid size-9 place-items-center rounded-full border-2 border-surface bg-ink text-white shadow-pop"
+                    aria-label="Change photo"
+                    @click="photo = true"
+                >
                     <Icon name="camera" :size="18" />
                 </button>
             </template>
@@ -101,18 +138,25 @@ async function share(): Promise<void> {
                 <Button variant="secondary" size="sm" @click="share"><Icon name="send" :size="16" /> {{ copied ? 'Copied!' : 'Share' }}</Button>
             </template>
             <template #meta>
-                <p class="text-xs text-ink-muted">{{ [account.student_number, account.email].filter(Boolean).join(" · ") }}</p>
+                <p class="text-xs text-ink-muted">{{ [account.student_number, account.email].filter(Boolean).join(' · ') }}</p>
             </template>
             <template #tab-upcoming>
                 <EmptyState v-if="!upcoming.length" title="Nothing coming up" description="Events you register for show here, with anything you still need to do." />
                 <ul class="grid gap-2">
                     <li v-for="e in upcoming" :key="e.slug">
-                        <Link :href="e.needs_payment ? `/events/${e.slug}/pay` : e.needs_indemnity ? `/events/${e.slug}/indemnity` : `/events/${e.slug}`" class="flex items-center gap-3 rounded-card border border-line bg-surface p-3 transition hover:shadow-card">
+                        <Link
+                            :href="e.needs_payment ? `/events/${e.slug}/pay` : e.needs_indemnity ? `/events/${e.slug}/indemnity` : `/events/${e.slug}`"
+                            class="flex items-center gap-3 rounded-card border border-line bg-surface p-3 transition hover:shadow-card"
+                        >
                             <img v-if="e.poster_url" :src="e.poster_url" alt="" class="size-14 shrink-0 rounded-control object-cover" />
-                            <span v-else class="grid size-14 shrink-0 place-items-center rounded-control bg-gradient-to-br from-brand-cyan to-brand-blue text-white"><Icon name="calendar" :size="22" /></span>
+                            <span v-else class="grid size-14 shrink-0 place-items-center rounded-control bg-gradient-to-br from-brand-cyan to-brand-blue text-white"
+                                ><Icon name="calendar" :size="22"
+                            /></span>
                             <span class="grid min-w-0 flex-1 text-sm">
                                 <strong class="truncate">{{ e.name }}</strong>
-                                <span class="truncate text-xs text-ink-muted">{{ dateTime(e.starts_at) }}<template v-if="e.venue"> · {{ e.venue }}</template> · {{ e.club }}</span>
+                                <span class="truncate text-xs text-ink-muted"
+                                    >{{ dateTime(e.starts_at) }}<template v-if="e.venue"> · {{ e.venue }}</template> · {{ e.club }}</span
+                                >
                             </span>
                             <Badge v-if="e.needs_payment" tone="warning">Pay now</Badge>
                             <Badge v-else-if="e.needs_indemnity" tone="warning">Sign indemnity</Badge>
@@ -122,9 +166,17 @@ async function share(): Promise<void> {
                 </ul>
             </template>
             <template #tab-certificates>
-                <EmptyState v-if="!certificates.length" title="No certificates yet" description="Committee positions and events you attend (clock in and out) appear here as downloadable certificates." />
+                <EmptyState
+                    v-if="!certificates.length"
+                    title="No certificates yet"
+                    description="Committee positions and events you attend (clock in and out) appear here as downloadable certificates."
+                />
                 <ul class="grid gap-2">
-                    <li v-for="c in certificates" :key="`${c.kind}-${c.source_id}`" class="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface p-4">
+                    <li
+                        v-for="c in certificates"
+                        :key="`${c.kind}-${c.source_id}`"
+                        class="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface p-4"
+                    >
                         <span class="min-w-0 flex-1">
                             <strong class="block">{{ c.title }}</strong>
                             <span class="text-sm text-ink-muted">You {{ c.statement }}</span>
@@ -150,10 +202,14 @@ async function share(): Promise<void> {
 
         <!-- Phones have no sidebar, so account actions sit at the bottom of the profile. -->
         <section class="mt-6 grid gap-2 md:hidden">
-            <Link href="/activities" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"><Icon name="ticket" :size="18" /> Activities &amp; tickets</Link>
-            <Link v-if="nav?.isAdmin" href="/admin" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"><Icon name="shield" :size="18" /> SLD Admin</Link>
-            <button type="button" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left text-sm font-medium text-danger shadow-card" @click="router.post('/logout')"><Icon name="logout" :size="18" /> Sign out</button>
+            <Link href="/activities" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"
+                ><Icon name="ticket" :size="18" /> Activities &amp; tickets</Link
+            >
+            <Link v-if="nav?.isAdmin" href="/admin" class="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card"
+                ><Icon name="shield" :size="18" /> SLD Admin</Link
+            >
         </section>
+        <SettingsPanel class="mt-6" />
 
         <PhotoEditor v-model:open="photo" :current="profile.photo_url" :name="profile.name" :has-override="account.has_photo_override" />
         <PhotoEditor v-model:open="cover" kind="cover" :current="profile.cover_url" :name="profile.name" :has-override="account.has_cover" />

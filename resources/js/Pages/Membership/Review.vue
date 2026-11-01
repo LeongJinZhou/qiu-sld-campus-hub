@@ -10,6 +10,7 @@ import { reactive } from 'vue';
 defineProps<{
     club: { slug: string; name: string };
     fee_sen: number | null;
+    pending_total: number;
     items: {
         id: number;
         student: string;
@@ -48,7 +49,7 @@ function decide(id: number, approve: boolean): void {
             <div>
                 <h1 class="text-xl font-bold">Membership payments · {{ club.name }}</h1>
                 <p class="text-sm text-ink-muted">
-                    Fee {{ fee_sen !== null ? rm(fee_sen) : 'not set' }}. Unclear receipts wait here; auto-confirmed ones are listed for spot checks.
+                    Fee {{ fee_sen !== null ? rm(fee_sen) : 'not set' }}. Unclear receipts wait here ({{ pending_total }} waiting, oldest first); the latest 50 auto-confirmed ones follow for spot checks.
                 </p>
             </div>
             <EmptyState v-if="!items.length" title="Nothing to review" />

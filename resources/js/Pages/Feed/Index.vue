@@ -56,6 +56,7 @@ function toggle(key: string): void {
             </div>
             <button
                 v-if="publishable.length"
+                data-tour="feed-create"
                 type="button"
                 class="reveal flex items-center gap-3 rounded-card border border-line bg-surface p-4 text-left text-sm text-ink-muted shadow-card transition hover:-translate-y-0.5 hover:shadow-pop"
                 @click="creating = true"

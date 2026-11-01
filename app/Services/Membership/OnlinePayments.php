@@ -32,9 +32,7 @@ class OnlinePayments
         if ($fee->amount_sen === 0) {
             throw new DomainException('This club is free to join.');
         }
-        if ($membership->payments()->whereIn('status', [PaymentStatus::Reading, PaymentStatus::PendingReview])->exists()) {
-            throw new DomainException('Your previous receipt is still being checked.');
-        }
+        $this->memberships->assertCanPay($membership);
         $hash = $this->guard->fingerprint($receipt);
         $this->guard->assertUnusedFile($hash, $membership->user_id);
 

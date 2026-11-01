@@ -7,6 +7,7 @@ use App\Events\DocumentApproved;
 use App\Services\Events\EventApprovalActions;
 use App\Services\Finance\WithdrawalProgress;
 use App\Services\Meetings\Meetings;
+use App\Support\SafeValueBinder;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use Spatie\Permission\PermissionRegistrar;
 
 class AppServiceProvider extends ServiceProvider
@@ -67,6 +69,9 @@ class AppServiceProvider extends ServiceProvider
         ] as $name => $perMinute) {
             RateLimiter::for($name, fn (Request $request) => Limit::perMinute($perMinute)->by($name.'|'.($request->user()?->id ?? $request->ip())));
         }
+
+        // Every spreadsheet export stores user text as text (no formula injection).
+        Cell::setValueBinder(new SafeValueBinder);
 
         // N+1 guard: outside production a lazy-loaded relation is reported, so missing eager loads surface in tests.
         Model::handleLazyLoadingViolationUsing(fn (Model $model, string $relation) => logger()->warning('Lazy loading', ['model' => $model::class, 'relation' => $relation]));
