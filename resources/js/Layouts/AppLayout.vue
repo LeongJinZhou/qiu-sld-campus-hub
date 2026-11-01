@@ -26,11 +26,12 @@ const items = computed<NavItem[]>(() => [
     { label: 'Feed', icon: 'home', href: '/feed', match: '/feed' },
     { label: 'Search', icon: 'search', href: '/search', match: '/search' },
     { label: 'Activities', icon: 'ticket', href: '/activities', match: '/activities' },
+    { label: 'Calendar', icon: 'calendar', href: '/calendar', match: '/calendar' },
     { label: 'Notifications', icon: 'bell', href: '/notifications', match: '/notifications', badge: (nav.value?.unread ?? 0) + (nav.value?.actions ?? 0) },
     ...(nav.value?.isStaff ? [{ label: 'Approvals', icon: 'check' as const, href: '/approvals', match: '/approvals' }] : []),
     { label: 'Profile', icon: 'user', href: '/me', match: '/me' },
 ]);
-const mobileItems = computed(() => items.value.filter((i) => i.label !== 'Approvals'));
+const mobileItems = computed(() => items.value.filter((i) => !['Approvals', 'Calendar'].includes(i.label)));
 const isActive = (item: NavItem): boolean => page.url === item.href || page.url.startsWith(item.match);
 
 // Live badge: refresh the unread count every 20 s while the app is on screen.
@@ -51,7 +52,9 @@ const logout = (): void => router.post('/logout');
                 <!-- Narrow rail: square icon. Full sidebar: the wide logo. -->
                 <img src="/icons/icon-192.png" alt="QIU Student Activity" class="size-9 rounded-lg lg:hidden" />
                 <img src="/brand/student-activity-black.png" alt="QIU Student Activity" class="hidden h-8 w-auto shrink-0 lg:block" />
-                <span class="hidden whitespace-nowrap text-base font-bold lg:inline"><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></span>
+                <span class="hidden whitespace-nowrap text-base font-bold lg:inline"
+                    ><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></span
+                >
             </Link>
             <nav class="grid gap-1" aria-label="Primary">
                 <Link
@@ -64,7 +67,11 @@ const logout = (): void => router.post('/logout');
                 >
                     <span class="relative">
                         <Icon :name="item.icon" :stroke-width="isActive(item) ? 2.4 : 1.8" class="transition group-hover:scale-105" />
-                        <span v-if="item.badge" class="absolute -right-1.5 -top-1.5 grid min-w-4 place-items-center rounded-full bg-brand-magenta px-1 text-[10px] font-bold text-white">{{ item.badge > 9 ? '9+' : item.badge }}</span>
+                        <span
+                            v-if="item.badge"
+                            class="absolute -right-1.5 -top-1.5 grid min-w-4 place-items-center rounded-full bg-brand-magenta px-1 text-[10px] font-bold text-white"
+                            >{{ item.badge > 9 ? '9+' : item.badge }}</span
+                        >
                     </span>
                     <span class="hidden lg:inline">{{ item.label }}</span>
                 </Link>
@@ -109,7 +116,13 @@ const logout = (): void => router.post('/logout');
             <ul class="flex justify-around">
                 <li v-for="item in mobileItems" :key="item.label">
                     <Link :href="item.href" class="relative grid h-14 w-14 place-items-center" :class="isActive(item) ? 'text-ink' : 'text-ink/60'" :aria-label="item.label">
-                        <Avatar v-if="item.icon === 'user' && user" :src="user.avatar_url" :name="user.name" size="xs" :class="isActive(item) ? 'ring-2 ring-ink rounded-full' : ''" />
+                        <Avatar
+                            v-if="item.icon === 'user' && user"
+                            :src="user.avatar_url"
+                            :name="user.name"
+                            size="xs"
+                            :class="isActive(item) ? 'ring-2 ring-ink rounded-full' : ''"
+                        />
                         <Icon v-else :name="item.icon" :size="26" :stroke-width="isActive(item) ? 2.4 : 1.8" />
                         <span v-if="item.badge" class="absolute right-2.5 top-2.5 size-2.5 rounded-full bg-brand-magenta ring-2 ring-surface" />
                     </Link>

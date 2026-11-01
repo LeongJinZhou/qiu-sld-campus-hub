@@ -10,6 +10,7 @@ use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\Auth\DevLoginController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ClubQrController;
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/report', [PostController::class, 'report'])->middleware('throttle:10,1')->name('posts.report');
 
     Route::get('/search', SearchController::class)->name('search');
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/people/lookup', PeopleLookupController::class)->middleware('throttle:120,1')->name('people.lookup');
     Route::get('/clubs', fn (Request $request) => to_route('search', ['type' => 'clubs', 'q' => $request->query('search')]))->name('clubs.index');
     Route::post('/clubs/{club}/posts', [PostController::class, 'store'])->name('clubs.posts.store');
@@ -270,3 +272,6 @@ Route::middleware('auth')->group(function () {
         });
     });
 });
+
+// Calendar subscription (Google Calendar fetches it without signing in): the signed link is the key.
+Route::get('/calendar/feed/{user}.ics', [CalendarController::class, 'feed'])->middleware(['signed', 'throttle:60,1'])->name('calendar.feed');
