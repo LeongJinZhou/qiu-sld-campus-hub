@@ -7,15 +7,14 @@ use App\Enums\DocumentType;
 use App\Models\Club;
 use App\Models\Document;
 use App\Models\Event;
-use App\Models\Payee;
 use App\Models\User;
 use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
 use DomainException;
 
 /**
- * 07 Fund Withdrawal/Transfer: items come from the approved proposal budget; weekly
- * activities need the request 2 weeks ahead; events only once their proposal is approved; several payees.
+ * 07 Fund Withdrawal/Transfer, for an event (items from its approved budget) or for the club (purpose stated,
+ * 2 weeks ahead). Any committee member fills it in; the Treasurer (the event's, for an event) signs and submits.
  */
 class FundWithdrawals
 {
@@ -45,14 +44,20 @@ class FundWithdrawals
 
     /**
      * Validates and normalises the form, checking every rule against records (never trusting totals from the browser).
+     * An event withdrawal is filed under its event and limited to its approved budget; a club withdrawal states its
+     * purpose. The bank account the money goes to is compulsory.
      *
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
     public function normalise(Club $club, array $input): array
     {
-        $event = isset($input['event_id']) ? Event::where('club_id', $club->id)->find($input['event_id']) : null;
-        if ($event) {
+        $scope = ($input['scope'] ?? (isset($input['event_id']) ? 'event' : 'club')) === 'event' ? 'event' : 'club';
+        $event = $scope === 'event' && isset($input['event_id']) ? Event::where('club_id', $club->id)->find($input['event_id']) : null;
+        if ($scope === 'event') {
+            if (! $event) {
+                throw new DomainException('Choose the event this withdrawal is for.');
+            }
             if ($event->status !== DocumentStatus::Approved) {
                 throw new DomainException('Fund withdrawal opens once the event proposal is approved.');
             }
@@ -64,31 +69,35 @@ class FundWithdrawals
                 }
             }
         } else {
+            if (trim((string) ($input['purpose'] ?? '')) === '') {
+                throw new DomainException('State what the club withdrawal is for.');
+            }
             $neededBy = CarbonImmutable::parse((string) ($input['needed_by'] ?? 'now'));
             if ($neededBy->lt(CarbonImmutable::today()->addDays(self::WEEKLY_LEAD_DAYS))) {
-                throw new DomainException('Weekly activity withdrawals must be requested at least 2 weeks before the money is needed.');
+                throw new DomainException('Club withdrawals must be requested at least 2 weeks before the money is needed.');
             }
+        }
+        $bank = array_map(fn ($v) => trim((string) $v), (array) ($input['bank'] ?? []));
+        if (($bank['bank_name'] ?? '') === '' || ($bank['account_name'] ?? '') === '' || ! preg_match('/^\d[\d\s-]{5,28}\d$/', $bank['account_number'] ?? '')) {
+            throw new DomainException('Fill in the bank, the account name and the account number (digits only) the money goes to.');
         }
 
         $items = array_values(array_map(fn ($i) => [
             'description' => $i['description'], 'unit_sen' => (int) $i['unit_sen'], 'quantity' => (int) $i['quantity'],
-            'amount_sen' => (int) $i['unit_sen'] * (int) $i['quantity'], 'method' => $i['method'],
+            'amount_sen' => (int) $i['unit_sen'] * (int) $i['quantity'], 'method' => $i['method'] ?? 'self',
         ], $input['items']));
         $total = array_sum(array_column($items, 'amount_sen'));
-        $payees = Payee::where('club_id', $club->id)->whereIn('id', array_column($input['payees'], 'payee_id'))->pluck('id')->all();
-        if (count($payees) !== count($input['payees'])) {
-            throw new DomainException('Choose payees saved for this club.');
-        }
-        if ($input['payees'] === [] || array_sum(array_map(fn ($p) => (int) $p['amount_sen'], $input['payees'])) !== $total) {
-            throw new DomainException('Payee amounts must add up to the total (RM '.number_format($total / 100, 2).').');
+        if ($total <= 0) {
+            throw new DomainException('Add at least one item with a price.');
         }
 
         return [
+            'scope' => $scope,
             'event_id' => $event?->id,
-            'purpose' => trim((string) $input['purpose']),
+            'purpose' => $event ? "the {$event->name} event" : trim((string) $input['purpose']),
             'needed_by' => $event?->starts_at->toDateString() ?? (string) $input['needed_by'],
             'items' => $items,
-            'payees' => array_values(array_map(fn ($p) => ['payee_id' => (int) $p['payee_id'], 'amount_sen' => (int) $p['amount_sen']], $input['payees'])),
+            'bank' => ['bank_name' => $bank['bank_name'], 'account_name' => $bank['account_name'], 'account_number' => (string) preg_replace('/\D/', '', $bank['account_number'])],
             'total_sen' => $total,
         ];
     }

@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['type', 'club_id', 'event_id', 'meeting_id', 'agm_id', 'session_id', 'status', 'created_by', 'submitted_at', 'decided_at'])]
+#[Fillable(['type', 'club_id', 'event_id', 'meeting_id', 'agm_id', 'session_id', 'status', 'created_by', 'submitted_at', 'decided_at',
+    'finance_stage', 'finance_file_path', 'bankin_path', 'bankin_reference', 'finance_note', 'completed_at'])]
 class Document extends Model
 {
     /** @var array<string, mixed> */
@@ -23,6 +24,7 @@ class Document extends Model
             'status' => DocumentStatus::class,
             'submitted_at' => 'datetime',
             'decided_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 
