@@ -50,9 +50,7 @@ class ApproverResolver
     private function clubRoles(Document $document, ScopedRole $role, ?string $position = null): Collection
     {
         return RoleAssignment::with('user')
-            ->where('scope_type', ScopeType::Club)
-            ->where('scope_id', $document->club_id)
-            ->where('session_id', $document->session_id)
+            ->actingFor($document->club_id, $document->session)
             ->where('role', $role)
             ->when($position, fn ($q) => $q->where('position', $position))
             ->get();

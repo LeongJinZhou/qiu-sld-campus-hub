@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ScopedRole;
 use App\Enums\ScopeType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -32,5 +33,21 @@ class RoleAssignment extends Model
     public function session(): BelongsTo
     {
         return $this->belongsTo(AcademicSession::class, 'session_id');
+    }
+
+    /**
+     * Club roles that count for a session today: that session's assignments that have not ended (an outgoing
+     * committee ends 7 days after an election), plus the next session's elected committee once its handover day
+     * has come.
+     *
+     * @param  Builder<RoleAssignment>  $query
+     */
+    public function scopeActingFor(Builder $query, int $clubId, AcademicSession $session): void
+    {
+        $next = AcademicSession::where('starts_on', '>', $session->starts_on)->orderBy('starts_on')->value('id');
+        $query->where('scope_type', ScopeType::Club)->where('scope_id', $clubId)->where(function (Builder $q) use ($session, $next): void {
+            $q->where(fn (Builder $w) => $w->where('session_id', $session->id)->where(fn (Builder $e) => $e->whereNull('ends_on')->orWhereDate('ends_on', '>=', today())))
+                ->when($next, fn (Builder $w) => $w->orWhere(fn (Builder $n) => $n->where('session_id', $next)->whereDate('starts_on', '<=', today())));
+        });
     }
 }

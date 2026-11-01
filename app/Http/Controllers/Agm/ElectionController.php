@@ -10,6 +10,8 @@ use App\Models\ElectionPosition;
 use App\Models\Vote;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Agm\Elections;
+use App\Services\QrCodes;
+use App\Services\Roles\CompulsoryPositionsCheck;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +25,7 @@ class ElectionController extends Controller
 {
     public function __construct(private readonly Elections $elections) {}
 
-    public function show(Request $request, Agm $agm): Response
+    public function show(Request $request, Agm $agm, QrCodes $qr): Response
     {
         $user = $request->user();
         $club = $agm->club;
@@ -35,6 +37,7 @@ class ElectionController extends Controller
         $phase = $election?->phase();
         // Tallies stay hidden until results are published (committee sees them once voting has closed).
         $showTally = $phase === 'published' || ($manages && $phase === 'closed');
+        $left = $election ? $this->elections->changesLeft($election, $user) : [];
         $voted = $election ? Vote::where('voter_id', $user->id)->whereIn('election_position_id', $election->positions()->select('id'))->pluck('candidate_id', 'election_position_id') : collect();
 
         return Inertia::render('Agm/Election', [
@@ -48,18 +51,67 @@ class ElectionController extends Controller
                 'nominations' => [$election->nominations_open_at->toIso8601String(), $election->nominations_close_at->toIso8601String()],
                 'voting' => [$election->voting_open_at->toIso8601String(), $election->voting_close_at->toIso8601String()],
                 'flags' => $manages ? $this->elections->flags($election) : [],
+                'handover_on' => $election->handoverOn()->toDateString(),
+                'handed_over' => $election->handed_over_at !== null,
+                'vote_changes' => Elections::VOTE_CHANGES,
                 'positions' => $election->positions()->with(['candidates.user.student', 'candidates' => fn ($q) => $q->withCount('votes')])->get()->map(fn (ElectionPosition $p) => [
                     'id' => $p->id, 'position' => $p->position, 'is_compulsory' => $p->is_compulsory,
                     'winner_id' => $p->winner_candidate_id, 'voted_for' => $voted[$p->id] ?? null,
+                    'changes_left' => $left[$p->id] ?? Elections::VOTE_CHANGES,
                     'candidates' => $p->candidates->map(fn (Candidate $c) => [
                         'id' => $c->id, 'name' => $c->user->name, 'statement' => $c->statement,
                         'photo_url' => $c->photo_path ? Storage::disk('public')->url($c->photo_path) : $c->user->photoUrl(),
                         'programme' => $c->user->student?->programmeShortForm(), 'year_group' => $c->user->student?->year_group,
                         'votes' => $showTally ? $c->votes_count : null,
+                        'is_me' => $c->user_id === $user->id,
+                        // A QR to spread among members: opens this ballot with the candidate highlighted.
+                        'share_url' => $url = route('election.show', ['agm' => $agm, 'candidate' => $c->id]),
+                        'qr_svg' => in_array($phase, ['nominating', 'between', 'voting'], true) ? $qr->svg($url) : null,
                     ]),
                 ]),
             ] : null,
+            'highlight' => $request->integer('candidate') ?: null,
+            'positions' => CompulsoryPositionsCheck::POSITIONS,
         ]);
+    }
+
+    /** Committee names a candidate: picked by name, or typed student ID. */
+    public function nominateFor(Request $request, ElectionPosition $position): RedirectResponse
+    {
+        Gate::authorize('viewInternal', $position->election->agm->club);
+        $data = $request->validate(['student_number' => ['required', 'string', 'max:30'], 'statement' => ['nullable', 'string', 'max:2000']]);
+        try {
+            $candidate = $this->elections->nominateFor($position, $request->user(), $data['student_number'], $data['statement'] ?? null);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', "{$candidate->user->name} is standing for {$position->position}.");
+    }
+
+    public function addPosition(Request $request, Election $election): RedirectResponse
+    {
+        Gate::authorize('viewInternal', $election->agm->club);
+        $name = $request->validate(['position' => ['required', 'string', 'max:100']])['position'];
+        try {
+            $this->elections->addPosition($election, $name);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', "{$name} added to the ballot.");
+    }
+
+    public function removePosition(ElectionPosition $position): RedirectResponse
+    {
+        Gate::authorize('viewInternal', $position->election->agm->club);
+        try {
+            $this->elections->removePosition($position);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Position removed.');
     }
 
     public function store(Request $request, Agm $agm, AgmPeriods $periods): RedirectResponse
@@ -106,7 +158,7 @@ class ElectionController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', "Vote cast for {$position->position}.");
+        return back()->with('success', "Vote saved for {$position->position}.");
     }
 
     public function publish(Election $election): RedirectResponse
@@ -118,6 +170,6 @@ class ElectionController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Results published. They now appear in the AGM Report (6.0 and 7.0).');
+        return back()->with('success', 'Results published. The new committee takes over in '.Elections::HANDOVER_DAYS.' days; the results are in the AGM Report (6.0 and 7.0).');
     }
 }
