@@ -37,7 +37,7 @@ const isActive = (href: string): boolean => (href === '/admin' ? page.url === '/
 </script>
 
 <template>
-    <div class="min-h-dvh md:grid md:grid-cols-[15rem_1fr]">
+    <div class="min-h-dvh md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
         <Toast />
         <CommitteeFeePopup />
         <aside class="hidden border-r border-line bg-surface md:block">

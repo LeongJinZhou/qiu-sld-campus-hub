@@ -171,3 +171,32 @@
 .camera-frame canvas {
     display: none !important;
 }
+
+/*
+ * Phones: the page itself never slides sideways. Wide tables, chip rows and carousels scroll inside their own
+ * boxes; anything else that is a little too wide is clipped instead of letting the whole page be dragged.
+ */
+html,
+body {
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+}
+#app,
+main {
+    max-width: 100vw;
+    min-width: 0;
+}
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+}
+pre,
+code {
+    overflow-wrap: anywhere;
+}
+/* A grid cell never grows wider than its column because of a long word, table or scrolling row inside it. */
+:where(.grid) > * {
+    min-width: 0;
+}

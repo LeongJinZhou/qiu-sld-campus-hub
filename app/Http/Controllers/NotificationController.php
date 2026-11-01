@@ -14,11 +14,19 @@ use Inertia\Response;
 
 class NotificationController extends Controller
 {
-    /** "Action needed" first (stays until done), then the latest notifications, which are marked read. */
+    public const GROUPS = ['social' => 'Club activity', 'money' => 'Payments & finance', 'documents' => 'Approvals & documents', 'events' => 'Events & tickets', 'other' => 'Other'];
+
+    private const SOCIAL = ['likes', 'comments', 'saves', 'follows', 'club_posts'];
+
+    /** "Action needed" first (stays until done), then notifications by group (filter, load more), marked read. */
     public function __invoke(Request $request, ActionItems $actions): Response
     {
         $user = $request->user();
-        $items = $user->notifications()->latest()->limit(50)->get();
+        $group = array_key_exists((string) $request->query('group'), self::GROUPS) ? (string) $request->query('group') : null;
+        $limit = min(500, max(30, (int) $request->query('limit', 30)));
+        $all = $user->notifications()->latest()->limit(500)->get();
+        $filtered = $group ? $all->filter(fn (DatabaseNotification $n) => self::groupOf($n) === $group)->values() : $all;
+        $items = $filtered->take($limit);
         $user->unreadNotifications()->update(['read_at' => now()]);
 
         return Inertia::render('Notifications/Index', [
@@ -29,12 +37,53 @@ class NotificationController extends Controller
                 'body' => $n->data['body'] ?? '',
                 'url' => $n->data['url'] ?? null,
                 'category' => $n->data['category'] ?? 'update',
+                'group' => self::groupOf($n),
                 'at' => $n->created_at?->diffForHumans(),
                 'unread' => $n->read_at === null,
             ]),
+            'hasMore' => $filtered->count() > $limit,
+            'limit' => $limit,
+            'group' => $group,
+            'groups' => collect(self::GROUPS)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label, 'count' => $all->filter(fn ($n) => self::groupOf($n) === $key)->count()])->values(),
+            'total' => $all->count(),
             'mutable' => User::MUTABLE_NOTIFICATIONS,
             'muted' => $user->notification_mutes ?? [],
         ]);
+    }
+
+    /** Clear one notification. */
+    public function destroy(Request $request, string $id): RedirectResponse
+    {
+        $request->user()->notifications()->whereKey($id)->delete();
+
+        return back();
+    }
+
+    /** Clear all notifications, or one group (e.g. all club activity). Action needed items are not affected. */
+    public function clear(Request $request): RedirectResponse
+    {
+        $group = $request->validate(['group' => ['nullable', Rule::in(array_keys(self::GROUPS))]])['group'] ?? null;
+        $ids = $request->user()->notifications()->get()->filter(fn (DatabaseNotification $n) => $group === null || self::groupOf($n) === $group)->modelKeys();
+        $request->user()->notifications()->whereKey($ids)->delete();
+
+        return back()->with('success', count($ids).' notification'.(count($ids) === 1 ? '' : 's').' cleared.');
+    }
+
+    /** Sorts a notification into a group by its type, or by what its title is about. */
+    public static function groupOf(DatabaseNotification $n): string
+    {
+        $category = $n->data['category'] ?? null;
+        if (in_array($category, self::SOCIAL, true)) {
+            return 'social';
+        }
+        $text = mb_strtolower(($n->data['title'] ?? '').' '.($category ?? ''));
+
+        return match (true) {
+            (bool) preg_match('/pay|paid|fee|cash|receipt|purchase|claim|transfer|withdraw|refund|finance|money|bank/', $text) => 'money',
+            (bool) preg_match('/approv|proposal|return|reject|submit|sign|document|minutes|report|agm|election|vote/', $text) => 'documents',
+            (bool) preg_match('/event|ticket|indemnity|registered|attendance|helper/', $text) => 'events',
+            default => 'other',
+        };
     }
 
     /** Mute or unmute likes, comments, saves or follows. */
