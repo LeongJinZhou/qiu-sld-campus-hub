@@ -95,9 +95,17 @@ class ApprovalEngine
         $this->advance($approval->document->fresh());
     }
 
-    public function returnToClub(Approval $approval, User $user, string $comment): void
+    /** @param list<array{key: string, note: string}> $sections the parts to fix, highlighted for the club */
+    public function returnToClub(Approval $approval, User $user, string $comment, array $sections = []): void
     {
+        if (trim($comment) === '' && $sections === []) {
+            throw new DomainException('Say what needs changing: a comment or the parts to fix.');
+        }
+        if ($comment === '') {
+            $comment = 'Please fix: '.implode('; ', array_map(fn (array $s) => "{$s['key']}: {$s['note']}", $sections));
+        }
         $this->close($approval, $user, ApprovalDecision::Returned, DocumentStatus::Returned, $comment);
+        $approval->update(['sections' => $sections ?: null]);
     }
 
     public function reject(Approval $approval, User $user, string $comment): void

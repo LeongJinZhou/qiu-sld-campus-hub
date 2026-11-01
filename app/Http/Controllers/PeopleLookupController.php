@@ -15,13 +15,13 @@ use Illuminate\Http\Request;
  */
 class PeopleLookupController extends Controller
 {
-    public const LIMIT = 8;
+    public const LIMIT = 20;
 
     public function __invoke(Request $request): JsonResponse
     {
         $user = $request->user();
         abort_unless($user->isSldAdmin() || $user->roleAssignments()->exists(), 403);
-        $q = trim((string) $request->validate(['q' => ['required', 'string', 'min:2', 'max:100']])['q']);
+        $q = trim((string) $request->validate(['q' => ['required', 'string', 'min:1', 'max:100']])['q']);
         $words = array_slice(preg_split('/\s+/', $q) ?: [], 0, 4);
 
         $students = Student::query()->where('status', StudentStatus::Active)

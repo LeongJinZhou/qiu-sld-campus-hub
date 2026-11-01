@@ -33,6 +33,9 @@ class SettingsRequest extends FormRequest
                 'alumni' => ['required', 'array'],
                 'alumni.*' => ['required', 'string', 'max:50'],
             ],
+            'cca' => [
+                'max_hours' => ['required', 'numeric', 'min:0.5', 'max:100'],
+            ],
             'sessions' => [
                 'name' => ['required', 'regex:/^\d{4}\/\d{4}$/', 'unique:sessions_academic,name'],
             ],

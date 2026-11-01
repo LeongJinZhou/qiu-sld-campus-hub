@@ -41,7 +41,7 @@ const active = ref(0);
 watchDebounced(
     q,
     async (value) => {
-        if (picked.value || value.trim().length < 2) {
+        if (picked.value || value.trim().length < 1) {
             results.value = [];
             return;
         }
@@ -154,7 +154,7 @@ defineExpose({ clear });
         </Transition>
         <Transition name="fade-up">
             <ul
-                v-if="open && !picked && q.trim().length >= 2"
+                v-if="open && !picked && q.trim().length >= 1"
                 :id="`${id}-list`"
                 role="listbox"
                 class="absolute inset-x-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-control border border-line bg-surface py-1 shadow-pop"

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useId } from 'vue';
 
-withDefaults(defineProps<{ label?: string; error?: string; rows?: number; readonly?: boolean; placeholder?: string }>(), {
+withDefaults(defineProps<{ label?: string; error?: string; rows?: number; readonly?: boolean; placeholder?: string; required?: boolean }>(), {
     rows: 4,
     readonly: false,
 });
@@ -11,7 +11,7 @@ const id = useId();
 
 <template>
     <div class="grid gap-1.5">
-        <label v-if="label" :for="id" class="text-sm font-medium text-ink">{{ label }}</label>
+        <label v-if="label" :for="id" class="text-sm font-medium text-ink">{{ label }}<span v-if="required" class="text-danger"> *</span></label>
         <textarea
             :id="id"
             v-model="model"
