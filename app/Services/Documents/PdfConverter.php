@@ -2,6 +2,7 @@
 
 namespace App\Services\Documents;
 
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use RuntimeException;
 use Symfony\Component\Process\Process;
@@ -19,19 +20,55 @@ class PdfConverter
 
     public function convert(string $sourcePath): string
     {
+        if (! is_file($sourcePath)) {
+            throw new RuntimeException("PDF conversion failed: {$sourcePath} does not exist.");
+        }
         $this->normaliseFonts($sourcePath);
         $outDir = dirname($sourcePath);
-        // A private profile dir lets several conversions run at once.
-        $profile = 'file://'.sys_get_temp_dir().'/lo-profile-'.getmypid();
-        $process = new Process([config('sld.soffice'), "-env:UserInstallation={$profile}", '--headless', '--convert-to', 'pdf', '--outdir', $outDir, $sourcePath]);
-        $process->setTimeout(120)->run();
-
         $pdf = $outDir.'/'.pathinfo($sourcePath, PATHINFO_FILENAME).'.pdf';
-        if (! $process->isSuccessful() || ! is_file($pdf)) {
-            throw new RuntimeException('PDF conversion failed: '.trim($process->getErrorOutput() ?: $process->getOutput()));
-        }
 
-        return $pdf;
+        // A private, writable LibreOffice profile per process (a shared /tmp profile is the usual cause of silent
+        // failures); on failure, one retry with a brand-new profile.
+        $last = null;
+        foreach ([false, true] as $fresh) {
+            $profileDir = storage_path('framework/lo-profile/'.getmypid().($fresh ? '-'.bin2hex(random_bytes(3)) : ''));
+            @mkdir($profileDir, 0775, true);
+            $process = new Process(
+                [config('sld.soffice'), '-env:UserInstallation=file://'.$profileDir, '--headless', '--norestore', '--nologo', '--convert-to', 'pdf', '--outdir', $outDir, $sourcePath],
+                null,
+                ['HOME' => $profileDir, 'TMPDIR' => sys_get_temp_dir()],
+            );
+            $process->setTimeout(120)->run();
+            if ($process->isSuccessful() && is_file($pdf)) {
+                if ($fresh) {
+                    $this->removeDir($profileDir);
+                }
+
+                return $pdf;
+            }
+            $last = $process;
+            if ($fresh) {
+                $this->removeDir($profileDir);
+            }
+        }
+        Log::error('PDF conversion failed', [
+            'file' => basename($sourcePath), 'binary' => config('sld.soffice'), 'exit_code' => $last?->getExitCode(),
+            'stderr' => mb_substr((string) $last?->getErrorOutput(), 0, 2000), 'stdout' => mb_substr((string) $last?->getOutput(), 0, 2000),
+        ]);
+
+        throw new RuntimeException('PDF conversion failed (exit '.$last?->getExitCode().'): '.trim((string) ($last?->getErrorOutput() ?: $last?->getOutput())));
+    }
+
+    private function removeDir(string $dir): void
+    {
+        if (! is_dir($dir)) {
+            return;
+        }
+        $items = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($items as $item) {
+            $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+        }
+        @rmdir($dir);
     }
 
     /** Rewrites the file in place: every run in a Word file, every cell style in a workbook. */

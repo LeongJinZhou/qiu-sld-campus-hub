@@ -62,6 +62,7 @@ class FinanceController extends Controller
             'clubEvents' => Event::where('club_id', $club->id)->orderByDesc('starts_at')->get(['id', 'name', 'starts_at'])
                 ->map(fn (Event $e) => ['value' => $e->id, 'label' => "{$e->name} · {$e->starts_at->format('j M Y')}"]),
             'balance_sen' => $this->ledger->balance($club),
+            'position' => $this->ledger->position($club),
             'payees' => Payee::where('club_id', $club->id)->orderBy('kind')->get()->map(fn (Payee $p) => [
                 'id' => $p->id, 'kind' => $p->kind, 'name' => $p->name, 'bank_name' => $p->bank_name, 'account' => $p->maskedAccount(),
             ]),
