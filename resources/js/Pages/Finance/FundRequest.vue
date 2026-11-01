@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import FormSection from '@/Components/forms/FormSection.vue';
-import LockedField from '@/Components/forms/LockedField.vue';
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
 import Modal from '@/Components/ui/Modal.vue';
@@ -12,39 +11,64 @@ import { date, rm } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
+type Person = { id: number; name: string };
 const props = defineProps<{
     club: { slug: string; name: string };
     events: { id: number; name: string; date: string; lines: { description: string; unit_sen: number; quantity: number; amount_sen: number }[] }[];
-    payees: { id: number; label: string }[];
     selectedEvent: number | null;
     earliestWeekly: string;
-    secretary: string | null;
+    clubTreasurer: Person | null;
+    eventTreasurers: Record<number, Person>;
+    me: number;
 }>();
 
 const form = useForm({
+    scope: (props.selectedEvent || props.events.length ? 'event' : 'club') as 'event' | 'club',
     event_id: props.selectedEvent as number | null,
     purpose: '',
     needed_by: '',
     items: [] as { description: string; unit_sen: number; quantity: number; method: 'vendor' | 'self' }[],
-    payees: [] as { payee_id: number | null; amount_sen: number }[],
+    bank: { bank_name: '', account_name: '', account_number: '' },
+    bank_confirmed: false,
     signature: null as string | null,
     signature_strokes: null as string | null,
 });
-const event = computed(() => props.events.find((e) => e.id === form.event_id) ?? null);
-// Items come from the approved budget; pre-fill all of them when an event is picked.
-watch(event, (e) => {
-    form.items = e ? e.lines.map((l) => ({ description: l.description, unit_sen: l.unit_sen, quantity: l.quantity, method: 'vendor' as const })) : [];
-    if (e) form.purpose = `the ${e.name} event`;
-}, { immediate: true });
+const event = computed(() => (form.scope === 'event' ? (props.events.find((e) => e.id === form.event_id) ?? null) : null));
+// Event: items come from the approved budget (all pre-filled). Club: type the items.
+watch(
+    () => [form.scope, event.value?.id],
+    () => {
+        form.items = event.value
+            ? event.value.lines.map((l) => ({ description: l.description, unit_sen: l.unit_sen, quantity: l.quantity, method: 'vendor' as const }))
+            : form.scope === 'club'
+              ? [{ description: '', unit_sen: 0, quantity: 1, method: 'self' as const }]
+              : [];
+    },
+    { immediate: true },
+);
 const total = computed(() => form.items.reduce((s, i) => s + i.unit_sen * Number(i.quantity || 0), 0));
-const payeeTotal = computed(() => form.payees.reduce((s, p) => s + Number(p.amount_sen || 0), 0));
-const signing = ref(false);
-const submit = (): void => form.post(`/clubs/${props.club.slug}/fund-requests`, { onFinish: () => (signing.value = false) });
+const treasurer = computed<Person | null>(() => (form.scope === 'event' ? (form.event_id ? (props.eventTreasurers[form.event_id] ?? null) : null) : props.clubTreasurer));
+const iAmTreasurer = computed(() => treasurer.value?.id === props.me);
 const setUnit = (row: { unit_sen: number }, value: string): void => {
-    row.unit_sen = Math.round(Number(value || 0) * 100);
+    row.unit_sen = Math.round(Number(value.replace(/[^\d.]/g, '') || 0) * 100);
 };
-const setPayee = (row: { amount_sen: number }, value: string): void => {
-    row.amount_sen = Math.round(Number(value || 0) * 100);
+const ready = computed(
+    () =>
+        total.value > 0 &&
+        form.bank.bank_name.trim() !== '' &&
+        form.bank.account_name.trim() !== '' &&
+        /^\d[\d\s-]{5,28}\d$/.test(form.bank.account_number.trim()) &&
+        (form.scope === 'event' ? !!form.event_id : form.purpose.trim() !== '' && !!form.needed_by),
+);
+
+// Bank details are checked twice: once on the form, then on a confirmation screen before anything is sent.
+const confirming = ref(false);
+const send = (): void => {
+    form.bank_confirmed = true;
+    form.post(`/clubs/${props.club.slug}/fund-requests`, {
+        onFinish: () => (confirming.value = false),
+        onError: () => (form.bank_confirmed = false),
+    });
 };
 </script>
 
@@ -54,57 +78,143 @@ const setPayee = (row: { amount_sen: number }, value: string): void => {
         <div class="grid gap-6">
             <header>
                 <h1 class="text-xl font-bold">Fund Withdrawal / Transfer</h1>
-                <p class="text-sm text-ink-muted">07 template · {{ club.name }} · Prepared by you → President → Advisor → Assistant Registrar → Bursar (endorse) → COO</p>
+                <p class="text-sm text-ink-muted">
+                    07 template · {{ club.name }} · Treasurer signs → Advisor → SLD → Finance signs → bank-in → Treasurer uploads proof → SLD confirms. You are told at every step.
+                </p>
             </header>
 
-            <FormSection title="Request">
-                <div class="grid gap-4 sm:grid-cols-3">
-                    <LockedField label="To" value="Student Life Division" />
-                    <LockedField label="From" :value="club.name" />
-                    <LockedField label="CC" value="Accounts and Finance Division" />
+            <FormSection title="What is it for?" required>
+                <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Withdrawal for">
+                    <button
+                        v-for="o in [
+                            { k: 'event', l: 'An event', d: 'Filed under the event; items from its approved budget' },
+                            { k: 'club', l: 'The club', d: 'Weekly activities and other club costs; state the purpose' },
+                        ] as const"
+                        :key="o.k"
+                        type="button"
+                        role="radio"
+                        :aria-checked="form.scope === o.k"
+                        class="grid gap-1 rounded-card border p-3 text-left text-sm transition"
+                        :class="form.scope === o.k ? 'border-brand-cyan bg-brand-cyan/10 ring-2 ring-brand-cyan/30' : 'border-line hover:bg-surface-muted'"
+                        @click="form.scope = o.k"
+                    >
+                        <strong>{{ o.l }}</strong
+                        ><span class="text-xs text-ink-muted">{{ o.d }}</span>
+                    </button>
                 </div>
-                <Select v-model="form.event_id" label="For" :options="[{ value: '', label: 'Weekly activity (no event)' }, ...events.map((e) => ({ value: e.id, label: `${e.name} · ${e.date}` }))]" />
-                <template v-if="!event">
-                    <Input v-model="form.purpose" label="To cover" placeholder="weekly training equipment" :error="form.errors.purpose" />
-                    <Input v-model="form.needed_by" type="date" label="Money needed by" :hint="`At least 2 weeks ahead: ${date(earliestWeekly)} or later`" :error="form.errors.needed_by" />
+                <template v-if="form.scope === 'event'">
+                    <Select
+                        v-model="form.event_id"
+                        label="Event"
+                        required
+                        placeholder="Choose an approved event"
+                        :options="events.map((e) => ({ value: e.id, label: `${e.name} · ${e.date}` }))"
+                        :error="form.errors.event_id"
+                    />
+                    <p v-if="!events.length" class="text-sm text-warning">No approved events yet. A withdrawal for an event opens once its proposal is approved.</p>
+                </template>
+                <template v-else>
+                    <Textarea v-model="form.purpose" label="Purpose" required :rows="2" placeholder="e.g. Weekly training balls and cones, November" :error="form.errors.purpose" />
+                    <Input
+                        v-model="form.needed_by"
+                        type="date"
+                        label="Money needed by"
+                        required
+                        :hint="`At least 2 weeks ahead: ${date(earliestWeekly)} or later`"
+                        :error="form.errors.needed_by"
+                    />
                 </template>
             </FormSection>
 
-            <FormSection title="Items" :hint="event ? 'From the approved budget. Lower an amount or remove lines you do not need now.' : undefined">
-                <div v-for="(item, i) in form.items" :key="i" class="grid gap-2 sm:grid-cols-[1fr_8rem_6rem_7rem_11rem_auto] sm:items-end">
-                    <Input v-model="item.description" label="Item" :readonly="!!event" />
-                    <Input :model-value="(item.unit_sen / 100).toFixed(2)" type="number" label="Unit price (RM)" :readonly="!!event" @update:model-value="setUnit(item, String($event))" />
-                    <Input v-model="item.quantity" type="number" label="Quantity" />
-                    <LockedField label="Total (RM)" :value="((item.unit_sen * Number(item.quantity || 0)) / 100).toFixed(2)" />
-                    <Select v-model="item.method" label="Payment method" :options="[{ value: 'vendor', label: 'QIU to vendor' }, { value: 'self', label: 'Student self purchase' }]" />
-                    <button type="button" class="pb-2 text-ink-muted hover:text-danger" aria-label="Remove" @click="form.items.splice(i, 1)">✕</button>
+            <FormSection title="Items" required :hint="form.scope === 'event' ? 'From the approved budget. Lower the amount if you need less.' : undefined">
+                <div v-for="(item, i) in form.items" :key="i" class="grid grid-cols-[1fr_7rem_5rem_auto] items-end gap-2">
+                    <Input v-model="item.description" :label="i === 0 ? 'Item' : undefined" :readonly="form.scope === 'event'" />
+                    <Input
+                        :model-value="item.unit_sen ? (item.unit_sen / 100).toFixed(2) : ''"
+                        :label="i === 0 ? 'Price (RM)' : undefined"
+                        @update:model-value="(v) => setUnit(item, String(v ?? ''))"
+                    />
+                    <Input v-model="item.quantity" type="number" :label="i === 0 ? 'Qty' : undefined" />
+                    <button
+                        v-if="form.scope === 'club' && form.items.length > 1"
+                        type="button"
+                        class="h-10 px-1 text-ink-muted hover:text-danger"
+                        aria-label="Remove item"
+                        @click="form.items.splice(i, 1)"
+                    >
+                        ✕
+                    </button>
+                    <span v-else />
                 </div>
-                <button v-if="!event" type="button" class="justify-self-start text-sm font-medium text-brand-blue" @click="form.items.push({ description: '', unit_sen: 0, quantity: 1, method: 'vendor' })">＋ Add item</button>
-                <p class="text-right font-semibold">Total {{ rm(total) }}</p>
+                <button
+                    v-if="form.scope === 'club'"
+                    type="button"
+                    class="justify-self-start text-sm font-medium text-brand-blue"
+                    @click="form.items.push({ description: '', unit_sen: 0, quantity: 1, method: 'self' })"
+                >
+                    ＋ Add item
+                </button>
+                <p class="flex justify-between border-t border-line pt-2 font-semibold">
+                    <span>Total</span><span class="tabular-nums">{{ rm(total) }}</span>
+                </p>
+                <p v-if="form.errors.items" class="text-xs text-danger">{{ form.errors.items }}</p>
             </FormSection>
 
-            <FormSection title="Transfer to" :hint="`Vendor accounts for “QIU to vendor”, the treasurer account for “Student self purchase”. Amounts must add up to ${rm(total)}.`">
-                <div v-for="(p, i) in form.payees" :key="i" class="grid gap-2 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
-                    <Select v-model="p.payee_id" label="Payee" :options="payees.map((x) => ({ value: x.id, label: x.label }))" placeholder="Choose" />
-                    <Input :model-value="(p.amount_sen / 100).toFixed(2)" type="number" label="Amount (RM)" @update:model-value="setPayee(p, String($event))" />
-                    <button type="button" class="pb-2 text-ink-muted hover:text-danger" aria-label="Remove" @click="form.payees.splice(i, 1)">✕</button>
+            <FormSection title="Bank account the money goes to" required hint="Finance banks the money into this account. Check every digit.">
+                <div class="grid gap-3 sm:grid-cols-3">
+                    <Input v-model="form.bank.bank_name" label="Bank" required placeholder="e.g. Maybank" :error="form.errors['bank.bank_name']" />
+                    <Input v-model="form.bank.account_name" label="Account name" required placeholder="As printed by the bank" :error="form.errors['bank.account_name']" />
+                    <Input v-model="form.bank.account_number" label="Account number" required placeholder="Digits only" :error="form.errors['bank.account_number']" />
                 </div>
-                <button type="button" class="justify-self-start text-sm font-medium text-brand-blue" @click="form.payees.push({ payee_id: null, amount_sen: 0 })">＋ Add payee</button>
-                <p class="text-sm" :class="payeeTotal === total ? 'text-success' : 'text-warning'">Payees {{ rm(payeeTotal) }} / total {{ rm(total) }}</p>
-                <p class="text-xs text-ink-muted">Save new treasurer or vendor accounts on the club's Finance page first.</p>
+            </FormSection>
+
+            <FormSection title="Treasurer's signature">
+                <p v-if="!treasurer" class="text-sm text-warning">
+                    {{ form.scope === 'event' ? 'This event has no Treasurer on its committee yet. Add one in the proposal first.' : 'The club has no Treasurer yet.' }}
+                </p>
+                <p v-else-if="iAmTreasurer" class="text-sm">
+                    You are the {{ form.scope === 'event' ? 'event' : 'club' }} Treasurer: sign below and it goes straight to your Advisor.
+                </p>
+                <p v-else class="text-sm">
+                    Only the {{ form.scope === 'event' ? 'event' : 'club' }} Treasurer, <strong>{{ treasurer.name }}</strong
+                    >, can sign. When you send it, they are asked to check and sign.
+                </p>
+                <SignaturePad v-if="iAmTreasurer" v-model="form.signature" v-model:strokes="form.signature_strokes" label="Your signature" />
             </FormSection>
 
             <div class="flex justify-end">
-                <Button :disabled="!form.items.length || payeeTotal !== total" @click="signing = true">Sign &amp; submit</Button>
+                <Button size="lg" :disabled="!ready || !treasurer || (iAmTreasurer && !form.signature)" @click="confirming = true">
+                    {{ iAmTreasurer ? 'Check bank details & sign' : `Check bank details & send to ${treasurer?.name ?? 'the Treasurer'}` }}
+                </Button>
             </div>
         </div>
 
-        <Modal v-model:open="signing" title="Prepared by">
-            <div class="grid gap-4">
-                <p class="text-sm text-ink-muted">Any committee member can prepare and submit. Your name and position go on the form as "Prepared by". Date and time come from the server.</p>
-                <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Signature" />
-                <p v-if="Object.keys(form.errors).length" class="text-sm text-danger">{{ Object.values(form.errors)[0] }}</p>
-                <Button :disabled="!form.signature" :loading="form.processing" @click="submit">Submit</Button>
+        <Modal v-model:open="confirming" title="Are these bank details correct?">
+            <div class="grid gap-4 text-sm">
+                <p class="text-ink-muted">Money sent to a wrong account is very hard to get back. Read each line once more.</p>
+                <dl class="grid gap-2 rounded-card border-2 border-warning/50 bg-warning/5 p-4">
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-ink-muted">Bank</dt>
+                        <dd class="text-right font-semibold">{{ form.bank.bank_name }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-ink-muted">Account name</dt>
+                        <dd class="text-right font-semibold">{{ form.bank.account_name }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-ink-muted">Account number</dt>
+                        <dd class="text-right font-mono text-base font-bold tracking-wider">{{ form.bank.account_number }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3 border-t border-line pt-2">
+                        <dt class="text-ink-muted">Amount</dt>
+                        <dd class="text-right font-semibold">{{ rm(total) }}</dd>
+                    </div>
+                </dl>
+                <p v-if="Object.keys(form.errors).length" class="text-danger">{{ Object.values(form.errors)[0] }}</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <Button variant="secondary" @click="confirming = false">No, let me fix it</Button>
+                    <Button :loading="form.processing" @click="send">Yes, correct · {{ iAmTreasurer ? 'sign' : 'send' }}</Button>
+                </div>
             </div>
         </Modal>
     </AppLayout>

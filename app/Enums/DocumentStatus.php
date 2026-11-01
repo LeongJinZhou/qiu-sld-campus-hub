@@ -11,8 +11,9 @@ enum DocumentStatus: string
     case Rejected = 'rejected';
     case Approved = 'approved';
 
+    /** Drafts, returned and rejected documents can be corrected and (re)submitted. */
     public function isEditable(): bool
     {
-        return $this === self::Draft || $this === self::Returned;
+        return $this === self::Draft || $this === self::Returned || $this === self::Rejected;
     }
 }

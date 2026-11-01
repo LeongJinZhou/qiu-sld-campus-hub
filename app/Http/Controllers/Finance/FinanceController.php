@@ -13,19 +13,20 @@ use App\Models\Event;
 use App\Models\LedgerEntry;
 use App\Models\Payee;
 use App\Models\Receipt;
-use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Documents\FinanceRecordExport;
+use App\Services\Documents\FinanceWorkbookExport;
 use App\Services\Documents\PdfConverter;
 use App\Services\Finance\FinanceReport;
+use App\Services\Finance\FinanceSections;
 use App\Services\Finance\FundWithdrawals;
 use App\Services\Finance\Ledger;
+use App\Services\Finance\WithdrawalProgress;
 use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -40,7 +41,7 @@ class FinanceController extends Controller
 {
     public function __construct(private readonly Ledger $ledger) {}
 
-    public function show(Request $request, Club $club, DocumentPresenter $presenter, FundWithdrawals $funds, FinanceReport $reports, SessionResolver $sessions): Response
+    public function show(Request $request, Club $club, DocumentPresenter $presenter, FundWithdrawals $funds, FinanceReport $reports, SessionResolver $sessions, FinanceSections $sections): Response
     {
         Gate::authorize('viewInternal', $club);
         $user = $request->user();
@@ -68,6 +69,7 @@ class FinanceController extends Controller
                 ->map(fn (Document $d) => [
                     'id' => $d->id, 'event' => $d->event?->name, 'purpose' => $d->data()['purpose'] ?? null,
                     'total_sen' => $d->data()['total_sen'] ?? 0, 'status' => $d->status->value, 'progress' => $presenter->progress($d),
+                    'stage' => WithdrawalProgress::STAGES[$d->finance_stage] ?? null, 'scope' => $d->event_id ? 'Event' : 'Club',
                 ]),
             'events' => Event::where('club_id', $club->id)->where('status', DocumentStatus::Approved)->orderByDesc('starts_at')->get()
                 ->map(fn (Event $e) => ['id' => $e->id, 'name' => $e->name, 'lines' => $funds->budgetLines($e)]),
@@ -76,7 +78,33 @@ class FinanceController extends Controller
                 'qr' => collect($fee->payment_qr_paths ?? [])->map(fn (string $p) => ['path' => $p, 'url' => Storage::disk('public')->url($p)])->values(),
             ] : null,
             'can' => ['edit' => $user->can('treasure', $club), 'sld' => $user->isSldAdmin()],
+            // Workbook export: the sections a committee can tick, for this session and for the whole history.
+            'workbook' => fn () => [
+                'session' => $sections->choices($club, $session),
+                'all' => $sections->choices($club, null),
+            ],
         ]);
+    }
+
+    /**
+     * The finance workbook (Excel or PDF): Overview, then one sheet per chosen section. "period=all" covers every
+     * transaction; otherwise the chosen session (the current committee's by default).
+     */
+    public function workbook(Request $request, Club $club, string $format, FinanceSections $sections, FinanceWorkbookExport $export, PdfConverter $pdf, SessionResolver $sessions): BinaryFileResponse
+    {
+        Gate::authorize('viewInternal', $club);
+        abort_unless(in_array($format, ['xlsx', 'pdf'], true), 404);
+        $input = $request->validate(['period' => ['nullable', 'in:session,all'], 'sections' => ['nullable', 'array', 'max:200'], 'sections.*' => ['string', 'regex:/^(none|drive|normal|other|event:\d+)$/']]);
+        $session = ($input['period'] ?? 'session') === 'all' ? null : $this->session($request, $sessions);
+        $file = $export->render($club, $sections->build($club, $session), $input['sections'] ?? null);
+        if ($format === 'pdf') {
+            $converted = $pdf->convert($file);
+            @unlink($file);
+            $file = $converted;
+        }
+        $label = $session ? str_replace('/', '-', $session->name) : 'All';
+
+        return response()->download($file, "{$club->name} - Finance {$label}.{$format}")->deleteFileAfterSend();
     }
 
     public function opening(Request $request, Club $club): RedirectResponse
@@ -163,55 +191,6 @@ class FinanceController extends Controller
         Payee::create([...$data, 'club_id' => $club->id]);
 
         return back()->with('success', 'Payee saved. Bank details are stored encrypted.');
-    }
-
-    public function requestForm(Request $request, Club $club, FundWithdrawals $funds): Response
-    {
-        Gate::authorize('viewInternal', $club);
-
-        return Inertia::render('Finance/FundRequest', [
-            'club' => $club->only('slug', 'name'),
-            'events' => Event::where('club_id', $club->id)->where('status', DocumentStatus::Approved)->orderByDesc('starts_at')->get()
-                ->map(fn (Event $e) => ['id' => $e->id, 'name' => $e->name, 'date' => $e->starts_at->format('j M Y'), 'lines' => $funds->budgetLines($e)]),
-            'payees' => Payee::where('club_id', $club->id)->get()->map(fn (Payee $p) => ['id' => $p->id, 'label' => "{$p->name} · {$p->bank_name} {$p->maskedAccount()} ({$p->kind})"]),
-            'selectedEvent' => $request->integer('event') ?: null,
-            'earliestWeekly' => today()->addDays(FundWithdrawals::WEEKLY_LEAD_DAYS)->toDateString(),
-            'secretary' => $club->roleAssignments()->where('position', 'Secretary')->latest('id')->with('user')->first()?->user?->name,
-        ]);
-    }
-
-    public function submitRequest(Request $request, Club $club, FundWithdrawals $funds, ApprovalEngine $engine): RedirectResponse
-    {
-        Gate::authorize('viewInternal', $club);
-        $input = $request->validate([
-            'event_id' => ['nullable', 'integer'],
-            'purpose' => ['required', 'string', 'max:300'],
-            'needed_by' => ['nullable', 'required_without:event_id', 'date'],
-            'items' => ['required', 'array', 'min:1', 'max:30'],
-            'items.*.description' => ['required', 'string', 'max:255'],
-            'items.*.unit_sen' => ['required', 'integer', 'min:1', 'max:100000000'],
-            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
-            'items.*.method' => ['required', 'in:vendor,self'],
-            'payees' => ['required', 'array', 'min:1', 'max:10'],
-            'payees.*.payee_id' => ['required', 'integer'],
-            'payees.*.amount_sen' => ['required', 'integer', 'min:1'],
-            'signature' => ['required', 'string'],
-            'signature_strokes' => ['required', 'string', 'max:307200'],
-        ]);
-
-        try {
-            $document = DB::transaction(function () use ($club, $input, $funds, $engine, $request) {
-                $data = $funds->normalise($club, $input);
-                $document = $funds->draft($club, $request->user(), $data['event_id'] ? Event::find($data['event_id']) : null);
-                $engine->submit($document, $request->user(), $data, $input['signature'], $input['signature_strokes']);
-
-                return $document;
-            });
-        } catch (DomainException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return to_route('documents.show', $document)->with('success', 'Fund withdrawal signed and sent to your President.');
     }
 
     /** @return array<string, mixed> */

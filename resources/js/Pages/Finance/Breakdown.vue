@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { matchesSearch } from '@/lib/search';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
@@ -48,10 +49,7 @@ const search = ref('');
 const status = ref('');
 const statuses = computed(() => [...new Set(props.breakdown.rows.map((r) => r.status))]);
 const rows = computed(() => {
-    const q = search.value.trim().toLowerCase();
-    return props.breakdown.rows.filter(
-        (r) => (!status.value || r.status === status.value) && (!q || `${r.name} ${r.student_number ?? ''} ${r.email} ${r.order_id ?? ''}`.toLowerCase().includes(q)),
-    );
+    return props.breakdown.rows.filter((r) => (!status.value || r.status === status.value) && matchesSearch(search.value, r.name, r.student_number, r.email, r.order_id));
 });
 const tone = (s: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' =>
     s === 'Paid' ? 'success' : s === 'Rejected' ? 'danger' : s === 'Being checked' ? 'info' : s.startsWith('Registered') ? 'neutral' : 'warning';

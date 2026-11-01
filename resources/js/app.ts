@@ -1,5 +1,6 @@
 import '../css/app.css';
 
+import { installMotion } from './lib/motion';
 import { createInertiaApp } from '@inertiajs/vue3';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
@@ -19,6 +20,7 @@ createInertiaApp({
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .mount(el);
+        installMotion();
     },
     progress: { color: '#E01CEB' },
 });

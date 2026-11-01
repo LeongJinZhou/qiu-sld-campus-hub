@@ -4,11 +4,16 @@ namespace App\Services\Agm;
 
 use App\Enums\MembershipStatus;
 use App\Enums\ScopedRole;
+use App\Enums\ScopeType;
 use App\Models\Agm;
 use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\ElectionPosition;
+use App\Models\RoleAssignment;
+use App\Models\Student;
 use App\Models\User;
+use App\Models\Vote;
+use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Roles\RoleService;
@@ -20,13 +25,21 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 /**
- * Elections inside the AGM: nomination and voting windows, eligibility, one vote per
- * position per voter, flags for SLD, results, and the role handover when the new term starts (1 July).
+ * Elections inside the AGM. The committee sets the nomination and voting times and the positions (the 4
+ * compulsory ones plus any others), and names candidates (or members stand themselves). Every member has one
+ * ticket per position, may change their mind up to 3 times, and cannot vote for themselves. The most votes wins.
+ * Winners are named at once; the outgoing committee keeps access for 7 days to hand over, then the new committee
+ * takes the titles and the access.
  */
 class Elections
 {
+    public const HANDOVER_DAYS = 7;
+
+    public const VOTE_CHANGES = 3;
+
     public function __construct(
         private readonly SessionResolver $sessions,
         private readonly RoleService $roles,
@@ -57,6 +70,38 @@ class Elections
 
             return $election;
         });
+    }
+
+    /** Before voting opens, the committee adds a position or removes one it added (the 4 compulsory stay). */
+    public function addPosition(Election $election, string $name): ElectionPosition
+    {
+        $name = trim($name);
+        if (! in_array($election->phase(), ['upcoming', 'nominating', 'between'], true)) {
+            throw new DomainException('Positions are fixed once voting opens.');
+        }
+        if ($name === '' || $election->positions()->where('position', $name)->exists()) {
+            throw new DomainException('Give the position a new name.');
+        }
+
+        return $election->positions()->create(['position' => $name, 'is_compulsory' => false, 'sort' => (int) $election->positions()->max('sort') + 1]);
+    }
+
+    public function removePosition(ElectionPosition $position): void
+    {
+        if ($position->is_compulsory || ! in_array($position->election->phase(), ['upcoming', 'nominating', 'between'], true)) {
+            throw new DomainException($position->is_compulsory ? 'President, Vice President, Secretary and Treasurer are always elected.' : 'Positions are fixed once voting opens.');
+        }
+        $position->delete();
+    }
+
+    /** The committee names a candidate (picked by name or typed student ID); the same eligibility applies. */
+    public function nominateFor(ElectionPosition $position, User $committee, string $studentNumber, ?string $statement): Candidate
+    {
+        $student = Student::where('student_number', trim($studentNumber))->first() ?? throw new DomainException('No student with that ID in university records.');
+        $candidate = $this->nominate($position, $student->ensureUser(), $statement ?: "Nominated by the {$position->election->agm->club->name} committee.", null);
+        $candidate->update(['nominated_by' => $committee->id]);
+
+        return $candidate;
     }
 
     /** A student stands for one position: an active member who can serve the full July–June term. */
@@ -94,12 +139,37 @@ class Elections
             throw new DomainException('That candidate is not standing for this position.');
         }
         $this->assertMember($election, $voter, allowAlumni: $election->allow_alumni_vote);
-
-        try {
-            $position->votes()->create(['candidate_id' => $candidate->id, 'voter_id' => $voter->id, 'created_at' => now()]);
-        } catch (UniqueConstraintViolationException) {
-            throw new DomainException("You have already voted for {$position->position}.");
+        if ($candidate->user_id === $voter->id) {
+            throw new DomainException('You cannot vote for yourself.');
         }
+
+        // One ticket per position; changing it is allowed up to 3 times.
+        DB::transaction(function () use ($position, $candidate, $voter): void {
+            $existing = $position->votes()->where('voter_id', $voter->id)->lockForUpdate()->first();
+            if (! $existing) {
+                try {
+                    $position->votes()->create(['candidate_id' => $candidate->id, 'voter_id' => $voter->id, 'created_at' => now()]);
+                } catch (UniqueConstraintViolationException) {
+                    throw new DomainException("You have already voted for {$position->position}.");
+                }
+
+                return;
+            }
+            if ($existing->candidate_id === $candidate->id) {
+                return;
+            }
+            if ($existing->changes >= self::VOTE_CHANGES) {
+                throw new DomainException("You have already changed your {$position->position} vote ".self::VOTE_CHANGES.' times. Your vote is final.');
+            }
+            $existing->update(['candidate_id' => $candidate->id, 'changes' => $existing->changes + 1, 'changed_at' => now()]);
+        });
+    }
+
+    /** How many more times this voter may change each vote. @return array<int, int> position id => changes left */
+    public function changesLeft(Election $election, User $voter): array
+    {
+        return Vote::where('voter_id', $voter->id)->whereIn('election_position_id', $election->positions()->select('id'))->pluck('changes', 'election_position_id')
+            ->map(fn ($c) => max(0, self::VOTE_CHANGES - (int) $c))->all();
     }
 
     /**
@@ -143,38 +213,59 @@ class Elections
                 $position->update(['winner_candidate_id' => $this->leaders($position)->first()?->id]);
             }
             $election->update(['results_published_at' => now()]);
-            $this->audit->log('election.published', $election);
+            // Winners hold their titles for the new term at once; their access starts on the handover day.
+            $handover = $election->handoverOn();
+            foreach ($election->positions()->with('winner.user')->get() as $position) {
+                if ($position->winner) {
+                    $this->roles->assignClubPosition($election->agm->club, $election->termSession, $position->winner->user, $position->position)
+                        ->update(['starts_on' => $handover->toDateString()]);
+                }
+            }
+            $this->audit->log('election.published', $election, ['handover_on' => $handover->toDateString()]);
         });
+        $this->tellCommittees($election->fresh(), 'Election results are out', 'The new committee takes over on '.$election->handoverOn()->format('D, j M Y').'. Until then the current committee hands over.');
 
-        if ($election->termSession->starts_on->lte(CarbonImmutable::today())) {
+        if ($election->handoverOn()->lte(CarbonImmutable::today())) {
             $this->handOver($election->fresh());
         }
     }
 
-    /** Winners take their positions for the new session (scheduled on 1 July, or straight away if published later). */
+    /**
+     * Handover day (7 days after voting closed): the outgoing committee's roles end, so they lose committee access;
+     * the elected committee (already assigned, starting today) gains it.
+     */
     public function handOver(Election $election): void
     {
-        if ($election->handed_over_at || ! $election->results_published_at) {
+        if ($election->handed_over_at || ! $election->results_published_at || $election->handoverOn()->isFuture()) {
             return;
         }
-        DB::transaction(function () use ($election): void {
-            foreach ($election->positions()->with('winner.user.student')->get() as $position) {
-                if ($position->winner) {
-                    $this->roles->assignClubPosition($election->agm->club, $election->termSession, $position->winner->user, $position->position);
-                }
-            }
+        $club = $election->agm->club;
+        DB::transaction(function () use ($election, $club): void {
+            RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $club->id)->where('session_id', $election->agm->session_id)
+                ->where('role', ScopedRole::ClubCommittee)->update(['ends_on' => $election->handoverOn()->subDay()->toDateString()]);
             $election->update(['handed_over_at' => now()]);
+            $this->audit->log('election.handed_over', $election);
         });
+        $this->tellCommittees($election, "Handover done: welcome, new {$club->name} committee", 'The new committee now has committee access. Thank you to the outgoing committee.');
     }
 
-    /** Daily: every published election whose term has started. */
+    /** Daily: every published election whose handover day has come. */
     public function handOverDue(CarbonImmutable $today): int
     {
-        $due = Election::whereNotNull('results_published_at')->whereNull('handed_over_at')
-            ->whereHas('termSession', fn ($q) => $q->whereDate('starts_on', '<=', $today))->get();
+        $due = Election::whereNotNull('results_published_at')->whereNull('handed_over_at')->get()
+            ->filter(fn (Election $e) => $e->handoverOn()->lte($today));
         $due->each(fn (Election $e) => $this->handOver($e));
 
         return $due->count();
+    }
+
+    /** Outgoing and incoming committee hear about results and the handover. */
+    private function tellCommittees(Election $election, string $title, string $body): void
+    {
+        $club = $election->agm->club;
+        $people = User::whereIn('id', RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $club->id)
+            ->whereIn('session_id', [$election->agm->session_id, $election->term_session_id])->select('user_id'))->get();
+        Notification::send($people, new DocumentNotification($title, "{$club->name}: {$body}", route('election.show', $election->agm)));
     }
 
     /**

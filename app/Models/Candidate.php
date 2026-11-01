@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['election_position_id', 'user_id', 'statement', 'photo_path'])]
+#[Fillable(['election_position_id', 'user_id', 'statement', 'photo_path', 'nominated_by'])]
 class Candidate extends Model
 {
     /** @return BelongsTo<ElectionPosition, $this> */

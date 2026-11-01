@@ -17,10 +17,14 @@ use App\Services\Meetings\Meetings;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use Carbon\CarbonImmutable;
 use DomainException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,17 +52,13 @@ class ProposalController extends Controller
                 ...$this->form->lockedFields($document),
                 'prepared_by' => $user->name,
             ],
-            'committee' => $event->committee()->with('user.student')->get()->map(fn (RoleAssignment $a) => [
-                'id' => $a->id,
-                'position' => $a->position,
-                'is_compulsory' => $a->is_compulsory,
-                'name' => $a->user->name,
-                'student_number' => $a->user->student?->student_number,
-                'responsibility' => $a->responsibility,
-            ]),
+            'committee' => $this->committee($event),
             'missingCommittee' => $compulsory->missing(ScopeType::Event, $event->id, null),
             'missingClubCommittee' => $compulsory->missing(ScopeType::Club, $event->club_id, $event->session_id),
-            'returnComment' => $document->approvals()->where('decision', 'returned')->latest('decided_at')->value('comment'),
+            'returnComment' => ($returned = $document->approvals()->whereIn('decision', ['returned', 'rejected'])->latest('decided_at')->first())?->comment,
+            // The parts the advisor or SLD asked to fix, highlighted on the form until it is resubmitted.
+            'returnSections' => in_array($document->status->value, ['returned', 'rejected'], true) ? ($returned?->sections ?? []) : [],
+            'ccaLimit' => $this->rules->ccaLimit(),
             'options' => [
                 'natures' => ProposalForm::NATURES,
                 'sdgs' => ProposalForm::SDGS,
@@ -105,6 +105,72 @@ class ProposalController extends Controller
         }
 
         return to_route('documents.show', $document)->with('success', 'Proposal submitted to your advisor.');
+    }
+
+    /**
+     * Live co-editing: what the shared draft looks like now, who else has it open and which part they are on.
+     * Polled every few seconds; also marks the caller as present (and in which section).
+     */
+    public function live(Request $request, Event $event, CompulsoryPositionsCheck $compulsory): JsonResponse
+    {
+        Gate::authorize('update', $event);
+        $document = $event->proposal()->firstOrFail();
+        $user = $request->user();
+        $section = mb_substr((string) $request->query('section', ''), 0, 40);
+        $key = "proposal-presence:{$document->id}";
+        $present = collect(Cache::get($key, []))->filter(fn (array $p) => $p['at'] > now()->subSeconds(20)->getTimestamp());
+        $present[$user->id] = ['name' => $user->name, 'photo_url' => $user->photoUrl(), 'section' => $section ?: null, 'at' => now()->getTimestamp()];
+        Cache::put($key, $present->all(), now()->addMinutes(5));
+
+        return response()->json([
+            'status' => $document->status->value,
+            'data' => $this->form->current($document),
+            'lastEdit' => $this->lastEdit($document),
+            'editors' => $present->except($user->id)->map(fn (array $p, int $id) => ['id' => $id, ...collect($p)->except('at')->all()])->values(),
+            'committee' => $this->committee($event),
+            'missingCommittee' => $compulsory->missing(ScopeType::Event, $event->id, null),
+        ]);
+    }
+
+    /**
+     * Autosave of only the parts this person changed, merged into the latest shared draft, so two committee
+     * members typing in different sections never overwrite each other.
+     */
+    public function patch(Request $request, Event $event): JsonResponse
+    {
+        Gate::authorize('update', $event);
+        $document = $event->proposal()->firstOrFail();
+        if (! $document->status->isEditable()) {
+            return response()->json(['message' => 'This proposal is in review and cannot be edited.'], 409);
+        }
+        $changes = collect((array) $request->input('changes', []))->only(array_keys($this->form->defaults($event)))->all();
+        // Half-typed work must still save (an empty new budget line, a time not finished yet): only the changed parts
+        // are checked, and only for their type and size; completeness is checked when someone submits.
+        $rules = collect((new ProposalRequest)->rules())
+            ->filter(fn ($r, string $field) => array_key_exists(explode('.', $field)[0], $changes))
+            ->map(fn (array $r) => array_values(array_filter(array_map(fn ($rule) => $rule === 'required' ? 'nullable' : $rule, $r),
+                fn ($rule) => ! is_string($rule) || ! str_starts_with($rule, 'date_format') && ! str_starts_with($rule, 'after'))))->all();
+        $validator = Validator::make($changes, $rules);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()->toArray()], 422);
+        }
+        $merged = array_replace($this->form->current($document), $changes);
+        $this->form->saveDraft($document, $merged, $request->user()->id);
+
+        return response()->json(['lastEdit' => $this->lastEdit($document)]);
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    private function committee(Event $event)
+    {
+        return $event->committee()->with('user.student')->get()->map(fn (RoleAssignment $a) => [
+            'id' => $a->id,
+            'position' => $a->position,
+            'is_compulsory' => $a->is_compulsory,
+            'name' => $a->user->name,
+            'student_number' => $a->user->student?->student_number,
+            'responsibility' => $a->responsibility,
+        ]);
     }
 
     /** Ask committee members to review and submit (customisable: pick who, add a note). */

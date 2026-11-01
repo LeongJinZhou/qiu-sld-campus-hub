@@ -11,8 +11,19 @@ export interface Flash {
     error: string | null;
 }
 
+export interface CommitteeFeeDue {
+    club: { slug: string; name: string; logo_url: string | null };
+    position: string | null;
+    fee_sen: number;
+    due_on: string;
+    days_left: number;
+    overdue: boolean;
+    url: string;
+}
+
 export interface SharedProps {
     auth: { user: AuthUser | null };
+    committeeFees: CommitteeFeeDue[];
     nav: { unread: number; actions: number; isStaff: boolean; isAdmin: boolean; canPublish: boolean } | null;
     flash: Flash;
     [key: string]: unknown;
@@ -39,6 +50,8 @@ export interface MemberCard {
 export interface SessionOption {
     id: number;
     name: string;
+    current?: boolean;
+    size?: number;
 }
 
 export interface Paginated<T> {
@@ -75,6 +88,7 @@ export interface ProposalData {
     eligibility: string;
     activities: { name: string; description: string }[];
     itinerary: { start: string; end: string; agenda: string }[];
+    ict_required?: boolean;
     ict_requirements: string;
     transport_required: boolean;
     transport_arrangement: string;
@@ -142,6 +156,7 @@ export interface CommentData {
     body: string;
     user: string;
     photo_url: string | null;
+    profile_url: string;
     at: string | null;
 }
 
@@ -188,7 +203,18 @@ export interface Ticket {
     amount_sen: number;
     method: string | null;
     attendee: { name: string; student_number: string | null; photo_url: string | null };
-    event: { slug: string; name: string; club: string; club_logo: string | null; starts_at: string; ends_at: string; venue: string | null; poster_url: string | null; past: boolean; needs_indemnity: boolean };
+    event: {
+        slug: string;
+        name: string;
+        club: string;
+        club_logo: string | null;
+        starts_at: string;
+        ends_at: string;
+        venue: string | null;
+        poster_url: string | null;
+        past: boolean;
+        needs_indemnity: boolean;
+    };
     theme: 'party' | 'nature' | 'online';
     clock_in: string | null;
     clock_out: string | null;

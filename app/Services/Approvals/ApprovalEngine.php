@@ -9,6 +9,7 @@ use App\Enums\ScopeType;
 use App\Events\DocumentApproved;
 use App\Models\Approval;
 use App\Models\Document;
+use App\Models\Signature;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
@@ -57,11 +58,18 @@ class ApprovalEngine
                 'created_by' => $user->id,
             ]);
 
-            $restart = $document->approvals()->doesntExist()
+            // A rejected document starts again from the first approver: everyone signs again. Earlier signatures stay
+            // on record with the version they signed, but no longer count for the new submission.
+            $wasRejected = $document->status === DocumentStatus::Rejected;
+            $restart = $wasRejected
+                || $document->approvals()->doesntExist()
                 || $previous === null
                 || $this->chains->isMaterialChange($previous->data, $data);
 
             if ($restart) {
+                if ($wasRejected) {
+                    Signature::where('document_id', $document->id)->whereNotNull('approval_id')->update(['approval_id' => null]);
+                }
                 $document->approvals()->delete();
                 foreach ($chain as $i => $role) {
                     $document->approvals()->create(['step_no' => $i + 1, 'role' => $role]);
@@ -95,14 +103,27 @@ class ApprovalEngine
         $this->advance($approval->document->fresh());
     }
 
-    public function returnToClub(Approval $approval, User $user, string $comment): void
+    /** @param list<array{key: string, note: string}> $sections the parts to fix, highlighted for the club */
+    public function returnToClub(Approval $approval, User $user, string $comment, array $sections = []): void
     {
+        if (trim($comment) === '' && $sections === []) {
+            throw new DomainException('Say what needs changing: a comment or the parts to fix.');
+        }
+        if ($comment === '') {
+            $comment = 'Please fix: '.implode('; ', array_map(fn (array $s) => "{$s['key']}: {$s['note']}", $sections));
+        }
         $this->close($approval, $user, ApprovalDecision::Returned, DocumentStatus::Returned, $comment);
+        $approval->update(['sections' => $sections ?: null]);
     }
 
-    public function reject(Approval $approval, User $user, string $comment): void
+    /** @param list<array{key: string, note: string}> $sections the parts that are wrong, highlighted for the club */
+    public function reject(Approval $approval, User $user, string $comment, array $sections = []): void
     {
+        if (trim($comment) === '' && $sections !== []) {
+            $comment = 'Rejected: '.implode('; ', array_map(fn (array $s) => "{$s['key']}: {$s['note']}", $sections));
+        }
         $this->close($approval, $user, ApprovalDecision::Rejected, DocumentStatus::Rejected, $comment);
+        $approval->update(['sections' => $sections ?: null]);
     }
 
     /** The step waiting for action, if the document is in review. */
@@ -152,7 +173,7 @@ class ApprovalEngine
         $verb = $decision === ApprovalDecision::Returned ? 'returned' : 'rejected';
         $document->creator->notify(new DocumentNotification(
             "{$document->type->label()} {$verb}",
-            "{$user->name} ({$approval->role->label()}) {$verb} it: {$comment}",
+            "{$user->name} ({$approval->role->label()}) {$verb} it: {$comment}".($decision === ApprovalDecision::Rejected ? ' You can correct it and submit again; everyone signs again.' : ''),
             route('documents.show', $document),
         ));
     }

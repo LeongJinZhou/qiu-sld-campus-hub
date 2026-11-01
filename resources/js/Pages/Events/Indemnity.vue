@@ -8,6 +8,7 @@ import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 const CONSENT = [
     'I am signing this indemnity form so that I can participate in the activity described above. This indemnity statement covers all events, and occurrences associated with the activities, including any associated travel, meals, and loading. I understand that if I have concerns about my health or ability to participate, it is my responsibility to discuss my concerns with a doctor before deciding to participate.',
@@ -15,8 +16,22 @@ const CONSENT = [
 ];
 
 const props = defineProps<{
-    event: { slug: string; name: string; venue: string | null; dates: string; organizer: string; staff_in_charge: string | null; closes_at: string; closed: boolean };
-    student: { name: string; student_number: string | null; programme: string | null; contact_number: string | null };
+    event: {
+        slug: string;
+        name: string;
+        venue: string | null;
+        dates: string;
+        organizer: string;
+        staff_in_charge: string | null;
+        closes_at: string;
+        closed: boolean;
+    };
+    student: {
+        name: string;
+        student_number: string | null;
+        programme: string | null;
+        contact_number: string | null;
+    };
     saved: Record<string, string | null> | null;
     signedAt: string | null;
     mustSign: boolean;
@@ -29,11 +44,16 @@ const form = useForm({
     emergency_relationship: props.saved?.emergency_relationship ?? '',
     alternate_name: props.saved?.alternate_name ?? '',
     alternate_phone: props.saved?.alternate_phone ?? '',
-    address: '',
+    address: props.saved?.address ?? '',
     consent: false,
     signature: null as string | null,
     signature_strokes: null as string | null,
 });
+
+// Returning signers see their saved details as a summary: check, then just sign. "Edit" opens the fields.
+const complete = computed(() => !!(props.saved?.emergency_name && props.saved.emergency_mobile_phone && props.saved.emergency_relationship && props.saved.address));
+const editing = ref(!complete.value);
+const firstError = computed(() => Object.keys(form.errors).length > 0);
 </script>
 
 <template>
@@ -60,36 +80,75 @@ const form = useForm({
                     </div>
                 </FormSection>
 
-                <FormSection title="Emergency Contact Person" :hint="saved ? 'Filled from your last indemnity. Update if anything changed.' : undefined">
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <Input v-model="form.emergency_name" label="Name of the emergency contact person" required :error="form.errors.emergency_name" />
-                        <Input v-model="form.emergency_relationship" label="Relationship" required :error="form.errors.emergency_relationship" />
-                        <Input v-model="form.emergency_mobile_phone" type="tel" label="Home/Mobile Phone Number" required :error="form.errors.emergency_mobile_phone" />
-                        <Input v-model="form.emergency_work_phone" type="tel" label="Work Phone Number" :error="form.errors.emergency_work_phone" />
-                    </div>
-                    <p class="text-sm">If the emergency contact person is not available, please contact:</p>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <Input v-model="form.alternate_name" label="Name" :error="form.errors.alternate_name" />
-                        <Input v-model="form.alternate_phone" type="tel" label="Phone Number" :error="form.errors.alternate_phone" />
-                    </div>
+                <FormSection v-if="!editing && !firstError" title="Your details" hint="Filled from your last indemnity form.">
+                    <dl class="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+                        <div>
+                            <dt class="text-ink-muted">Emergency contact</dt>
+                            <dd class="font-medium">{{ form.emergency_name }} ({{ form.emergency_relationship }})</dd>
+                        </div>
+                        <div>
+                            <dt class="text-ink-muted">Their phone</dt>
+                            <dd class="font-medium">
+                                {{ form.emergency_mobile_phone }}<template v-if="form.emergency_work_phone"> · {{ form.emergency_work_phone }}</template>
+                            </dd>
+                        </div>
+                        <div v-if="form.alternate_name">
+                            <dt class="text-ink-muted">If not available</dt>
+                            <dd class="font-medium">
+                                {{ form.alternate_name }} ·
+                                {{ form.alternate_phone }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-ink-muted">Your address</dt>
+                            <dd class="font-medium">{{ form.address }}</dd>
+                        </div>
+                    </dl>
+                    <button type="button" class="justify-self-start text-sm font-medium text-brand-blue" @click="editing = true">Something changed? Edit</button>
                 </FormSection>
 
+                <Transition name="fade-up">
+                    <FormSection
+                        v-if="editing || firstError"
+                        title="Emergency Contact Person"
+                        :hint="saved ? 'Filled from your last indemnity. Update if anything changed.' : 'Saved for next time, so you only type this once.'"
+                    >
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <Input v-model="form.emergency_name" label="Name of the emergency contact person" required :error="form.errors.emergency_name" />
+                            <Input v-model="form.emergency_relationship" label="Relationship" required :error="form.errors.emergency_relationship" />
+                            <Input v-model="form.emergency_mobile_phone" type="tel" label="Home/Mobile Phone Number" required :error="form.errors.emergency_mobile_phone" />
+                            <Input v-model="form.emergency_work_phone" type="tel" label="Work Phone Number" :error="form.errors.emergency_work_phone" />
+                        </div>
+                        <p class="text-sm">If the emergency contact person is not available, please contact:</p>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <Input v-model="form.alternate_name" label="Name" :error="form.errors.alternate_name" />
+                            <Input v-model="form.alternate_phone" type="tel" label="Phone Number" :error="form.errors.alternate_phone" />
+                        </div>
+                        <Textarea v-model="form.address" label="Your address" :rows="2" :error="form.errors.address" />
+                    </FormSection>
+                </Transition>
+
                 <FormSection title="Participant Consent">
-                    <p v-for="(p, i) in CONSENT" :key="i" class="text-justify text-sm">{{ p }}</p>
+                    <p v-for="(p, i) in CONSENT" :key="i" class="text-justify text-sm">
+                        {{ p }}
+                    </p>
                     <div class="grid gap-3 sm:grid-cols-2">
                         <LockedField label="Name" :value="student.name" />
                         <LockedField label="Student ID" :value="student.student_number" />
                         <LockedField label="Programme" :value="student.programme" />
                         <LockedField label="Contact Number" :value="student.contact_number" />
                     </div>
-                    <Textarea v-model="form.address" label="Address" :rows="2" :error="form.errors.address" />
                     <LockedField label="Date" value="Server date when you sign" />
                     <Checkbox v-model="form.consent" label="I have read and agree to the participant consent above." />
-                    <p v-if="form.errors.consent" class="text-xs text-danger">{{ form.errors.consent }}</p>
+                    <p v-if="form.errors.consent" class="text-xs text-danger">
+                        {{ form.errors.consent }}
+                    </p>
                     <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Signature" :signer="student.name" />
                 </FormSection>
 
-                <Button v-if="!signedAt && !event.closed && mustSign" type="submit" size="lg" :disabled="!form.consent || !form.signature" :loading="form.processing">Sign indemnity</Button>
+                <Button v-if="!signedAt && !event.closed && mustSign" type="submit" size="lg" :disabled="!form.consent || !form.signature" :loading="form.processing"
+                    >Sign indemnity</Button
+                >
             </form>
         </div>
     </AppLayout>

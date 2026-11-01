@@ -3,6 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Enums\GlobalRole;
+use App\Enums\StudentStatus;
 use App\Exceptions\NotInRecordsException;
 use App\Models\Staff;
 use App\Models\User;
@@ -69,7 +70,14 @@ class SignInService
      */
     public function signInWithPersonalEmail(string $email): User
     {
-        $user = User::whereRaw('lower(personal_email) = ?', [strtolower(trim($email))])->first() ?? throw new NotInRecordsException;
+        // Only graduates use this door: never staff, SLD or super admins (they sign in with their QIU Google account),
+        // and only when exactly one account has linked this address.
+        $matches = User::with('student', 'staff')->whereRaw('lower(personal_email) = ?', [strtolower(trim($email))])->get();
+        $user = $matches->count() === 1 ? $matches->first() : throw new NotInRecordsException;
+        if ($user->staff || $user->hasAnyRole(['staff', 'admin', 'superadmin']) || in_array(strtolower($user->email), array_map('strtolower', config('sld.superadmin_emails')), true)
+            || $user->student?->status !== StudentStatus::Alumni) {
+            throw new NotInRecordsException;
+        }
         if ($user->student) {
             $this->camsys->syncByEmail($user->email);
         }

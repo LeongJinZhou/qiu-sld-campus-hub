@@ -114,8 +114,10 @@ class MembershipController extends Controller
                     'student_number' => $p->user->student?->student_number,
                     'status' => $p->status->value,
                     'amount_sen' => $p->amount_sen,
-                    'ai' => ['amount_sen' => $p->ai_amount_sen, 'date' => $p->ai_date?->toDateString(), 'reference' => $p->ai_reference, 'payee' => $p->ai_payee, 'confidence' => $p->ai_confidence],
+                    'ai' => ['amount_sen' => $p->ai_amount_sen, 'date' => $p->ai_date?->toDateString(), 'reference' => $p->ai_reference, 'payee' => $p->ai_payee, 'payer' => $p->ai_payer, 'confidence' => $p->ai_confidence],
                     'flags' => $p->flags ?? [],
+                    'has_reference' => $p->reference_key !== null,
+                    'order_id' => $p->order_id,
                     'receipt_url' => URL::temporarySignedRoute('payments.receipt', now()->addMinutes(30), $p),
                     'at' => $p->created_at?->diffForHumans(),
                 ]),
@@ -125,10 +127,10 @@ class MembershipController extends Controller
     public function decide(Request $request, MembershipPayment $payment): RedirectResponse
     {
         Gate::authorize('treasure', $payment->club);
-        $data = $request->validate(['approve' => ['required', 'boolean'], 'note' => ['nullable', 'string', 'max:500']]);
+        $data = $request->validate(['approve' => ['required', 'boolean'], 'note' => ['nullable', 'string', 'max:500'], 'reference' => ['nullable', 'string', 'max:60']]);
 
         try {
-            $this->memberships->review($payment, $request->user(), $data['approve'], $data['note'] ?? null);
+            $this->memberships->review($payment, $request->user(), $data['approve'], $data['note'] ?? null, $data['reference'] ?? null);
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }

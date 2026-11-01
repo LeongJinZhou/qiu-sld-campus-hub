@@ -26,10 +26,8 @@ class Chains
                 ChainRole::Bursar,
                 ChainRole::Coo,
             ])),
-            DocumentType::FundWithdrawal => [
-                ChainRole::Preparer, ChainRole::President, ChainRole::Advisor,
-                ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo,
-            ],
+            // Treasurer signs, Advisor, then SLD; Finance signs the exported form on paper (see FundWithdrawals).
+            DocumentType::FundWithdrawal => [ChainRole::Treasurer, ChainRole::Advisor, ChainRole::SldOfficer],
             // The first signature on every form is whoever prepares and submits it, with their own position.
             DocumentType::AgmReport => [ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer],
             // The official 13 template is signed by the preparer, the President and the Advisor.

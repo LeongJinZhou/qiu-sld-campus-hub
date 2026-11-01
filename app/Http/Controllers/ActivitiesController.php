@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Enums\DocumentStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\ScopedRole;
-use App\Enums\ScopeType;
 use App\Models\Club;
 use App\Models\Event;
 use App\Models\EventRegistration;
@@ -26,8 +25,7 @@ class ActivitiesController extends Controller
     public function __invoke(Request $request, SessionResolver $sessions, Tickets $tickets): Response
     {
         $user = $request->user();
-        $roles = RoleAssignment::where('user_id', $user->id)->where('scope_type', ScopeType::Club)
-            ->where('session_id', $sessions->current()->id)->get()->keyBy('scope_id');
+        $roles = RoleAssignment::query()->acting($sessions->current())->where('user_id', $user->id)->get()->keyBy('scope_id');
         $memberships = Membership::where('user_id', $user->id)
             ->whereIn('status', [MembershipStatus::Active, MembershipStatus::Grace, MembershipStatus::Pending, MembershipStatus::Alumni])->get()->keyBy('club_id');
         $clubs = Club::with('category')->whereIn('id', $roles->keys()->merge($memberships->keys())->unique())->orderBy('name')->get();

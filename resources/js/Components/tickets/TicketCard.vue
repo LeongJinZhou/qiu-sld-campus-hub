@@ -39,7 +39,9 @@ const status = computed(() => {
         unpaid: { text: 'Not paid yet', tone: 'bg-warning text-white' },
     }[t.status];
 });
-const valid = computed(() => props.ticket.status === 'paid' || props.ticket.status === 'free');
+const paidUp = computed(() => props.ticket.status === 'paid' || props.ticket.status === 'free');
+// Outdoor events: the QR ticket appears only after the indemnity is signed.
+const valid = computed(() => paidUp.value && !props.ticket.event.needs_indemnity);
 
 // Fixed pseudo-random particles, so the layout is the same on every render.
 const particles = Array.from({ length: 14 }, (_, i) => ({
@@ -129,7 +131,9 @@ const particles = Array.from({ length: 14 }, (_, i) => ({
             <div v-if="qrSvg && valid" class="qr-frame relative mx-auto grid place-items-center rounded-2xl p-3">
                 <div class="size-48 [&_svg]:size-full" v-html="qrSvg" />
             </div>
-            <p v-else-if="!valid" class="rounded-control bg-warning/10 px-3 py-2 text-center text-sm text-warning">Your QR ticket appears once payment is confirmed.</p>
+            <p v-else-if="!valid" class="rounded-control bg-warning/10 px-3 py-2 text-center text-sm text-warning">
+                {{ paidUp ? 'Sign the indemnity form and your QR ticket appears here.' : 'Your QR ticket appears once payment is confirmed.' }}
+            </p>
 
             <div class="grid grid-cols-2 gap-3 text-xs">
                 <div><p class="text-ink-muted">Ticket / transaction ID</p><p class="break-all font-mono font-semibold">{{ ticket.order_id ?? '—' }}</p></div>

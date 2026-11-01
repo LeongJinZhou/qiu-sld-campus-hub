@@ -51,8 +51,8 @@ class ClubPolicy
      */
     public function treasure(User $user, Club $club): bool
     {
-        return $user->isSldAdmin() || RoleAssignment::where('scope_type', 'club')->where('scope_id', $club->id)
-            ->where('session_id', $this->sessions->current()->id)->where('role', ScopedRole::ClubCommittee)->where('user_id', $user->id)->exists();
+        return $user->isSldAdmin() || RoleAssignment::query()->actingFor($club->id, $this->sessions->current())
+            ->where('role', ScopedRole::ClubCommittee)->where('user_id', $user->id)->exists();
     }
 
     /** Members, documents and finance tabs (later phases): committee, advisor and SLD only. */

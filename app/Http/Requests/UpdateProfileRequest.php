@@ -19,7 +19,12 @@ class UpdateProfileRequest extends FormRequest
             'hidden_sections' => ['array'],
             'hidden_sections.*' => ['string', Rule::in(User::HIDEABLE_SECTIONS)],
             // Lets alumni keep signing in after their QIU account closes, so it must be a non-QIU address.
-            'personal_email' => ['nullable', 'email', 'max:255', 'not_regex:/@qiu\.edu\.my$/i'],
+            'personal_email' => ['nullable', 'email', 'max:255', 'not_regex:/@qiu\.edu\.my$/i', function (string $attribute, mixed $value, \Closure $fail): void {
+                // One account per personal email, compared case-insensitively.
+                if (is_string($value) && User::whereRaw('lower(personal_email) = ?', [mb_strtolower(trim($value))])->whereKeyNot($this->user()?->id)->exists()) {
+                    $fail('This email is already linked to another account.');
+                }
+            }],
         ];
     }
 
@@ -27,5 +32,12 @@ class UpdateProfileRequest extends FormRequest
     public function messages(): array
     {
         return ['personal_email.not_regex' => 'Use a personal email, not your QIU email.'];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('personal_email'))) {
+            $this->merge(['personal_email' => mb_strtolower(trim($this->input('personal_email'))) ?: null]);
+        }
     }
 }
