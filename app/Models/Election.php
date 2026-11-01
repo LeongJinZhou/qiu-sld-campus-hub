@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\Agm\Elections;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,5 +53,11 @@ class Election extends Model
     public function positions(): HasMany
     {
         return $this->hasMany(ElectionPosition::class)->orderBy('sort');
+    }
+
+    /** The day the elected committee takes over: 7 days after voting closes (the old committee hands over until then). */
+    public function handoverOn(): CarbonImmutable
+    {
+        return CarbonImmutable::instance($this->voting_close_at)->addDays(Elections::HANDOVER_DAYS)->startOfDay();
     }
 }

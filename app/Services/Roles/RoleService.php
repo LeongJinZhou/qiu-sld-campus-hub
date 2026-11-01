@@ -145,12 +145,7 @@ class RoleService
     /** Whether the user is on the club's committee or advises it in the session. */
     public function belongsToClub(User $user, Club $club, AcademicSession $session): bool
     {
-        return RoleAssignment::query()
-            ->where('user_id', $user->id)
-            ->where('scope_type', ScopeType::Club)
-            ->where('scope_id', $club->id)
-            ->where('session_id', $session->id)
-            ->exists();
+        return RoleAssignment::query()->actingFor($club->id, $session)->where('user_id', $user->id)->exists();
     }
 
     /** @return Builder<RoleAssignment> */

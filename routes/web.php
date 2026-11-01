@@ -211,6 +211,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/election-positions/{position}/nominate', [ElectionController::class, 'nominate'])->middleware('throttle:10,1')->name('election.nominate');
     Route::post('/election-positions/{position}/vote', [ElectionController::class, 'vote'])->middleware('throttle:30,1')->name('election.vote');
     Route::post('/elections/{election}/publish', [ElectionController::class, 'publish'])->name('election.publish');
+    Route::post('/election-positions/{position}/nominate-member', [ElectionController::class, 'nominateFor'])->middleware('throttle:30,1')->name('election.nominate-member');
+    Route::post('/elections/{election}/positions', [ElectionController::class, 'addPosition'])->name('election.positions.store');
+    Route::delete('/election-positions/{position}', [ElectionController::class, 'removePosition'])->name('election.positions.destroy');
     Route::put('/clubs/{club}/annual-report', [AnnualReportController::class, 'save'])->name('annual.save');
     Route::post('/clubs/{club}/annual-report/draft', [AnnualReportController::class, 'draft'])->middleware('throttle:6,1')->name('annual.draft');
     Route::post('/clubs/{club}/annual-report/generate', [AnnualReportController::class, 'generate'])->middleware('throttle:6,1')->name('annual.generate');
