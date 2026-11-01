@@ -2,6 +2,7 @@
 
 namespace App\Services\Events;
 
+use App\Models\Setting;
 use Carbon\CarbonInterface;
 use DomainException;
 
@@ -47,9 +48,19 @@ class ProposalRules
         ];
     }
 
-    /** 1 hour of event = 1 CCA; the club may still edit it on the proposal. */
+    public const CCA_SETTING = 'cca_limit';
+
+    public const DEFAULT_CCA_LIMIT = 10;
+
+    /** 1 hour of event = 1 CCA; the proposal form caps it at SLD's limit. */
     public function defaultCca(CarbonInterface $startsAt, CarbonInterface $endsAt): float
     {
         return round($startsAt->diffInMinutes($endsAt, absolute: true) / 60, 1);
+    }
+
+    /** The most CCA hours one event may award; only SLD admins change it (Settings). */
+    public function ccaLimit(): float
+    {
+        return (float) (Setting::read(self::CCA_SETTING, ['max_hours' => self::DEFAULT_CCA_LIMIT])['max_hours'] ?? self::DEFAULT_CCA_LIMIT);
     }
 }

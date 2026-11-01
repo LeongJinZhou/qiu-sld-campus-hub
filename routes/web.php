@@ -137,6 +137,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/indemnities/pdf', [IndemnityController::class, 'download'])->name('events.indemnities.pdf');
     Route::get('/events/{event}/proposal', [ProposalController::class, 'edit'])->name('proposals.edit');
     Route::put('/events/{event}/proposal', [ProposalController::class, 'update'])->name('proposals.update');
+    Route::get('/events/{event}/proposal/live', [ProposalController::class, 'live'])->middleware('throttle:120,1')->name('proposals.live');
+    Route::patch('/events/{event}/proposal/live', [ProposalController::class, 'patch'])->middleware('throttle:120,1')->name('proposals.patch');
     Route::post('/events/{event}/proposal/submit', [ProposalController::class, 'submit'])->name('proposals.submit');
     Route::post('/events/{event}/proposal/ask', [ProposalController::class, 'askToSubmit'])->middleware('throttle:10,1')->name('proposals.ask');
     Route::delete('/events/{event}/proposal', [ProposalController::class, 'discard'])->name('proposals.discard');

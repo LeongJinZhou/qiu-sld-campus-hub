@@ -21,7 +21,7 @@ it('does not change an approved event when a resubmission is refused', function 
     $f['event']->update(['status' => DocumentStatus::Approved]);
     $data = array_replace(app(ProposalForm::class)->defaults($f['event']), [
         'name' => 'Changed after approval', 'summary' => 'Summary', 'venue' => 'Venue', 'nature' => ['environmental'],
-        'source_of_fund' => ['club'], 'introduction' => 'Intro', 'objectives' => ['One'], 'eligibility' => 'All', 'conclusion' => 'End',
+        'source_of_fund' => ['club'], 'introduction' => 'Intro', 'objectives' => ['One', 'Two'], 'eligibility' => 'All', 'conclusion' => 'End',
         'activities' => [], 'itinerary' => [], 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
     ]);
 

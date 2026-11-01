@@ -33,7 +33,7 @@ class ProposalForm
     /** @return array<string, mixed> */
     public function defaults(Event $event): array
     {
-        $cca = $this->rules->defaultCca($event->starts_at, $event->ends_at);
+        $cca = min($this->rules->ccaLimit(), $this->rules->defaultCca($event->starts_at, $event->ends_at));
 
         return [
             'name' => $event->name,
