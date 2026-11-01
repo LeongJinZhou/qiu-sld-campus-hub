@@ -39,6 +39,7 @@ use App\Http\Controllers\Membership\MembershipController;
 use App\Http\Controllers\Membership\ParticipantsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PeopleLookupController;
+use App\Http\Controllers\PreferencesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SearchController;
@@ -82,6 +83,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/search', SearchController::class)->name('search');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+    Route::put('/me/theme', [PreferencesController::class, 'theme'])->name('me.theme');
+    Route::post('/me/tours', [PreferencesController::class, 'tour'])->name('me.tours');
     Route::get('/people/lookup', PeopleLookupController::class)->middleware('throttle:directory')->name('people.lookup');
     Route::get('/clubs', fn (Request $request) => to_route('search', ['type' => 'clubs', 'q' => $request->query('search')]))->name('clubs.index');
     Route::post('/clubs/{club}/posts', [PostController::class, 'store'])->name('clubs.posts.store');
