@@ -17,7 +17,8 @@ class FundWithdrawalDocx
 {
     public const TEMPLATE = '07. Student Organization Fund Withdrawal and Transfer Form template.docx';
 
-    private const SIGNERS = [ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo];
+    /** Slot order on the 07 form; Finance (AR, Bursar, COO) sign the printed copy by hand. */
+    private const SIGNERS = [ChainRole::Treasurer, ChainRole::President, ChainRole::Advisor, ChainRole::AssistantRegistrar, ChainRole::Bursar, ChainRole::Coo];
 
     public function __construct(private readonly DocxRenderer $docx) {}
 
@@ -40,16 +41,17 @@ class FundWithdrawalDocx
                 'item_quantity' => (string) $i['quantity'], 'item_total' => $rm($i['amount_sen']), 'item_method' => FundWithdrawals::METHODS[$i['method']] ?? $i['method'],
             ], $d['items'] ?? [], array_keys($d['items'] ?? [])) ?: [array_fill_keys(['item_no', 'item_description', 'item_price', 'item_quantity', 'item_total', 'item_method'], '')]);
 
-            $payees = Payee::whereIn('id', array_column($d['payees'] ?? [], 'payee_id'))->get()->keyBy('id');
-            DocxRenderer::block($t, 'payees', array_map(function (array $p) use ($payees, $rm) {
-                $payee = $payees[$p['payee_id']];
-
-                return [
-                    'payee_name' => $payee->name, 'payee_email' => (string) $payee->email, 'payee_contact' => (string) $payee->contact_no,
-                    'payee_bank' => $payee->bank_name, 'payee_kind' => $payee->kind, 'payee_holder' => (string) $payee->account_holder,
-                    'payee_account' => (string) $payee->account_number, 'payee_amount' => $rm($p['amount_sen']),
-                ];
-            }, $d['payees'] ?? []) ?: [array_fill_keys(['payee_name', 'payee_email', 'payee_contact', 'payee_bank', 'payee_kind', 'payee_holder', 'payee_account', 'payee_amount'], '')]);
+            // The bank account the money goes to (older forms listed saved payees instead).
+            $bank = $d['bank'] ?? null;
+            $rows = $bank ? [[
+                'payee_name' => $bank['account_name'], 'payee_email' => '', 'payee_contact' => '', 'payee_bank' => $bank['bank_name'], 'payee_kind' => $document->event_id ? 'event' : 'club',
+                'payee_holder' => $bank['account_name'], 'payee_account' => $bank['account_number'], 'payee_amount' => $rm((int) ($d['total_sen'] ?? 0)),
+            ]] : Payee::whereIn('id', array_column($d['payees'] ?? [], 'payee_id'))->get()->map(fn (Payee $payee) => [
+                'payee_name' => $payee->name, 'payee_email' => (string) $payee->email, 'payee_contact' => (string) $payee->contact_no, 'payee_bank' => $payee->bank_name,
+                'payee_kind' => $payee->kind, 'payee_holder' => (string) $payee->account_holder, 'payee_account' => (string) $payee->account_number,
+                'payee_amount' => $rm((int) (collect($d['payees'])->firstWhere('payee_id', $payee->id)['amount_sen'] ?? 0)),
+            ])->all();
+            DocxRenderer::block($t, 'payees', $rows ?: [array_fill_keys(['payee_name', 'payee_email', 'payee_contact', 'payee_bank', 'payee_kind', 'payee_holder', 'payee_account', 'payee_amount'], '')]);
 
             $approvals = $document->approvals->keyBy(fn (Approval $a) => $a->role->value);
             foreach (self::SIGNERS as $i => $role) {

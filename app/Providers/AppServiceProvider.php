@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Enums\DocumentType;
 use App\Events\DocumentApproved;
 use App\Services\Events\EventApprovalActions;
-use App\Services\Finance\Ledger;
+use App\Services\Finance\WithdrawalProgress;
 use App\Services\Meetings\Meetings;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Database\Eloquent\Model;
@@ -34,9 +34,9 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(DocumentApproved::class, [EventApprovalActions::class, 'handle']);
         Event::listen(DocumentApproved::class, [Meetings::class, 'handleApproved']);
-        // An approved fund withdrawal (07) is written to the club ledger under its event automatically.
+        // A fully signed fund withdrawal (07) goes to Finance; it reaches the ledger only when SLD confirms the bank-in.
         Event::listen(DocumentApproved::class, fn (DocumentApproved $approved) => $approved->document->type === DocumentType::FundWithdrawal
-            ? app(Ledger::class)->withdrawal($approved->document) : null);
+            ? app(WithdrawalProgress::class)->approved($approved->document) : null);
 
         // Every sign-in (including "remember me" coming back): committee members who owe their club fee see a pop-up.
         Event::listen(Login::class, fn () => session()->put('committee_fee_popup', true));

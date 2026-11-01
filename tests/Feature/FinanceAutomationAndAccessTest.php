@@ -1,13 +1,9 @@
 <?php
 
 use App\Enums\DocumentStatus;
-use App\Enums\DocumentType;
 use App\Enums\PaymentStatus;
-use App\Models\Document;
-use App\Models\LedgerEntry;
 use App\Models\Membership;
 use App\Models\MembershipDrive;
-use App\Models\Payee;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Finance\FinanceReport;
@@ -25,23 +21,6 @@ beforeEach(function () {
     $this->secretary = $this->club->roleAssignments()->where('position', 'Secretary')->first()->user;
     $this->ledger = app(Ledger::class);
     $this->ledger->setOpeningBalance($this->club, 100000, app(SessionResolver::class)->current()->starts_on, null, sldOfficer());
-});
-
-it('files an approved fund withdrawal under its event automatically, once', function () {
-    approvedEventWithBudget($this);
-    $payee = Payee::create(['club_id' => $this->club->id, 'kind' => 'treasurer', 'name' => 'T', 'bank_name' => 'CIMB', 'account_holder' => 'T', 'account_number' => '7001234567']);
-    $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/fund-requests", [
-        'event_id' => $this->f['event']->id, 'purpose' => 'Supplies',
-        'items' => [['description' => 'Gloves', 'unit_sen' => 500, 'quantity' => 40, 'method' => 'vendor']],
-        'payees' => [['payee_id' => $payee->id, 'amount_sen' => 20000]],
-        'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
-    ])->assertRedirect();
-    $document = Document::where('type', DocumentType::FundWithdrawal)->sole();
-    approveRemainingSteps($document);
-
-    $entry = LedgerEntry::where('category', 'withdrawal')->sole();
-    expect($entry->only('expense_sen', 'event_id', 'method'))->toBe(['expense_sen' => 20000, 'event_id' => $this->f['event']->id, 'method' => 'transfer'])
-        ->and($this->ledger->withdrawal($document->fresh()))->toBeNull(); // never twice
 });
 
 it('builds the year report with breakdowns by type and event, and filters', function () {

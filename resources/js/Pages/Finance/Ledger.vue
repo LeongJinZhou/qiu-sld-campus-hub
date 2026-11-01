@@ -94,6 +94,8 @@ const props = defineProps<{
         total_sen: number;
         status: string;
         progress: ApprovalProgress;
+        stage: string | null;
+        scope: string;
     }[];
     events: { id: number; name: string }[];
     fee: {
@@ -620,12 +622,15 @@ const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, .
                     <EmptyState v-if="!requests.length" title="No withdrawal requests yet" />
                     <ul class="grid gap-3">
                         <li v-for="r in requests" :key="r.id">
-                            <Link :href="`/documents/${r.id}`" class="grid gap-2 rounded-control border border-line p-3 text-sm hover:shadow-card">
-                                <span class="flex justify-between gap-3"
-                                    ><strong>{{ r.event ?? r.purpose }}</strong
-                                    ><span class="tabular-nums">{{ rm(r.total_sen) }}</span></span
-                                >
-                                <ApprovalTracker :progress="r.progress" compact />
+                            <Link :href="`/withdrawals/${r.id}`" class="grid gap-2 rounded-control border border-line p-3 text-sm hover:shadow-card">
+                                <span class="flex justify-between gap-3">
+                                    <span class="min-w-0"
+                                        ><Badge :tone="r.scope === 'Event' ? 'info' : 'neutral'">{{ r.scope }}</Badge> <strong>{{ r.event ?? r.purpose }}</strong></span
+                                    >
+                                    <span class="tabular-nums">{{ rm(r.total_sen) }}</span>
+                                </span>
+                                <ApprovalTracker v-if="!r.stage" :progress="r.progress" compact />
+                                <span v-else class="text-xs font-semibold" :class="r.stage === 'Completed' ? 'text-success' : 'text-warning'">{{ r.stage }}</span>
                             </Link>
                         </li>
                     </ul>

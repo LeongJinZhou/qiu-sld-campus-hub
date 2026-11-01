@@ -24,6 +24,10 @@ class ApproverResolver
     {
         return match ($role) {
             ChainRole::Preparer => $this->clubRoles($document, ScopedRole::ClubCommittee)->pluck('user'),
+            // Fund withdrawals are signed by the Treasurer: the event's Treasurer for an event, else the club's.
+            ChainRole::Treasurer => $document->event_id
+                ? RoleAssignment::with('user')->where('scope_type', ScopeType::Event)->where('scope_id', $document->event_id)->where('position', 'Treasurer')->get()->pluck('user')
+                : $this->clubRoles($document, ScopedRole::ClubCommittee, 'Treasurer')->pluck('user'),
             ChainRole::Secretary => $this->clubRoles($document, ScopedRole::ClubCommittee, 'Secretary')->pluck('user'),
             ChainRole::President => $this->clubRoles($document, ScopedRole::ClubCommittee, 'President')->pluck('user'),
             ChainRole::Advisor => $this->clubRoles($document, ScopedRole::Advisor)->pluck('user'),
@@ -37,6 +41,7 @@ class ApproverResolver
         return match ($role) {
             ChainRole::Preparer => $this->clubRoles($document, ScopedRole::ClubCommittee)->firstWhere('user_id', $user->id)->position ?? 'Committee',
             ChainRole::Advisor => 'Club Advisor',
+            ChainRole::Treasurer => $document->event_id ? 'Event Treasurer' : 'Treasurer',
             default => $role->label(),
         };
     }

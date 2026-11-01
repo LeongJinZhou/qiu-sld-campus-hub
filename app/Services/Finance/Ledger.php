@@ -52,22 +52,6 @@ class Ledger
         ]);
     }
 
-    /** An approved fund withdrawal (07) leaves the club fund: filed under the event it was for, once only. */
-    public function withdrawal(Document $document): ?LedgerEntry
-    {
-        $total = (int) ($document->data()['total_sen'] ?? 0);
-        if ($total <= 0 || LedgerEntry::where('source_type', $document->getMorphClass())->where('source_id', $document->id)->exists()) {
-            return null;
-        }
-        $document->loadMissing('club', 'event');
-
-        return $document->club->ledger()->create([
-            'entry_date' => today(), 'description' => 'Fund withdrawal (07)'.($document->event ? " – {$document->event->name}" : ''),
-            'expense_sen' => $total, 'category' => 'withdrawal', 'event_id' => $document->event_id, 'method' => 'transfer',
-            'source_type' => $document->getMorphClass(), 'source_id' => $document->id, 'created_by' => $document->created_by,
-        ]);
-    }
-
     /**
      * Manual entries by the Treasurer, filed under an event or "other". Every expense needs an original receipt.
      */
