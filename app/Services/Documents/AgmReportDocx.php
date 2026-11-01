@@ -55,7 +55,7 @@ class AgmReportDocx
                 $k++;
                 $signed = XlsxRenderer::signed($document, ChainRole::from($role));
                 $t->setValue("sig{$k}_name", $signed->signer_name ?? (string) ($c['signers'][$position] ?? ''));
-                $t->setValue("sig{$k}_date", $signed ? $signed->signed_at->format('d/m/Y g:i A')." · Verify {$signed->verification_code}" : '');
+                $t->setValue("sig{$k}_date", $signed ? $signed->signed_at->format('d/m/Y g:i A') : '');
                 $image = $signed ? Storage::disk('local')->path($signed->image_path) : null;
                 $image && is_file($image)
                     ? $t->setImageValue("sig{$k}_image", ['path' => $image, 'height' => 32, 'ratio' => true])

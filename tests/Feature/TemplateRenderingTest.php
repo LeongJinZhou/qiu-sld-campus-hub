@@ -44,7 +44,7 @@ it('fills every placeholder in the proposal template', function () {
         ->toContain('Marine life')
         ->toContain('Profit / Loss')
         ->toContain('300.00')            // 500 - 200 = RM 300 profit
-        ->toContain('Verify ')
+        ->not->toContain('Verify ')
         ->and(substr_count($text, 'Gloves') + substr_count($text, 'Bags'))->toBe(2)
         ->and(substr_count($text, 'Arrival') + substr_count($text, 'Lunch'))->toBe(2);
     unlink($path);
@@ -77,3 +77,20 @@ it('converts the filled proposal to PDF with LibreOffice', function () {
     @unlink($docx);
     unlink($pdf);
 })->skip(fn () => ! is_executable((string) config('sld.soffice')), 'LibreOffice not installed');
+
+it('sets every PDF export in a sans-serif font at 12 pt', function () {
+    $data = completeProposal($this->f);
+    app(ApprovalEngine::class)->submit($this->f['document'], $this->f['president'], $data, signaturePng());
+    $path = app(ProposalDocx::class)->render($this->f['document']->fresh());
+
+    app(PdfConverter::class)->normaliseFonts($path);
+
+    $zip = new ZipArchive;
+    $zip->open($path);
+    $xml = $zip->getFromName('word/document.xml').$zip->getFromName('word/styles.xml');
+    $zip->close();
+    preg_match_all('/w:ascii="([^"]+)"/', $xml, $fonts);
+    preg_match_all('/<w:sz w:val="(\d+)"/', $xml, $sizes);
+    expect(array_unique($fonts[1]))->toBe(['Arial'])->and(array_values(array_unique($sizes[1])))->toBe(['24']);
+    unlink($path);
+});

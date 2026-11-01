@@ -88,6 +88,7 @@ export interface ProposalData {
     eligibility: string;
     activities: { name: string; description: string }[];
     itinerary: { start: string; end: string; agenda: string }[];
+    ict_required?: boolean;
     ict_requirements: string;
     transport_required: boolean;
     transport_arrangement: string;
@@ -202,7 +203,18 @@ export interface Ticket {
     amount_sen: number;
     method: string | null;
     attendee: { name: string; student_number: string | null; photo_url: string | null };
-    event: { slug: string; name: string; club: string; club_logo: string | null; starts_at: string; ends_at: string; venue: string | null; poster_url: string | null; past: boolean; needs_indemnity: boolean };
+    event: {
+        slug: string;
+        name: string;
+        club: string;
+        club_logo: string | null;
+        starts_at: string;
+        ends_at: string;
+        venue: string | null;
+        poster_url: string | null;
+        past: boolean;
+        needs_indemnity: boolean;
+    };
     theme: 'party' | 'nature' | 'online';
     clock_in: string | null;
     clock_out: string | null;

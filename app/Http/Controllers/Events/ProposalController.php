@@ -55,9 +55,9 @@ class ProposalController extends Controller
             'committee' => $this->committee($event),
             'missingCommittee' => $compulsory->missing(ScopeType::Event, $event->id, null),
             'missingClubCommittee' => $compulsory->missing(ScopeType::Club, $event->club_id, $event->session_id),
-            'returnComment' => ($returned = $document->approvals()->where('decision', 'returned')->latest('decided_at')->first())?->comment,
+            'returnComment' => ($returned = $document->approvals()->whereIn('decision', ['returned', 'rejected'])->latest('decided_at')->first())?->comment,
             // The parts the advisor or SLD asked to fix, highlighted on the form until it is resubmitted.
-            'returnSections' => $document->status->value === 'returned' ? ($returned?->sections ?? []) : [],
+            'returnSections' => in_array($document->status->value, ['returned', 'rejected'], true) ? ($returned?->sections ?? []) : [],
             'ccaLimit' => $this->rules->ccaLimit(),
             'options' => [
                 'natures' => ProposalForm::NATURES,
@@ -144,12 +144,18 @@ class ProposalController extends Controller
             return response()->json(['message' => 'This proposal is in review and cannot be edited.'], 409);
         }
         $changes = collect((array) $request->input('changes', []))->only(array_keys($this->form->defaults($event)))->all();
-        $merged = array_replace($this->form->current($document), $changes);
-        $validator = Validator::make($merged, (new ProposalRequest)->rules());
+        // Half-typed work must still save (an empty new budget line, a time not finished yet): only the changed parts
+        // are checked, and only for their type and size; completeness is checked when someone submits.
+        $rules = collect((new ProposalRequest)->rules())
+            ->filter(fn ($r, string $field) => array_key_exists(explode('.', $field)[0], $changes))
+            ->map(fn (array $r) => array_values(array_filter(array_map(fn ($rule) => $rule === 'required' ? 'nullable' : $rule, $r),
+                fn ($rule) => ! is_string($rule) || ! str_starts_with($rule, 'date_format') && ! str_starts_with($rule, 'after'))))->all();
+        $validator = Validator::make($changes, $rules);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()->toArray()], 422);
         }
-        $this->form->saveDraft($document, $validator->validated(), $request->user()->id);
+        $merged = array_replace($this->form->current($document), $changes);
+        $this->form->saveDraft($document, $merged, $request->user()->id);
 
         return response()->json(['lastEdit' => $this->lastEdit($document)]);
     }

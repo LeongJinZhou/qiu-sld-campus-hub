@@ -52,7 +52,7 @@ it('submits, runs the chain over HTTP and lands in the feed', function () {
 
     $step = app(ApprovalEngine::class)->currentStep($this->f['document']->fresh());
     $this->actingAs($this->f['advisor'])->get('/approvals')->assertInertia(fn (Assert $p) => $p->has('items', 1));
-    $this->actingAs($this->f['advisor'])->post("/approvals/{$step->id}", ['decision' => 'approve', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])->assertRedirect('/approvals');
+    $this->actingAs($this->f['advisor'])->post("/approvals/{$step->id}", ['decision' => 'approve', 'no_problems' => '1', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])->assertRedirect('/approvals');
 
     approveRemainingSteps($this->f['document']);
 

@@ -72,8 +72,9 @@ class ProposalDocx
             'introduction' => $d['introduction'],
             'expected_participants' => (string) $d['expected_participants'],
             'eligibility' => $d['eligibility'],
-            'ict_requirements' => $d['ict_requirements'] ?: '-',
-            'transport' => 'Transportation '.($d['transport_required'] ? 'required' : 'not required').($d['transport_arrangement'] ? '. '.$d['transport_arrangement'] : ''),
+            // Unticked = "Not required" on the form.
+            'ict_requirements' => ($d['ict_required'] ?? filled($d['ict_requirements'] ?? null)) && filled($d['ict_requirements'] ?? null) ? $d['ict_requirements'] : 'Not required',
+            'transport' => $d['transport_required'] ? 'Transportation required'.($d['transport_arrangement'] ? '. '.$d['transport_arrangement'] : '') : 'Not required',
             'departure_time' => $d['departure_time'] ?: '-',
             'departure_pickup' => $d['departure_pickup'] ?: '-',
             'return_time' => $d['return_time'] ?: '-',
@@ -99,7 +100,9 @@ class ProposalDocx
 
         DocxRenderer::block($t, 'objectives', array_map(fn (string $o) => ['objective' => $o], array_values(array_filter($d['objectives'])) ?: ['']));
         $this->rows($t, 'activity_name', array_map(fn ($a) => ['activity_name' => $a['name'], 'activity_description' => $a['description']], $d['activities']));
-        $this->rows($t, 'itinerary_start', array_map(fn ($r) => ['itinerary_start' => $this->time($r['start']), 'itinerary_end' => $this->time($r['end']), 'itinerary_agenda' => $r['agenda']], $d['itinerary']));
+        // The itinerary is optional: rows left half-done print what was given.
+        $itinerary = array_values(array_filter($d['itinerary'] ?? [], fn ($r) => filled($r['start'] ?? null) || filled($r['end'] ?? null) || filled($r['agenda'] ?? null)));
+        $this->rows($t, 'itinerary_start', array_map(fn ($r) => ['itinerary_start' => filled($r['start'] ?? null) ? $this->time($r['start']) : '', 'itinerary_end' => filled($r['end'] ?? null) ? $this->time($r['end']) : '', 'itinerary_agenda' => (string) ($r['agenda'] ?? '')], $itinerary));
         $this->rows($t, 'committee_name', $document->event->committee->map(fn (RoleAssignment $a) => [
             'committee_name' => $a->user->name, 'committee_role' => $a->position, 'committee_responsibility' => (string) $a->responsibility,
         ])->all());
@@ -139,7 +142,7 @@ class ProposalDocx
                     ChainRole::Advisor => $signerStaff->department ?? $document->club->name,
                     default => (string) ($signerStaff->department ?? $staff?->department),
                 },
-                "sig{$k}_date" => $signed ? $signed->signed_at->format('d/m/Y g:i A')." · Verify {$signed->verification_code}" : '',
+                "sig{$k}_date" => $signed ? $signed->signed_at->format('d/m/Y g:i A') : '',
             ]);
 
             $image = $signed ? Storage::disk('local')->path($signed->image_path) : null;

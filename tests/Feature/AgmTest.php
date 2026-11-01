@@ -88,7 +88,7 @@ it('refuses an AGM Report with fewer than 2 objectives, then runs Preparer → P
     $docx = app(AgmReportDocx::class)->render($document->fresh());
     expect(DocxRenderer::remainingPlaceholders($docx))->toBe([])
         ->and(docxText($docx))->toContain('Arrival &amp; attendance')->toContain('Elect the committee')->toContain('Our club has a total of 4 members')
-        ->toContain($this->secretary->name)->toContain('Verify ');
+        ->toContain($this->secretary->name)->not->toContain('Verify ');
 });
 
 it('lets the AI draft fill only the empty objectives, speech and agenda', function () {

@@ -163,7 +163,7 @@ async function autosave(): Promise<void> {
 watchDebounced(
     () => JSON.stringify(dataOnly()),
     () => void autosave(),
-    { debounce: 1200 },
+    { debounce: 500, maxWait: 1500 },
 );
 
 const mySection = ref('');
@@ -201,7 +201,7 @@ async function pull(): Promise<void> {
     }
     lastEditLive.value = live.lastEdit;
 }
-const { pause: stopPulling } = useIntervalFn(() => void pull(), 4000, {
+const { pause: stopPulling } = useIntervalFn(() => void pull(), 1500, {
     immediate: props.editable,
     immediateCallback: props.editable,
 });
@@ -487,7 +487,13 @@ const removeMember = (id: number): void =>
                 />
             </FormSection>
 
-            <FormSection title="Tentative / Event Itinerary" section="itinerary" :flag="flag('itinerary')" :editors="editorsIn('itinerary')" required>
+            <FormSection
+                title="Tentative / Event Itinerary"
+                hint="Optional. List what you know so far; times can be left blank."
+                section="itinerary"
+                :flag="flag('itinerary')"
+                :editors="editorsIn('itinerary')"
+            >
                 <DynamicTable
                     v-model="form.itinerary"
                     :columns="[
@@ -503,12 +509,33 @@ const removeMember = (id: number): void =>
             </FormSection>
 
             <FormSection title="ICT & Maintenance Requirement" section="ict" :flag="flag('ict')" :editors="editorsIn('ict')">
-                <Textarea v-model="form.ict_requirements" :rows="3" :readonly="readOnly" />
+                <Checkbox v-model="form.ict_required" label="ICT or maintenance support required (projector, sound, Wi-Fi, room setup…)" :disabled="readOnly" />
+                <Transition name="fade-up">
+                    <Textarea
+                        v-if="form.ict_required"
+                        v-model="form.ict_requirements"
+                        label="What is needed"
+                        required
+                        :rows="3"
+                        :readonly="readOnly"
+                        :error="form.errors.ict_requirements"
+                    />
+                </Transition>
+                <p v-if="!form.ict_required" class="text-sm text-ink-muted">Not ticked: the form will say <strong>Not required</strong>.</p>
             </FormSection>
 
             <FormSection title="Logistic Arrangements" section="logistics" :flag="flag('logistics')" :editors="editorsIn('logistics')">
                 <Checkbox v-model="form.transport_required" label="Transportation required" :disabled="readOnly" />
-                <Input v-model="form.transport_arrangement" label="Arrangement" placeholder="By participants' own transport / university transport" :readonly="readOnly" />
+                <p v-if="!form.transport_required" class="text-sm text-ink-muted">Not ticked: the form will say <strong>Not required</strong>.</p>
+                <Input
+                    v-if="form.transport_required"
+                    v-model="form.transport_arrangement"
+                    label="Arrangement"
+                    required
+                    placeholder="By participants' own transport / university transport"
+                    :readonly="readOnly"
+                    :error="form.errors.transport_arrangement"
+                />
                 <div v-if="form.transport_required" class="grid gap-4 sm:grid-cols-2">
                     <Input v-model="form.departure_time" type="time" label="Departure Time" :readonly="readOnly" />
                     <Input v-model="form.departure_pickup" label="Pickup Point" :readonly="readOnly" />
