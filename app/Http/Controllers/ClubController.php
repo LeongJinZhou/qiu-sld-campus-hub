@@ -24,6 +24,7 @@ use App\Services\QrCodes;
 use App\Services\Roles\CommitteeBoard;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Time\SessionResolver;
+use App\Support\QueryInput;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,7 +34,7 @@ class ClubController extends Controller
     public function show(Request $request, Club $club, SessionResolver $sessions, CommitteeBoard $board, CompulsoryPositionsCheck $compulsory, QrCodes $qr, DocumentPresenter $presenter): Response
     {
         $current = $sessions->current();
-        $session = AcademicSession::where('name', $request->query('session'))->first() ?? $current;
+        $session = AcademicSession::where('name', QueryInput::text($request, 'session', 9))->first() ?? $current;
         $user = $request->user();
 
         return Inertia::render('Clubs/Show', [
@@ -80,7 +81,7 @@ class ClubController extends Controller
                 ->map(fn (Membership $m) => ['name' => $m->user->name, 'photo_url' => $m->user->photoUrl(), 'profile_url' => route('profile.public', $m->user->qr_token)]),
             'upcoming' => $club->events()->where('status', DocumentStatus::Approved)->where('ends_at', '>', now())->orderBy('starts_at')->limit(3)->get()
                 ->map(fn (Event $e) => ['slug' => $e->slug, 'name' => $e->name, 'starts_at' => $e->starts_at->toIso8601String(), 'venue' => $e->venue, 'poster_url' => $e->posterUrl(), 'fee_sen' => $e->fee_sen, 'registration_open' => $e->registration_open, 'members_only' => $e->members_only]),
-            'tab' => $request->query('tab', 'committee'),
+            'tab' => QueryInput::text($request, 'tab', 20, 'committee'),
             'posts' => Inertia::defer(fn () => $club->posts()->visible()->with('media', 'event')->latest('published_at')->limit(30)->get()
                 ->map(fn (Post $p) => ['id' => $p->id, 'url' => route('posts.show', $p), 'image' => $p->media->first()?->url() ?? $p->event?->posterUrl(), 'caption' => $p->caption, 'count' => $p->media->count()])),
             'albums' => Inertia::defer(fn () => $club->albums()->with(['photos', 'session'])->latest()->get()->map(fn (Album $a) => [

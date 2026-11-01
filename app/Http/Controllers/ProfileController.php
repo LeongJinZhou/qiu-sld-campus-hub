@@ -72,11 +72,12 @@ class ProfileController extends Controller
         }
 
         // Photo-only saves must not wipe the other settings.
-        if ($request->has('hidden_sections') || $request->has('personal_email')) {
-            $user->fill([
-                'hidden_sections' => $request->validated('hidden_sections', []),
-                'personal_email' => $request->validated('personal_email'),
-            ]);
+        // Each setting changes only when it is sent: saving the personal email never resets privacy choices.
+        if ($request->has('hidden_sections')) {
+            $user->hidden_sections = $request->validated('hidden_sections', []);
+        }
+        if ($request->has('personal_email')) {
+            $user->personal_email = $request->validated('personal_email');
         }
         $user->save();
 

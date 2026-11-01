@@ -9,9 +9,6 @@ use App\Models\Document;
 /** Ordered approval chains per document type. */
 class Chains
 {
-    /** Changing any of these on resubmission restarts the whole chain. */
-    public const MATERIAL_KEYS = ['budget', 'starts_at', 'ends_at'];
-
     /** @return list<ChainRole> */
     public function for(Document $document): array
     {
@@ -39,17 +36,28 @@ class Chains
     }
 
     /**
+     * Approvals are bound to the exact version signed: any change to the signed content restarts the review, so no
+     * approver's signature ever stands under text they did not see. (Earlier signatures stay on record.)
+     *
      * @param  array<string, mixed>  $before
      * @param  array<string, mixed>  $after
      */
     public function isMaterialChange(array $before, array $after): bool
     {
-        foreach (self::MATERIAL_KEYS as $key) {
-            if (($before[$key] ?? null) != ($after[$key] ?? null)) {
-                return true;
-            }
-        }
+        return $this->canonical($before) !== $this->canonical($after);
+    }
 
-        return false;
+    /** @param array<string, mixed> $data */
+    private function canonical(array $data): string
+    {
+        $sort = function (array $a) use (&$sort): array {
+            if (! array_is_list($a)) {
+                ksort($a);
+            }
+
+            return array_map(fn ($v) => is_array($v) ? $sort($v) : $v, $a);
+        };
+
+        return (string) json_encode($sort($data));
     }
 }

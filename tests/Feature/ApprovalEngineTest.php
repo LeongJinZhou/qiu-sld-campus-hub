@@ -74,7 +74,7 @@ it('runs through all seven signers, then posts to the feed, unlocks attendance a
         ->and($event->documentItems()->where('kind', 'receipts')->first()->due_on->toDateString())->toBe($event->ends_at->copy()->addWeek()->toDateString());
 });
 
-it('returns to the club with a comment and keeps earlier approvals on an unchanged resubmit', function () {
+it('keeps earlier approvals only when the resubmitted content is unchanged', function () {
     $this->engine->submit($this->f['document'], $this->f['president'], $this->data, signaturePng());
     $resolver = app(ApproverResolver::class);
     $this->engine->approve($this->engine->currentStep($this->f['document']->fresh()), $this->f['advisor'], signaturePng());
@@ -83,10 +83,16 @@ it('returns to the club with a comment and keeps earlier approvals on an unchang
 
     expect($this->f['document']->fresh()->status)->toBe(DocumentStatus::Returned);
 
-    $this->engine->submit($this->f['document']->fresh(), $this->f['president'], [...$this->data, 'conclusion' => 'Venue booked.'], signaturePng());
+    // Nothing changed (the venue was booked outside the form): the Advisor's approval still stands.
+    $this->engine->submit($this->f['document']->fresh(), $this->f['president'], $this->data, signaturePng());
 
     expect($this->engine->currentStep($this->f['document']->fresh())->role)->toBe(ChainRole::SldOfficer)
         ->and($this->f['document']->approvals()->where('role', ChainRole::Advisor)->value('decision'))->toBe(ApprovalDecision::Approved);
+
+    // Any change to what was signed sends it back to the Advisor.
+    $this->engine->returnToClub($this->engine->currentStep($this->f['document']->fresh()), $resolver->candidates($this->f['document'], ChainRole::SldOfficer)->first(), 'Mention the venue.');
+    $this->engine->submit($this->f['document']->fresh(), $this->f['president'], [...$this->data, 'conclusion' => 'Venue booked.'], signaturePng());
+    expect($this->engine->currentStep($this->f['document']->fresh())->role)->toBe(ChainRole::Advisor);
 });
 
 it('restarts the whole chain when the budget or date changes on resubmit', function () {

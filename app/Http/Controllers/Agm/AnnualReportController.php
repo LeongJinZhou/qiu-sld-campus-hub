@@ -8,6 +8,7 @@ use App\Models\Club;
 use App\Models\GeneratedFile;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Reports\AnnualReports;
+use App\Support\QueryInput;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ class AnnualReportController extends Controller
         Gate::authorize('viewInternal', $club);
         abort_unless(in_array($format, ['pptx', 'pdf'], true), 404);
         $file = GeneratedFile::with('session')->where(['club_id' => $club->id, 'kind' => GeneratedFile::ANNUAL_REPORT])
-            ->when($request->query('session'), fn ($q, $id) => $q->where('session_id', $id))
+            ->when(QueryInput::int($request, 'session', 0, 0, PHP_INT_MAX), fn ($q, $id) => $q->where('session_id', $id))
             ->whereNotNull('generated_at')->latest('generated_at')->firstOrFail();
         $path = $format === 'pptx' ? $file->pptx_path : $file->pdf_path;
         abort_unless($path && is_file($path), 404);

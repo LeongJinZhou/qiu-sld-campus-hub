@@ -15,6 +15,7 @@ use App\Services\Events\ProposalForm;
 use App\Services\Events\ProposalRules;
 use App\Services\Meetings\Meetings;
 use App\Services\Roles\CompulsoryPositionsCheck;
+use App\Support\QueryInput;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Http\JsonResponse;
@@ -116,7 +117,7 @@ class ProposalController extends Controller
         Gate::authorize('update', $event);
         $document = $event->proposal()->firstOrFail();
         $user = $request->user();
-        $section = mb_substr((string) $request->query('section', ''), 0, 40);
+        $section = QueryInput::text($request, 'section', 40);
         $key = "proposal-presence:{$document->id}";
         $present = collect(Cache::get($key, []))->filter(fn (array $p) => $p['at'] > now()->subSeconds(20)->getTimestamp());
         $present[$user->id] = ['name' => $user->name, 'photo_url' => $user->photoUrl(), 'section' => $section ?: null, 'at' => now()->getTimestamp()];

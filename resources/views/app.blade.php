@@ -10,11 +10,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title inertia>{{ config('app.name') }}</title>
     <script>
-        // Theme before first paint (no white flash in dark mode): the account's choice, else this device's last choice.
+        // Theme before first paint: the signed-in account's choice is authoritative ("system" follows the device);
+        // nothing cached on the device can override it, so a shared phone never shows the previous person's theme.
         (function () {
-            var el = document.documentElement, t = el.dataset.theme;
-            try { if (t === 'system' && localStorage.getItem('theme')) t = localStorage.getItem('theme'); } catch (e) {}
-            el.dataset.theme = t || 'system';
+            var el = document.documentElement;
+            if (['light', 'dark', 'system'].indexOf(el.dataset.theme) === -1) el.dataset.theme = 'system';
         })();
     </script>
     @fonts
