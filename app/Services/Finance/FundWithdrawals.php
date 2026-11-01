@@ -61,11 +61,17 @@ class FundWithdrawals
             if ($event->status !== DocumentStatus::Approved) {
                 throw new DomainException('Fund withdrawal opens once the event proposal is approved.');
             }
+            // Each budget line is limited to its approved amount in total: rows repeating the same line are added up,
+            // together with what earlier withdrawals for this event (in review or approved) already took from it.
             $lines = collect($this->budgetLines($event))->keyBy('description');
-            foreach ($input['items'] as $item) {
-                $line = $lines[$item['description']] ?? throw new DomainException("“{$item['description']}” is not in the approved budget.");
-                if ((int) $item['unit_sen'] * (int) $item['quantity'] > $line['amount_sen']) {
-                    throw new DomainException("“{$item['description']}” is more than the approved RM ".number_format($line['amount_sen'] / 100, 2).'.');
+            $already = $this->alreadyWithdrawn($event, isset($input['document_id']) ? (int) $input['document_id'] : null);
+            foreach (collect($input['items'])->groupBy('description') as $description => $rows) {
+                $line = $lines[$description] ?? throw new DomainException("“{$description}” is not in the approved budget.");
+                $asked = $rows->sum(fn ($i) => (int) $i['unit_sen'] * (int) $i['quantity']);
+                $left = $line['amount_sen'] - ($already[$description] ?? 0);
+                if ($asked > $left) {
+                    throw new DomainException("“{$description}” is more than the approved RM ".number_format($line['amount_sen'] / 100, 2)
+                        .(($already[$description] ?? 0) > 0 ? ' (RM '.number_format($left / 100, 2).' left after earlier withdrawals)' : '').'.');
                 }
             }
         } else {
@@ -100,6 +106,16 @@ class FundWithdrawals
             'bank' => ['bank_name' => $bank['bank_name'], 'account_name' => $bank['account_name'], 'account_number' => (string) preg_replace('/\D/', '', $bank['account_number'])],
             'total_sen' => $total,
         ];
+    }
+
+    /** @return array<string, int> per budget line, sen already asked for by this event's other live withdrawals */
+    private function alreadyWithdrawn(Event $event, ?int $exceptDocumentId): array
+    {
+        return Document::where('type', DocumentType::FundWithdrawal)->where('event_id', $event->id)
+            ->whereIn('status', [DocumentStatus::InReview, DocumentStatus::Approved])
+            ->when($exceptDocumentId, fn ($q) => $q->whereKeyNot($exceptDocumentId))->get()
+            ->flatMap(fn (Document $d) => $d->data()['items'] ?? [])
+            ->groupBy('description')->map(fn ($items) => (int) $items->sum('amount_sen'))->all();
     }
 
     public function draft(Club $club, User $user, ?Event $event): Document

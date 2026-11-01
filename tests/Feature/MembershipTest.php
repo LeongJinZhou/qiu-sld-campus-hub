@@ -67,7 +67,7 @@ it('only lets active camsys students join', function () {
 it('auto-confirms an online payment the AI reads cleanly and records ledger income', function () {
     Storage::fake('local');
     setFee($this, 3000);
-    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(3000, today()->toDateString(), 'TXN-777', 'FIXTURE CLUB QIU', 0.97));
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(3000, today()->toDateString(), 'TXN-777', 'FIXTURE CLUB QIU', 0.97, $this->student->name));
     $m = $this->service->join($this->club, $this->student, true);
 
     $payment = app(OnlinePayments::class)->submit($m, UploadedFile::fake()->image('receipt.jpg'));
@@ -93,7 +93,7 @@ it('queues unclear receipts for the Treasurer, who confirms or rejects', functio
 it('rejects a screenshot another student already used, and a reused transaction ID', function () {
     Storage::fake('local');
     setFee($this, 3000);
-    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(3000, today()->toDateString(), 'TXN-555', 'FIXTURE CLUB QIU', 0.97));
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(3000, today()->toDateString(), 'TXN-555', 'FIXTURE CLUB QIU', 0.97, $this->student->name));
     $screenshot = UploadedFile::fake()->image('receipt.jpg');
     $first = app(OnlinePayments::class)->submit($this->service->join($this->club, $this->student, true), $screenshot);
     $other = otherStudent();

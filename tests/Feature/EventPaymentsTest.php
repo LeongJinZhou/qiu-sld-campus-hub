@@ -38,7 +38,7 @@ it('reserves a place as payment pending and lists it under Action needed', funct
 });
 
 it('confirms an online event payment, files it under that event with an order ID', function () {
-    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'TXN-EV1', 'FIXTURE CLUB QIU', 0.97));
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'TXN-EV1', 'FIXTURE CLUB QIU', 0.97, $this->student->name));
     $registration = app(EventRegistrations::class)->register($this->event->fresh(), $this->student);
 
     $payment = app(EventPayments::class)->submitOnline($registration, UploadedFile::fake()->image('receipt.jpg'))->fresh();
@@ -94,7 +94,7 @@ it('blocks clock-in for a participant who has not paid', function () {
 })->throws(DomainException::class, 'not paid');
 
 it('tallies who registered and paid for an event, matched against the ledger, and exports it', function () {
-    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'TXN-EV2', 'FIXTURE CLUB QIU', 0.97));
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'TXN-EV2', 'FIXTURE CLUB QIU', 0.97, $this->student->name));
     $registration = app(EventRegistrations::class)->register($this->event->fresh(), $this->student);
     app(EventPayments::class)->submitOnline($registration, UploadedFile::fake()->image('receipt.jpg'));
     $unpaid = Student::where('status', 'active')->where('student_number', '!=', 'STD20240010')->orderByDesc('student_number')->first()->ensureUser();
@@ -126,7 +126,7 @@ it('counts membership joins by drive with the money collected', function () {
 });
 
 it('lets SLD find a transaction by any parts of its ID as they type', function () {
-    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'MBB-4242', 'FIXTURE CLUB QIU', 0.97));
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'MBB-4242', 'FIXTURE CLUB QIU', 0.97, $this->student->name));
     $registration = app(EventRegistrations::class)->register($this->event->fresh(), $this->student);
     app(EventPayments::class)->submitOnline($registration, UploadedFile::fake()->image('receipt.jpg'));
 

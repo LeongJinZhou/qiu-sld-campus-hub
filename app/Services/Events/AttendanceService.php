@@ -26,8 +26,17 @@ class AttendanceService
             throw new DomainException("{$user->name} is not an active student.");
         }
         $role = $this->roleOf($event, $user);
-        if ($event->fee_sen > 0 && $role !== 'committee' && $event->registrations()->where('user_id', $user->id)->where('status', 'pending_payment')->exists()) {
-            throw new DomainException("{$user->name} has not paid the event fee yet, so clock-in is blocked.");
+        // Eligibility is enforced here, whatever the entry point (scanned QR, door desk, manual add).
+        if ($role !== 'committee') {
+            if (! app(EventRegistrations::class)->mayJoin($event, $user)) {
+                throw new DomainException("{$event->name} is for {$event->club->name} members only, so {$user->name} cannot clock in.");
+            }
+            $registration = $event->fee_sen > 0 ? $event->registrations()->where('user_id', $user->id)->first() : null;
+            if ($event->fee_sen > 0 && ! $registration?->isPaidUp()) {
+                throw new DomainException($registration
+                    ? "{$user->name} has not paid the event fee yet, so clock-in is blocked."
+                    : "{$user->name} is not registered for this paid event, so clock-in is blocked.");
+            }
         }
         if ($event->is_outdoor && ! $event->indemnities()->where('user_id', $user->id)->exists()) {
             throw new DomainException("{$user->name} has not signed the indemnity form, so clock-in is blocked.");

@@ -38,5 +38,5 @@ it('sends a receipt sent from someone else\'s account to review', function () us
 
     expect($assess('LEONG JIN ZHOU')['flags'])->toBe([])
         ->and($assess('Ahmad Bin Abdullah')['flags'])->toContain('payer_mismatch')
-        ->and($assess(null)['flags'])->toBe([]);
+        ->and($assess(null)['flags'])->toBe(['no_payer']);
 });

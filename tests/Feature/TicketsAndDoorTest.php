@@ -41,7 +41,7 @@ it('gives a free registration a ticket with its own order ID, shown only to its 
 
 it('issues a paid ticket carrying the payment order ID once the fee is confirmed', function () {
     app(EventPayments::class)->configure($this->event, $this->president, ['fee_rm' => 15, 'payment_url' => 'https://pay.example/x', 'payment_account_name' => 'Fixture Club QIU']);
-    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'TXN-T1', 'FIXTURE CLUB QIU', 0.97));
+    $this->mock(ReceiptReader::class)->shouldReceive('read')->andReturn(new ReceiptReading(1500, today()->toDateString(), 'TXN-T1', 'FIXTURE CLUB QIU', 0.97, $this->student->name));
     $r = app(EventRegistrations::class)->register($this->event->fresh(), $this->student);
     expect($r->ticket_code)->toBeNull();
 

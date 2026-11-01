@@ -113,7 +113,8 @@ it('requires a comment to return or reject; a rejected document can be corrected
     $document = $this->f['document']->fresh();
     expect($document->status)->toBe(DocumentStatus::InReview)
         ->and($document->approvals()->where('decision', 'approved')->count())->toBe(1)
-        ->and(Signature::where('document_id', $document->id)->count())->toBe(1)
+        ->and(Signature::where('document_id', $document->id)->whereNotNull('approval_id')->count())->toBe(1)
+        ->and(Signature::where('document_id', $document->id)->count())->toBe(2)
         ->and($this->engine->currentStep($document)->role)->toBe(ChainRole::Advisor);
 });
 

@@ -52,7 +52,9 @@ it('keeps unrelated draft events from staff outside the approval chain', functio
     $event = Event::create(['club_id' => $other->id, 'session_id' => $f['event']->session_id, 'name' => 'Confidential draft',
         'starts_at' => now()->addMonths(4), 'ends_at' => now()->addMonths(4)->addHour(), 'expected_participants' => 20]);
 
-    $this->actingAs($f['advisor'])->get(route('events.show', $event))->assertForbidden();
+    // A deactivated staff account is signed out on its next request (stricter than a 403).
+    $this->actingAs($f['advisor'])->get(route('events.show', $event))->assertRedirect(route('login'));
+    $this->assertGuest();
 });
 
 it('makes events from past sessions read-only for the club', function () {

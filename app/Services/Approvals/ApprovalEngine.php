@@ -58,7 +58,8 @@ class ApprovalEngine
                 'created_by' => $user->id,
             ]);
 
-            // A rejected document starts again from the first approver, and every earlier signature is cleared.
+            // A rejected document starts again from the first approver: everyone signs again. Earlier signatures stay
+            // on record with the version they signed, but no longer count for the new submission.
             $wasRejected = $document->status === DocumentStatus::Rejected;
             $restart = $wasRejected
                 || $document->approvals()->doesntExist()
@@ -67,7 +68,7 @@ class ApprovalEngine
 
             if ($restart) {
                 if ($wasRejected) {
-                    Signature::where('document_id', $document->id)->delete();
+                    Signature::where('document_id', $document->id)->whereNotNull('approval_id')->update(['approval_id' => null]);
                 }
                 $document->approvals()->delete();
                 foreach ($chain as $i => $role) {

@@ -41,8 +41,13 @@ class ReceiptVerifier
             $flags[] = 'payee_mismatch';
         }
 
-        if ($studentName !== null && $reading->payer !== null && ! $this->namesMatch($reading->payer, $studentName)) {
-            $flags[] = 'payer_mismatch';
+        // Who sent the money must be readable and be the student: missing evidence is never auto-confirmed.
+        if ($studentName !== null) {
+            if ($reading->payer === null || trim($reading->payer) === '') {
+                $flags[] = 'no_payer';
+            } elseif (! $this->namesMatch($reading->payer, $studentName)) {
+                $flags[] = 'payer_mismatch';
+            }
         }
 
         $date = $this->date($reading->date);

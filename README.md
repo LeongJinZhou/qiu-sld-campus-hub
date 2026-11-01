@@ -75,8 +75,11 @@ composer run dev                        # or: php artisan serve + npm run dev
 ```bash
 composer test     # Pest
 npm run build     # vue-tsc type-check + Vite build
+php artisan test --group=hard-audit  # role matrices, input boundaries, receipts and adversarial workflow checks
 QA_TEMPLATES=1 php artisan test --filter=TemplateFidelity   # every official template → storage/qa/ side by side
 ```
+
+The hard-audit tests use the in-memory test databases and fake upload disks. They cover access, payment, withdrawal and signature boundaries and all pass; a future failure is evidence to investigate, not a reason to weaken the expected boundary. They do not perform live Google sign-in, bank transfers, browser/camera testing or concurrent load testing.
 
 ## Security and privacy
 
