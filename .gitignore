@@ -63,3 +63,4 @@ _ide_helper.php
 
 # Firebase CLI state
 /.firebase
+/storage/framework/lo-profile

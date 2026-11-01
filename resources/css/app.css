@@ -200,3 +200,61 @@ code {
 :where(.grid) > * {
     min-width: 0;
 }
+
+/*
+ * Dark mode: the same design tokens with dark values. Chosen in the profile (Light / Dark / System); "System"
+ * follows the phone or computer. Brand colours stay; surfaces, lines and ink swap. Solid dark buttons (bg-ink)
+ * become a raised dark grey so their white text stays readable.
+ */
+@layer base {
+    :root[data-theme='dark'] {
+        color-scheme: dark;
+        --color-ink: #ececf1;
+        --color-ink-muted: #a3a3b0;
+        --color-line: #2e2e38;
+        --color-surface: #18181d;
+        --color-surface-muted: #0f0f13;
+        --color-success: #22c55e;
+        --color-warning: #f59e0b;
+        --color-danger: #f87171;
+        --color-brand-blue: #4c8dff;
+        --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
+        --shadow-pop: 0 12px 40px rgb(0 0 0 / 0.6);
+    }
+    @media (prefers-color-scheme: dark) {
+        :root[data-theme='system'] {
+            color-scheme: dark;
+            --color-ink: #ececf1;
+            --color-ink-muted: #a3a3b0;
+            --color-line: #2e2e38;
+            --color-surface: #18181d;
+            --color-surface-muted: #0f0f13;
+            --color-success: #22c55e;
+            --color-warning: #f59e0b;
+            --color-danger: #f87171;
+            --color-brand-blue: #4c8dff;
+            --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
+            --shadow-pop: 0 12px 40px rgb(0 0 0 / 0.6);
+        }
+    }
+}
+:root[data-theme='dark'] :is(.bg-ink, .bg-ink\/95) {
+    background-color: #2d2d37;
+}
+:root[data-theme='dark'] :is(.hover\:bg-ink\/90, .hover\:bg-ink\/85):hover {
+    background-color: #3a3a46;
+}
+:root[data-theme='dark'] img[src*='student-activity-black'] {
+    filter: invert(1) hue-rotate(180deg);
+}
+@media (prefers-color-scheme: dark) {
+    :root[data-theme='system'] :is(.bg-ink, .bg-ink\/95) {
+        background-color: #2d2d37;
+    }
+    :root[data-theme='system'] :is(.hover\:bg-ink\/90, .hover\:bg-ink\/85):hover {
+        background-color: #3a3a46;
+    }
+    :root[data-theme='system'] img[src*='student-activity-black'] {
+        filter: invert(1) hue-rotate(180deg);
+    }
+}

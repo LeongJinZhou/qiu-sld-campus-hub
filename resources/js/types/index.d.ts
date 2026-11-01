@@ -4,6 +4,9 @@ export interface AuthUser {
     email: string;
     avatar_url: string | null;
     roles: string[];
+    theme?: 'light' | 'dark' | 'system';
+    tours_seen?: string[];
+    committee_club?: { slug: string; name: string } | null;
 }
 
 export interface Flash {

@@ -43,6 +43,7 @@ class CashHandovers
     public function request(Membership $membership, User $committee): CashHandover
     {
         $fee = $this->memberships->fee($membership->club) ?? throw new DomainException('This club has no approved fee.');
+        $this->memberships->assertCanPay($membership);
         $this->assertCanStart($membership->club_id, $committee, $membership->payments());
 
         return DB::transaction(fn (): CashHandover => $this->start($membership->payments()->create([

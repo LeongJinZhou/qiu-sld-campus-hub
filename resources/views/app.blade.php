@@ -1,13 +1,22 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ auth()->user()?->theme ?? 'system' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#FDDA1A">
+    <meta name="theme-color" content="#FDDA1A" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f0f13" media="(prefers-color-scheme: dark)">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title inertia>{{ config('app.name') }}</title>
+    <script>
+        // Theme before first paint (no white flash in dark mode): the account's choice, else this device's last choice.
+        (function () {
+            var el = document.documentElement, t = el.dataset.theme;
+            try { if (t === 'system' && localStorage.getItem('theme')) t = localStorage.getItem('theme'); } catch (e) {}
+            el.dataset.theme = t || 'system';
+        })();
+    </script>
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.ts'])
     @inertiaHead

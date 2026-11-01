@@ -61,7 +61,10 @@ class FinanceWorkbookExport
             $sheet->setCellValue("E{$row}", "=C{$row}-D{$row}");
         }
         $row++;
-        $sheet->fromArray([['Total', "=SUM(B{$first}:B".($row - 1).')', "=SUM(C{$first}:C".($row - 1).')', "=SUM(D{$first}:D".($row - 1).')', "=C{$row}-D{$row}"]], null, "A{$row}");
+        // Totals sum only the section rows above; with no sections they are plain zeros (never a range that
+        // includes the total's own cell).
+        $sum = fn (string $col) => $row > $first ? "=SUM({$col}{$first}:{$col}".($row - 1).')' : 0;
+        $sheet->fromArray([['Total', $sum('B'), $sum('C'), $sum('D'), "=C{$row}-D{$row}"]], null, "A{$row}");
         $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true);
         $sheet->getStyle("A{$row}:E{$row}")->getBorders()->getTop()->setBorderStyle(Border::BORDER_THIN);
         $row += 2;

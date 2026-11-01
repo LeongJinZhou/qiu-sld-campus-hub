@@ -12,6 +12,7 @@ use App\Models\ReportTheme;
 use App\Models\User;
 use App\Services\Documents\PdfConverter;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Symfony\Component\Process\Process;
@@ -86,7 +87,13 @@ class AnnualReports
         if (! $process->isSuccessful() || ! is_file("{$base}.pptx")) {
             throw new RuntimeException('Annual report generation failed: '.trim($process->getErrorOutput()));
         }
-        $pdf = $this->pdf->convert("{$base}.pptx");
+        // The PowerPoint is kept even if the PDF copy fails; the PDF can be made again later.
+        try {
+            $pdf = $this->pdf->convert("{$base}.pptx");
+        } catch (RuntimeException $e) {
+            Log::warning('Annual report PDF failed; PowerPoint kept', ['club_id' => $file->club_id, 'error' => $e->getMessage()]);
+            $pdf = null;
+        }
 
         foreach (array_filter([$file->pptx_path, $file->pdf_path]) as $old) {
             @unlink($old);
