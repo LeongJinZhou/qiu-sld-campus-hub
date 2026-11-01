@@ -5,7 +5,7 @@ import Icon from '@/Components/ui/Icon.vue';
 import Modal from '@/Components/ui/Modal.vue';
 import QrCode from '@/Components/ui/QrCode.vue';
 import { Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     club: {
@@ -27,53 +27,111 @@ const props = defineProps<{
 const emit = defineEmits<{ openStories: [] }>();
 
 const qrOpen = ref(false);
+const hasMembershipAction = computed(
+    () => (props.membership.can_join && !['active', 'alumni'].includes(props.membership.status ?? '')) || ['active', 'alumni'].includes(props.membership.status ?? ''),
+);
 const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, { preserveScroll: true });
 </script>
 
 <template>
-    <header class="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-        <div class="h-28 bg-gradient-to-r from-brand-cyan via-brand-blue to-brand-magenta sm:h-36" />
-        <div class="grid gap-5 px-5 pb-6 sm:grid-cols-[auto_1fr] sm:gap-8 sm:px-8">
-        <button type="button" class="-mt-14 justify-self-center sm:justify-self-start" :disabled="!hasStories" :aria-label="hasStories ? 'View stories' : undefined" @click="emit('openStories')">
-            <span class="block rounded-full bg-surface p-1"><Avatar :src="club.logo_url" :name="club.name" size="xl" :ring="hasStories" /></span>
-        </button>
-        <div class="grid gap-3 pt-2 sm:pt-4">
-            <div class="flex flex-wrap items-center gap-2">
-                <h1 class="text-xl font-bold">{{ club.name }}</h1>
-                <Badge v-if="club.category" tone="info">{{ club.category }}</Badge>
+    <!-- Instagram-style profile: logo with story ring, stats beside it, name and bio, then one row of actions. -->
+    <header class="grid gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
+        <div class="grid grid-cols-[auto_1fr] items-center gap-4 sm:gap-8">
+            <button type="button" class="shrink-0" :disabled="!hasStories" :aria-label="hasStories ? 'View stories' : undefined" @click="emit('openStories')">
+                <span class="block rounded-full p-[3px]" :class="hasStories ? 'bg-gradient-to-tr from-brand-yellow via-brand-orange to-brand-magenta' : 'bg-line'">
+                    <span class="block rounded-full bg-surface p-[3px]"
+                        ><Avatar :src="club.logo_url" :name="club.name" size="lg" class="sm:hidden" /><Avatar
+                            :src="club.logo_url"
+                            :name="club.name"
+                            size="xl"
+                            class="hidden sm:block"
+                    /></span>
+                </span>
+            </button>
+            <div class="grid min-w-0 gap-2">
+                <div class="hidden flex-wrap items-center gap-2 sm:flex">
+                    <h1 class="truncate text-xl font-bold">{{ club.name }}</h1>
+                    <Badge v-if="club.status !== 'active'" :tone="club.status === 'inactive' ? 'danger' : 'warning'">{{
+                        club.status === 'inactive' ? 'Inactive' : 'At risk'
+                    }}</Badge>
+                </div>
+                <dl class="grid grid-cols-4 text-center sm:max-w-md sm:text-left">
+                    <div
+                        v-for="stat in [
+                            { label: 'events', value: counts.events },
+                            { label: 'members', value: counts.members },
+                            { label: 'followers', value: counts.followers },
+                            { label: 'alumni', value: counts.alumni },
+                        ]"
+                        :key="stat.label"
+                        class="min-w-0"
+                    >
+                        <dd class="text-base font-bold tabular-nums sm:text-lg">{{ stat.value }}</dd>
+                        <dt class="truncate text-[11px] text-ink-muted sm:text-xs">{{ stat.label }}</dt>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <div class="grid gap-1 text-sm">
+            <div class="flex flex-wrap items-center gap-2 sm:hidden">
+                <h1 class="text-base font-bold">{{ club.name }}</h1>
                 <Badge v-if="club.status !== 'active'" :tone="club.status === 'inactive' ? 'danger' : 'warning'">{{ club.status === 'inactive' ? 'Inactive' : 'At risk' }}</Badge>
             </div>
-            <dl class="grid grid-cols-4 divide-x divide-line rounded-card border border-line text-center sm:max-w-md">
-                <div v-for="s in [{ label: 'Members', value: counts.members }, { label: 'Alumni', value: counts.alumni }, { label: 'Events', value: counts.events }, { label: 'Followers', value: counts.followers }]" :key="s.label" class="py-2">
-                    <dd class="text-lg font-bold tabular-nums">{{ s.value }}</dd>
-                    <dt class="text-[11px] text-ink-muted">{{ s.label }}</dt>
-                </div>
-            </dl>
-            <p v-if="club.established_year" class="text-xs text-ink-muted">Est. {{ club.established_year }} · {{ counts.committee }} on the committee</p>
-            <p v-if="club.bio" class="whitespace-pre-line text-sm">{{ club.bio }}</p>
-            <div class="flex flex-wrap items-center gap-4 text-sm">
-                <!-- Join is always offered to non-members; the join page explains if the fee is not approved yet. -->
-                <Link
-                    v-if="membership.can_join && !['active', 'alumni'].includes(membership.status ?? '')"
-                    :href="`/clubs/${club.slug}/join`"
-                    class="inline-flex h-9 items-center rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-4 font-semibold text-white shadow-card"
-                    :class="membership.drive ? 'animate-tracker-pulse' : ''"
-                >
-                    {{ membership.status === 'grace' ? 'Renew membership' : membership.status === 'pending' ? 'Continue joining' : 'Join club' }}<template v-if="membership.fee_sen !== null"> · {{ membership.fee_sen ? `RM ${(membership.fee_sen / 100).toFixed(2)}` : 'Free' }}</template>
-                </Link>
-                <span v-else-if="membership.status === 'active' || membership.status === 'alumni'" class="inline-flex h-9 items-center rounded-control bg-success/10 px-3 font-semibold text-success">✓ {{ membership.status === 'alumni' ? 'Alumni member' : 'Member' }}</span>
-                <button type="button" class="inline-flex h-9 items-center rounded-control px-4 font-semibold" :class="following ? 'border border-line bg-surface-muted' : 'bg-ink text-white'" @click="follow">
-                    {{ following ? 'Following' : 'Follow' }}
-                </button>
-                <a v-if="club.instagram_handle" :href="`https://instagram.com/${club.instagram_handle}`" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 font-medium text-brand-blue">
-                    <Icon name="instagram" :size="16" />@{{ club.instagram_handle }}
-                </a>
-                <button type="button" class="inline-flex items-center gap-1.5 font-medium text-ink-muted hover:text-ink" @click="qrOpen = true"><Icon name="qr" :size="16" />Club QR</button>
-            </div>
+            <p v-if="club.category" class="text-ink-muted">
+                {{ club.category }}<template v-if="club.established_year"> · Est. {{ club.established_year }}</template> · {{ counts.committee }} on the committee
+            </p>
+            <p v-if="club.bio" class="whitespace-pre-line break-words">{{ club.bio }}</p>
+            <a
+                v-if="club.instagram_handle"
+                :href="`https://instagram.com/${club.instagram_handle}`"
+                target="_blank"
+                rel="noopener"
+                class="inline-flex w-fit items-center gap-1.5 font-semibold text-brand-blue"
+            >
+                <Icon name="instagram" :size="15" />@{{ club.instagram_handle }}
+            </a>
         </div>
+
+        <div class="grid grid-cols-[1fr_1fr_auto] gap-2 text-sm">
+            <button
+                type="button"
+                class="inline-flex h-9 items-center justify-center gap-1.5 rounded-control px-3 font-semibold transition active:scale-[0.97]"
+                :class="[following ? 'bg-surface-muted text-ink' : 'bg-brand-blue text-white hover:bg-brand-blue/90', hasMembershipAction ? '' : 'col-span-2']"
+                :aria-pressed="following"
+                @click="follow"
+            >
+                <Icon v-if="following" name="check" :size="15" />{{ following ? 'Following' : 'Follow' }}
+            </button>
+            <Link
+                v-if="membership.can_join && !['active', 'alumni'].includes(membership.status ?? '')"
+                :href="`/clubs/${club.slug}/join`"
+                class="inline-flex h-9 items-center justify-center truncate rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-3 font-semibold text-white transition active:scale-[0.97]"
+                :class="membership.drive ? 'animate-tracker-pulse' : ''"
+            >
+                {{ membership.status === 'grace' ? 'Renew' : membership.status === 'pending' ? 'Continue joining' : 'Join'
+                }}<template v-if="membership.fee_sen !== null">&nbsp;· {{ membership.fee_sen ? `RM ${(membership.fee_sen / 100).toFixed(2)}` : 'Free' }}</template>
+            </Link>
+            <span
+                v-else-if="membership.status === 'active' || membership.status === 'alumni'"
+                class="inline-flex h-9 items-center justify-center rounded-control bg-success/10 px-3 font-semibold text-success"
+            >
+                ✓ {{ membership.status === 'alumni' ? 'Alumni' : 'Member' }}
+            </span>
+            <button
+                type="button"
+                class="grid size-9 place-items-center rounded-control bg-surface-muted text-ink transition hover:bg-line active:scale-[0.97]"
+                aria-label="Club QR code"
+                @click="qrOpen = true"
+            >
+                <Icon name="qr" :size="18" />
+            </button>
         </div>
         <Modal v-model:open="qrOpen" :title="club.name">
-            <QrCode :svg="club.qr_svg" label="Scan to open this club" :download-name="`${club.slug}-qr`" />
+            <div class="grid justify-items-center gap-3">
+                <QrCode :svg="club.qr_svg" label="Scan to open this club" :download-name="`${club.slug}-qr`" />
+                <p class="text-center text-xs text-ink-muted">Print it on posters or show it at booths; it always opens this page.</p>
+            </div>
         </Modal>
     </header>
 </template>

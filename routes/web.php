@@ -218,6 +218,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/activities', ActivitiesController::class)->name('activities');
     Route::redirect('/my-clubs', '/activities');
     Route::put('/notifications/mutes', [NotificationController::class, 'mutes'])->name('notifications.mutes');
+    Route::delete('/notifications', [NotificationController::class, 'clear'])->name('notifications.clear');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->whereUuid('id')->name('notifications.destroy');
     Route::post('/notifications/left-halfway', [NotificationController::class, 'leftHalfway'])->middleware('throttle:30,1')->name('notifications.left');
     Route::get('/me', [ProfileController::class, 'show'])->name('profile.me');
     Route::get('/me/certificates/{kind}/{source}', [CertificateController::class, 'download'])->middleware('throttle:20,1')->whereNumber('source')->name('certificates.download');

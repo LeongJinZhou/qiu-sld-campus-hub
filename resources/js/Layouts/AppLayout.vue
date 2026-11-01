@@ -41,7 +41,7 @@ const logout = (): void => router.post('/logout');
 </script>
 
 <template>
-    <div class="min-h-dvh bg-surface-muted md:grid md:grid-cols-[4.5rem_1fr] lg:grid-cols-[15rem_1fr]">
+    <div class="min-h-dvh bg-surface-muted md:grid md:grid-cols-[4.5rem_minmax(0,1fr)] lg:grid-cols-[15rem_minmax(0,1fr)]">
         <Toast />
         <CommitteeFeePopup />
 
@@ -99,7 +99,7 @@ const logout = (): void => router.post('/logout');
                 </div>
             </header>
 
-            <main class="mx-auto px-4 py-6 md:px-8" :class="wide ? 'max-w-6xl' : 'max-w-4xl'">
+            <main class="mx-auto w-full min-w-0 px-4 py-6 md:px-8" :class="wide ? 'max-w-6xl' : 'max-w-4xl'">
                 <slot />
             </main>
         </div>
