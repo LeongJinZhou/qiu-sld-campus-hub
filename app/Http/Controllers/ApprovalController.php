@@ -85,8 +85,8 @@ class ApprovalController extends Controller
         try {
             match ($request->validated('decision')) {
                 'approve' => $this->engine->approve($approval, $user, (string) $request->validated('signature'), $comment ?: null, $request->validated('signature_strokes')),
-                'return' => $this->engine->returnToClub($approval, $user, $comment),
-                'reject' => $this->engine->reject($approval, $user, $comment),
+                'return' => $this->engine->returnToClub($approval, $user, $comment, $request->validated('sections') ?? []),
+                'reject' => $this->engine->reject($approval, $user, $comment, $request->validated('sections') ?? []),
             };
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());

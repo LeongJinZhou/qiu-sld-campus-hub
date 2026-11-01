@@ -21,7 +21,7 @@ it('does not change an approved event when a resubmission is refused', function 
     $f['event']->update(['status' => DocumentStatus::Approved]);
     $data = array_replace(app(ProposalForm::class)->defaults($f['event']), [
         'name' => 'Changed after approval', 'summary' => 'Summary', 'venue' => 'Venue', 'nature' => ['environmental'],
-        'source_of_fund' => ['club'], 'introduction' => 'Intro', 'objectives' => ['One'], 'eligibility' => 'All', 'conclusion' => 'End',
+        'source_of_fund' => ['club'], 'introduction' => 'Intro', 'objectives' => ['One', 'Two'], 'eligibility' => 'All', 'conclusion' => 'End',
         'activities' => [], 'itinerary' => [], 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
     ]);
 
@@ -39,9 +39,9 @@ it('records ledger income once even if two reviewers approve the same payment', 
     $payment = $membership->payments()->create(['club_id' => $f['club']->id, 'user_id' => $student->id, 'method' => 'online', 'amount_sen' => 3000, 'status' => PaymentStatus::PendingReview]);
     $stale = $payment->fresh();
 
-    $service->review($payment, $f['president'], true, null);
+    $service->review($payment, $f['president'], true, null, 'TXN-9');
 
-    expect(fn () => $service->review($stale, $f['president'], true, null))->toThrow(DomainException::class)
+    expect(fn () => $service->review($stale, $f['president'], true, null, 'TXN-9'))->toThrow(DomainException::class)
         ->and(LedgerEntry::where('source_id', $payment->id)->count())->toBe(1);
 });
 
@@ -52,7 +52,9 @@ it('keeps unrelated draft events from staff outside the approval chain', functio
     $event = Event::create(['club_id' => $other->id, 'session_id' => $f['event']->session_id, 'name' => 'Confidential draft',
         'starts_at' => now()->addMonths(4), 'ends_at' => now()->addMonths(4)->addHour(), 'expected_participants' => 20]);
 
-    $this->actingAs($f['advisor'])->get(route('events.show', $event))->assertForbidden();
+    // A deactivated staff account is signed out on its next request (stricter than a 403).
+    $this->actingAs($f['advisor'])->get(route('events.show', $event))->assertRedirect(route('login'));
+    $this->assertGuest();
 });
 
 it('makes events from past sessions read-only for the club', function () {

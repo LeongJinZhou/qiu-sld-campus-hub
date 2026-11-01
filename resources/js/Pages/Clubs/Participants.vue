@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { matchesSearch } from '@/lib/search';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import Button from '@/Components/ui/Button.vue';
@@ -39,8 +40,7 @@ const open = ref<number | null>(null);
 const isMember = (m: Member): boolean => ['committee', 'member', 'renewing', 'alumni'].includes(m);
 const nonMembers = computed(() => props.rows.filter((r) => !isMember(r.member)));
 const rows = computed(() => {
-    const q = search.value.trim().toLowerCase();
-    const list = props.rows.filter((r) => (show.value === 'all' || (show.value === 'non' ? !isMember(r.member) : isMember(r.member))) && (!q || `${r.name} ${r.student_number ?? ''} ${r.programme ?? ''}`.toLowerCase().includes(q)));
+    const list = props.rows.filter((r) => (show.value === 'all' || (show.value === 'non' ? !isMember(r.member) : isMember(r.member))) && matchesSearch(search.value, r.name, r.student_number, r.programme));
     return [...list].sort((a, b) => (sort.value === 'name' ? a.name.localeCompare(b.name) : sort.value === 'recent' ? (b.last_date ?? '').localeCompare(a.last_date ?? '') : b.attended - a.attended || b.registered - a.registered));
 });
 const tone = (m: Member): 'success' | 'info' | 'warning' | 'neutral' => (m === 'member' || m === 'committee' ? 'success' : m === 'alumni' || m === 'renewing' ? 'info' : m === 'pending' ? 'warning' : 'neutral');

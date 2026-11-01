@@ -3,8 +3,10 @@
 namespace App\Http\Requests\Social;
 
 use App\Models\Post;
+use App\Services\Social\PostingRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StorePostRequest extends FormRequest
 {
@@ -25,5 +27,19 @@ class StorePostRequest extends FormRequest
             'photos' => ['required', 'array', 'min:1', 'max:10'],
             'photos.*' => self::IMAGE_RULES,
         ];
+    }
+
+    /** Spam and bad-word checks once the basic fields are valid. @return list<callable> */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+            $eventId = $this->integer('event_id') ?: null;
+            foreach (app(PostingRules::class)->postProblems($this->route('club'), $eventId, $this->input('caption')) as $field => $message) {
+                $validator->errors()->add($field, $message);
+            }
+        }];
     }
 }

@@ -3,8 +3,10 @@
 use App\Enums\DocumentStatus;
 use App\Models\Club;
 use App\Models\Post;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
+use App\Services\Events\ProposalRules;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -50,7 +52,7 @@ it('submits, runs the chain over HTTP and lands in the feed', function () {
 
     $step = app(ApprovalEngine::class)->currentStep($this->f['document']->fresh());
     $this->actingAs($this->f['advisor'])->get('/approvals')->assertInertia(fn (Assert $p) => $p->has('items', 1));
-    $this->actingAs($this->f['advisor'])->post("/approvals/{$step->id}", ['decision' => 'approve', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])->assertRedirect('/approvals');
+    $this->actingAs($this->f['advisor'])->post("/approvals/{$step->id}", ['decision' => 'approve', 'no_problems' => '1', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])->assertRedirect('/approvals');
 
     approveRemainingSteps($this->f['document']);
 
@@ -124,4 +126,44 @@ it('only lets the club and SLD publish, and only SLD moderate', function () {
     $this->actingAs($this->f['president'])->post("/admin/moderation/posts/{$post->id}/pin")->assertForbidden();
     $this->actingAs(sldOfficer())->post("/admin/moderation/posts/{$post->id}/pin");
     expect($post->fresh()->pinned_at)->not->toBeNull();
+});
+
+it('refuses a submission with fewer than 2 objectives, a loss-making budget, fractional quantities or CCA above the SLD limit', function () {
+    $f = $this->f;
+    Setting::write(ProposalRules::CCA_SETTING, ['max_hours' => 3]);
+    $data = [...completeProposal($f), 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()];
+
+    $this->actingAs($f['president'])->post(route('proposals.submit', $f['event']), [...$data, 'objectives' => ['Only one'], 'cca_participant' => 5,
+        'budget' => ['revenue' => [['description' => 'Fund', 'price_sen' => 100, 'quantity' => 1]], 'expenses' => [['description' => 'Gloves', 'price_sen' => 500, 'quantity' => 1.5]]]])
+        ->assertSessionHasErrors(['objectives', 'cca_participant', 'budget.expenses.0.quantity']);
+    $this->actingAs($f['president'])->post(route('proposals.submit', $f['event']), [...$data, 'cca_participant' => 3, 'cca_committee' => 3,
+        'budget' => ['revenue' => [['description' => 'Fund', 'price_sen' => 100, 'quantity' => 1]], 'expenses' => [['description' => 'Gloves', 'price_sen' => 500, 'quantity' => 1]]]])
+        ->assertSessionHasErrors('budget');
+});
+
+it('lets two committee members edit different parts at once without overwriting each other, and shows who is editing', function () {
+    $f = $this->f;
+    $secretary = $f['club']->roleAssignments()->where('position', 'Secretary')->first()->user;
+    $url = route('proposals.live', $f['event']);
+
+    $this->actingAs($f['president'])->getJson("{$url}?section=budget")->assertOk();
+    $this->actingAs($f['president'])->patchJson($url, ['changes' => ['introduction' => 'From the president']])->assertOk();
+    $this->actingAs($secretary)->patchJson($url, ['changes' => ['conclusion' => 'From the secretary']])->assertOk();
+
+    $this->actingAs($secretary)->getJson("{$url}?section=conclusion")->assertOk()
+        ->assertJsonPath('data.introduction', 'From the president')->assertJsonPath('data.conclusion', 'From the secretary')
+        ->assertJsonPath('editors.0.name', $f['president']->name)->assertJsonPath('editors.0.section', 'budget');
+    $this->actingAs(otherStudent())->getJson($url)->assertForbidden();
+});
+
+it('returns a proposal pointing at the parts to fix, highlighted on the form', function () {
+    $f = $this->f;
+    app(ApprovalEngine::class)->submit($f['document'], $f['president'], completeProposal($f), signaturePng());
+    $step = $f['document']->approvals()->where('decision', 'pending')->orderBy('step_no')->first();
+
+    $this->actingAs($f['advisor'])->post("/approvals/{$step->id}", ['decision' => 'return', 'sections' => [['key' => 'budget', 'note' => 'Gloves are too expensive']]])
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($f['president'])->get(route('proposals.edit', $f['event']))
+        ->assertInertia(fn ($p) => $p->where('status', 'returned')->where('returnSections.0.key', 'budget')->where('returnSections.0.note', 'Gloves are too expensive'));
 });

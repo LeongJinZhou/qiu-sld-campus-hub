@@ -5,7 +5,6 @@ namespace App\Services\Membership;
 use App\Enums\HandoverStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ScopedRole;
-use App\Enums\ScopeType;
 use App\Models\CashHandover;
 use App\Models\EventRegistration;
 use App\Models\Membership;
@@ -16,13 +15,13 @@ use App\Notifications\DocumentNotification;
 use App\Services\Ai\CashPhotoChecker;
 use App\Services\AuditLogger;
 use App\Services\Events\EventPayments;
+use App\Services\QrCodes;
 use App\Services\Time\SessionResolver;
 use DomainException;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Zxing\QrReader;
 
 /**
  * Cash payment handover: student picks a committee member → Accept/Decline → both tap ready → the student shows
@@ -236,21 +235,13 @@ class CashHandovers
 
     private function isCommittee(User $user, int $clubId): bool
     {
-        return RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $clubId)
-            ->where('session_id', $this->sessions->current()->id)->where('role', ScopedRole::ClubCommittee)
+        return RoleAssignment::query()->actingFor($clubId, $this->sessions->current())->where('role', ScopedRole::ClubCommittee)
             ->where('user_id', $user->id)->exists();
     }
 
     private function decode(string $path): ?string
     {
-        try {
-            // TRY_HARDER: without it ~1 in 10 clean phone photos of the QR fail to decode.
-            $text = (new QrReader($path))->text(['TRY_HARDER' => true]);
-
-            return is_string($text) && $text !== '' ? $text : null;
-        } catch (\Throwable) {
-            return null;
-        }
+        return app(QrCodes::class)->decode($path);
     }
 
     /** @return 'student'|'committee' */

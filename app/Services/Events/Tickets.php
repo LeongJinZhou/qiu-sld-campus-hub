@@ -25,9 +25,11 @@ class Tickets
         $event = $registration->event;
         $paid = $this->paidPayment($registration);
         $attendance = Attendance::where('event_id', $event->id)->where('user_id', $registration->user_id)->first();
+        $needsIndemnity = $event->is_outdoor && ! $event->indemnities()->where('user_id', $registration->user_id)->exists();
 
         return [
-            'code' => $registration->ticket_code,
+            // The ticket itself (its code and QR) is held back until an outdoor event's indemnity is signed.
+            'code' => $needsIndemnity ? null : $registration->ticket_code,
             'url' => $registration->ticket_code ? route('tickets.show', $registration->ticket_code) : null,
             'status' => $this->status($registration),
             'order_id' => $registration->order_id ?? $paid?->order_id,
@@ -42,7 +44,7 @@ class Tickets
                 'slug' => $event->slug, 'name' => $event->name, 'club' => $event->club->name, 'club_logo' => $event->club->logoUrl(),
                 'starts_at' => $event->starts_at->toIso8601String(), 'ends_at' => $event->ends_at->toIso8601String(),
                 'venue' => $event->venue, 'poster_url' => $event->posterUrl(), 'past' => $event->ends_at->isPast(),
-                'needs_indemnity' => $event->is_outdoor && ! $event->indemnities()->where('user_id', $registration->user_id)->exists(),
+                'needs_indemnity' => $needsIndemnity,
             ],
             'theme' => $this->theme($event),
             'clock_in' => $attendance?->clock_in_at?->format('g:i A'),

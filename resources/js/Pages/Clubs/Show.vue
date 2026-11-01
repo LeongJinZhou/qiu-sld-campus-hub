@@ -130,12 +130,24 @@ const statusTone = (s: string) => (s === 'approved' ? 'success' : s === 'returne
 
             <Tabs v-model="tab" :tabs="tabs">
                 <template #committee>
-                    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="mb-5 grid gap-4">
                         <SessionSelector :sessions="sessions" :selected="session" :url="`/clubs/${club.slug}`" />
-                        <Badge v-if="!isCurrentSession">Past session · read-only</Badge>
+                        <div class="relative overflow-hidden rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+                            <span class="absolute -right-8 -top-10 size-36 animate-float-soft rounded-full bg-gradient-to-br from-brand-yellow/40 to-brand-magenta/30 blur-2xl" aria-hidden="true" />
+                            <div class="relative flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted">{{ isCurrentSession ? 'Current committee' : 'Past committee' }}</p>
+                                    <h2 class="text-2xl font-black"><span class="text-gradient-warm">{{ session }}</span></h2>
+                                    <p class="text-sm text-ink-muted">{{ committee.length }} committee member{{ committee.length === 1 ? '' : 's' }}<template v-if="advisors.length"> · {{ advisors.length }} advisor{{ advisors.length === 1 ? '' : 's' }}</template></p>
+                                </div>
+                                <Badge v-if="!isCurrentSession">Past session · read-only</Badge>
+                            </div>
+                        </div>
                     </div>
                     <div class="grid gap-8">
-                        <CommitteeBoard :committee="committee" :advisors="advisors" />
+                        <Transition name="fade-up" mode="out-in">
+                            <CommitteeBoard :key="session" :committee="committee" :advisors="advisors" />
+                        </Transition>
 
                         <section v-if="isCurrentSession && upcoming.length" class="grid gap-3">
                             <h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">Coming up</h3>

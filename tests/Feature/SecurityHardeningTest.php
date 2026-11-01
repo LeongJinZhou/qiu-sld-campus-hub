@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /** Phase 5 security pass: every route guarded, rate limits, uploads re-encoded, audit coverage. */
-const PUBLIC_ROUTES = ['up', '/', 'auth/google/redirect', 'auth/google/alumni', 'auth/google/callback', 'not-in-records', 'p/{token}', 'verify/{code}', 'certificates/{code}', 'dev/login-as'];
+const PUBLIC_ROUTES = ['up', '/', 'auth/google/redirect', 'auth/google/alumni', 'auth/google/callback', 'not-in-records', 'p/{token}', 'verify/{code}', 'certificates/{code}', 'dev/login-as', 'calendar/feed/{user}.ics'];
 
 it('requires sign-in on every route except the public allow-list, and SLD rights on every admin route', function () {
     $open = [];

@@ -3,14 +3,16 @@
 namespace App\Services\Notifications;
 
 use App\Enums\ApprovalDecision;
+use App\Enums\ChainRole;
 use App\Enums\DocumentStatus;
+use App\Enums\DocumentType;
 use App\Enums\HandoverStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ScopedRole;
-use App\Enums\ScopeType;
 use App\Models\Approval;
 use App\Models\CashHandover;
+use App\Models\Document;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\Membership;
@@ -18,6 +20,9 @@ use App\Models\MembershipPayment;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
+use App\Services\Approvals\ApproverResolver;
+use App\Services\Documents\Drafts;
+use App\Services\Membership\CommitteeFees;
 use App\Services\Time\SessionResolver;
 use Illuminate\Support\Facades\Cache;
 
@@ -32,7 +37,7 @@ class ActionItems
     /** @return list<array{key: string, kind: string, title: string, body: string, url: string, since: ?string}> */
     public function for(User $user): array
     {
-        return [...$this->payments($user), ...$this->eventPayments($user), ...$this->handovers($user), ...$this->receiptsToReview($user), ...$this->indemnities($user), ...$this->approvals($user)];
+        return [...$this->committeeFees($user), ...$this->payments($user), ...$this->eventPayments($user), ...$this->handovers($user), ...$this->receiptsToReview($user), ...$this->indemnities($user), ...$this->approvals($user), ...$this->withdrawals($user)];
     }
 
     /** Short-lived cache for the badge count shown on every page. */
@@ -44,6 +49,19 @@ class ActionItems
     public static function forget(User|int $user): void
     {
         Cache::forget('actions:'.($user instanceof User ? $user->id : $user));
+    }
+
+    /** Club committee members pay the club fee too. */
+    private function committeeFees(User $user): array
+    {
+        return array_map(fn (array $f) => [
+            'key' => "committee-fee:{$f['club']['slug']}", 'kind' => 'payment',
+            'title' => ($f['overdue'] ? 'Overdue: ' : '')."Pay your {$f['club']['name']} club fee",
+            'body' => "As {$f['position']} you pay the club fee (RM ".number_format($f['fee_sen'] / 100, 2).') like every member. '
+                .($f['overdue'] ? 'It was due '.date('j M Y', strtotime($f['due_on'])).'.' : "Due within {$f['days_left']} day".($f['days_left'] === 1 ? '' : 's').'.'),
+            'url' => $f['url'], 'since' => null,
+        ], array_values(array_filter(app(CommitteeFees::class)->unpaid($user), // "Finish paying" already covers a join in progress.
+            fn (array $f) => ! Membership::where('user_id', $user->id)->where('status', MembershipStatus::Pending)->whereHas('club', fn ($q) => $q->where('slug', $f['club']['slug']))->exists())));
     }
 
     /** Joined a paid club but not paid yet (and no cash handover running). */
@@ -97,8 +115,7 @@ class ActionItems
     /** Committee members: online receipts the AI could not confirm. */
     private function receiptsToReview(User $user): array
     {
-        $clubIds = RoleAssignment::where('user_id', $user->id)->where('scope_type', ScopeType::Club)->where('role', ScopedRole::ClubCommittee)
-            ->where('session_id', $this->sessions->current()->id)->pluck('scope_id');
+        $clubIds = RoleAssignment::query()->acting($this->sessions->current())->where('user_id', $user->id)->where('role', ScopedRole::ClubCommittee)->pluck('scope_id');
         if ($clubIds->isEmpty()) {
             return [];
         }
@@ -116,13 +133,39 @@ class ActionItems
     private function indemnities(User $user): array
     {
         return Event::where('is_outdoor', true)->where('status', DocumentStatus::Approved)->where('starts_at', '>', now()->addDays(3))
-            ->whereHas('registrations', fn ($q) => $q->where('user_id', $user->id))
+            ->whereHas('registrations', fn ($q) => $q->where('user_id', $user->id)->where('status', 'registered'))
             ->whereDoesntHave('indemnities', fn ($q) => $q->where('user_id', $user->id))->get()
             ->map(fn (Event $e) => [
-                'key' => "indemnity:{$e->id}", 'kind' => 'indemnity', 'title' => "Sign the indemnity for {$e->name}",
-                'body' => 'Required for outdoor events. Signing closes '.$e->indemnityClosesAt()->format('D, j M Y').'; without it you cannot clock in.',
+                'key' => "indemnity:{$e->id}", 'kind' => 'indemnity', 'title' => "One step left: sign the indemnity for {$e->name}",
+                'body' => 'You have not finished. Your details are filled in; just check and sign to get your ticket. Signing closes '.$e->indemnityClosesAt()->format('D, j M Y').'.',
                 'url' => route('events.indemnity', $e), 'since' => null,
             ])->values()->all();
+    }
+
+    /** Fund withdrawals waiting on this person: Treasurer to sign or upload the bank-in, SLD to send to Finance or confirm. */
+    private function withdrawals(User $user): array
+    {
+        $resolver = app(ApproverResolver::class);
+
+        return Document::with('club', 'event')->where('type', DocumentType::FundWithdrawal)
+            ->where(fn ($q) => $q->where('status', DocumentStatus::Draft)->orWhereIn('finance_stage', ['awaiting_finance', 'awaiting_bankin', 'bankin_uploaded']))
+            ->get()
+            ->map(function (Document $d) use ($user, $resolver): ?array {
+                $treasurer = $resolver->canAct($user, $d, ChainRole::Treasurer);
+                $todo = match (true) {
+                    $d->status === DocumentStatus::Draft && $treasurer => 'Sign the fund withdrawal',
+                    $d->finance_stage === 'awaiting_bankin' && $treasurer => 'Upload the bank-in proof',
+                    $d->finance_stage === 'awaiting_finance' && $user->isSldAdmin() => 'Send the withdrawal to Finance',
+                    $d->finance_stage === 'bankin_uploaded' && $user->isSldAdmin() => 'Confirm the bank-in',
+                    default => null,
+                };
+
+                return $todo ? [
+                    'key' => "withdrawal:{$d->id}", 'kind' => 'payment', 'title' => "{$todo}: ".($d->event?->name ?? $d->club->name),
+                    'body' => 'RM '.number_format(((int) (app(Drafts::class)->current($d, [])['total_sen'] ?? 0)) / 100, 2).' fund withdrawal.',
+                    'url' => route('withdrawals.show', $d), 'since' => $d->updated_at?->toIso8601String(),
+                ] : null;
+            })->filter()->values()->all();
     }
 
     /** Approval steps waiting for this person (advisor, President, staff approvers, SLD). */

@@ -12,7 +12,13 @@ class DecideApprovalRequest extends FormRequest
     {
         return [
             'decision' => ['required', Rule::in(['approve', 'return', 'reject'])],
-            'comment' => ['nullable', 'required_unless:decision,approve', 'string', 'max:2000'],
+            // Approving needs only the signature and the "no problems" tick; returning or rejecting needs the parts
+            // that are wrong (proposals) or a comment.
+            'comment' => ['exclude_if:decision,approve', 'nullable', 'required_without:sections', 'string', 'max:2000'],
+            'no_problems' => ['exclude_unless:decision,approve', 'accepted'],
+            'sections' => ['exclude_if:decision,approve', 'nullable', 'array', 'max:20'],
+            'sections.*.key' => ['required', 'string', 'max:40', 'distinct'],
+            'sections.*.note' => ['required', 'string', 'max:500'],
             'signature' => ['nullable', 'required_if:decision,approve', 'string'],
             'signature_strokes' => ['nullable', 'required_if:decision,approve', 'string', 'max:307200'],
         ];

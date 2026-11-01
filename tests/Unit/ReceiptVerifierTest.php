@@ -32,3 +32,11 @@ it('sends anything unclear to the Treasurer review queue with a reason', functio
 it('reviews receipts the AI could not read', function () use ($assess) {
     expect($assess(null))->toBe(['status' => PaymentStatus::PendingReview, 'flags' => ['unreadable']]);
 });
+
+it('sends a receipt sent from someone else\'s account to review', function () use ($today, $good) {
+    $assess = fn (?string $payer) => (new ReceiptVerifier)->assess($good(['payer' => $payer]), 3000, 'GPS Club QIU', [], $today, 'Jinzhou Leong');
+
+    expect($assess('LEONG JIN ZHOU')['flags'])->toBe([])
+        ->and($assess('Ahmad Bin Abdullah')['flags'])->toContain('payer_mismatch')
+        ->and($assess(null)['flags'])->toBe(['no_payer']);
+});

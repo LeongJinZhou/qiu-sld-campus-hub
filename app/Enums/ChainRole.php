@@ -6,6 +6,7 @@ namespace App\Enums;
 enum ChainRole: string
 {
     case Preparer = 'preparer';
+    case Treasurer = 'treasurer';
     case Secretary = 'secretary';
     case President = 'president';
     case Advisor = 'advisor';

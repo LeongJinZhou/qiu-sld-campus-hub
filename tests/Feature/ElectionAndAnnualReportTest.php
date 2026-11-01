@@ -9,6 +9,8 @@ use App\Models\Vote;
 use App\Services\Agm\AgmReportForm;
 use App\Services\Agm\Elections;
 use App\Services\Reports\AnnualReports;
+use App\Services\Roles\RoleService;
+use App\Services\Time\SessionResolver;
 use Illuminate\Support\Facades\Notification;
 use Symfony\Component\Process\Process;
 
@@ -57,7 +59,7 @@ it('puts the four compulsory positions on the ballot and checks eligibility and 
         ->toMatchArray(['President' => 'uncontested', 'Vice President' => 'no_candidate', 'Secretary' => 'no_candidate', 'Treasurer' => 'no_candidate']);
 });
 
-it('allows one vote per position, alumni only when switched on, and hands roles over when the term starts', function () {
+it('gives one ticket per position, changeable 3 times, no self-votes, alumni only when switched on, and hands over 7 days after voting', function () {
     $election = makeElection($this);
     $members = plainMembers($this, 5);
     $alumnus = User::factory()->create();
@@ -76,9 +78,15 @@ it('allows one vote per position, alumni only when switched on, and hands roles 
     $this->actingAs($members[3])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $leader->id])->assertSessionHas('error', 'Voting is not open.');
     $this->travelTo($election->voting_open_at->addMinute());
     $this->actingAs($members[3])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $leader->id])->assertSessionHas('success');
-    $this->actingAs($members[3])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $rival->id])->assertSessionHas('error', 'You have already voted for President.');
+    // Changing one's mind: up to 3 times, then the vote is final.
+    foreach ([$rival, $leader, $rival] as $choice) {
+        $this->actingAs($members[3])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $choice->id])->assertSessionHas('success');
+    }
+    $this->actingAs($members[3])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $leader->id])->assertSessionHas('error', fn ($m) => str_contains($m, 'final'));
+    $this->actingAs($members[3])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $rival->id])->assertSessionHas('success'); // same choice: no change
+    $this->actingAs($members[0])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $leader->id])->assertSessionHas('error', 'You cannot vote for yourself.');
     $this->actingAs($members[1])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $leader->id])->assertSessionHas('success');
-    $this->actingAs($members[2])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $rival->id])->assertSessionHas('success');
+    $this->actingAs($members[2])->post("/election-positions/{$president->id}/vote", ['candidate_id' => $leader->id])->assertSessionHas('success');
     $this->actingAs($alumnus)->post("/election-positions/{$president->id}/vote", ['candidate_id' => $rival->id])->assertSessionHas('error');
     expect(Vote::count())->toBe(3);
     // Tallies are hidden from members while voting is open.
@@ -92,16 +100,24 @@ it('allows one vote per position, alumni only when switched on, and hands roles 
 
     $lines = app(AgmReportForm::class)->computed($this->agm->fresh())['election'];
     expect($lines['election'][0])->toBe('4 positions were elected.')
-        ->and($lines['election'][1])->toContain('President: 2 candidates')->toContain('(2 votes)')
+        ->and($lines['election'][1])->toContain('President: 2 candidates')->toContain('(2 votes)')->toContain('(1 votes)')
         ->and($lines['appointments'][0])->toBe("President: {$members[0]->name} ({$members[0]->student->student_number})");
 
-    // Handover on 1 July, when the new term begins.
+    // Winners hold their titles at once; the outgoing committee keeps access for 7 days, then the new one takes over.
     $term = $election->fresh()->termSession;
-    expect($election->fresh()->handed_over_at)->toBeNull();
-    $this->travelTo($term->starts_on->setTime(0, 30));
+    $club = $this->club;
+    $roles = app(RoleService::class);
+    $now = app(SessionResolver::class)->current();
+    expect(RoleAssignment::where('session_id', $term->id)->where('scope_id', $club->id)->where('position', 'President')->value('user_id'))->toBe($members[0]->id)
+        ->and($election->fresh()->handed_over_at)->toBeNull()
+        ->and($roles->belongsToClub($this->secretary, $club, $now))->toBeTrue()
+        ->and($roles->belongsToClub($members[0], $club, $now))->toBeFalse();
+
+    $this->travelTo($election->voting_close_at->addDays(Elections::HANDOVER_DAYS)->startOfDay()->addMinutes(30));
     $this->artisan('schedule:test', ['--name' => 'election-handover'])->assertSuccessful();
-    expect(RoleAssignment::where('session_id', $term->id)->where('scope_id', $this->club->id)->where('position', 'President')->value('user_id'))->toBe($members[0]->id)
-        ->and($election->fresh()->handed_over_at)->not->toBeNull();
+    expect($election->fresh()->handed_over_at)->not->toBeNull()
+        ->and($roles->belongsToClub($this->secretary, $club, $now))->toBeFalse()
+        ->and($roles->belongsToClub($members[0], $club, $now))->toBeTrue();
 });
 
 it('blocks publishing while a compulsory position has no candidate', function () {
@@ -139,4 +155,25 @@ it('submits the AGM package only when all four parts are ready', function () {
     $this->actingAs($this->secretary)->post("/agms/{$this->agm->id}/package")->assertSessionHas('success');
     expect($this->agm->fresh()->package_submitted_at)->not->toBeNull();
     $this->actingAs($this->sld)->get('/admin/agm')->assertOk()->assertInertia(fn ($page) => $page->where('clubs.0.agm.package_submitted_at', fn ($v) => $v !== null));
+});
+
+it('lets the committee add and remove positions before voting, name candidates by student ID, and share a candidate QR', function () {
+    $election = makeElection($this);
+    [$member] = plainMembers($this, 1);
+    $member->student->update(['expected_end_date' => now()->addYears(3)]);
+
+    $this->actingAs($this->secretary)->post("/elections/{$election->id}/positions", ['position' => 'Sports Director'])->assertSessionHas('success');
+    $sports = positionNamed($election, 'Sports Director');
+    $this->actingAs($this->secretary)->delete('/election-positions/'.positionNamed($election, 'President')->id)->assertSessionHas('error');
+    $this->actingAs($this->secretary)->post("/election-positions/{$sports->id}/nominate-member", ['student_number' => $member->student->student_number])->assertSessionHas('success');
+    expect($sports->candidates()->sole()->only('user_id', 'nominated_by'))->toBe(['user_id' => $member->id, 'nominated_by' => $this->secretary->id]);
+    $this->actingAs($member)->post("/election-positions/{$sports->id}/nominate-member", ['student_number' => $member->student->student_number])->assertForbidden();
+
+    $candidate = $sports->candidates()->sole();
+    $this->actingAs($member)->get("/agms/{$this->agm->id}/election?candidate={$candidate->id}")->assertInertia(fn ($p) => $p
+        ->where('highlight', $candidate->id)->where('election.positions.4.candidates.0.is_me', true)
+        ->where('election.positions.4.candidates.0.qr_svg', fn ($svg) => str_contains((string) $svg, '<svg')));
+
+    $this->travelTo($election->voting_open_at->addMinute());
+    $this->actingAs($this->secretary)->delete("/election-positions/{$sports->id}")->assertSessionHas('error', 'Positions are fixed once voting opens.');
 });

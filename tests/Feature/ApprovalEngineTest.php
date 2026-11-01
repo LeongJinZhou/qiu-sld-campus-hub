@@ -6,6 +6,7 @@ use App\Enums\DocumentStatus;
 use App\Models\EventDocumentItem;
 use App\Models\Post;
 use App\Models\RoleAssignment;
+use App\Models\Signature;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Approvals\ApproverResolver;
 
@@ -99,15 +100,22 @@ it('restarts the whole chain when the budget or date changes on resubmit', funct
     expect($this->engine->currentStep($this->f['document']->fresh())->role)->toBe(ChainRole::Advisor);
 });
 
-it('requires a comment to return or reject, and rejection is final', function () {
+it('requires a comment to return or reject; a rejected document can be corrected and signed again from the start', function () {
     $this->engine->submit($this->f['document'], $this->f['president'], $this->data, signaturePng());
     $step = $this->engine->currentStep($this->f['document']->fresh());
 
     expect(fn () => $this->engine->reject($step, $this->f['advisor'], ' '))->toThrow(DomainException::class, 'comment');
 
     $this->engine->reject($step, $this->f['advisor'], 'Not suitable.');
-    expect($this->f['document']->fresh()->status)->toBe(DocumentStatus::Rejected)
-        ->and(fn () => $this->engine->submit($this->f['document']->fresh(), $this->f['president'], $this->data, signaturePng()))->toThrow(DomainException::class);
+    expect($this->f['document']->fresh()->status)->toBe(DocumentStatus::Rejected);
+
+    $this->engine->submit($this->f['document']->fresh(), $this->f['president'], $this->data, signaturePng());
+    $document = $this->f['document']->fresh();
+    expect($document->status)->toBe(DocumentStatus::InReview)
+        ->and($document->approvals()->where('decision', 'approved')->count())->toBe(1)
+        ->and(Signature::where('document_id', $document->id)->whereNotNull('approval_id')->count())->toBe(1)
+        ->and(Signature::where('document_id', $document->id)->count())->toBe(2)
+        ->and($this->engine->currentStep($document)->role)->toBe(ChainRole::Advisor);
 });
 
 it('rejects a forged signature payload', function () {

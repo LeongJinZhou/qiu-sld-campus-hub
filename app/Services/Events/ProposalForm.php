@@ -33,7 +33,7 @@ class ProposalForm
     /** @return array<string, mixed> */
     public function defaults(Event $event): array
     {
-        $cca = $this->rules->defaultCca($event->starts_at, $event->ends_at);
+        $cca = min($this->rules->ccaLimit(), $this->rules->defaultCca($event->starts_at, $event->ends_at));
 
         return [
             'name' => $event->name,
@@ -51,7 +51,7 @@ class ProposalForm
             'introduction' => '', 'objectives' => ['', '', ''], 'eligibility' => '',
             'activities' => [['name' => '', 'description' => '']],
             'itinerary' => [['start' => '', 'end' => '', 'agenda' => 'Arrival & Registration']],
-            'ict_requirements' => '',
+            'ict_required' => false, 'ict_requirements' => '',
             'transport_required' => false, 'transport_arrangement' => '',
             'departure_time' => '', 'departure_pickup' => '', 'return_time' => '', 'return_pickup' => '',
             'budget' => ['revenue' => [], 'expenses' => []],
@@ -76,22 +76,37 @@ class ProposalForm
         $this->syncEvent($document->event, $data);
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Keeps the event row in step with the draft. Half-typed values (an empty name, a date being typed) are skipped,
+     * so the event keeps its last good value until the field is finished.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function syncEvent(Event $event, array $data): void
     {
-        $event->update([
-            'name' => $data['name'],
-            'summary' => $data['summary'],
-            'starts_at' => CarbonImmutable::parse($data['starts_at']),
-            'ends_at' => CarbonImmutable::parse($data['ends_at']),
-            'venue' => $data['venue'],
-            'mode' => $data['mode'],
-            'expected_participants' => $data['expected_participants'],
-            'is_outdoor' => $data['is_outdoor'],
-            'is_faculty_event' => $data['is_faculty_event'],
-            'cca_participant' => $data['cca_participant'],
-            'cca_committee' => $data['cca_committee'],
-        ]);
+        $date = function (mixed $value): ?CarbonImmutable {
+            try {
+                return is_string($value) && $value !== '' ? CarbonImmutable::parse($value) : null;
+            } catch (\Throwable) {
+                return null;
+            }
+        };
+        $starts = $date($data['starts_at'] ?? null);
+        $ends = $date($data['ends_at'] ?? null);
+        $values = [
+            'name' => filled($data['name'] ?? null) ? $data['name'] : null,
+            'summary' => $data['summary'] ?? null,
+            'starts_at' => $starts && $ends && $ends->gt($starts) ? $starts : null,
+            'ends_at' => $starts && $ends && $ends->gt($starts) ? $ends : null,
+            'venue' => $data['venue'] ?? null,
+            'mode' => in_array($data['mode'] ?? null, ['physical', 'virtual'], true) ? $data['mode'] : null,
+            'expected_participants' => is_numeric($data['expected_participants'] ?? null) && $data['expected_participants'] >= 1 ? (int) $data['expected_participants'] : null,
+            'is_outdoor' => (bool) ($data['is_outdoor'] ?? false),
+            'is_faculty_event' => (bool) ($data['is_faculty_event'] ?? false),
+            'cca_participant' => is_numeric($data['cca_participant'] ?? null) ? $data['cca_participant'] : null,
+            'cca_committee' => is_numeric($data['cca_committee'] ?? null) ? $data['cca_committee'] : null,
+        ];
+        $event->update(array_filter($values, fn ($v, $k) => $v !== null || in_array($k, ['summary', 'venue'], true), ARRAY_FILTER_USE_BOTH));
     }
 
     /** Fields the template prints that come from records and cannot be edited. */

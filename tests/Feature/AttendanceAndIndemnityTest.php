@@ -8,7 +8,10 @@ use App\Services\Documents\AttendanceListExport;
 use App\Services\Documents\XlsxRenderer;
 use App\Services\Events\AttendanceQr;
 use App\Services\Events\AttendanceService;
+use App\Services\Events\EventRegistrations;
 use App\Services\Events\IndemnityService;
+use App\Services\Events\Tickets;
+use App\Services\Notifications\ActionItems;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -138,4 +141,23 @@ it('keeps the signature block intact when there are more participants than blank
 
     expect($sheet->getCell('B25')->getValue())->toBe('Student 20')
         ->and($sheet->getCell('A26')->getValue())->toBe('Prepared by:');
+});
+
+it('asks a newly registered outdoor participant to sign, holds back the ticket, then hands it over once signed', function () {
+    $this->event->update(['is_outdoor' => true]);
+    $this->travelTo($this->event->starts_at->copy()->subDays(10));
+    $other = otherStudent();
+
+    $registration = app(EventRegistrations::class)->register($this->event->fresh(), $other);
+
+    expect($other->notifications()->first()->data['title'])->toContain('One step left: sign the indemnity')
+        ->and(collect(app(ActionItems::class)->for($other))->pluck('kind'))->toContain('indemnity')
+        ->and(app(Tickets::class)->present($registration->fresh())['code'])->toBeNull();
+    $this->actingAs($other)->get("/tickets/{$registration->ticket_code}")->assertInertia(fn ($p) => $p->where('qrSvg', null)->where('ticket.event.needs_indemnity', true));
+
+    $this->actingAs($other)->post("/events/{$this->event->slug}/indemnity", indemnityData())->assertRedirect(route('tickets.show', $registration->ticket_code));
+
+    expect(app(Tickets::class)->present($registration->fresh())['code'])->toBe($registration->ticket_code)
+        ->and(collect(app(ActionItems::class)->for($other))->pluck('kind'))->not->toContain('indemnity')
+        ->and(app(IndemnityService::class)->savedDetails($other)['address'])->toBe('12 Jalan Test, Ipoh');
 });

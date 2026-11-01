@@ -5,6 +5,7 @@ use App\Models\ClubFee;
 use App\Models\Post;
 use App\Models\Student;
 use App\Models\User;
+use App\Notifications\DocumentNotification;
 use App\Notifications\SocialNotification;
 use App\Services\Membership\CashHandovers;
 use App\Services\Membership\MembershipService;
@@ -70,4 +71,20 @@ it('sends outdoor-event registrants straight to the indemnity form', function ()
     $event->update(['status' => DocumentStatus::Approved, 'is_outdoor' => true, 'registration_open' => true]);
     $this->actingAs($this->student)->post("/events/{$event->slug}/register")->assertRedirect(route('events.indemnity', $event));
     expect(collect(app(ActionItems::class)->for($this->student))->pluck('kind'))->toContain('indemnity');
+});
+
+it('filters notifications by group and clears one, a group or all', function () {
+    $user = otherStudent();
+    $user->notify(new DocumentNotification('Payment received', 'RM 30', '/x'));
+    $user->notify(new DocumentNotification('Proposal returned', 'Fix budget', '/y'));
+    $user->notify(new SocialNotification('Ali liked your post', 'Club', '/z', 'likes', 'k1'));
+
+    $this->actingAs($user)->get('/notifications?group=money')->assertInertia(fn ($p) => $p->has('items', 1)->where('items.0.title', 'Payment received')->where('total', 3));
+
+    $this->actingAs($user)->delete('/notifications/'.$user->notifications()->where('data->title', 'Ali liked your post')->value('id'));
+    expect($user->notifications()->count())->toBe(2);
+    $this->actingAs($user)->delete('/notifications', ['group' => 'documents']);
+    expect($user->notifications()->pluck('data')->pluck('title')->all())->toBe(['Payment received']);
+    $this->actingAs($user)->delete('/notifications');
+    expect($user->notifications()->count())->toBe(0);
 });

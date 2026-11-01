@@ -12,9 +12,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'order_id', 'membership_id', 'event_id', 'event_registration_id', 'club_id', 'user_id', 'method', 'amount_sen', 'reference', 'receipt_path', 'ai_amount_sen', 'ai_date',
-    'ai_reference', 'ai_payee', 'ai_confidence', 'flags', 'status', 'review_note', 'collected_by', 'verified_by', 'verified_at',
+    'ai_reference', 'ai_payee', 'ai_payer', 'reference_key', 'receipt_hash', 'ai_confidence', 'flags', 'status', 'review_note', 'collected_by', 'verified_by', 'verified_at',
 ])]
-#[Hidden(['receipt_path'])]
+#[Hidden(['receipt_path', 'receipt_hash', 'reference_key'])]
 class MembershipPayment extends Model
 {
     protected function casts(): array
@@ -62,10 +62,12 @@ class MembershipPayment extends Model
     protected static function booted(): void
     {
         static::creating(function (MembershipPayment $payment): void {
-            $ids = app(OrderIds::class);
-            $payment->order_id ??= $payment->event_id
-                ? $ids->forEvent(Event::with('club')->findOrFail($payment->event_id))
-                : $ids->forClub(Club::findOrFail($payment->club_id), 'membership');
+            $payment->order_id ??= app(OrderIds::class)->forStudent(
+                Club::findOrFail($payment->club_id),
+                $payment->event_id ? Event::findOrFail($payment->event_id) : null,
+                User::findOrFail($payment->user_id),
+                now(),
+            );
         });
     }
 

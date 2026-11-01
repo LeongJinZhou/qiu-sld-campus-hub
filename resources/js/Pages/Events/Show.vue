@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IndemnityPrompt from '@/Components/events/IndemnityPrompt.vue';
 import Icon from '@/Components/ui/Icon.vue';
 import Input from '@/Components/ui/Input.vue';
 import FileUpload from '@/Components/ui/FileUpload.vue';
@@ -102,7 +103,8 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                     </template>
                     <template v-else-if="registered">
                         <p class="mt-2 text-sm font-medium text-success">You're registered.</p>
-                        <Link v-if="ticketUrl" :href="ticketUrl"><Button block class="mt-2">View my ticket</Button></Link>
+                        <IndemnityPrompt v-if="registrationStatus === 'registered' && indemnity && !indemnity.signed && !indemnity.closed" :slug="event.slug" :name="event.name" :closes-at="indemnity.closes_at" class="mt-2" />
+                        <Link v-else-if="ticketUrl" :href="ticketUrl"><Button block class="mt-2">View my ticket</Button></Link>
                         <button type="button" class="mt-1 text-xs text-ink-muted underline" @click="unregister">Cancel registration</button>
                     </template>
                     <template v-else-if="event.registration_open && !mayJoin">
@@ -145,6 +147,7 @@ const unregister = (): void => router.delete(`/events/${props.event.slug}/regist
                     </form>
                 </Card>
                 <Link v-if="can.checkIn && !can.organise" :href="`/events/${event.slug}/attendance`"><Button block><Icon name="scan" :size="18" /> Door helper: scan tickets</Button></Link>
+                <Link v-if="can.checkIn && event.status === 'approved'" :href="`/events/${event.slug}/purchases`"><Button block variant="secondary"><Icon name="receipt" :size="18" /> Purchases &amp; claims</Button></Link>
                 <template v-if="can.organise">
                     <Link :href="`/events/${event.slug}/attendance`"><Button block>Door &amp; attendance</Button></Link>
                     <Link v-if="payment.fee_sen" :href="`/clubs/${event.club.slug}/finance/events/${event.slug}`"><Button block variant="secondary">Who paid · money tally</Button></Link>

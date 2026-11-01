@@ -5,7 +5,6 @@ namespace App\Services\Meetings;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Enums\ScopedRole;
-use App\Enums\ScopeType;
 use App\Events\DocumentApproved;
 use App\Models\CcaRecord;
 use App\Models\Club;
@@ -103,8 +102,7 @@ class Meetings
     /** @return Collection<int, User> */
     public function committee(Club $club)
     {
-        return User::whereIn('id', RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $club->id)
-            ->where('session_id', $this->sessions->current()->id)
+        return User::whereIn('id', RoleAssignment::query()->actingFor($club->id, $this->sessions->current())
             ->whereIn('role', [ScopedRole::ClubCommittee, ScopedRole::Advisor])->select('user_id'))->get();
     }
 }

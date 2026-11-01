@@ -53,7 +53,7 @@ class MinutesDocx
                 $signed = $approval?->decision === ApprovalDecision::Approved ? $approval->signature : null;
                 $t->setValue("sig{$k}_name", $signed->signer_name ?? '');
                 if ($k > 1) {
-                    $t->setValue("sig{$k}_date", $signed ? $signed->signed_at->format('d/m/Y g:i A')." · Verify {$signed->verification_code}" : '');
+                    $t->setValue("sig{$k}_date", $signed ? $signed->signed_at->format('d/m/Y g:i A') : '');
                 }
                 $image = $signed ? Storage::disk('local')->path($signed->image_path) : null;
                 $image && is_file($image)

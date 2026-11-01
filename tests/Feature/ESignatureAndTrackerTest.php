@@ -74,7 +74,7 @@ it('signs off the attendance list and prints both signatures on the 03 template'
 
     expect(count($sheet->getDrawingCollection()))->toBe(2)
         ->and($sheet->getCell('B23')->getValue())->toBe($this->f['president']->name)
-        ->and($sheet->getCell('B25')->getValue())->toContain($codes[0])
+        ->and($sheet->getCell('B25')->getValue())->not->toContain($codes[0])->toMatch('/^\d{2}\/\d{2}\/\d{4}/')
         ->and($sheet->getCell('B31')->getValue())->toBe('Dr Lim Siew Ling');
     unlink($path);
 });

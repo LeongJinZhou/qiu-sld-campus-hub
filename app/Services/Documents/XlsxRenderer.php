@@ -81,7 +81,7 @@ class XlsxRenderer
                 $sheet->setCellValue('B'.($row + 1), $signer->position);
             }
             if ($signer->signature) {
-                $sheet->setCellValue('B'.($row + 2), $signer->signature->signed_at->format('d/m/Y g:i A').' · Verify '.$signer->signature->verification_code);
+                $sheet->setCellValue('B'.($row + 2), $signer->signature->signed_at->format('d/m/Y g:i A'));
                 $image = Storage::disk('local')->path($signer->signature->image_path);
                 if (is_file($image)) {
                     (new Drawing)->setPath($image)->setHeight(48)->setCoordinates('B'.($row - 3))->setOffsetY(4)->setWorksheet($sheet);

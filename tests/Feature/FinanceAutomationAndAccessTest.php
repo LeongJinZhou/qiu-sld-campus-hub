@@ -1,18 +1,18 @@
 <?php
 
 use App\Enums\DocumentStatus;
-use App\Enums\DocumentType;
-use App\Models\Document;
-use App\Models\LedgerEntry;
+use App\Enums\PaymentStatus;
 use App\Models\Membership;
-use App\Models\Payee;
+use App\Models\MembershipDrive;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Finance\FinanceReport;
+use App\Services\Finance\FinanceSections;
 use App\Services\Finance\Ledger;
 use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 beforeEach(function () {
     $this->f = proposalFixture();
@@ -21,23 +21,6 @@ beforeEach(function () {
     $this->secretary = $this->club->roleAssignments()->where('position', 'Secretary')->first()->user;
     $this->ledger = app(Ledger::class);
     $this->ledger->setOpeningBalance($this->club, 100000, app(SessionResolver::class)->current()->starts_on, null, sldOfficer());
-});
-
-it('files an approved fund withdrawal under its event automatically, once', function () {
-    approvedEventWithBudget($this);
-    $payee = Payee::create(['club_id' => $this->club->id, 'kind' => 'treasurer', 'name' => 'T', 'bank_name' => 'CIMB', 'account_holder' => 'T', 'account_number' => '7001234567']);
-    $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/fund-requests", [
-        'event_id' => $this->f['event']->id, 'purpose' => 'Supplies',
-        'items' => [['description' => 'Gloves', 'unit_sen' => 500, 'quantity' => 40, 'method' => 'vendor']],
-        'payees' => [['payee_id' => $payee->id, 'amount_sen' => 20000]],
-        'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
-    ])->assertRedirect();
-    $document = Document::where('type', DocumentType::FundWithdrawal)->sole();
-    approveRemainingSteps($document);
-
-    $entry = LedgerEntry::where('category', 'withdrawal')->sole();
-    expect($entry->only('expense_sen', 'event_id', 'method'))->toBe(['expense_sen' => 20000, 'event_id' => $this->f['event']->id, 'method' => 'transfer'])
-        ->and($this->ledger->withdrawal($document->fresh()))->toBeNull(); // never twice
 });
 
 it('builds the year report with breakdowns by type and event, and filters', function () {
@@ -107,4 +90,34 @@ it('shows Activities with management shortcuts for committee and memberships for
     // Every committee member can now do club money tasks, not only the Treasurer.
     $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/finance/entries", ['date' => today()->toDateString(), 'description' => 'Donation', 'kind' => 'income', 'amount_rm' => 20])
         ->assertSessionHas('success');
+});
+
+it('exports a workbook: Overview first, then membership drive, normal registration, each event, other; this session or everything', function () {
+    $event = $this->f['event'];
+    $event->update(['status' => DocumentStatus::Approved]);
+    $today = CarbonImmutable::today();
+    MembershipDrive::create(['club_id' => null, 'title' => 'Welcome Week', 'starts_at' => now()->subDay(), 'ends_at' => now()->addDay(), 'set_by' => sldOfficer()->id]);
+    $student = Student::where('student_number', 'STD20240010')->first()->ensureUser();
+    $membership = $this->club->memberships()->create(['user_id' => $student->id, 'status' => 'pending']);
+    $payment = $membership->payments()->create(['club_id' => $this->club->id, 'user_id' => $student->id, 'method' => 'cash', 'amount_sen' => 3000, 'status' => PaymentStatus::Confirmed, 'verified_at' => now()]);
+    $this->ledger->income($this->club, $today, 'Membership fee – drive', 3000, $payment, category: 'membership', method: 'cash');
+    $this->ledger->income($this->club, $today->subYears(2), 'Membership fee – old', 2000, category: 'membership', method: 'cash');
+    $this->ledger->manual($this->club, $today, 'Gloves', 0, 2500, UploadedFile::fake()->image('r.jpg'), $this->treasurer, eventId: $event->id, method: 'cash');
+
+    $data = app(FinanceSections::class)->build($this->club, app(SessionResolver::class)->current());
+    $sections = collect($data['sections'])->keyBy('key');
+    expect($sections['drive']['rows'][0]['drive'])->toBe('Welcome Week')
+        ->and($sections['drive']['rows'][0]['name'])->toBe($student->name)
+        ->and($sections['normal']['rows'])->toBe([])
+        ->and($sections["event:{$event->id}"]['rows'][0]['expense_sen'])->toBe(2500);
+    expect(collect(app(FinanceSections::class)->build($this->club, null)['sections'])->keyBy('key')['normal']['rows'][0]['description'])->toBe('Membership fee – old');
+
+    $response = $this->actingAs($this->treasurer)->get("/clubs/{$this->club->slug}/finance/workbook/xlsx?period=session&sections[]=drive&sections[]=event:{$event->id}")->assertOk();
+    $book = IOFactory::load($response->getFile()->getPathname());
+    expect($book->getSheetNames())->toBe(['Overview', 'Membership drive', 'Event · '.mb_substr($event->name, 0, 20)])
+        ->and($book->getSheet(1)->getCell('C6')->getValue())->toBe($payment->fresh()->order_id);
+
+    $all = $this->actingAs($this->treasurer)->get("/clubs/{$this->club->slug}/finance/workbook/xlsx?period=all")->assertOk();
+    expect(IOFactory::load($all->getFile()->getPathname())->getSheetNames())->toContain('Normal registration');
+    $this->actingAs($student)->get("/clubs/{$this->club->slug}/finance/workbook/xlsx")->assertForbidden();
 });
