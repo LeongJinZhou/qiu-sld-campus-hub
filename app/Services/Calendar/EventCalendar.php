@@ -79,7 +79,8 @@ class EventCalendar
 
     private function escape(string $text): string
     {
-        return str_replace(['\\', ';', ',', "\r\n", "\n"], ['\\\\', '\;', '\,', '\n', '\n'], $text);
+        // Every line break (CRLF, LF or a bare CR) becomes an escaped "\n", so text can never start a new property.
+        return str_replace(['\\', ';', ',', "\r\n", "\r", "\n"], ['\\\\', '\;', '\,', '\n', '\n', '\n'], $text);
     }
 
     /** Lines longer than 75 octets continue on the next line, starting with a space. */

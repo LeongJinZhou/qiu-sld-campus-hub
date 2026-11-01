@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ScopeType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AddAdvisorRequest;
 use App\Http\Requests\Admin\AssignPositionRequest;
@@ -45,7 +46,8 @@ class ClubCommitteeController extends Controller
 
     public function remove(Club $club, RoleAssignment $assignment): RedirectResponse
     {
-        abort_unless($assignment->scope_id === $club->id, 404);
+        // Club roles only: an event assignment can share the same numeric scope id but is never removable here.
+        abort_unless($assignment->scope_type === ScopeType::Club && $assignment->scope_id === $club->id, 404);
         $this->roles->remove($assignment);
 
         return back()->with('success', 'Removed.');

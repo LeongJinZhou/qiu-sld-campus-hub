@@ -3,6 +3,7 @@
 namespace App\Services\Events;
 
 use App\Enums\MembershipStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\Membership;
@@ -26,6 +27,16 @@ class EventRegistrations
         }
 
         // A paid event keeps the place as "payment pending" until the fee is confirmed.
+        // Registering again after cancelling reinstates the same place: a paid place is not charged twice (fees are
+        // not refunded through the app, so the payment still counts).
+        $cancelled = $event->registrations()->onlyTrashed()->where('user_id', $user->id)->first();
+        if ($cancelled) {
+            $cancelled->restore();
+            $paid = $cancelled->payments()->whereIn('status', [PaymentStatus::Confirmed, PaymentStatus::AutoConfirmed])->exists();
+            $cancelled->update(['status' => $paid || $event->fee_sen <= 0 ? 'registered' : 'pending_payment']);
+
+            return $cancelled->fresh();
+        }
         $registration = $event->registrations()->firstOrCreate(['user_id' => $user->id], ['status' => $event->fee_sen > 0 ? 'pending_payment' : 'registered']);
         if ($registration->wasRecentlyCreated) {
             app(IndemnityService::class)->askToSign($registration, "You're in for {$event->name}!");

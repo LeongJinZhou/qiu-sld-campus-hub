@@ -16,7 +16,10 @@ class EnsureAccountActive
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if ($user && $user->staff && ! $user->staff->active && ! $user->student?->isActive() && ! $user->isSldAdmin()) {
+        // Deactivating a staff account ends its access, SLD admins included. The only exception is an emergency super
+        // admin listed in SUPERADMIN_EMAILS (server configuration), who cannot be locked out from the app.
+        $emergency = $user && in_array(strtolower($user->email), array_map('strtolower', config('sld.superadmin_emails')), true);
+        if ($user && $user->staff && ! $user->staff->active && ! $user->student?->isActive() && ! $emergency) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

@@ -6,6 +6,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Event;
 use App\Models\User;
 use App\Services\Calendar\EventCalendar;
+use App\Support\QueryInput;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -19,7 +20,8 @@ class CalendarController extends Controller
     public function index(Request $request, EventCalendar $calendar): Response
     {
         $user = $request->user();
-        $month = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('month')) ? CarbonImmutable::createFromFormat('!Y-m', (string) $request->query('month')) : CarbonImmutable::now()->startOfMonth();
+        $asked = QueryInput::month($request, 'month');
+        $month = $asked ? CarbonImmutable::createFromFormat('!Y-m', $asked) : CarbonImmutable::now()->startOfMonth();
         $from = $month->startOfMonth()->startOfWeek(CarbonImmutable::MONDAY);
         $to = $month->endOfMonth()->endOfWeek(CarbonImmutable::SUNDAY)->addDay()->startOfDay();
         $mine = $user->eventRegistrations()->pluck('event_id')->all();

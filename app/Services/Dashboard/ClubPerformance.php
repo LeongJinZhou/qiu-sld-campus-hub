@@ -32,7 +32,7 @@ class ClubPerformance
         $eventIds = $events->pluck('id');
         $attendance = DB::table('attendance')->whereIn('event_id', $eventIds)->whereNotNull('clock_in_at')
             ->join('events', 'events.id', '=', 'attendance.event_id')->selectRaw('events.club_id, COUNT(*) AS n')->groupBy('events.club_id')->pluck('n', 'club_id');
-        $registered = DB::table('event_registrations')->whereIn('event_id', $eventIds)
+        $registered = DB::table('event_registrations')->whereIn('event_id', $eventIds)->whereNull('event_registrations.deleted_at')
             ->join('events', 'events.id', '=', 'event_registrations.event_id')->selectRaw('events.club_id, COUNT(*) AS n')->groupBy('events.club_id')->pluck('n', 'club_id');
         $members = Membership::whereIn('status', [MembershipStatus::Active, MembershipStatus::Grace])->selectRaw('club_id, COUNT(*) AS n')->groupBy('club_id')->pluck('n', 'club_id');
         $likes = DB::table('post_likes')->join('posts', 'posts.id', '=', 'post_likes.post_id')->whereBetween('post_likes.created_at', [$from, $to])

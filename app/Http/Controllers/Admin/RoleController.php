@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateUserRolesRequest;
 use App\Models\User;
 use App\Services\Roles\RoleService;
+use App\Support\QueryInput;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,7 +20,7 @@ class RoleController extends Controller
 
     public function index(Request $request): Response
     {
-        $search = trim((string) $request->query('search', ''));
+        $search = QueryInput::text($request, 'search', 100);
 
         return Inertia::render('Admin/Roles/Index', [
             'search' => $search,

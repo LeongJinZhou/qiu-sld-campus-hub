@@ -76,13 +76,17 @@ composer run dev                        # or: php artisan serve + npm run dev
 composer test     # Pest
 npm run build     # vue-tsc type-check + Vite build
 php artisan test --group=hard-audit  # role matrices, input boundaries, receipts and adversarial workflow checks
+php artisan test --group=deep-uat  # multi-task permutations, moderation, profile privacy, query fuzzing and account revocation
+node --test tests/Frontend/deep-contracts.mjs  # execute actual theme, calendar and navigation scripts without a browser
 SLD_UAT=1 php artisan test --group=combined-uat  # 3,000 joins, payments, connected event/AGM journeys and native exports
 QA_TEMPLATES=1 php artisan test --filter=TemplateFidelity   # every official template → storage/qa/ side by side
 ```
 
 The hard-audit tests use the in-memory test databases and fake upload disks. They cover access, payment, withdrawal and signature boundaries and all pass; a future failure is evidence to investigate, not a reason to weaken the expected boundary. They do not perform live Google sign-in, bank transfers, browser/camera testing or concurrent load testing.
 
-Combined UAT is opt-in and uses the same isolated databases/disks. It issues over 5,000 sequential in-process requests, retains dummy Excel/Word/PowerPoint exports and reconciliation JSON under `/private/tmp/sld-uat-20261102`, and checks advances versus purchases, empty workbooks and formula injection. Receipt OCR is mocked; QR photo decoding, approval signatures and exports use the application code. This is workflow/volume testing, not a concurrent production benchmark. Unresolved findings remain failing tests.
+Combined UAT is opt-in and uses the same isolated databases/disks. It issues over 5,000 sequential in-process requests, retains dummy Excel/Word/PowerPoint exports and reconciliation JSON under `/private/tmp/sld-uat-20261102`, and checks advances versus purchases, empty workbooks and formula injection. Receipt OCR is mocked; QR photo decoding, approval signatures and exports use the application code. This is workflow/volume testing, not a concurrent production benchmark. All scenarios pass.
+
+Deep UAT covers workflow and privacy boundaries (moderation, public profiles, query fuzzing, approvals bound to the signed version, cancellations, account revocation); all cases pass. Frontend contract tests execute the actual calendar, theme and navigation scripts with boundary stubs; they do not verify rendered layouts, keyboard focus, touch interaction or accessibility. Run browser/device UAT separately before release.
 
 ## Security and privacy
 

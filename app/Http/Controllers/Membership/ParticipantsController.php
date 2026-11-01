@@ -9,6 +9,7 @@ use App\Services\Documents\PdfConverter;
 use App\Services\Documents\SimpleTableExport;
 use App\Services\Membership\ClubParticipants;
 use App\Services\Time\SessionResolver;
+use App\Support\QueryInput;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -52,6 +53,6 @@ class ParticipantsController extends Controller
 
     private function session(Request $request, SessionResolver $sessions): AcademicSession
     {
-        return AcademicSession::where('name', (string) $request->query('session'))->first() ?? $sessions->current();
+        return AcademicSession::where('name', QueryInput::text($request, 'session', 9))->first() ?? $sessions->current();
     }
 }
