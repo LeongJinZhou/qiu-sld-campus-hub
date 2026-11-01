@@ -18,6 +18,7 @@ use App\Models\MembershipPayment;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
+use App\Services\Membership\CommitteeFees;
 use App\Services\Time\SessionResolver;
 use Illuminate\Support\Facades\Cache;
 
@@ -32,7 +33,7 @@ class ActionItems
     /** @return list<array{key: string, kind: string, title: string, body: string, url: string, since: ?string}> */
     public function for(User $user): array
     {
-        return [...$this->payments($user), ...$this->eventPayments($user), ...$this->handovers($user), ...$this->receiptsToReview($user), ...$this->indemnities($user), ...$this->approvals($user)];
+        return [...$this->committeeFees($user), ...$this->payments($user), ...$this->eventPayments($user), ...$this->handovers($user), ...$this->receiptsToReview($user), ...$this->indemnities($user), ...$this->approvals($user)];
     }
 
     /** Short-lived cache for the badge count shown on every page. */
@@ -44,6 +45,19 @@ class ActionItems
     public static function forget(User|int $user): void
     {
         Cache::forget('actions:'.($user instanceof User ? $user->id : $user));
+    }
+
+    /** Club committee members pay the club fee too. */
+    private function committeeFees(User $user): array
+    {
+        return array_map(fn (array $f) => [
+            'key' => "committee-fee:{$f['club']['slug']}", 'kind' => 'payment',
+            'title' => ($f['overdue'] ? 'Overdue: ' : '')."Pay your {$f['club']['name']} club fee",
+            'body' => "As {$f['position']} you pay the club fee (RM ".number_format($f['fee_sen'] / 100, 2).') like every member. '
+                .($f['overdue'] ? 'It was due '.date('j M Y', strtotime($f['due_on'])).'.' : "Due within {$f['days_left']} day".($f['days_left'] === 1 ? '' : 's').'.'),
+            'url' => $f['url'], 'since' => null,
+        ], array_values(array_filter(app(CommitteeFees::class)->unpaid($user), // "Finish paying" already covers a join in progress.
+            fn (array $f) => ! Membership::where('user_id', $user->id)->where('status', MembershipStatus::Pending)->whereHas('club', fn ($q) => $q->where('slug', $f['club']['slug']))->exists())));
     }
 
     /** Joined a paid club but not paid yet (and no cash handover running). */
