@@ -5,7 +5,6 @@ namespace App\Services\Membership;
 use App\Enums\HandoverStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ScopedRole;
-use App\Enums\ScopeType;
 use App\Models\CashHandover;
 use App\Models\EventRegistration;
 use App\Models\Membership;
@@ -236,8 +235,7 @@ class CashHandovers
 
     private function isCommittee(User $user, int $clubId): bool
     {
-        return RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $clubId)
-            ->where('session_id', $this->sessions->current()->id)->where('role', ScopedRole::ClubCommittee)
+        return RoleAssignment::query()->actingFor($clubId, $this->sessions->current())->where('role', ScopedRole::ClubCommittee)
             ->where('user_id', $user->id)->exists();
     }
 

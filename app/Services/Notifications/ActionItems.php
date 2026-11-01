@@ -10,7 +10,6 @@ use App\Enums\HandoverStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ScopedRole;
-use App\Enums\ScopeType;
 use App\Models\Approval;
 use App\Models\CashHandover;
 use App\Models\Document;
@@ -116,8 +115,7 @@ class ActionItems
     /** Committee members: online receipts the AI could not confirm. */
     private function receiptsToReview(User $user): array
     {
-        $clubIds = RoleAssignment::where('user_id', $user->id)->where('scope_type', ScopeType::Club)->where('role', ScopedRole::ClubCommittee)
-            ->where('session_id', $this->sessions->current()->id)->pluck('scope_id');
+        $clubIds = RoleAssignment::query()->acting($this->sessions->current())->where('user_id', $user->id)->where('role', ScopedRole::ClubCommittee)->pluck('scope_id');
         if ($clubIds->isEmpty()) {
             return [];
         }

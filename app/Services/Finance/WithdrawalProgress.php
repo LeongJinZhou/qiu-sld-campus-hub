@@ -77,9 +77,11 @@ class WithdrawalProgress
     /** SLD confirms the money arrived: recorded in the ledger under the event (or the club), with the proof. */
     public function complete(Document $document, User $sld): LedgerEntry
     {
-        $this->assertStage($document, 'bankin_uploaded');
         $this->assertSld($sld);
         $entry = DB::transaction(function () use ($document, $sld): LedgerEntry {
+            // Re-read under a row lock: a second caller holding a stale copy waits, then sees "completed" and stops.
+            $document = Document::whereKey($document->id)->lockForUpdate()->firstOrFail();
+            $this->assertStage($document, 'bankin_uploaded');
             $copy = "receipts/{$document->club_id}/".basename((string) $document->bankin_path);
             Storage::disk('local')->copy((string) $document->bankin_path, $copy);
             $receipt = Receipt::create(['club_id' => $document->club_id, 'path' => $copy, 'original_name' => 'Bank-in proof.'.pathinfo($copy, PATHINFO_EXTENSION), 'uploaded_by' => $sld->id]);

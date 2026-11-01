@@ -5,7 +5,6 @@ namespace App\Services\Membership;
 use App\Enums\MembershipStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ScopedRole;
-use App\Enums\ScopeType;
 use App\Models\Club;
 use App\Models\Membership;
 use App\Models\MembershipPayment;
@@ -36,8 +35,7 @@ class CommitteeFees
             return [];
         }
         $session = $this->sessions->current();
-        $assignments = RoleAssignment::where('user_id', $user->id)->where('role', ScopedRole::ClubCommittee)
-            ->where('scope_type', ScopeType::Club)->where('session_id', $session->id)->get();
+        $assignments = RoleAssignment::query()->acting($session)->where('user_id', $user->id)->where('role', ScopedRole::ClubCommittee)->get();
         $out = [];
         foreach ($assignments as $assignment) {
             $club = Club::find($assignment->scope_id);
