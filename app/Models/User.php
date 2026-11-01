@@ -130,4 +130,10 @@ class User extends Authenticatable
     {
         return in_array($section, $this->hidden_sections ?? [], true);
     }
+
+    /** @return HasMany<EventRegistration, $this> */
+    public function eventRegistrations(): HasMany
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
 }
