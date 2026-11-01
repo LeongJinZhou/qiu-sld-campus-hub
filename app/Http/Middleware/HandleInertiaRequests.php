@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Membership\CommitteeFees;
 use App\Services\Notifications\ActionItems;
 use App\Services\Time\SessionResolver;
 use Illuminate\Http\Request;
@@ -59,6 +60,8 @@ class HandleInertiaRequests extends Middleware
                 'canPublish' => $user->isSldAdmin() || $user->roleAssignments()->where('scope_type', 'club')
                     ->where('session_id', app(SessionResolver::class)->current()->id)->exists(),
             ] : null,
+            // Shown once per sign-in: club fees this committee member has not paid yet.
+            'committeeFees' => fn () => $user && $request->session()->pull('committee_fee_popup') ? app(CommitteeFees::class)->unpaid($user) : [],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

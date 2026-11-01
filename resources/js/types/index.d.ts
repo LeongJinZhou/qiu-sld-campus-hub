@@ -11,8 +11,19 @@ export interface Flash {
     error: string | null;
 }
 
+export interface CommitteeFeeDue {
+    club: { slug: string; name: string; logo_url: string | null };
+    position: string | null;
+    fee_sen: number;
+    due_on: string;
+    days_left: number;
+    overdue: boolean;
+    url: string;
+}
+
 export interface SharedProps {
     auth: { user: AuthUser | null };
+    committeeFees: CommitteeFeeDue[];
     nav: { unread: number; actions: number; isStaff: boolean; isAdmin: boolean; canPublish: boolean } | null;
     flash: Flash;
     [key: string]: unknown;

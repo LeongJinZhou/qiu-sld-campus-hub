@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CommitteeFeePopup from '@/Components/payments/CommitteeFeePopup.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Drawer from '@/Components/ui/Drawer.vue';
 import Toast from '@/Components/ui/Toast.vue';
@@ -38,6 +39,7 @@ const isActive = (href: string): boolean => (href === '/admin' ? page.url === '/
 <template>
     <div class="min-h-dvh md:grid md:grid-cols-[15rem_1fr]">
         <Toast />
+        <CommitteeFeePopup />
         <aside class="hidden border-r border-line bg-surface md:block">
             <div class="sticky top-0 grid gap-6 p-5">
                 <Link href="/clubs"><img src="/brand/student-activity-black.png" alt="QIU Student Activity" class="h-10 w-auto" /></Link>

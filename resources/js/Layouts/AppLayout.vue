@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CommitteeFeePopup from '@/Components/payments/CommitteeFeePopup.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Icon, { type IconName } from '@/Components/ui/Icon.vue';
 import Toast from '@/Components/ui/Toast.vue';
@@ -42,6 +43,7 @@ const logout = (): void => router.post('/logout');
 <template>
     <div class="min-h-dvh bg-surface-muted md:grid md:grid-cols-[4.5rem_1fr] lg:grid-cols-[15rem_1fr]">
         <Toast />
+        <CommitteeFeePopup />
 
         <!-- Desktop / tablet sidebar -->
         <aside class="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface px-3 py-6 md:flex">
