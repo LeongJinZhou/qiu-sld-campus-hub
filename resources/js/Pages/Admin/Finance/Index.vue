@@ -109,7 +109,7 @@ const tone = (s: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' 
                         class="grid gap-2 rounded-card border border-line bg-surface p-3 shadow-card sm:grid-cols-[1fr_auto] sm:items-center"
                     >
                         <div class="grid min-w-0 gap-1">
-                            <p v-if="t.order_id" class="flex flex-wrap gap-x-0.5 font-mono text-xs leading-5">
+                            <p v-if="t.order_id" class="flex flex-wrap gap-x-0.5 break-all font-mono text-xs leading-5">
                                 <template v-for="(part, i) in parts(t.order_id)" :key="i">
                                     <span v-if="i" class="text-ink-muted">_</span>
                                     <mark v-if="part.hit" class="rounded bg-brand-cyan/20 px-0.5 text-ink">{{ part.text }}</mark>

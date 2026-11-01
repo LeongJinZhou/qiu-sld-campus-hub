@@ -38,14 +38,10 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
     <header class="grid gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
         <div class="grid grid-cols-[auto_1fr] items-center gap-4 sm:gap-8">
             <button type="button" class="shrink-0" :disabled="!hasStories" :aria-label="hasStories ? 'View stories' : undefined" @click="emit('openStories')">
-                <span class="block rounded-full p-[3px]" :class="hasStories ? 'bg-gradient-to-tr from-brand-yellow via-brand-orange to-brand-magenta' : 'bg-line'">
-                    <span class="block rounded-full bg-surface p-[3px]"
-                        ><Avatar :src="club.logo_url" :name="club.name" size="lg" class="sm:hidden" /><Avatar
-                            :src="club.logo_url"
-                            :name="club.name"
-                            size="xl"
-                            class="hidden sm:block"
-                    /></span>
+                <span class="grid size-[5.5rem] place-items-center rounded-full sm:size-32" :class="hasStories ? 'bg-gradient-to-tr from-brand-yellow via-brand-orange to-brand-magenta' : 'bg-line'">
+                    <span class="grid size-[calc(100%-6px)] place-items-center overflow-hidden rounded-full border-[3px] border-surface bg-surface [&>span]:!size-full [&>span>span]:!size-full">
+                        <Avatar :src="club.logo_url" :name="club.name" size="lg" />
+                    </span>
                 </span>
             </button>
             <div class="grid min-w-0 gap-2">
@@ -55,7 +51,7 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
                         club.status === 'inactive' ? 'Inactive' : 'At risk'
                     }}</Badge>
                 </div>
-                <dl class="grid grid-cols-4 text-center sm:max-w-md sm:text-left">
+                <dl class="grid grid-cols-4 gap-1 text-center sm:max-w-md sm:text-left">
                     <div
                         v-for="stat in [
                             { label: 'events', value: counts.events },
@@ -67,7 +63,7 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
                         class="min-w-0"
                     >
                         <dd class="text-base font-bold tabular-nums sm:text-lg">{{ stat.value }}</dd>
-                        <dt class="truncate text-[11px] text-ink-muted sm:text-xs">{{ stat.label }}</dt>
+                        <dt class="text-[11px] leading-tight text-ink-muted sm:text-xs">{{ stat.label }}</dt>
                     </div>
                 </dl>
             </div>

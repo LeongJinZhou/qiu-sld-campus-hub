@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = withDefaults(
     defineProps<{ src?: string | null; name: string; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; ring?: boolean }>(),
     { src: null, size: 'md', ring: false },
 );
 
+// A photo that fails to load (expired Google link, deleted file) falls back to initials.
+const broken = ref(false);
+watch(
+    () => props.src,
+    () => (broken.value = false),
+);
 const sizes = { xs: 'size-6 text-[10px]', sm: 'size-9 text-xs', md: 'size-14 text-base', lg: 'size-20 text-xl', xl: 'size-28 text-3xl' };
 // Initials from the first two words; an email falls back to the part before "@" ("jinzhou.leong" -> "JL").
 const initials = computed(() => {
@@ -18,7 +24,7 @@ const initials = computed(() => {
 <template>
     <span class="inline-grid shrink-0 place-items-center rounded-full" :class="ring ? 'ring-story p-[3px]' : ''">
         <span class="grid place-items-center overflow-hidden rounded-full bg-surface" :class="[sizes[size], ring ? 'border-2 border-surface' : '']">
-            <img v-if="src" :src="src" :alt="name" class="size-full object-cover" referrerpolicy="no-referrer" />
+            <img v-if="src && !broken" :src="src" :alt="name" class="size-full object-cover" referrerpolicy="no-referrer" @error="broken = true" />
             <span v-else class="grid size-full place-items-center bg-gradient-to-br from-brand-orange to-brand-magenta font-semibold text-white" aria-hidden="true">
                 {{ initials }}
             </span>
