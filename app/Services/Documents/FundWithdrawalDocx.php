@@ -59,7 +59,7 @@ class FundWithdrawalDocx
                 $staff = $role->approverRole() ? Staff::where('approver_role', $role->approverRole())->where('active', true)->first() : null;
                 $t->setValues([
                     "sig{$k}_name" => $signed->signer_name ?? $staff->name ?? '',
-                    "sig{$k}_date" => $signed ? $signed->signed_at->format('d/m/Y g:i A')." · Verify {$signed->verification_code}" : '',
+                    "sig{$k}_date" => $signed ? $signed->signed_at->format('d/m/Y g:i A') : '',
                 ]);
                 $image = $signed ? Storage::disk('local')->path($signed->image_path) : null;
                 $image && is_file($image)

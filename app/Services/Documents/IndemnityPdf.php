@@ -105,7 +105,6 @@ class IndemnityPdf
             $cell->addImage($image, ['height' => 32]);
         }
         $cell->addText('----------------------------------');
-        $cell->addText("Verify: {$i->signature->verification_code} · ".route('verify', $i->signature->verification_code), ['size' => 8, 'color' => '555555']);
     }
 
     private function heading(Table $table, string $text): void
