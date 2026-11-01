@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'cover_path', 'personal_email', 'hidden_sections', 'notification_mutes', 'last_login_at'])]
+#[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'cover_path', 'personal_email', 'hidden_sections', 'notification_mutes', 'last_login_at', 'theme', 'tours_seen'])]
 #[Hidden(['remember_token', 'google_id', 'google_token', 'google_refresh_token'])]
 class User extends Authenticatable
 {
@@ -36,6 +36,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'tours_seen' => 'array',
             'hidden_sections' => 'array',
             'notification_mutes' => 'array',
             'last_login_at' => 'datetime',

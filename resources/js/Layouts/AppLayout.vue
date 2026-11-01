@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CommitteeFeePopup from '@/Components/payments/CommitteeFeePopup.vue';
+import GuidedTour from '@/Components/ui/GuidedTour.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Icon, { type IconName } from '@/Components/ui/Icon.vue';
 import Toast from '@/Components/ui/Toast.vue';
@@ -45,6 +46,7 @@ const logout = (): void => router.post('/logout');
     <div class="min-h-dvh bg-surface-muted md:grid md:grid-cols-[4.5rem_minmax(0,1fr)] lg:grid-cols-[15rem_minmax(0,1fr)]">
         <Toast />
         <CommitteeFeePopup />
+        <GuidedTour />
 
         <!-- Desktop / tablet sidebar -->
         <aside class="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface px-3 py-6 md:flex">
@@ -61,6 +63,7 @@ const logout = (): void => router.post('/logout');
                     v-for="item in items"
                     :key="item.label"
                     :href="item.href"
+                    :data-tour="`nav-${item.label.toLowerCase()}`"
                     class="group relative flex items-center gap-4 rounded-control px-3 py-2.5 text-[15px] transition hover:bg-surface-muted"
                     :class="isActive(item) ? 'font-semibold text-ink' : 'text-ink/80'"
                     :aria-current="isActive(item) ? 'page' : undefined"
@@ -115,7 +118,13 @@ const logout = (): void => router.post('/logout');
         <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur md:hidden" aria-label="Primary">
             <ul class="flex justify-around">
                 <li v-for="item in mobileItems" :key="item.label">
-                    <Link :href="item.href" class="relative grid h-14 w-14 place-items-center" :class="isActive(item) ? 'text-ink' : 'text-ink/60'" :aria-label="item.label">
+                    <Link
+                        :href="item.href"
+                        :data-tour="`nav-${item.label.toLowerCase()}`"
+                        class="relative grid h-14 w-14 place-items-center"
+                        :class="isActive(item) ? 'text-ink' : 'text-ink/60'"
+                        :aria-label="item.label"
+                    >
                         <Avatar
                             v-if="item.icon === 'user' && user"
                             :src="user.avatar_url"

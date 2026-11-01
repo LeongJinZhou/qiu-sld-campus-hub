@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\ScopedRole;
+use App\Models\Club;
+use App\Models\RoleAssignment;
 use App\Services\Membership\CommitteeFees;
 use App\Services\Notifications\ActionItems;
 use App\Services\Time\SessionResolver;
@@ -49,6 +52,12 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'avatar_url' => $user->photoUrl(),
                     'roles' => $user->globalRoles(),
+                    'theme' => $user->theme ?? 'system',
+                    'tours_seen' => $user->tours_seen ?? [],
+                    // The club this person helps run now, for the committee tour (null when none).
+                    'committee_club' => fn () => ($a = RoleAssignment::query()->acting(app(SessionResolver::class)->current())
+                        ->where('user_id', $user->id)->where('role', ScopedRole::ClubCommittee)->first())
+                        ? Club::whereKey($a->scope_id)->first(['slug', 'name'])?->only('slug', 'name') : null,
                 ] : null,
             ],
             'nav' => fn () => $user ? [
