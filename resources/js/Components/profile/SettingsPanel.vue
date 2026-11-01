@@ -11,12 +11,7 @@ const theme = ref<Theme>((user.value?.theme as Theme | undefined) ?? 'system');
 
 function setTheme(value: Theme): void {
     theme.value = value;
-    document.documentElement.dataset.theme = value;
-    try {
-        localStorage.setItem('theme', value);
-    } catch {
-        /* private mode: the account setting still saves */
-    }
+    document.documentElement.dataset.theme = value; // saved to the account, never to the device
     router.put('/me/theme', { theme: value }, { preserveScroll: true, preserveState: true, only: ['auth'] });
 }
 

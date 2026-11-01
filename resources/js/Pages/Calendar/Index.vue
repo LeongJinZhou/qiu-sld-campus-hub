@@ -29,6 +29,11 @@ const props = defineProps<{ month: string; today: string; events: CalEvent[]; ye
 
 const TZ = 'Asia/Kuala_Lumpur';
 const dayKey = (iso: string): string => new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
+// The end is exclusive: an event ending at 00:00 does not appear on the next day.
+const lastDayKey = (startIso: string, endIso: string): string => {
+    const end = new Date(endIso).getTime();
+    return dayKey(new Date(Math.max(new Date(startIso).getTime(), end - 1)).toISOString());
+};
 const time = (iso: string): string => new Date(iso).toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
 const ym = computed(() => props.month.split('-').map(Number) as [number, number]);
 const title = computed(() => new Date(ym.value[0], ym.value[1] - 1, 1).toLocaleDateString('en-MY', { month: 'long', year: 'numeric' }));
@@ -47,7 +52,12 @@ const days = computed(() => {
         const d = new Date(start);
         d.setDate(start.getDate() + i);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        return { key, day: d.getDate(), inMonth: d.getMonth() === mon - 1, events: shown.value.filter((e) => dayKey(e.starts_at) <= key && dayKey(e.ends_at) >= key) };
+        return {
+            key,
+            day: d.getDate(),
+            inMonth: d.getMonth() === mon - 1,
+            events: shown.value.filter((e) => dayKey(e.starts_at) <= key && lastDayKey(e.starts_at, e.ends_at) >= key),
+        };
     }).filter((d, i, all) => i < 35 || all.slice(35).some((x) => x.inMonth));
 });
 

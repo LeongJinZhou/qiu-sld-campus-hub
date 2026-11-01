@@ -7,6 +7,7 @@ use App\Models\Club;
 use App\Models\Post;
 use App\Services\Social\FeedQuery;
 use App\Services\Social\PostPresenter;
+use App\Support\QueryInput;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,8 +25,8 @@ class FeedController extends Controller
             'archive' => fn () => $feed->archive(),
             // One folded group, opened on request (?group=m:2026-10).
             'group' => Inertia::optional(fn () => [
-                'key' => (string) $request->query('group'),
-                'posts' => $feed->bucket($user, (string) $request->query('group'))->map(fn (Post $p) => $presenter->card($p))->all(),
+                'key' => QueryInput::text($request, 'group', 12),
+                'posts' => $feed->bucket($user, QueryInput::text($request, 'group', 12))->map(fn (Post $p) => $presenter->card($p))->all(),
             ]),
             'openCreate' => $request->boolean('create'),
             'publishable' => Club::orderBy('name')->get()->filter(fn (Club $c) => $user->can('publish', $c))

@@ -20,6 +20,7 @@ use App\Services\Events\AttendanceService;
 use App\Services\Events\EventRegistrations;
 use App\Services\Events\Tickets;
 use App\Services\QrCodes;
+use App\Support\QueryInput;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class AttendanceController extends Controller
         Gate::authorize('checkIn', $event);
         $action = $request->query('action') === 'out' ? 'out' : 'in';
         $manage = $request->user()->can('organises', $event);
-        $find = trim((string) $request->query('find', ''));
+        $find = QueryInput::text($request, 'find', 200);
 
         $registrations = $event->registrations()->with(['user.student', 'payments'])->get()->keyBy('user_id');
         // Places confirmed before tickets existed get theirs now.
@@ -177,8 +178,8 @@ class AttendanceController extends Controller
     /** A student scanned the event's rotating QR with their own phone. */
     public function attend(Request $request, Event $event): RedirectResponse
     {
-        $action = (string) $request->query('action');
-        if (! $this->qr->isValid($event, $action, (string) $request->query('code'))) {
+        $action = QueryInput::text($request, 'action', 3);
+        if (! $this->qr->isValid($event, $action, QueryInput::text($request, 'code', 100))) {
             return to_route('events.show', $event)->with('error', 'This QR code has expired. Scan the code on screen again.');
         }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Services\Finance\Ledger;
 use App\Services\Finance\TransactionSearch;
+use App\Support\QueryInput;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,7 +16,7 @@ class FinanceOverviewController extends Controller
 {
     public function __invoke(Request $request, Ledger $ledger, TransactionSearch $search): Response
     {
-        $q = mb_substr(trim((string) $request->query('q', '')), 0, 200);
+        $q = QueryInput::text($request, 'q');
 
         return Inertia::render('Admin/Finance/Index', [
             'q' => $q,

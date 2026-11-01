@@ -15,6 +15,7 @@ use App\Services\Roles\CommitteeBoard;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Time\SessionResolver;
 use App\Services\Uploads\ImageUpload;
+use App\Support\QueryInput;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -60,7 +61,7 @@ class ClubController extends Controller
     public function edit(Request $request, Club $club, SessionResolver $sessions, CommitteeBoard $board, CompulsoryPositionsCheck $compulsory): Response
     {
         $current = $sessions->current();
-        $session = AcademicSession::where('name', $request->query('session'))->first() ?? $current;
+        $session = AcademicSession::where('name', QueryInput::text($request, 'session', 9))->first() ?? $current;
 
         return Inertia::render('Admin/Clubs/Edit', [
             'club' => [

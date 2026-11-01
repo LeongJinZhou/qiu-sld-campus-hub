@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 /**
@@ -18,6 +19,9 @@ use Illuminate\Support\Str;
 #[Hidden(['ticket_code'])]
 class EventRegistration extends Model
 {
+    /** Cancelling keeps the row (soft delete): its payments, order ID and ticket history stay on record. */
+    use SoftDeletes;
+
     protected function casts(): array
     {
         return ['paid_at' => 'datetime'];
