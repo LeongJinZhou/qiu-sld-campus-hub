@@ -90,7 +90,7 @@ export default function LiveQrCapture({ expectToken, personName, onCapture }: Li
                 {
                     fps: 8,
                     // Scan the middle of the picture, but photograph the whole frame (QR and cash together).
-                    qrbox: (w: number, h: number) => ({ width: Math.round(Math.min(w, h) * 0.6), height: Math.round(Math.min(w, h) * 0.6) }),
+                    qrbox: (w: number, h: number) => ({ width: Math.max(50, Math.round(Math.min(w, h) * 0.6)), height: Math.max(50, Math.round(Math.min(w, h) * 0.6)) }),
                     videoConstraints: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
                 },
                 onScan,

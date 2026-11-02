@@ -16,7 +16,7 @@ export default function QrScanner({ onScan }: { onScan: (value: string) => void 
                 { facingMode: 'environment' },
                 {
                     fps: 10,
-                    qrbox: (w: number, h: number) => ({ width: Math.round(Math.min(w, h) * 0.65), height: Math.round(Math.min(w, h) * 0.65) }),
+                    qrbox: (w: number, h: number) => ({ width: Math.max(50, Math.round(Math.min(w, h) * 0.65)), height: Math.max(50, Math.round(Math.min(w, h) * 0.65)) }),
                 },
                 (text) => latest.current(text),
                 () => undefined,
