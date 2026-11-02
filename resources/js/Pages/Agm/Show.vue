@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EvidencePhotos from '@/Components/reports/EvidencePhotos.vue';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Badge from '@/Components/ui/Badge.vue';
@@ -21,6 +22,9 @@ const props = defineProps<{
     period: { session: string; starts_on: string; agm_deadline: string; report_deadline: string } | null;
     calendarConnected: boolean;
     agm: {
+        evidence: { type: string; id: number; minimum: number; photos: { id: number | null; url: string }[] };
+        archive_session_id: number | null;
+        acknowledged_at: string | null;
         id: number;
         starts_at: string;
         ends_at: string;
@@ -35,7 +39,13 @@ const props = defineProps<{
         checklist: Record<string, { label: string; ready: boolean }>;
     } | null;
     people: { id: number; name: string; photo_url: string | null }[];
-    annual: { events: { id: number; name: string; date: string; details: string }[]; theme_id: number | null; generated_at: string | null; ai: string | null; ai_available: boolean } | null;
+    annual: {
+        events: { id: number; name: string; date: string; details: string }[];
+        theme_id: number | null;
+        generated_at: string | null;
+        ai: string | null;
+        ai_available: boolean;
+    } | null;
     themes: { id: number; name: string }[];
 }>();
 
@@ -52,7 +62,11 @@ const annualForm = useForm({
     theme_id: props.annual?.theme_id ?? null,
 });
 const drafting = computed(() => props.annual?.ai === 'pending');
-usePoll(2500, { only: ['annual'], onSuccess: () => drafting.value || (annualForm.details = Object.fromEntries((props.annual?.events ?? []).map((e) => [e.id, e.details]))) }, { autoStart: drafting.value });
+usePoll(
+    2500,
+    { only: ['annual'], onSuccess: () => drafting.value || (annualForm.details = Object.fromEntries((props.annual?.events ?? []).map((e) => [e.id, e.details]))) },
+    { autoStart: drafting.value },
+);
 const saveAnnual = (then?: () => void): void => annualForm.put(`/clubs/${props.club.slug}/annual-report`, { preserveScroll: true, onSuccess: () => then?.() });
 const generate = (): void => saveAnnual(() => router.post(`/clubs/${props.club.slug}/annual-report/generate`, {}, { preserveScroll: true }));
 const themeOptions = computed(() => [{ value: '', label: 'Template default' }, ...props.themes.map((t) => ({ value: t.id, label: t.name }))]);
@@ -71,10 +85,26 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
             <EmptyState v-if="!period" title="The AGM module is locked" description="SLD opens it during the AGM period. You'll see a countdown here when it starts." />
 
             <template v-else>
+                <EvidencePhotos v-if="agm" :evidence="agm.evidence" can-edit title="AGM photos" />
+                <p v-if="agm?.acknowledged_at" class="rounded-card bg-success/10 px-4 py-3 text-sm text-success">
+                    SLD acknowledged this AGM on {{ agm.acknowledged_at }}.
+                    <a v-if="agm.archive_session_id" :href="`/clubs/${club.slug}/archive/${agm.archive_session_id}`" class="font-semibold underline"
+                        >Download the year's archive (ZIP)</a
+                    >
+                </p>
                 <section class="grid gap-3 rounded-card bg-gradient-to-r from-brand-cyan/15 via-brand-blue/10 to-brand-magenta/15 p-5 sm:grid-cols-3">
-                    <div><p class="text-xs text-ink-muted">Session</p><p class="text-lg font-bold">{{ period.session }}</p></div>
-                    <div><p class="text-xs text-ink-muted">Hold the AGM by {{ date(period.agm_deadline) }}</p><p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.agm_deadline)) }} days left</p></div>
-                    <div><p class="text-xs text-ink-muted">Submit the package by {{ date(period.report_deadline) }}</p><p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.report_deadline)) }} days left</p></div>
+                    <div>
+                        <p class="text-xs text-ink-muted">Session</p>
+                        <p class="text-lg font-bold">{{ period.session }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-ink-muted">Hold the AGM by {{ date(period.agm_deadline) }}</p>
+                        <p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.agm_deadline)) }} days left</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-ink-muted">Submit the package by {{ date(period.report_deadline) }}</p>
+                        <p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.report_deadline)) }} days left</p>
+                    </div>
                 </section>
 
                 <Card v-if="!agm">
@@ -100,10 +130,16 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
                             <p class="flex flex-wrap items-center gap-3 text-sm">
                                 <span class="flex items-center gap-1"><Icon name="calendar" :size="16" />{{ dateTime(agm.starts_at) }}</span>
                                 <span v-if="agm.venue" class="flex items-center gap-1"><Icon name="pin" :size="16" />{{ agm.venue }}</span>
-                                <a v-if="agm.meet_link" :href="agm.meet_link" target="_blank" rel="noopener"><Button size="sm"><Icon name="camera" :size="16" /> Join Google Meet</Button></a>
+                                <a v-if="agm.meet_link" :href="agm.meet_link" target="_blank" rel="noopener"
+                                    ><Button size="sm"><Icon name="camera" :size="16" /> Join Google Meet</Button></a
+                                >
                             </p>
                             <div class="mt-4 flex flex-wrap gap-2">
-                                <Link :href="`/agms/${agm.id}/election`"><Button variant="secondary" size="sm">Election<Badge v-if="agm.election" class="ml-2">{{ agm.election }}</Badge></Button></Link>
+                                <Link :href="`/agms/${agm.id}/election`"
+                                    ><Button variant="secondary" size="sm"
+                                        >Election<Badge v-if="agm.election" class="ml-2">{{ agm.election }}</Badge></Button
+                                    ></Link
+                                >
                                 <Link :href="`/agms/${agm.id}/report`"><Button variant="secondary" size="sm">AGM Report (01)</Button></Link>
                             </div>
                             <div v-if="agm.report && agm.report.total" class="mt-4"><ApprovalTracker :progress="agm.report" compact /></div>
@@ -111,9 +147,16 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
 
                         <Card v-if="annual">
                             <template #title>2. Annual Activities Report (12)</template>
-                            <p class="mb-3 text-sm text-ink-muted">One details slide and one photos slide per approved event of {{ period.session }}. Photos come from each event's gallery album (up to 6).</p>
+                            <p class="mb-3 text-sm text-ink-muted">
+                                One details slide and one photos slide per approved event of {{ period.session }}. Photos come from each event's gallery album (up to 6).
+                            </p>
                             <div v-if="annual.ai_available && annual.events.length" class="mb-3">
-                                <Button variant="secondary" size="sm" :loading="drafting" @click="router.post(`/clubs/${club.slug}/annual-report/draft`, {}, { preserveScroll: true })">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    :loading="drafting"
+                                    @click="router.post(`/clubs/${club.slug}/annual-report/draft`, {}, { preserveScroll: true })"
+                                >
                                     <Icon name="sparkles" :size="16" /> {{ drafting ? 'Writing…' : 'Write empty details with AI' }}
                                 </Button>
                                 <p v-if="annual.ai === 'failed'" class="mt-1 text-sm text-warning">AI couldn't write the details — please write them yourself.</p>
@@ -130,8 +173,7 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
                                 <Button :loading="annualForm.processing" @click="generate">Generate PPTX &amp; PDF</Button>
                             </div>
                             <p v-if="annual.generated_at" class="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                                Generated {{ annual.generated_at }} ·
-                                <a :href="`/clubs/${club.slug}/annual-report/pptx`" class="text-brand-blue underline">PPTX</a> ·
+                                Generated {{ annual.generated_at }} · <a :href="`/clubs/${club.slug}/annual-report/pptx`" class="text-brand-blue underline">PPTX</a> ·
                                 <a :href="`/clubs/${club.slug}/annual-report/pdf`" class="text-brand-blue underline">PDF</a>
                             </p>
                         </Card>
@@ -145,7 +187,9 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
                                 </li>
                             </ul>
                             <p v-if="agm.package_submitted_at" class="mt-3 text-sm font-medium text-success">Submitted {{ agm.package_submitted_at }}</p>
-                            <Button v-else class="mt-3" :disabled="!packageReady" @click="router.post(`/agms/${agm.id}/package`, {}, { preserveScroll: true })">Submit package</Button>
+                            <Button v-else class="mt-3" :disabled="!packageReady" @click="router.post(`/agms/${agm.id}/package`, {}, { preserveScroll: true })"
+                                >Submit package</Button
+                            >
                         </Card>
                     </div>
 
@@ -163,7 +207,13 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
                             </form>
                             <ul class="grid max-h-96 gap-1 overflow-y-auto">
                                 <li v-for="p in people" :key="p.id">
-                                    <button type="button" class="flex w-full items-center gap-3 rounded-control p-2 text-left text-sm transition disabled:cursor-default" :class="agm.present.includes(p.id) ? 'bg-success/10' : 'hover:bg-surface-muted'" :disabled="agm.present.includes(p.id) || !agm.attendance_open" @click="mark(p.id)">
+                                    <button
+                                        type="button"
+                                        class="flex w-full items-center gap-3 rounded-control p-2 text-left text-sm transition disabled:cursor-default"
+                                        :class="agm.present.includes(p.id) ? 'bg-success/10' : 'hover:bg-surface-muted'"
+                                        :disabled="agm.present.includes(p.id) || !agm.attendance_open"
+                                        @click="mark(p.id)"
+                                    >
                                         <Avatar :src="p.photo_url" :name="p.name" size="xs" />
                                         <span class="flex-1">{{ p.name }}</span>
                                         <Icon v-if="agm.present.includes(p.id)" name="check" :size="16" class="text-success" />

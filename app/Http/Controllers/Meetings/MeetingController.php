@@ -12,6 +12,7 @@ use App\Services\Documents\DocumentPresenter;
 use App\Services\Google\CalendarMeetService;
 use App\Services\Meetings\Meetings;
 use App\Services\Meetings\MinutesForm;
+use App\Services\Reports\EvidencePhotos;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -75,6 +76,7 @@ class MeetingController extends Controller
                 'venue' => $meeting->venue, 'meet_link' => $meeting->meet_link, 'club' => $meeting->club->only('slug', 'name'),
                 'hours' => round($meeting->starts_at->diffInMinutes($meeting->ends_at, absolute: true) / 60, 1),
             ],
+            'evidence' => $meeting->kind === 'activity' ? app(EvidencePhotos::class)->panel($meeting) : null,
             'people' => $this->meetings->committee($meeting->club)
                 ->merge($meeting->club->memberships()->whereIn('status', ['active', 'grace'])->with('user')->get()->pluck('user'))
                 ->unique('id')->sortBy('name')->values()->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'photo_url' => $u->photoUrl()]),

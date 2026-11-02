@@ -105,21 +105,41 @@ it('gives one ticket per position, changeable 3 times, no self-votes, alumni onl
         ->and($lines['election'][1])->toContain('President: 2 candidates')->toContain('(2 votes)')->toContain('(1 votes)')
         ->and($lines['appointments'][0])->toBe("President: {$members[0]->name} ({$members[0]->student->student_number})");
 
-    // Winners hold their titles at once; the outgoing committee keeps access for 7 days, then the new one takes over.
+    // Winners hold their titles at once with no access. SLD acknowledges the AGM and starts the handover: the incoming
+    // committee gets training (view-only) access for the overlap, then full access while the outgoing one loses it.
     $term = $election->fresh()->termSession;
     $club = $this->club;
     $roles = app(RoleService::class);
     $now = app(SessionResolver::class)->current();
-    expect(RoleAssignment::where('session_id', $term->id)->where('scope_id', $club->id)->where('position', 'President')->value('user_id'))->toBe($members[0]->id)
-        ->and($election->fresh()->handed_over_at)->toBeNull()
-        ->and($roles->belongsToClub($this->secretary, $club, $now))->toBeTrue()
-        ->and($roles->belongsToClub($members[0], $club, $now))->toBeFalse();
+    $winner = $members[0];
+    expect(RoleAssignment::where('session_id', $term->id)->where('scope_id', $club->id)->where('position', 'President')->value('user_id'))->toBe($winner->id)
+        ->and($roles->belongsToClub($winner, $club, $now))->toBeFalse();
 
-    $this->travelTo($election->voting_close_at->addDays(Elections::HANDOVER_DAYS)->startOfDay()->addMinutes(30));
+    $sld = sldOfficer();
+    expect(fn () => $service->startHandover($election->fresh(), $sld))->toThrow(DomainException::class, 'Acknowledge the AGM');
+    $this->actingAs($sld)->post("/admin/agms/{$this->agm->id}/acknowledge")->assertSessionHas('error'); // package not in yet
+    $this->agm->update(['package_submitted_at' => now()]);
+    $this->actingAs($sld)->post("/admin/agms/{$this->agm->id}/acknowledge")->assertSessionHas('success');
+    $archive = GeneratedFile::where(['club_id' => $club->id, 'kind' => GeneratedFile::ANNUAL_ARCHIVE])->sole();
+    $zip = new ZipArchive;
+    expect($zip->open($archive->zip_path))->toBeTrue();
+    $names = collect(range(0, $zip->numFiles - 1))->map(fn ($i) => $zip->getNameIndex($i));
+    expect($names->contains(fn ($n) => str_contains($n, '02 Finance/')))->toBeTrue()->and($names->contains(fn ($n) => str_contains($n, '03 Members/')))->toBeTrue();
+    $zip->close();
+    $this->actingAs($this->secretary)->get("/clubs/{$club->slug}/archive/{$this->agm->session_id}")->assertOk();
+    $this->actingAs(otherStudent())->get("/clubs/{$club->slug}/archive/{$this->agm->session_id}")->assertForbidden();
+    $this->actingAs($sld)->post("/admin/elections/{$election->id}/handover")->assertSessionHas('success');
+
+    expect($roles->belongsToClub($winner, $club, $now))->toBeTrue()      // training: can view
+        ->and($roles->actsForClub($winner, $club, $now))->toBeFalse()     // but not act
+        ->and($winner->can('treasure', $club))->toBeFalse()
+        ->and($roles->actsForClub($this->secretary, $club, $now))->toBeTrue();
+
+    $this->travelTo($election->fresh()->handoverOn()->addMinutes(30));
     $this->artisan('schedule:test', ['--name' => 'election-handover'])->assertSuccessful();
     expect($election->fresh()->handed_over_at)->not->toBeNull()
         ->and($roles->belongsToClub($this->secretary, $club, $now))->toBeFalse()
-        ->and($roles->belongsToClub($members[0], $club, $now))->toBeTrue();
+        ->and($roles->actsForClub($winner, $club, $now))->toBeTrue();
 });
 
 it('blocks publishing while a compulsory position has no candidate', function () {
@@ -148,12 +168,14 @@ it('builds the Annual Activities Report from the official PPTX with one details 
     $this->actingAs($this->secretary)->get("/clubs/{$this->club->slug}/annual-report/pptx")->assertOk();
 })->skip(fn () => ! is_executable((string) config('sld.soffice')) || (new Process([config('sld.python'), '-c', 'import pptx']))->run() !== 0, 'python-pptx or LibreOffice not installed');
 
-it('submits the AGM package only when all four parts are ready', function () {
+it('submits the AGM package only when all parts (and the AGM photos) are ready', function () {
     $this->actingAs($this->secretary)->post("/agms/{$this->agm->id}/package")->assertSessionHas('error', fn ($m) => str_contains($m, 'AGM Report') && str_contains($m, 'Annual Activities Report'));
 
     $this->agm->report->update(['status' => DocumentStatus::InReview]);
     $this->club->openingBalance()->create(['amount_sen' => 10000, 'as_of' => today(), 'set_by' => $this->sld->id]);
     GeneratedFile::create(['club_id' => $this->club->id, 'session_id' => $this->agm->session_id, 'kind' => GeneratedFile::ANNUAL_REPORT, 'generated_at' => now(), 'created_by' => $this->secretary->id]);
+    $this->actingAs($this->secretary)->post("/agms/{$this->agm->id}/package")->assertSessionHas('error', fn ($m) => str_contains($m, 'AGM photos'));
+    withPhotos($this->agm);
 
     $this->actingAs($this->secretary)->post("/agms/{$this->agm->id}/package")->assertSessionHas('success');
     expect($this->agm->fresh()->package_submitted_at)->not->toBeNull();

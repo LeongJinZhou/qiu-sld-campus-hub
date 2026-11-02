@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\BuildAnnualArchive;
 use App\Models\Agm;
 use App\Models\AgmPeriod;
 use App\Models\Club;
+use App\Models\Election;
 use App\Models\GeneratedFile;
 use App\Models\ReportTheme;
 use App\Services\Agm\AgmPackage;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Agm\Elections;
+use App\Services\AuditLogger;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Time\SessionResolver;
 use App\Services\Uploads\ImageUpload;
@@ -56,6 +59,14 @@ class AgmController extends Controller
                         'flags' => $agm->election ? $elections->flags($agm->election) : [],
                         'checklist' => $package->checklist($agm),
                         'package_submitted_at' => $agm->package_submitted_at?->format('D, j M Y, g:i A'),
+                        'id' => $agm->id,
+                        'acknowledged_at' => $agm->acknowledged_at?->format('D, j M Y'),
+                        'election_id' => $agm->election?->id,
+                        'results_published' => $agm->election?->results_published_at !== null,
+                        'handover_started' => $agm->election?->handover_started_at !== null,
+                        'handover_ends_on' => $agm->election?->handover_ends_on?->format('D, j M Y'),
+                        'handed_over' => $agm->election?->handed_over_at !== null,
+                        'archive' => GeneratedFile::where(['club_id' => $agm->club_id, 'session_id' => $agm->session_id, 'kind' => GeneratedFile::ANNUAL_ARCHIVE])->whereNotNull('zip_path')->exists(),
                     ] : null,
                     'annual' => isset($annual[$club->id]),
                 ];
@@ -115,5 +126,32 @@ class AgmController extends Controller
         });
 
         return back()->with('success', 'Theme saved.');
+    }
+
+    /** SLD acknowledges a club's AGM (package received). This archives the year and unlocks the handover. */
+    public function acknowledge(Request $request, Agm $agm, AuditLogger $audit): RedirectResponse
+    {
+        if ($agm->acknowledged_at) {
+            return back()->with('error', 'This AGM is already acknowledged.');
+        }
+        if (! $agm->package_submitted_at) {
+            return back()->with('error', 'The club has not submitted its AGM package yet.');
+        }
+        $agm->update(['acknowledged_at' => now(), 'acknowledged_by' => $request->user()->id]);
+        $audit->log('agm.acknowledged', $agm);
+        BuildAnnualArchive::dispatch($agm->id);
+
+        return back()->with('success', "AGM acknowledged. The {$agm->club->name} archive is being built; the handover can now start.");
+    }
+
+    public function startHandover(Request $request, Election $election, Elections $elections): RedirectResponse
+    {
+        try {
+            $elections->startHandover($election, $request->user());
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Handover started. The incoming committee has training access until '.$election->fresh()->handoverOn()?->format('D, j M Y').'.');
     }
 }

@@ -77,6 +77,10 @@ it('refuses an AGM Report with fewer than 2 objectives, then runs Preparer → P
     $this->actingAs(User::factory()->create())->post("/agms/{$agm->id}/report/submit", [...$payload, 'objectives' => ['A', 'B']])
         ->assertForbidden();
 
+    // The AGM needs photo evidence (SLD minimum) before its report can be submitted.
+    $this->actingAs($this->secretary)->post("/agms/{$agm->id}/report/submit", [...$payload, 'objectives' => ['Review the session', 'Elect the committee']])
+        ->assertSessionHas('error', fn ($m) => str_contains($m, 'photos'));
+    withPhotos($agm);
     $this->actingAs($this->secretary)->post("/agms/{$agm->id}/report/submit", [...$payload, 'objectives' => ['Review the session', 'Elect the committee']])->assertSessionHas('success');
     $document = $agm->report()->first();
     expect($document->status)->toBe(DocumentStatus::InReview)

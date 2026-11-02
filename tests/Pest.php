@@ -6,6 +6,7 @@ use App\Models\Club;
 use App\Models\Document;
 use App\Models\Event;
 use App\Models\Membership;
+use App\Models\ReportPhoto;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Approvals\ApprovalEngine;
@@ -19,6 +20,7 @@ use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Encoder\Encoder;
 use Database\Seeders\SettingsSeeder;
 use Database\Seeders\StaffSeeder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
@@ -226,4 +228,12 @@ function otherStudent(string $number = 'STD20249998', string $name = 'Other Stud
     $template = Student::where('student_number', 'STD20240010')->first();
 
     return Student::create([...$template->only($template->getFillable()), 'student_number' => $number, 'email' => strtolower($number).'@qiu.edu.my', 'name' => $name, 'user_id' => null])->ensureUser();
+}
+
+/** Evidence photos on record for a weekly report (meeting), an AGM or an event (SLD minimum is 3 by default). */
+function withPhotos(Model $subject, int $count = 3): void
+{
+    foreach (range(1, $count) as $i) {
+        ReportPhoto::create(['photoable_type' => $subject->getMorphClass(), 'photoable_id' => $subject->getKey(), 'path' => "report-photos/test/{$i}.jpg"]);
+    }
 }

@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
 use App\Services\Events\ProposalRules;
+use App\Services\Reports\EvidencePhotos;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +46,15 @@ class ApprovalEngine
         $this->compulsory->assertComplete(ScopeType::Club, $document->club_id, $document->session_id);
         if ($document->type === DocumentType::Proposal) {
             $this->compulsory->assertComplete(ScopeType::Event, (int) $document->event_id, null);
+        }
+
+        // Photo evidence (SLD minimum): a weekly activity report and the AGM report.
+        $document->loadMissing('meeting', 'agm');
+        if ($document->type === DocumentType::Minutes && $document->meeting?->kind === 'activity') {
+            app(EvidencePhotos::class)->assertEnough($document->meeting, 'this weekly activity report');
+        }
+        if ($document->type === DocumentType::AgmReport && $document->agm) {
+            app(EvidencePhotos::class)->assertEnough($document->agm, 'the AGM');
         }
 
         $chain = $this->chains->for($document);

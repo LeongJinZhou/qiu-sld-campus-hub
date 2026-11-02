@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['club_id', 'session_id', 'kind', 'data', 'report_theme_id', 'pptx_path', 'pdf_path', 'generated_at', 'created_by'])]
+#[Fillable(['club_id', 'session_id', 'kind', 'data', 'report_theme_id', 'pptx_path', 'pdf_path', 'zip_path', 'generated_at', 'created_by'])]
 class GeneratedFile extends Model
 {
     public const ANNUAL_REPORT = 'annual_report';
+
+    public const ANNUAL_ARCHIVE = 'annual_archive';
 
     protected function casts(): array
     {

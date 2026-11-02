@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
 use App\Services\Finance\Ledger;
+use App\Services\Reports\EvidencePhotos;
 use DomainException;
 use Illuminate\Support\Facades\Notification;
 
@@ -29,6 +30,7 @@ class AgmPackage
             'finance' => ['label' => 'Financial Report (02 Finance Record)', 'ready' => $this->ledger->isReady($agm->club)],
             'members' => ['label' => 'Full Member List (10)', 'ready' => true],
             'annual' => ['label' => 'Annual Activities Report (12)', 'ready' => $annual],
+            'photos' => ['label' => 'AGM photos (at least '.app(EvidencePhotos::class)->minimum().')', 'ready' => app(EvidencePhotos::class)->enough($agm)],
         ];
     }
 

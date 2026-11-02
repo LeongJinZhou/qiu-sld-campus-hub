@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Events;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventDocumentItem;
+use App\Services\Reports\EvidencePhotos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -23,6 +24,8 @@ class EventDocumentController extends Controller
 
         return Inertia::render('Events/Documents', [
             'event' => $event->only('slug', 'name'),
+            // Completion needs SLD's minimum photos too (album, posts or uploaded here).
+            'evidence' => app(EvidencePhotos::class)->panel($event),
             'items' => $event->documentItems()->orderBy('due_on')->orderBy('id')->get()->map(fn (EventDocumentItem $i) => [
                 'id' => $i->id,
                 'label' => $i->label(),
