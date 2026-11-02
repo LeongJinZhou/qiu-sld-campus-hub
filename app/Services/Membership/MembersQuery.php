@@ -58,6 +58,7 @@ class MembersQuery
                 'id' => $m->id,
                 'club' => $m->club->name,
                 'club_id' => $m->club_id,
+                'club_slug' => $m->club->slug,
                 'category' => $m->club->category?->name,
                 'club_status' => $m->club->status,
                 'name' => $m->user->name,
@@ -109,7 +110,7 @@ class MembersQuery
                 $advisor = $a->role === ScopedRole::Advisor;
 
                 return [
-                    'id' => "r{$a->id}", 'club' => $club->name, 'club_id' => $club->id, 'category' => $club->category?->name, 'club_status' => $club->status,
+                    'id' => "r{$a->id}", 'club' => $club->name, 'club_id' => $club->id, 'club_slug' => $club->slug, 'category' => $club->category?->name, 'club_status' => $club->status,
                     'name' => $a->user->name, 'email' => $a->user->email, 'student_number' => $student?->student_number,
                     'programme' => $student?->programme ?? ($advisor ? $a->user->staff?->department : null), 'programme_short' => $student?->programmeShortForm(),
                     'year_group' => $student?->year_group, 'intake' => $student ? sprintf('%d%02d', $student->year_entry, $student->intake_month) : null,
@@ -119,6 +120,46 @@ class MembersQuery
                     'events' => 0, 'cca' => $student ? $cca($a->user_id) : 0.0,
                 ];
             })->filter()->values();
+    }
+
+    /**
+     * All clubs (SLD): one row per person, however many clubs they are in. Filters have already been applied to
+     * each club row, so a person appears when at least one of their clubs matches; their matching clubs are listed
+     * together (club, position, status, payment, expiry). Order follows the person's first matching row.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function people(Collection $rows): Collection
+    {
+        return $rows->groupBy(fn (array $r) => $r['student_number'] ?: $r['email'])->map(function (Collection $own): array {
+            $first = $own->first();
+
+            return [
+                ...collect($first)->only(['name', 'email', 'student_number', 'programme', 'programme_short', 'year_group', 'intake', 'cca'])->all(),
+                'id' => 'u'.($first['student_number'] ?: $first['email']),
+                'events' => (int) $own->sum('events'),
+                'clubs' => $own->map(fn (array $r) => collect($r)->only(['club', 'club_id', 'club_slug', 'position', 'status', 'payment', 'method', 'collected_by', 'expires'])->all())->values()->all(),
+            ];
+        })->values();
+    }
+
+    /**
+     * Cards for the one-row-per-person list: a person counts under a status or payment when any of their listed
+     * clubs has it, and the total is the number of people.
+     *
+     * @param  Collection<int, array<string, mixed>>  $people
+     * @return array<string, int>
+     */
+    public function peopleCounts(Collection $people): array
+    {
+        $any = fn (string $field, string $value) => $people->filter(fn (array $p) => collect($p['clubs'])->contains($field, $value))->count();
+
+        return [
+            'total' => $people->count(),
+            'active' => $any('status', 'active'), 'grace' => $any('status', 'grace'), 'terminated' => $any('status', 'terminated'), 'alumni' => $any('status', 'alumni'),
+            'paid' => $any('payment', 'paid'), 'pending' => $any('payment', 'pending'), 'unpaid' => $any('payment', 'unpaid'),
+        ];
     }
 
     /** @return array<string, int> dashboard cards */
