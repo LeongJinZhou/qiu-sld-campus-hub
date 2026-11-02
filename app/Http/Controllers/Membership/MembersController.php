@@ -132,9 +132,12 @@ class MembersController extends Controller
             'joined_from' => ['nullable', 'date'], 'joined_to' => ['nullable', 'date'],
             'expiring_days' => ['nullable', 'integer', 'min:0', 'max:365'],
             'min_events' => ['nullable', 'integer', 'min:0'], 'min_cca' => ['nullable', 'numeric', 'min:0'],
-            'sort' => ['nullable', 'array', 'max:3'], 'sort.*' => ['array', 'size:2'],
-            'sort.*.0' => ['string', 'in:'.implode(',', MembersQuery::SORTABLE)], 'sort.*.1' => ['in:asc,desc'],
+            // Sort levels arrive as "field:dir" (nested arrays do not survive a query string).
+            'sort' => ['nullable', 'array', 'max:3'], 'sort.*' => ['string', 'regex:/^('.implode('|', MembersQuery::SORTABLE).'):(asc|desc)$/'],
         ]);
+        if (isset($f['sort'])) {
+            $f['sort'] = array_map(fn (string $level) => explode(':', $level, 2), $f['sort']);
+        }
 
         return array_filter($f, fn ($v) => $v !== null && $v !== [] && $v !== '');
     }

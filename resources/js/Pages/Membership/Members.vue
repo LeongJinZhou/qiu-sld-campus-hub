@@ -17,7 +17,7 @@ import { computed, reactive, ref } from 'vue';
 
 type Filters = Record<string, string | number | string[] | string[][] | undefined>;
 interface Row {
-    id: number;
+    id: number | string;
     club: string;
     name: string;
     email: string;
@@ -63,23 +63,59 @@ const layout = computed(() => (props.portal ? PortalLayout : AppLayout));
 const layoutProps = computed(() => (props.portal ? { title: props.club ? `Members · ${props.club.name}` : 'All members' } : { wide: true }));
 const feeTone = { paid: 'success', unpaid: 'danger', checking: 'info', no_fee: 'neutral' } as const;
 const feeLabel = { paid: 'Paid', unpaid: 'Not paid', checking: 'Payment being checked', no_fee: 'No fee set' } as const;
-const f = reactive<Filters>({ status: [], position: [], payment: [], method: [], collected_by: [], year_group: [], programme_short: [], intake: [], club_id: [], category: [], club_status: [], ...(copy(props.filters) as Partial<Filters>) });
+const LISTS = ['status', 'position', 'payment', 'method', 'collected_by', 'year_group', 'programme_short', 'intake', 'club_id', 'category', 'club_status'] as const;
+// The drawer's state, rebuilt from what the server applied (club ids as numbers, so their boxes show ticked).
+const fromServer = (): Filters => {
+    const out: Filters = { ...(copy(props.filters) as Filters) };
+    for (const k of LISTS) out[k] = Array.isArray(out[k]) ? (out[k] as string[]).map((v) => (k === 'club_id' ? Number(v) : v)) as string[] : [];
+    delete out.sort;
+    delete out.search;
+    return out;
+};
+const f = reactive<Filters>(fromServer());
 const sort = ref<string[][]>(Array.isArray(props.filters.sort) ? (props.filters.sort as string[][]) : [['name', 'asc']]);
 const search = ref(typeof props.filters.search === 'string' ? props.filters.search : '');
 const open = ref(false);
 
-const apply = (extra: Filters = {}): void => {
-    router.get(url, { ...f, search: search.value || undefined, sort: sort.value, ...extra }, { preserveState: true, preserveScroll: true, replace: true });
+// Sort levels travel as "field:dir" strings: nested arrays do not survive the query string.
+const query = (extra: Filters = {}): Record<string, unknown> => ({
+    ...Object.fromEntries(Object.entries(f).filter(([, v]) => (Array.isArray(v) ? v.length : v !== '' && v !== undefined && v !== null))),
+    search: search.value || undefined,
+    sort: sort.value.map(([k, d]) => `${k}:${d}`),
+    ...extra,
+});
+const visit = (extra: Filters = {}): void => {
+    router.get(url, query(extra) as never, { preserveState: true, preserveScroll: true, replace: true, onSuccess: () => Object.assign(f, fromServer()) });
+};
+const apply = (): void => visit();
+// The stat cards replace the status/payment filter (Total clears both) and the drawer shows it.
+const pick = (key: string): void => {
+    f.status = ['active', 'grace', 'terminated', 'alumni'].includes(key) ? [key] : [];
+    f.payment = ['paid', 'pending', 'unpaid'].includes(key) ? [key] : [];
+    visit();
 };
 watchDebounced(search, () => apply(), { debounce: 300 });
-const goPage = (page: number): void => router.get(url, { ...f, search: search.value || undefined, sort: sort.value, page }, { preserveState: true, replace: true });
+const goPage = (page: number): void => visit({ page } as Filters);
 const toOptions = (list: string[]) => Object.fromEntries(list.map((v) => [v, v]));
 const activeCount = computed(() => Object.entries(props.filters).filter(([k, v]) => !['search', 'sort'].includes(k) && (Array.isArray(v) ? v.length : v !== undefined)).length);
-const clear = (): void => router.get(url, {}, { preserveScroll: true });
+const clear = (): void => {
+    for (const k of Object.keys(f)) delete f[k];
+    Object.assign(f, Object.fromEntries(LISTS.map((k) => [k, []])));
+    search.value = '';
+    router.get(url, {}, { preserveScroll: true, onSuccess: () => Object.assign(f, fromServer()) });
+};
 const sortFields = { name: 'Name', student_number: 'Student ID', programme: 'Programme', year_group: 'Year group', status: 'Status', joined: 'Joined', expires: 'Expires', events: 'Events', cca: 'CCA', club: 'Club' };
 const toggleSort = (field: string): void => {
     const [first] = sort.value;
     sort.value = [[field, first?.[0] === field && first[1] === 'asc' ? 'desc' : 'asc'], ...sort.value.filter(([k]) => k !== field)].slice(0, 3);
+    apply();
+};
+const openView = (filters: Filters): void => {
+    const saved = filters.sort;
+    sort.value = Array.isArray(saved) && saved.length ? (saved as unknown[]).map((x) => (Array.isArray(x) ? (x as string[]) : String(x).split(':'))) : [['name', 'asc']];
+    for (const k of LISTS) f[k] = Array.isArray(filters[k]) ? (filters[k] as string[]) : [];
+    Object.assign(f, Object.fromEntries(Object.entries(filters).filter(([k]) => !(LISTS as readonly string[]).includes(k) && k !== 'sort' && k !== 'search')));
+    search.value = typeof filters.search === 'string' ? filters.search : '';
     apply();
 };
 const saveView = (): void => {
@@ -92,7 +128,7 @@ const cards = [
     ['total', 'Total'], ['active', 'Active'], ['grace', 'Grace'], ['terminated', 'Terminated'],
     ['alumni', 'Alumni'], ['paid', 'Paid'], ['pending', 'Pending'], ['unpaid', 'Unpaid'],
 ] as const;
-const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = { active: 'success', grace: 'warning', terminated: 'danger', alumni: 'info', pending: 'neutral', paid: 'success', unpaid: 'danger' };
+const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = { active: 'success', grace: 'warning', terminated: 'danger', alumni: 'info', pending: 'neutral', paid: 'success', unpaid: 'danger', committee: 'info', advisor: 'neutral', exempt: 'neutral' };
 </script>
 
 <template>
@@ -124,7 +160,7 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
             </section>
 
             <dl class="grid grid-cols-4 gap-2 sm:grid-cols-8">
-                <button v-for="[key, label] in cards" :key="key" type="button" class="rounded-card border border-line bg-surface p-3 text-center shadow-card transition hover:shadow-pop" @click="apply(key === 'total' ? {} : ['paid', 'pending', 'unpaid'].includes(key) ? { payment: [key] } : { status: [key] })">
+                <button v-for="[key, label] in cards" :key="key" type="button" class="rounded-card border border-line bg-surface p-3 text-center shadow-card transition hover:shadow-pop" @click="pick(key)">
                     <dd class="text-xl font-bold tabular-nums">{{ counts[key] ?? 0 }}</dd>
                     <dt class="text-xs text-ink-muted">{{ label }}</dt>
                 </button>
@@ -138,7 +174,7 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 
             <div v-if="views.length" class="flex flex-wrap gap-2">
                 <span v-for="v in views" :key="v.id" class="inline-flex items-center gap-1 rounded-full bg-surface-muted px-3 py-1 text-sm">
-                    <button type="button" class="font-medium" @click="router.get(url, v.filters, { preserveScroll: true })">{{ v.name }}</button>
+                    <button type="button" class="font-medium" @click="openView(v.filters)">{{ v.name }}</button>
                     <button type="button" class="text-ink-muted hover:text-danger" :aria-label="`Delete view ${v.name}`" @click="router.delete(`/saved-views/${v.id}`, { preserveScroll: true })">✕</button>
                 </span>
             </div>
@@ -202,7 +238,7 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
             <form class="grid gap-5" @submit.prevent="apply(); open = false">
                 <Select v-model="(f as Record<string, unknown>).session as string" label="Session" :options="[{ value: '', label: 'Any' }, ...options.sessions.map((s) => ({ value: s, label: s }))]" />
                 <fieldset class="grid gap-2"><legend class="text-sm font-medium">Status</legend>
-                    <CheckboxGroup v-model="f.status as string[]" :options="{ active: 'Active', grace: 'Grace', terminated: 'Terminated', alumni: 'Alumni', pending: 'Pending' }" :columns="2" />
+                    <CheckboxGroup v-model="f.status as string[]" :options="{ active: 'Active', grace: 'Grace', terminated: 'Terminated', alumni: 'Alumni', pending: 'Pending', committee: 'Committee (not joined yet)', advisor: 'Advisor' }" :columns="2" />
                 </fieldset>
                 <fieldset class="grid gap-2"><legend class="text-sm font-medium">Payment</legend>
                     <CheckboxGroup v-model="f.payment as string[]" :options="{ paid: 'Paid', pending: 'Pending', unpaid: 'Unpaid' }" :columns="3" />

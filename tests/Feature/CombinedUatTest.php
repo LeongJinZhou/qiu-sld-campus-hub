@@ -23,6 +23,7 @@ use App\Services\Approvals\ApproverResolver;
 use App\Services\Events\AttendanceQr;
 use App\Services\Events\PostMortemForm;
 use App\Services\Finance\Ledger;
+use App\Services\Membership\MembersQuery;
 use App\Services\Membership\ReceiptReading;
 use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
@@ -204,10 +205,15 @@ it('runs 3000 club joins plus online and cash payment requests and reconciles ev
             'active' => $club->memberships()->where('status', 'active')->count(),
             'expected_balance_sen' => $expected[$index], 'actual_balance_sen' => $actual];
         expect($club->memberships()->count())->toBe(1000)->and($actual)->toBe($expected[$index]);
+        // Spec change: every member type is listed, so the club's committee members and advisor who hold no
+        // membership row appear alongside the 1,000 members.
+        $officers = app(MembersQuery::class)->rows([$club->id])->whereIn('status', ['committee', 'advisor'])->count();
+        $listed = 1000 + $officers;
+        $lastPage = (int) ceil($listed / 100);
         uatCall($this, $this->treasurer, 'get', '/clubs/'.$club->slug.'/members', [], 200)
-            ->assertInertia(fn ($page) => $page->where('pagination.total', 1000)->where('pagination.last_page', 10)->has('rows', 100));
-        uatCall($this, $this->treasurer, 'get', '/clubs/'.$club->slug.'/members?page=10', [], 200)
-            ->assertInertia(fn ($page) => $page->where('pagination.page', 10)->has('rows', 100));
+            ->assertInertia(fn ($page) => $page->where('pagination.total', $listed)->where('pagination.last_page', $lastPage)->has('rows', 100));
+        uatCall($this, $this->treasurer, 'get', '/clubs/'.$club->slug.'/members?page='.$lastPage, [], 200)
+            ->assertInertia(fn ($page) => $page->where('pagination.page', $lastPage)->has('rows', $listed - ($lastPage - 1) * 100));
         uatCall($this, $this->treasurer, 'get', '/clubs/'.$club->slug.'/payments/review', [], 200);
         $path = uatExport($this, $this->treasurer, '/clubs/'.$club->slug.'/members/export/xlsx', 'capacity-members-'.$index.'.xlsx');
         $book = IOFactory::load($path);
