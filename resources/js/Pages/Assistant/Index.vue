@@ -10,6 +10,7 @@ interface Message {
     role: 'user' | 'assistant';
     content: string;
     links: { title: string; kind: string; url: string }[];
+    followups?: string[];
     at: string | null;
 }
 const props = defineProps<{ messages: Message[] }>();
@@ -38,7 +39,10 @@ const examples = ['What do I need to sign this week?', 'When is the next event o
             <header class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h1 class="flex items-center gap-2 text-2xl font-bold"><Icon name="sparkles" /> Assistant</h1>
-                    <p class="text-sm text-ink-muted">Answers from what you are allowed to open, with links straight to it. Only you see this history.</p>
+                    <p class="text-sm text-ink-muted">
+                        Answers only from what your role may see (fees and events for everyone; a club's money and members for its own committee; everything for SLD). Only you see
+                        this history.
+                    </p>
                 </div>
                 <Button v-if="messages.length" variant="secondary" size="sm" @click="clearAll">Delete history</Button>
             </header>
@@ -65,6 +69,20 @@ const examples = ['What do I need to sign this week?', 'When is the next event o
                                 >
                             </li>
                         </ul>
+                        <div v-if="m.followups?.length && m.id === messages[messages.length - 1]?.id" class="flex flex-wrap gap-1.5 pt-1">
+                            <button
+                                v-for="f in m.followups"
+                                :key="f"
+                                type="button"
+                                class="rounded-full border border-line px-2.5 py-1 text-xs text-ink-muted hover:bg-surface-muted hover:text-ink"
+                                @click="
+                                    form.question = f;
+                                    ask();
+                                "
+                            >
+                                {{ f }}
+                            </button>
+                        </div>
                         <button
                             type="button"
                             class="absolute -top-2 right-1 hidden rounded-full bg-surface px-1.5 text-xs text-ink-muted shadow-card group-hover:block focus:block"
