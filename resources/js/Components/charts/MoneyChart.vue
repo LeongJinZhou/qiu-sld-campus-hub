@@ -7,6 +7,12 @@ import { computed, ref } from 'vue';
  * tooltip on every bar and a table view. Colours are the validated blue/orange pair, re-stepped for dark mode.
  */
 const props = defineProps<{ title: string; rows: { key: string; label?: string; income_sen: number; expense_sen: number }[] }>();
+// "Aug 26" labels: the month on top, and the year underneath only where it changes (first bar, January), so 12 fit.
+const axis = (r: { key: string; label?: string }, i: number): { top: string; bottom: string | null } => {
+    const m = /^(\w{3}) (\d{2})$/.exec(r.label ?? '');
+    if (!m) return { top: r.label ?? r.key, bottom: null };
+    return { top: m[1]!, bottom: i === 0 || m[1] === 'Jan' ? `'${m[2]}` : null };
+};
 const max = computed(() => Math.max(1, ...props.rows.flatMap((r) => [r.income_sen, r.expense_sen])));
 const tip = ref<{ x: number; y: number; lines: string[] } | null>(null);
 const show = (e: PointerEvent, r: (typeof props.rows)[number]): void => {
@@ -52,7 +58,10 @@ const h = (sen: number): string => `${Math.max(sen ? 2 : 0, (sen / max.value) * 
                 </div>
             </div>
             <div class="flex gap-1.5 text-center text-[10px] text-ink-muted">
-                <span v-for="r in rows" :key="r.key" class="flex-1 truncate">{{ r.label ?? r.key }}</span>
+                <span v-for="(r, i) in rows" :key="r.key" class="min-w-0 flex-1 leading-tight">
+                    <span class="block truncate">{{ axis(r, i).top }}</span>
+                    <span v-if="axis(r, i).bottom" class="block truncate">{{ axis(r, i).bottom }}</span>
+                </span>
             </div>
         </template>
         <div
