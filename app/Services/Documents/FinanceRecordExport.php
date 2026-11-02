@@ -24,7 +24,7 @@ class FinanceRecordExport
         $session = $this->sessions->current();
         $treasurer = $club->roleAssignments()->where('session_id', $session->id)->where('position', 'Treasurer')->with('user')->first()?->user;
         $advisor = $club->roleAssignments()->where('session_id', $session->id)->where('role', ScopedRole::Advisor)->with('user')->first()?->user;
-        $output = storage_path("app/private/generated/finance-{$club->id}-".now()->format('YmdHis').'.xlsx');
+        $output = storage_path("app/private/generated/finance-{$club->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.xlsx');
 
         return $this->xlsx->render(self::TEMPLATE, function (Spreadsheet $book) use ($rows, $treasurer, $advisor): void {
             $sheet = $book->getActiveSheet();

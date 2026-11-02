@@ -79,7 +79,7 @@ class Certificates
 
         $dir = storage_path('app/private/generated');
         is_dir($dir) || mkdir($dir, 0775, true);
-        $docx = "{$dir}/certificate-{$certificate->code}-".now()->format('YmdHis').'.docx';
+        $docx = "{$dir}/certificate-{$certificate->code}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.docx';
         $word->save($docx);
         $pdf = $this->pdf->convert($docx);
         @unlink($docx);

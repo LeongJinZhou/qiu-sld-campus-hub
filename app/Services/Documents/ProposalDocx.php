@@ -35,7 +35,7 @@ class ProposalDocx
     {
         $document->loadMissing(['club', 'event.committee.user', 'approvals.signature', 'approvals.approver.staff']);
         $data = $document->data() ?: $this->form->current($document);
-        $output = storage_path("app/private/generated/proposal-{$document->id}-".now()->format('YmdHis').'.docx');
+        $output = storage_path("app/private/generated/proposal-{$document->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.docx');
 
         return $this->docx->render(self::TEMPLATE, fn (TemplateProcessor $t) => $this->fill($t, $document, $data), $output);
     }

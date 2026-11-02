@@ -22,7 +22,7 @@ class PostMortemExport
         $header = $this->form->header($event);
         $preparer = XlsxRenderer::signed($document, ChainRole::Preparer);
         $advisor = XlsxRenderer::signed($document, ChainRole::Advisor);
-        $output = storage_path("app/private/generated/post-mortem-{$document->id}-".now()->format('YmdHis').'.xlsx');
+        $output = storage_path("app/private/generated/post-mortem-{$document->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.xlsx');
 
         return $this->xlsx->render(self::TEMPLATE, function (Spreadsheet $book) use ($header, $data, $preparer, $advisor, $document): void {
             $sheet = $book->getActiveSheet();
