@@ -15,7 +15,9 @@ const props = defineProps<{
     sessions: { name: string; starts_on: string; ends_on: string }[];
     currentSession: string;
     ccaLimit: number;
+    rules: { proposal_lead_days: number; min_photos: number; transfer_days: number; handover_days: number };
 }>();
+const rules = useForm({ ...props.rules });
 const cca = useForm({ max_hours: props.ccaLimit });
 
 const programmes = useForm({
@@ -51,6 +53,7 @@ const save = {
             }))
             .put('/admin/settings/statuses', options),
     cca: () => cca.put('/admin/settings/cca', options),
+    rules: () => rules.put('/admin/settings/rules', options),
     session: () =>
         session.put('/admin/settings/sessions', {
             ...options,
@@ -98,6 +101,24 @@ const save = {
                         >
                         <Button type="submit" :loading="programmes.processing">Save</Button>
                     </div>
+                </form>
+            </Card>
+
+            <Card>
+                <template #title>Deadlines and requirements</template>
+                <p class="mb-4 text-sm text-ink-muted">Rules every club works to. Exceptions (a late proposal, a budget deficit) need a reason and your approval.</p>
+                <form class="grid gap-3 sm:grid-cols-2" @submit.prevent="save.rules">
+                    <Input
+                        v-model="rules.proposal_lead_days"
+                        type="number"
+                        label="Submit proposals at least (days before the event)"
+                        required
+                        :error="rules.errors.proposal_lead_days"
+                    />
+                    <Input v-model="rules.min_photos" type="number" label="Photos required (weekly report, AGM, completed event)" required :error="rules.errors.min_photos" />
+                    <Input v-model="rules.transfer_days" type="number" label="Finance transfers withdrawals within (days)" required :error="rules.errors.transfer_days" />
+                    <Input v-model="rules.handover_days" type="number" label="Committee handover overlap (days)" required :error="rules.errors.handover_days" />
+                    <div class="sm:col-span-2"><Button type="submit" :loading="rules.processing">Save rules</Button></div>
                 </form>
             </Card>
 

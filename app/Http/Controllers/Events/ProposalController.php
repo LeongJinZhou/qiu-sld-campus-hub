@@ -15,6 +15,7 @@ use App\Services\Events\ProposalForm;
 use App\Services\Events\ProposalRules;
 use App\Services\Meetings\Meetings;
 use App\Services\Roles\CompulsoryPositionsCheck;
+use App\Services\SldRules;
 use App\Support\QueryInput;
 use Carbon\CarbonImmutable;
 use DomainException;
@@ -66,11 +67,7 @@ class ProposalController extends Controller
                 'fundSources' => ProposalForm::FUND_SOURCES,
                 'compulsoryPositions' => CompulsoryPositionsCheck::POSITIONS,
             ],
-            'leadTime' => [
-                'threshold' => ProposalRules::LARGE_EVENT_PARTICIPANTS,
-                'small' => $this->rules->earliestStart(1, now())->toDateString(),
-                'large' => $this->rules->earliestStart(ProposalRules::LARGE_EVENT_PARTICIPANTS, now())->toDateString(),
-            ],
+            'leadTime' => ['earliest' => $this->rules->earliestStart(now())->toDateString(), 'days' => app(SldRules::class)->get('proposal_lead_days')],
         ]);
     }
 
@@ -95,7 +92,7 @@ class ProposalController extends Controller
         }
 
         try {
-            $this->rules->assertLeadTime((int) $data['expected_participants'], CarbonImmutable::parse($data['starts_at']), now());
+            $this->rules->assertLeadTime(CarbonImmutable::parse($data['starts_at']), now(), $data['late_reason'] ?? null);
             // Draft + submission succeed or fail together, so a refused submission never changes the event.
             DB::transaction(function () use ($document, $data, $request, $engine): void {
                 $this->form->saveDraft($document, $data, $request->user()->id);

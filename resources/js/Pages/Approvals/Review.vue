@@ -17,12 +17,15 @@ const props = defineProps<{
     canAct: boolean;
     document: PresentedDocument;
     downloads: string[];
+    exceptions: { kind: string; label: string; reason: string }[];
+    decidesExceptions: boolean;
 }>();
 
 const form = useForm({
     decision: 'approve' as 'approve' | 'return' | 'reject',
     comment: '',
     no_problems: false,
+    accept_exceptions: false,
     signature: null as string | null,
     signature_strokes: null as string | null,
 });
@@ -56,6 +59,13 @@ const decide = (decision: 'approve' | 'return' | 'reject'): void => {
     <AppLayout>
         <div class="grid gap-6 lg:grid-cols-[1fr_24rem]">
             <div class="grid content-start gap-4">
+                <section v-if="exceptions.length" class="grid gap-2 rounded-card border-2 border-warning/50 bg-warning/5 p-4 text-sm">
+                    <h2 class="font-semibold text-warning">Exceptions for SLD to decide</h2>
+                    <div v-for="e in exceptions" :key="e.kind">
+                        <p class="font-medium">{{ e.label }}</p>
+                        <p class="text-ink-muted">Reason given: {{ e.reason || '—' }}</p>
+                    </div>
+                </section>
                 <h1 class="text-xl font-bold">
                     {{ document.type_label }} ·
                     {{ document.event?.name ?? document.club.name }}
@@ -100,8 +110,19 @@ const decide = (decision: 'approve' | 'return' | 'reject'): void => {
                                     <input v-model="form.no_problems" type="checkbox" class="mt-0.5 size-4 accent-success" />
                                     I have checked this {{ document.type_label.toLowerCase() }} and found no problems.
                                 </label>
+                                <label
+                                    v-if="exceptions.length && decidesExceptions"
+                                    class="flex items-start gap-2 rounded-control border-2 border-warning/50 bg-warning/5 p-3 text-sm"
+                                >
+                                    <input v-model="form.accept_exceptions" type="checkbox" class="mt-0.5 size-4 accent-warning" />
+                                    I approve these exceptions as SLD: {{ exceptions.map((e) => e.label).join('; ') }}.
+                                </label>
                                 <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Sign to approve" />
-                                <Button :disabled="!form.signature || !form.no_problems" :loading="form.processing && form.decision === 'approve'" @click="decide('approve')">
+                                <Button
+                                    :disabled="!form.signature || !form.no_problems || (exceptions.length > 0 && decidesExceptions && !form.accept_exceptions)"
+                                    :loading="form.processing && form.decision === 'approve'"
+                                    @click="decide('approve')"
+                                >
                                     Approve &amp; sign
                                 </Button>
                             </div>

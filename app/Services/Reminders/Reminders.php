@@ -26,6 +26,7 @@ use App\Services\Events\IndemnityService;
 use App\Services\Events\ProposalRules;
 use App\Services\Meetings\Meetings;
 use App\Services\Notifications\ActionItems;
+use App\Services\SldRules;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -81,7 +82,7 @@ class Reminders
         }
     }
 
-    /** Draft or returned proposals whose last day to submit (1.5 or 3 months ahead) is 7 days or 1 day away. */
+    /** Draft or returned proposals whose last day to submit (SLD's lead time before the event) is 7 days or 1 day away. */
     private function proposalLeadTime(CarbonImmutable $today): void
     {
         $drafts = Document::with('event')->where('type', DocumentType::Proposal)
@@ -89,13 +90,13 @@ class Reminders
             ->whereHas('event', fn ($q) => $q->where('starts_at', '>', $today))->get();
         foreach ($drafts as $doc) {
             $event = $doc->event;
-            $large = $event->expected_participants >= ProposalRules::LARGE_EVENT_PARTICIPANTS;
-            $lastDay = CarbonImmutable::parse($event->starts_at)->startOfDay()->subMonthsNoOverflow($large ? 3 : 1)->subDays($large ? 0 : 15);
+            $lead = app(SldRules::class)->get('proposal_lead_days');
+            $lastDay = CarbonImmutable::parse($event->starts_at)->startOfDay()->subDays($lead);
             foreach (self::LEAD_DAYS as $days) {
                 if ($lastDay->equalTo($today->addDays($days))) {
                     $this->send("proposal-lead:{$doc->id}:{$days}", $this->eventCommittee($event),
                         "Submit the proposal for {$event->name}",
-                        "The last day to submit is {$lastDay->format('D j M Y')} (".($large ? '3 months' : '1.5 months').' before the event).',
+                        "The last day to submit is {$lastDay->format('D j M Y')} ({$lead} days before the event).",
                         route('proposals.edit', $event));
                 }
             }

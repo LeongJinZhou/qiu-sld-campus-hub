@@ -101,6 +101,8 @@ export interface ProposalData {
     return_pickup: string;
     budget: { revenue: { description: string; price_sen: number; quantity: number }[]; expenses: { description: string; price_sen: number; quantity: number }[] };
     conclusion: string;
+    late_reason?: string;
+    deficit_reason?: string;
 }
 
 export interface ApprovalStep {

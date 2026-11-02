@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ApprovalDecision;
+use App\Enums\ChainRole;
 use App\Enums\DocumentStatus;
 use App\Http\Requests\DecideApprovalRequest;
 use App\Models\Approval;
@@ -74,6 +75,8 @@ class ApprovalController extends Controller
             'canAct' => $this->engine->canAct($approval, $request->user()),
             'downloads' => app(DocumentExporter::class)->formats($approval->document),
             'document' => $presenter->present($approval->document),
+            'exceptions' => $this->engine->exceptions($approval->document),
+            'decidesExceptions' => $approval->role === ChainRole::SldOfficer,
         ]);
     }
 
@@ -84,7 +87,7 @@ class ApprovalController extends Controller
 
         try {
             match ($request->validated('decision')) {
-                'approve' => $this->engine->approve($approval, $user, (string) $request->validated('signature'), $comment ?: null, $request->validated('signature_strokes')),
+                'approve' => $this->engine->approve($approval, $user, (string) $request->validated('signature'), $comment ?: null, $request->validated('signature_strokes'), $request->boolean('accept_exceptions')),
                 'return' => $this->engine->returnToClub($approval, $user, $comment, $request->validated('sections') ?? []),
                 'reject' => $this->engine->reject($approval, $user, $comment, $request->validated('sections') ?? []),
             };
