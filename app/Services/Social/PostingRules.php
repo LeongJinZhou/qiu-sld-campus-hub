@@ -7,6 +7,7 @@ use App\Models\Club;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Moderation\ToxicityClassifier;
 use App\Support\ContentFilter;
 
 /**
@@ -18,15 +19,22 @@ class PostingRules
 {
     public const CLUB_DAILY = 5;
 
+    public const TOXIC = 'This reads as abusive or insulting. Please rephrase it respectfully.';
+
     public const PER_EVENT_TOTAL = 3;
 
     public const COMMENTS_PER_MINUTE = 5;
+
+    public function __construct(private readonly ToxicityClassifier $toxicity) {}
 
     /** @return array<string, string> field => message; empty when the post may go up */
     public function postProblems(Club $club, ?int $eventId, ?string $caption): array
     {
         if ($words = ContentFilter::offences($caption)) {
             return ['caption' => $this->rudeMessage($words)];
+        }
+        if ($caption && $this->toxicity->isToxic($caption)) {
+            return ['caption' => self::TOXIC];
         }
         $own = Post::where('club_id', $club->id)->where('type', '!=', Post::TYPE_EVENT);
         if ((clone $own)->where('created_at', '>=', now()->subDay())->count() >= self::CLUB_DAILY) {
@@ -59,6 +67,9 @@ class PostingRules
     {
         if ($words = ContentFilter::offences($body)) {
             return $this->rudeMessage($words);
+        }
+        if ($this->toxicity->isToxic($body)) {
+            return self::TOXIC;
         }
         if (Comment::where('user_id', $user->id)->where('created_at', '>=', now()->subMinute())->count() >= self::COMMENTS_PER_MINUTE) {
             return 'You are commenting too fast. Wait a minute and try again.';
