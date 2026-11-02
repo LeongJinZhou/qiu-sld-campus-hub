@@ -347,6 +347,14 @@ onMounted(() => {
                 <Badge :tone="status === 'returned' ? 'warning' : status === 'approved' ? 'success' : 'neutral'">{{ status.replace('_', ' ') }}</Badge>
             </header>
 
+            <section v-if="status === 'approved'" class="flex flex-wrap items-center justify-between gap-3 rounded-card border border-success/40 bg-success/5 px-4 py-3">
+                <p class="text-sm"><strong class="text-success">Approved.</strong> Download the signed proposal to keep a copy.</p>
+                <div class="flex gap-2">
+                    <a :href="`/documents/${documentId}/download/pdf`" class="rounded-control bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/85">Download PDF</a>
+                    <a :href="`/documents/${documentId}/download/docx`" class="rounded-control border border-line bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-muted">Word</a>
+                </div>
+            </section>
+
             <section v-if="approval" class="rounded-card border border-line bg-surface p-5 shadow-card">
                 <ApprovalTracker :progress="approval.progress" :steps="approval.steps" />
             </section>
