@@ -7,11 +7,14 @@ use App\Http\Controllers\Agm\AgmReportController;
 use App\Http\Controllers\Agm\AnnualReportController;
 use App\Http\Controllers\Agm\ElectionController;
 use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\ArchiveController;
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\Auth\DevLoginController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\ClubApplicationController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ClubQrController;
 use App\Http\Controllers\DocumentController;
@@ -27,6 +30,7 @@ use App\Http\Controllers\Events\PosterController;
 use App\Http\Controllers\Events\PostMortemController;
 use App\Http\Controllers\Events\ProposalController;
 use App\Http\Controllers\Events\TicketController;
+use App\Http\Controllers\EvidencePhotoController;
 use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Finance\PaymentBreakdownController;
 use App\Http\Controllers\Finance\WithdrawalController;
@@ -83,6 +87,21 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/search', SearchController::class)->name('search');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+    Route::get('/assistant', [AssistantController::class, 'index'])->name('assistant');
+    Route::post('/assistant', [AssistantController::class, 'ask'])->middleware('throttle:ai')->name('assistant.ask');
+    Route::delete('/assistant', [AssistantController::class, 'clear'])->name('assistant.clear');
+    Route::delete('/assistant/{message}', [AssistantController::class, 'destroy'])->name('assistant.destroy');
+    Route::get('/clubs-apply', [ClubApplicationController::class, 'create'])->name('club-applications.create');
+    Route::post('/clubs-apply', [ClubApplicationController::class, 'store'])->middleware('throttle:uploads')->name('club-applications.store');
+    Route::get('/club-applications/{application}', [ClubApplicationController::class, 'show'])->name('club-applications.show');
+    Route::post('/club-applications/{application}/sign', [ClubApplicationController::class, 'sign'])->name('club-applications.sign');
+    Route::post('/club-applications/{application}/return', [ClubApplicationController::class, 'sendBack'])->name('club-applications.return');
+    Route::post('/club-applications/{application}/decide', [ClubApplicationController::class, 'decide'])->name('club-applications.decide');
+    Route::post('/club-applications/{application}/resubmit', [ClubApplicationController::class, 'resubmit'])->name('club-applications.resubmit');
+    Route::post('/evidence/{type}/{id}', [EvidencePhotoController::class, 'store'])->whereIn('type', ['meeting', 'agm', 'event'])->whereNumber('id')->middleware('throttle:uploads')->name('evidence.store');
+    Route::delete('/evidence-photos/{photo}', [EvidencePhotoController::class, 'destroy'])->name('evidence.destroy');
+    Route::get('/events/{event}/photos.zip', [EvidencePhotoController::class, 'eventZip'])->middleware('throttle:exports')->name('events.photos.zip');
+    Route::get('/clubs/{club}/archive/{session}', ArchiveController::class)->middleware('throttle:exports')->name('clubs.archive');
     Route::put('/me/theme', [PreferencesController::class, 'theme'])->name('me.theme');
     Route::post('/me/tours', [PreferencesController::class, 'tour'])->name('me.tours');
     Route::get('/people/lookup', PeopleLookupController::class)->middleware('throttle:directory')->name('people.lookup');
@@ -156,6 +175,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
     Route::get('/approvals/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
     Route::post('/approvals/{approval}', [ApprovalController::class, 'decide'])->name('approvals.decide');
+    Route::post('/approvals/{approval}/paper', [ApprovalController::class, 'paperStart'])->name('approvals.paper.start');
+    Route::post('/approvals/{approval}/paper/record', [ApprovalController::class, 'paperRecord'])->middleware('throttle:uploads')->name('approvals.paper.record');
+    Route::delete('/approvals/{approval}/paper', [ApprovalController::class, 'paperCancel'])->name('approvals.paper.cancel');
+    Route::get('/approvals/{approval}/paper/scan', [ApprovalController::class, 'paperScan'])->name('approvals.paper.scan');
 
     Route::get('/notifications', NotificationController::class)->name('notifications');
 
@@ -244,6 +267,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('can:manage,'.Club::class)->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
         Route::get('performance', Admin\PerformanceController::class)->name('performance');
+        Route::get('tracking', Admin\TrackingController::class)->name('tracking');
         Route::resource('clubs', Admin\ClubController::class)->except(['show', 'destroy']);
         Route::post('clubs/{club}/committee', [Admin\ClubCommitteeController::class, 'assign'])->name('clubs.committee.assign');
         Route::post('clubs/{club}/advisors', [Admin\ClubCommitteeController::class, 'addAdvisor'])->name('clubs.advisors.store');
@@ -256,10 +280,13 @@ Route::middleware('auth')->group(function () {
         Route::put('staff/{staff}', [Admin\StaffController::class, 'update'])->name('staff.update');
 
         Route::get('members', [MembersController::class, 'all'])->name('members.all');
+        Route::get('clubs/{club}/members', [MembersController::class, 'adminClub'])->name('members.admin-club');
         Route::get('finance', Admin\FinanceOverviewController::class)->name('finance.index');
         Route::get('requests', [SldRequestController::class, 'index'])->name('requests.index');
         Route::post('requests', [SldRequestController::class, 'store'])->name('requests.store');
         Route::get('agm', [Admin\AgmController::class, 'index'])->name('agm.index');
+        Route::post('agms/{agm}/acknowledge', [Admin\AgmController::class, 'acknowledge'])->name('agm.acknowledge');
+        Route::post('elections/{election}/handover', [Admin\AgmController::class, 'startHandover'])->name('election.handover');
         Route::post('agm/periods', [Admin\AgmController::class, 'open'])->name('agm.open');
         Route::post('agm/periods/{period}/close', [Admin\AgmController::class, 'close'])->name('agm.close');
         Route::post('agm/themes', [Admin\AgmController::class, 'theme'])->name('agm.themes');

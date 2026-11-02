@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import MoneyChart from '@/Components/charts/MoneyChart.vue';
 import Badge from '@/Components/ui/Badge.vue';
+import Select from '@/Components/ui/Select.vue';
 import Icon from '@/Components/ui/Icon.vue';
 import Table from '@/Components/ui/Table.vue';
 import PortalLayout from '@/Layouts/PortalLayout.vue';
@@ -37,7 +39,15 @@ const props = defineProps<{
         balance_sen: number;
         last_entry: string | null;
     }[];
+    money: { monthly: { key: string; label: string; income_sen: number; expense_sen: number }[]; yearly: { key: string; income_sen: number; expense_sen: number }[] };
+    moneyClub: string | null;
 }>();
+const moneyFor = (club: string | number | null | undefined): void =>
+    router.get(
+        '/admin/finance',
+        { ...(props.q ? { q: props.q } : {}), ...(club ? { club } : {}) },
+        { only: ['money', 'moneyClub'], preserveState: true, preserveScroll: true, replace: true },
+    );
 
 const columns = [
     { key: 'name' as const, label: 'Club', sortable: true },
@@ -138,6 +148,23 @@ const tone = (s: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' 
                 </TransitionGroup>
                 <p v-if="!transactions.length" class="rounded-card border border-dashed border-line p-6 text-center text-sm text-ink-muted">No transaction matches every word.</p>
             </template>
+        </section>
+
+        <section class="mt-8 grid gap-3">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <h2 class="text-lg font-semibold">Money in and out{{ moneyClub ? ` · ${clubs.find((c) => c.slug === moneyClub)?.name ?? ''}` : ' · all clubs' }}</h2>
+                <Select
+                    :model-value="moneyClub ?? ''"
+                    label="Club"
+                    :options="[{ value: '', label: 'All clubs' }, ...clubs.map((c) => ({ value: c.slug, label: c.name }))]"
+                    @update:model-value="moneyFor"
+                />
+            </div>
+            <div class="grid gap-4 lg:grid-cols-2">
+                <MoneyChart title="This session, month by month" :rows="money.monthly" />
+                <MoneyChart title="Year by year" :rows="money.yearly" />
+            </div>
+            <p class="text-xs text-ink-muted">Fund withdrawals are advances, not expenses, so they are not counted here; the purchases they pay for are.</p>
         </section>
 
         <section class="mt-8 grid gap-3">

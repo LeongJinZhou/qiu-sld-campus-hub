@@ -1,15 +1,111 @@
+<div align="center">
+
+<img src="public/brand/student-activity-black.png" alt="QIU Student Activity" height="72">
+
 # QIU SLD Campus Hub
 
-**Student Life Division portal for Quest International University (QIU), Ipoh.**
-An Instagram-style social face for clubs and student life, plus a back-office portal that turns every official SLD template into a web form that prints back in the exact official layout, with digital approval chains.
+**The Student Life Division portal for Quest International University (QIU), Ipoh.**
 
-> Core principle: **nobody types a fact the system already knows.** Identity, programme, year group, positions, club and event details are pulled from university records and locked.
+An Instagram-style home for clubs and student life, plus a back office that turns every official SLD template into a
+web form, routes it through digital approval chains, and prints it back in the exact official layout.
+
+[**Live demo →**](https://qiu-sld-campus-hub.onrender.com)
 
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php&logoColor=white)
 ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
-![Pest](https://img.shields.io/badge/tests-Pest-F28D1A)
+![Tests](https://img.shields.io/badge/tests-2%2C800%2B_Pest-F28D1A)
+![Render](https://img.shields.io/badge/deployed_on-Render-46E3B7?logo=render&logoColor=white)
+
+</div>
+
+> Core principle: **nobody types a fact the system already knows.** Identity, programme, year group, positions, club and event
+> details come from university records and are locked.
+
+## A look inside
+
+| Student feed | Event ticket | Club page |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/feed.png" width="240" alt="Feed with an approved event post"> | <img src="docs/screenshots/ticket.png" width="240" alt="Animated event ticket with QR"> | <img src="docs/screenshots/club.png" width="240" alt="Club profile with follow and join"> |
+
+| AGM: the year in review, compiled automatically |
+| :---: |
+| <img src="docs/screenshots/agm-year.png" alt="AGM year in review: events, weekly activities, money by month and category, documents"> |
+
+| SLD submissions tracker | SLD club finance |
+| :---: | :---: |
+| <img src="docs/screenshots/sld-tracker.png" alt="What every club has submitted and what is missing"> | <img src="docs/screenshots/sld-finance.png" alt="Monthly and yearly income and expenses, balances"> |
+
+| SLD view of a club's members and committee fees | Role-aware assistant |
+| :---: | :---: |
+| <img src="docs/screenshots/sld-members.png" alt="Members with committee fee status, inside the admin portal"> | <img src="docs/screenshots/assistant.png" width="240" alt="Assistant answering only from records the person may open"> |
+
+## How it works
+
+### An event, from idea to archive
+
+```mermaid
+flowchart LR
+    A[Committee drafts proposal<br/>live, autosaved] --> B[Preparer signs]
+    B --> C[Advisor signs]
+    C --> D{SLD}
+    D -- needs Dean / COO / Registrar --> P[Export · sign on paper<br/>upload scan · tick signers]
+    P --> E
+    D -- approves --> E[Approved 🎉]
+    D -- marks parts --> R[Returned to fix] --> B
+    E --> F[Posted to the feed<br/>followers notified]
+    E --> G[Registration · tickets · QR attendance]
+    G --> H[Completion package<br/>photos · post mortem · finance]
+    H --> I[SLD tracker]
+```
+
+A late proposal (under the 14-day lead time) or a budget deficit needs a written reason, and SLD must approve it explicitly. That decision is recorded with the signature.
+
+### A club's year
+
+```mermaid
+flowchart LR
+    N[New club application<br/>President → Advisor → SLD] --> O[Club opens with<br/>committee and advisor]
+    O --> W[Weekly activities<br/>minutes + 3 photos]
+    O --> EV[Events]
+    W & EV --> Y[AGM: year in review<br/>report · election · package]
+    Y --> K[SLD acknowledges<br/>archive ZIP built]
+    K --> HO[SLD starts handover<br/>new committee: view-only training]
+    HO --> T[Overlap ends: new committee in charge<br/>old committee thanked + certificates]
+```
+
+### Money
+
+```mermaid
+flowchart LR
+    M[Membership payment<br/>receipt checked once across all clubs] --> L[(Club ledger)]
+    WD[Fund withdrawal<br/>Treasurer → President → Advisor → SLD] --> FI[Finance transfers<br/>within 14 days, else flagged]
+    FI --> BI[Treasurer uploads bank-in] --> SC[SLD confirms] --> L
+    PU[Event purchases<br/>receipt read by AI] --> L
+```
+
+### Architecture
+
+```mermaid
+flowchart TB
+    subgraph Browser
+        V[Vue 3 + Inertia · TypeScript<br/>installable PWA]
+    end
+    subgraph Laravel
+        C[Thin controllers + form requests] --> S[Services: business rules]
+        C --> PO[Policies: every permission server-side]
+        S --> Q[Queued jobs: AI drafting, archives, PDFs]
+    end
+    V <--> C
+    S --> DB[(MySQL / SQLite)]
+    S --> CS[(camsys: read-only<br/>student records)]
+    S --> ST[Private storage<br/>signed, expiring links]
+    Q --> AI[Claude: drafting, receipts, assistant]
+    Q --> LO[LibreOffice · PhpWord · python-pptx<br/>official template output]
+    C --> G[Google: sign-in, Calendar, Meet]
+```
 
 ## Features
 
@@ -41,6 +137,21 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 - AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance
 - Elections: nominations with full-term check, one vote per position, SLD flags, results into the AGM Report, role handover on 1 July
 - Annual Activities Report (12) as PPTX/PDF from the official template, AI-written event details, SLD themes; AGM package checklist
+- Approval routes per the spec: proposals Preparer → Advisor → SLD (final); withdrawals Treasurer → President → Advisor → SLD, then Finance transfers and the Treasurer uploads the bank-in receipt
+- SLD rules editable in Settings: proposal lead time (14 days), minimum photos (3), Finance transfer deadline (14 days), handover overlap (7 days). A late proposal or a budget deficit needs a reason that SLD explicitly approves, and the approval is recorded
+- Evidence photos required for weekly activity reports, AGMs and finished events. Event photos download as a ZIP named `Club_Event_YYYYMMDD_01.jpg`
+- After SLD acknowledges the AGM, a yearly archive ZIP is built (AGM, finance, members, annual report, events, weekly reports, photos), visible only to the club and SLD
+- Handover started by SLD after the acknowledged AGM: the incoming committee gets view-only training access during the overlap
+- SLD submissions tracker: weekly reports missing by month, incomplete event completion packages, AGM state, overdue transfers. Finance has monthly and yearly income/expense charts for one club or all clubs
+- One calendar: approved events plus my meetings, weekly activities, weekly-report due dates and AGMs, with a whole-year view
+- New-club registration: the proposed President applies and signs → the advisor signs → SLD approves. The club, its committee and its advisor only exist after approval
+- Role-aware assistant: answers only from records the person may open, links to them, and keeps a private history the person can delete
+- Report and long forms save drafts automatically (on the server for reports, on the device for new requests); every submission ends with one sign-and-confirm step
+- Higher-authority signatures on paper at SLD's step: choose the signatories, export the official document, upload the signed scan and tick who signed. The final approval opens only when everyone is ticked, and it ends with an approval animation
+- AGM "year in review" compiled automatically for that session only: events with turnout and completion state, weekly activities, money by month and category, and every AGM document
+- When the handover overlap ends, the outgoing committee loses access and each member gets a thank-you and their committee certificate
+- SLD views a club's members and committee fee status (paid, not paid, being checked) inside the admin portal; advisors and committees see the same on the club page
+- Light and dark mode belong to each account, never the device, so a shared phone never shows the previous person's theme
 
 ## Tech stack
 
@@ -52,6 +163,14 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 | Auth | Google OAuth (Laravel Socialite), spatie/laravel-permission |
 | Documents | PhpWord, PhpSpreadsheet, python-pptx, LibreOffice headless |
 | Tests | Pest |
+
+**Backend choice vs the original tech spec.** The spec named a Python backend with MySQL. This project uses Laravel (PHP) with MySQL/MariaDB in production and SQLite locally. It covers the same requirements:
+- The same relational database design.
+- The same REST-style endpoints, served through Inertia.
+- Background jobs and a daily scheduler.
+- Python is still used where it is the better tool (`python-pptx` for the annual report).
+
+Rewriting the backend in Python would change nothing for users and would put the tested behaviour at risk (over 1,500 automated tests), so no rewrite is planned.
 
 ## Getting started
 

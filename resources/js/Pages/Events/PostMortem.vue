@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AutosaveNote from '@/Components/forms/AutosaveNote.vue';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import DynamicTable from '@/Components/forms/DynamicTable.vue';
 import FormSection from '@/Components/forms/FormSection.vue';
@@ -8,6 +9,7 @@ import Icon from '@/Components/ui/Icon.vue';
 import Modal from '@/Components/ui/Modal.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useAutosave } from '@/composables/useAutosave';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { copy } from '@/lib/clone';
 import { Head, Link, useForm, usePoll } from '@inertiajs/vue3';
@@ -33,6 +35,7 @@ const body = () => ({ rows: form.rows, recommendations: form.recommendations });
 const save = (): void => form.transform(body).put(url, { preserveScroll: true });
 const suggest = (): void => form.transform(body).post(`${url}/suggest`, { preserveScroll: true });
 const suggesting = computed(() => props.document.ai === 'pending');
+const autosaved = useAutosave(url, body, () => props.document.editable && !suggesting.value, () => form.processing);
 usePoll(2500, { only: ['document'], onSuccess: () => { if (!suggesting.value) { form.rows = copy(props.document.data.rows); form.recommendations = [...props.document.data.recommendations]; } } }, { autoStart: suggesting.value });
 
 const recRows = computed({
@@ -96,7 +99,8 @@ const submit = (): void => form.post(`${url}/submit`, { preserveScroll: true, on
                 <p class="text-xs text-ink-muted">AI only fills empty improvement and recommendation boxes; edit anything it writes.</p>
             </FormSection>
 
-            <div v-if="document.editable" class="flex justify-end gap-2">
+            <div v-if="document.editable" class="flex flex-wrap justify-end gap-2">
+                    <AutosaveNote :state="autosaved" class="mr-auto self-center" />
                 <Button variant="secondary" :loading="form.processing" @click="save">Save draft</Button>
                 <Button @click="signing = true">Sign &amp; submit</Button>
             </div>

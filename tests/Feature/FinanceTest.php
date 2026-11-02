@@ -111,7 +111,7 @@ it('runs an event withdrawal: event Treasurer signs, Advisor, SLD, Finance, bank
     expect($document->status)->toBe(DocumentStatus::Draft)->and($eventTreasurer->notifications()->count())->toBe(1);
 
     $this->actingAs($eventTreasurer)->post("/withdrawals/{$document->id}/sign", ['signature' => signaturePng(), 'signature_strokes' => signatureStrokes(), 'bank_confirmed' => '1'])->assertSessionHasNoErrors();
-    expect($document->approvals()->orderBy('step_no')->pluck('role')->all())->toBe([ChainRole::Treasurer, ChainRole::Advisor, ChainRole::SldOfficer]);
+    expect($document->approvals()->orderBy('step_no')->pluck('role')->all())->toBe([ChainRole::Treasurer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer]);
     approveRemainingSteps($document);
     expect($document->fresh()->finance_stage)->toBe('awaiting_finance')->and(LedgerEntry::where('category', 'withdrawal')->count())->toBe(0);
 

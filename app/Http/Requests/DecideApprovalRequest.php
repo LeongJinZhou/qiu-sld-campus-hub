@@ -17,6 +17,7 @@ class DecideApprovalRequest extends FormRequest
             'comment' => ['exclude_if:decision,approve', 'nullable', 'required_without:sections', 'string', 'max:2000'],
             'no_problems' => ['exclude_unless:decision,approve', 'accepted'],
             'sections' => ['exclude_if:decision,approve', 'nullable', 'array', 'max:20'],
+            'accept_exceptions' => ['nullable', 'boolean'],
             'sections.*.key' => ['required', 'string', 'max:40', 'distinct'],
             'sections.*.note' => ['required', 'string', 'max:500'],
             'signature' => ['nullable', 'required_if:decision,approve', 'string'],

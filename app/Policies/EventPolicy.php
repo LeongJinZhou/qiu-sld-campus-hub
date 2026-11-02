@@ -18,7 +18,7 @@ class EventPolicy
     /** Club committee (current session) or SLD can start an event proposal. */
     public function create(User $user, Club $club): bool
     {
-        return $user->isSldAdmin() || $this->roles->belongsToClub($user, $club, $this->sessions->current());
+        return $user->isSldAdmin() || $this->roles->actsForClub($user, $club, $this->sessions->current());
     }
 
     /** Approved events are public to signed-in users; drafts only to organisers, SLD and people in its approval chain. */
@@ -46,7 +46,7 @@ class EventPolicy
     public function organises(User $user, Event $event): bool
     {
         return $user->isSldAdmin()
-            || $this->roles->belongsToClub($user, $event->club, $event->session)
+            || $this->roles->actsForClub($user, $event->club, $event->session)
             || RoleAssignment::where('scope_type', ScopeType::Event)->where('scope_id', $event->id)->where('user_id', $user->id)->exists();
     }
 }

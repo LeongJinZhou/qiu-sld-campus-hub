@@ -3,8 +3,14 @@
 namespace App\Services\Calendar;
 
 use App\Enums\DocumentStatus;
+use App\Enums\MembershipStatus;
+use App\Models\Agm;
 use App\Models\Event;
+use App\Models\Meeting;
+use App\Models\Membership;
+use App\Models\RoleAssignment;
 use App\Models\User;
+use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -40,6 +46,44 @@ class EventCalendar
             'followed' => in_array($event->club_id, $followed, true),
             'google_url' => $this->googleLink($event),
         ];
+    }
+
+    /**
+     * The rest of a person's calendar, shown only to those it concerns: meetings and weekly-report due dates for the
+     * committee and advisor, weekly activities and AGMs for members too, every AGM for SLD.
+     *
+     * @return list<array{key: string, kind: string, title: string, club: string, starts_at: string, ends_at: string, url: string}>
+     */
+    public function personal(User $user, CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $session = app(SessionResolver::class)->current();
+        $runs = RoleAssignment::query()->acting($session, training: true)->where('user_id', $user->id)->pluck('scope_id')->unique();
+        $member = Membership::where('user_id', $user->id)->whereIn('status', [MembershipStatus::Active, MembershipStatus::Grace])->pluck('club_id');
+        $clubs = $runs->merge($member)->unique();
+        $items = [];
+        foreach (Meeting::with('club', 'minutes')->whereIn('club_id', $clubs)->where('starts_at', '<', $to)->where('ends_at', '>=', $from->subDays(8))->get() as $m) {
+            $isCommittee = $runs->contains($m->club_id);
+            if ($m->kind === 'committee' && ! $isCommittee) {
+                continue;
+            }
+            if ($m->ends_at->gte($from)) {
+                $items[] = ['key' => "m{$m->id}", 'kind' => $m->kind === 'activity' ? 'activity' : 'meeting', 'title' => $m->title, 'club' => $m->club->name,
+                    'starts_at' => $m->starts_at->toIso8601String(), 'ends_at' => $m->ends_at->toIso8601String(), 'url' => route('meetings.show', $m)];
+            }
+            // The weekly activity report is due a week after the activity, until it is submitted.
+            $due = $m->ends_at->copy()->addDays(7)->setTime(23, 59);
+            if ($m->kind === 'activity' && $isCommittee && ! in_array($m->minutes?->status, [DocumentStatus::InReview, DocumentStatus::Approved], true) && $due->between($from, $to)) {
+                $items[] = ['key' => "r{$m->id}", 'kind' => 'report_due', 'title' => "Weekly report due: {$m->title}", 'club' => $m->club->name,
+                    'starts_at' => $due->copy()->setTime(23, 0)->toIso8601String(), 'ends_at' => $due->toIso8601String(), 'url' => route('meetings.show', $m)];
+            }
+        }
+        $agms = Agm::with('club')->where('starts_at', '<', $to)->where('ends_at', '>=', $from)->when(! $user->isSldAdmin(), fn ($q) => $q->whereIn('club_id', $clubs))->get();
+        foreach ($agms as $a) {
+            $items[] = ['key' => "a{$a->id}", 'kind' => 'agm', 'title' => "AGM · {$a->club->name}", 'club' => $a->club->name,
+                'starts_at' => $a->starts_at->toIso8601String(), 'ends_at' => $a->ends_at->toIso8601String(), 'url' => route('agm.show', $a->club)];
+        }
+
+        return $items;
     }
 
     /** "Add to Google Calendar" for one event. */

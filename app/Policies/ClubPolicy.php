@@ -36,13 +36,13 @@ class ClubPolicy
     public function update(User $user, Club $club): bool
     {
         return $user->isSldAdmin()
-            || ($club->isTransferred() && $this->roles->belongsToClub($user, $club, $this->sessions->current()));
+            || ($club->isTransferred() && $this->roles->actsForClub($user, $club, $this->sessions->current()));
     }
 
     /** Posts, stories, highlights, gallery and FAQ: the club's own people and SLD. */
     public function publish(User $user, Club $club): bool
     {
-        return $this->viewInternal($user, $club);
+        return $user->isSldAdmin() || $this->roles->actsForClub($user, $club, $this->sessions->current());
     }
 
     /**
@@ -58,6 +58,14 @@ class ClubPolicy
     /** Members, documents and finance tabs (later phases): committee, advisor and SLD only. */
     public function viewInternal(User $user, Club $club): bool
     {
-        return $user->isSldAdmin() || $this->roles->belongsToClub($user, $club, $this->sessions->current());
+        if ($user->isSldAdmin()) {
+            return true;
+        }
+        $session = $this->sessions->current();
+
+        // The incoming committee's handover training access is view-only: it opens pages, never changes anything.
+        return request()->isMethodSafe()
+            ? $this->roles->belongsToClub($user, $club, $session)
+            : $this->roles->actsForClub($user, $club, $session);
     }
 }

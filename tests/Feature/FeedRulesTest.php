@@ -83,3 +83,12 @@ it('shows only the last 7 days in full and folds older posts by fortnight, month
         ->and(app(FeedQuery::class)->bucket($this->student, 'y:'.now()->subYear()->year))->toHaveCount(1)
         ->and(app(FeedQuery::class)->bucket($this->student, 'nonsense'))->toHaveCount(0);
 });
+
+it('shows the real like count and the viewer\'s own like on the feed after liking', function () {
+    $p = $this->club->posts()->create(['type' => 'general', 'caption' => 'Like me', 'published_at' => now(), 'created_at' => now()]);
+    $this->actingAs($this->student)->post("/posts/{$p->id}/like");
+    $this->actingAs($this->president)->post("/posts/{$p->id}/like");
+
+    $this->actingAs($this->student)->get('/feed')->assertInertia(fn (Assert $page) => $page
+        ->where('posts.data.0.likes_count', 2)->where('posts.data.0.liked', true));
+});

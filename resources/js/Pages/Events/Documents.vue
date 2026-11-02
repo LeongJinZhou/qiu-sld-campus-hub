@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import EvidencePhotos from '@/Components/reports/EvidencePhotos.vue';
 import Badge from '@/Components/ui/Badge.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 
 const props = defineProps<{
     event: { slug: string; name: string };
+    evidence: { type: string; id: number; minimum: number; photos: { id: number | null; url: string }[] };
     items: { id: number; label: string; due_on: string; overdue: boolean; submitted_at: string | null; file_name: string | null; file_url: string | null }[];
 }>();
 
@@ -30,7 +32,9 @@ function upload(id: number, event: Event): void {
                     </div>
                     <div class="flex items-center gap-3">
                         <a v-if="item.file_url" :href="item.file_url" class="text-xs text-brand-blue">{{ item.file_name }}</a>
-                        <Badge :tone="item.submitted_at ? 'success' : item.overdue ? 'danger' : 'neutral'">{{ item.submitted_at ? `Submitted ${item.submitted_at}` : item.overdue ? 'Overdue' : 'Pending' }}</Badge>
+                        <Badge :tone="item.submitted_at ? 'success' : item.overdue ? 'danger' : 'neutral'">{{
+                            item.submitted_at ? `Submitted ${item.submitted_at}` : item.overdue ? 'Overdue' : 'Pending'
+                        }}</Badge>
                         <label class="cursor-pointer rounded-control border border-line px-3 py-1.5 text-xs font-medium hover:bg-surface-muted">
                             {{ item.submitted_at ? 'Replace' : 'Upload' }}
                             <input type="file" class="sr-only" @change="upload(item.id, $event)" />
@@ -38,6 +42,8 @@ function upload(id: number, event: Event): void {
                     </div>
                 </li>
             </ul>
+            <EvidencePhotos :evidence="evidence" can-edit title="Event photos" />
+            <a :href="`/events/${event.slug}/photos.zip`" class="justify-self-start text-sm font-medium text-brand-blue">Download all photos (ZIP)</a>
         </div>
     </AppLayout>
 </template>

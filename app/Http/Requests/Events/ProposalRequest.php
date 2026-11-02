@@ -70,6 +70,9 @@ class ProposalRequest extends FormRequest
             'budget.*.*.price_sen' => ['required', 'integer', 'min:0', 'max:100000000'],
             'budget.*.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
             'conclusion' => [$required, 'string', 'max:5000'],
+            // Exceptions SLD must approve: why it is submitted late, and why the budget does not break even.
+            'late_reason' => ['nullable', 'string', 'max:1000'],
+            'deficit_reason' => ['nullable', 'string', 'max:1000'],
             'signature' => [$submitting ? 'required' : 'prohibited', 'string'],
             'signature_strokes' => [$submitting ? 'required' : 'prohibited', 'string', 'max:307200'],
         ];
@@ -96,8 +99,8 @@ class ProposalRequest extends FormRequest
                 return;
             }
             $totals = app(ProposalRules::class)->budgetTotals((array) $this->input('budget', []));
-            if (! $totals['covers_expenses']) {
-                $validator->errors()->add('budget', sprintf('Revenue (RM %s) must at least cover expenses (RM %s). Add revenue or cut costs before submitting.',
+            if (! $totals['covers_expenses'] && trim((string) $this->input('deficit_reason')) === '') {
+                $validator->errors()->add('deficit_reason', sprintf('Revenue (RM %s) does not cover expenses (RM %s). Break even, or explain the deficit; SLD decides whether to approve it.',
                     number_format($totals['revenue_sen'] / 100, 2), number_format($totals['expenses_sen'] / 100, 2)));
             }
         }];

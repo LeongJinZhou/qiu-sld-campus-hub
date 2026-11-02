@@ -93,6 +93,10 @@ it('needs attendance before weekly activity minutes, then awards CCA on approval
     $student = Student::where('student_number', 'STD20240010')->first()->ensureUser();
     $this->club->memberships()->create(['user_id' => $student->id, 'status' => 'active']);
     $this->actingAs($this->secretary)->post("/meetings/{$meeting->id}/attendance", ['present' => [$student->id, $this->secretary->id]]);
+    // A weekly activity report also needs photo evidence (SLD minimum).
+    $this->actingAs($this->secretary)->post("/meetings/{$meeting->id}/minutes/submit", [...minutesPayload(), 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])
+        ->assertSessionHas('error', fn ($m) => str_contains($m, 'photos'));
+    withPhotos($meeting);
     $this->actingAs($this->secretary)->post("/meetings/{$meeting->id}/minutes/submit", [...minutesPayload(), 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])
         ->assertSessionHas('success');
     approveRemainingSteps($meeting->minutes);

@@ -47,7 +47,7 @@ class IndemnityPdf
             $word->addSection()->addText('No indemnity forms have been signed yet.');
         }
 
-        $docx = storage_path("app/private/generated/indemnity-{$event->id}-".now()->format('YmdHis').'.docx');
+        $docx = storage_path("app/private/generated/indemnity-{$event->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.docx');
         if (! is_dir(dirname($docx))) {
             mkdir(dirname($docx), 0775, true);
         }

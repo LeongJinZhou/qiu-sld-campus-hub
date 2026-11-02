@@ -22,8 +22,10 @@ class CalendarController extends Controller
         $user = $request->user();
         $asked = QueryInput::month($request, 'month');
         $month = $asked ? CarbonImmutable::createFromFormat('!Y-m', $asked) : CarbonImmutable::now()->startOfMonth();
-        $from = $month->startOfMonth()->startOfWeek(CarbonImmutable::MONDAY);
-        $to = $month->endOfMonth()->endOfWeek(CarbonImmutable::SUNDAY)->addDay()->startOfDay();
+        // Year view (?view=year): the whole calendar year of that month, as a 12-month grid.
+        $yearView = QueryInput::oneOf($request, 'view', ['month', 'year'], 'month') === 'year';
+        $from = $yearView ? $month->startOfYear() : $month->startOfMonth()->startOfWeek(CarbonImmutable::MONDAY);
+        $to = $yearView ? $month->endOfYear()->addDay()->startOfDay() : $month->endOfMonth()->endOfWeek(CarbonImmutable::SUNDAY)->addDay()->startOfDay();
         $mine = $user->eventRegistrations()->pluck('event_id')->all();
         $followed = $user->followedClubs()->pluck('clubs.id')->all();
         $first = Event::where('status', DocumentStatus::Approved)->min('starts_at');
@@ -31,7 +33,9 @@ class CalendarController extends Controller
         return Inertia::render('Calendar/Index', [
             'month' => $month->format('Y-m'),
             'today' => CarbonImmutable::now()->toDateString(),
+            'view' => $yearView ? 'year' : 'month',
             'events' => $calendar->between($from, $to)->map(fn (Event $e) => $calendar->present($e, $user, $mine, $followed))->values(),
+            'items' => $calendar->personal($user, $from, $to),
             'years' => range((int) CarbonImmutable::parse($first ?? now())->year, (int) now()->addYear()->year),
             'feedUrl' => URL::signedRoute('calendar.feed', ['user' => $user->id]),
         ]);

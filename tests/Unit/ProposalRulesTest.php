@@ -5,21 +5,26 @@ use Carbon\CarbonImmutable;
 
 $rules = fn () => new ProposalRules;
 
-it('needs 1.5 months lead time under 60 participants and 3 months from 60', function () use ($rules) {
+it('needs the SLD lead time (14 days by default) before the event', function () use ($rules) {
     $today = CarbonImmutable::parse('2026-10-29');
 
-    expect($rules()->earliestStart(59, $today)->toDateString())->toBe('2026-12-14')
-        ->and($rules()->earliestStart(60, $today)->toDateString())->toBe('2027-01-29')
-        ->and($rules()->earliestStart(200, $today)->toDateString())->toBe('2027-01-29');
+    expect($rules()->earliestStart($today, 14)->toDateString())->toBe('2026-11-12')
+        ->and($rules()->earliestStart($today, 30)->toDateString())->toBe('2026-11-28');
 });
 
-it('rejects an event that starts too soon', function () use ($rules) {
-    $rules()->assertLeadTime(80, CarbonImmutable::parse('2027-01-28 09:00'), CarbonImmutable::parse('2026-10-29'));
-})->throws(DomainException::class, '3 months');
-
-it('accepts an event on the earliest allowed day', function () use ($rules) {
-    $rules()->assertLeadTime(30, CarbonImmutable::parse('2026-12-14 09:00'), CarbonImmutable::parse('2026-10-29'));
+it('rejects an event that starts too soon without a reason, and accepts it with one (SLD then decides)', function () use ($rules) {
+    expect(fn () => $rules()->assertLeadTime(CarbonImmutable::parse('2026-11-05 09:00'), CarbonImmutable::parse('2026-10-29'), null, 14))->toThrow(DomainException::class, '14 days');
+    $rules()->assertLeadTime(CarbonImmutable::parse('2026-11-05 09:00'), CarbonImmutable::parse('2026-10-29'), 'The venue only became free this week.', 14);
+    $rules()->assertLeadTime(CarbonImmutable::parse('2026-11-12 09:00'), CarbonImmutable::parse('2026-10-29'), null, 14);
     expect(true)->toBeTrue();
+});
+
+it('lists the exceptions SLD must decide: late submission and budget deficit, with reasons', function () use ($rules) {
+    $data = ['starts_at' => '2026-11-05T09:00', 'late_reason' => 'Venue freed up', 'deficit_reason' => 'Club fund covers it',
+        'budget' => ['revenue' => [], 'expenses' => [['price_sen' => 500, 'quantity' => 2]]]];
+
+    expect(array_column($rules()->exceptions($data, CarbonImmutable::parse('2026-10-29'), 14), 'kind'))->toBe(['late', 'deficit'])
+        ->and($rules()->exceptions([...$data, 'starts_at' => '2026-12-01T09:00', 'budget' => ['revenue' => [], 'expenses' => []]], CarbonImmutable::parse('2026-10-29'), 14))->toBe([]);
 });
 
 it('totals the budget in sen and flags when revenue does not cover expenses', function () use ($rules) {

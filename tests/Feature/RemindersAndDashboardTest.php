@@ -26,7 +26,7 @@ function remindersOn(string $date): int
 it('reminds the event committee 7 days and 1 day before the last day to submit a proposal, once each', function () {
     $event = $this->f['event']->fresh();
     $event->update(['expected_participants' => 40]);
-    $lastDay = CarbonImmutable::parse($event->starts_at)->startOfDay()->subMonthsNoOverflow(1)->subDays(15);
+    $lastDay = CarbonImmutable::parse($event->starts_at)->startOfDay()->subDays(14); // SLD lead time, 14 days by default
 
     expect(remindersOn($lastDay->subDays(7)->toDateString()))->toBe(1)
         ->and(remindersOn($lastDay->subDays(7)->toDateString()))->toBe(0)

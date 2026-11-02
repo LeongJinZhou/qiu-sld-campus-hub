@@ -9,13 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['document_id', 'step_no', 'role', 'approver_user_id', 'decision', 'comment', 'sections', 'due_at', 'decided_at'])]
+#[Fillable(['document_id', 'step_no', 'role', 'approver_user_id', 'decision', 'comment', 'sections', 'paper', 'paper_scan_path', 'due_at', 'decided_at'])]
 class Approval extends Model
 {
     protected function casts(): array
     {
         return [
             'sections' => 'array',
+            'paper' => 'array',
             'role' => ChainRole::class,
             'decision' => ApprovalDecision::class,
             'due_at' => 'datetime',

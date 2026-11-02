@@ -51,7 +51,8 @@ class ElectionController extends Controller
                 'nominations' => [$election->nominations_open_at->toIso8601String(), $election->nominations_close_at->toIso8601String()],
                 'voting' => [$election->voting_open_at->toIso8601String(), $election->voting_close_at->toIso8601String()],
                 'flags' => $manages ? $this->elections->flags($election) : [],
-                'handover_on' => $election->handoverOn()->toDateString(),
+                'handover_on' => $election->handoverOn()?->toDateString(),
+                'handover_started' => $election->handover_started_at !== null,
                 'handed_over' => $election->handed_over_at !== null,
                 'vote_changes' => Elections::VOTE_CHANGES,
                 'positions' => $election->positions()->with(['candidates.user.student', 'candidates' => fn ($q) => $q->withCount('votes')])->get()->map(fn (ElectionPosition $p) => [
@@ -170,6 +171,6 @@ class ElectionController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Results published. The new committee takes over in '.Elections::HANDOVER_DAYS.' days; the results are in the AGM Report (6.0 and 7.0).');
+        return back()->with('success', 'Results published. SLD starts the handover after acknowledging the AGM; the results are in the AGM Report (6.0 and 7.0).');
     }
 }

@@ -3,6 +3,7 @@ import CommitteeFeePopup from '@/Components/payments/CommitteeFeePopup.vue';
 import GuidedTour from '@/Components/ui/GuidedTour.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Icon, { type IconName } from '@/Components/ui/Icon.vue';
+import Celebration from '@/Components/ui/Celebration.vue';
 import Toast from '@/Components/ui/Toast.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { useIntervalFn } from '@vueuse/core';
@@ -28,11 +29,12 @@ const items = computed<NavItem[]>(() => [
     { label: 'Search', icon: 'search', href: '/search', match: '/search' },
     { label: 'Activities', icon: 'ticket', href: '/activities', match: '/activities' },
     { label: 'Calendar', icon: 'calendar', href: '/calendar', match: '/calendar' },
+    { label: 'Assistant', icon: 'sparkles', href: '/assistant', match: '/assistant' },
     { label: 'Notifications', icon: 'bell', href: '/notifications', match: '/notifications', badge: (nav.value?.unread ?? 0) + (nav.value?.actions ?? 0) },
     ...(nav.value?.isStaff ? [{ label: 'Approvals', icon: 'check' as const, href: '/approvals', match: '/approvals' }] : []),
     { label: 'Profile', icon: 'user', href: '/me', match: '/me' },
 ]);
-const mobileItems = computed(() => items.value.filter((i) => !['Approvals', 'Calendar'].includes(i.label)));
+const mobileItems = computed(() => items.value.filter((i) => !['Approvals', 'Calendar', 'Assistant'].includes(i.label)));
 // Whole path segments only: /meetings must not light up /me (Profile).
 const isActive = (item: NavItem): boolean => {
     const path = page.url.split(/[?#]/)[0] ?? '';
@@ -49,6 +51,7 @@ const logout = (): void => router.post('/logout');
 <template>
     <div class="min-h-dvh bg-surface-muted md:grid md:grid-cols-[4.5rem_minmax(0,1fr)] lg:grid-cols-[15rem_minmax(0,1fr)]">
         <Toast />
+        <Celebration :text="page.props.flash.celebrate" />
         <CommitteeFeePopup />
         <GuidedTour />
 
@@ -108,6 +111,7 @@ const logout = (): void => router.post('/logout');
                     <span class="whitespace-nowrap font-bold"><span class="text-gradient-warm">Campus</span> <span class="text-gradient-cool">Hub</span></span>
                 </Link>
                 <div class="flex items-center gap-4">
+                    <Link href="/assistant" aria-label="Assistant"><Icon name="sparkles" /></Link>
                     <Link v-if="nav?.isStaff" href="/approvals" aria-label="Approvals"><Icon name="check" /></Link>
                     <Link v-if="nav?.isAdmin" href="/admin" aria-label="SLD Admin"><Icon name="shield" /></Link>
                 </div>

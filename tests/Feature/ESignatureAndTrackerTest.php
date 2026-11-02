@@ -47,7 +47,7 @@ it('reports where the proposal is and whose approval it waits for', function () 
 
     expect($progress)->toMatchArray([
         'done' => 1,
-        'total' => 7,
+        'total' => 3,
         'status' => 'in_review',
         'current_role' => 'Advisor',
         'waiting_on' => ['Dr Lim Siew Ling'],

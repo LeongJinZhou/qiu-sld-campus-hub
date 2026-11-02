@@ -51,7 +51,7 @@ const follow = (): void => router.post(`/clubs/${props.club.slug}/follow`, {}, {
                         club.status === 'inactive' ? 'Inactive' : 'At risk'
                     }}</Badge>
                 </div>
-                <dl class="grid grid-cols-4 gap-1 text-center sm:max-w-md sm:text-left">
+                <dl class="flex justify-between gap-2 text-center sm:max-w-md sm:justify-start sm:gap-8 sm:text-left">
                     <div
                         v-for="stat in [
                             { label: 'events', value: counts.events },

@@ -3,31 +3,52 @@
 namespace App\Services\Events;
 
 use App\Models\Setting;
+use App\Services\SldRules;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use DomainException;
 
-/** Lead-time, budget and CCA rules for event proposals. */
+/** Lead-time, budget, exception and CCA rules for event proposals. */
 class ProposalRules
 {
-    public const LARGE_EVENT_PARTICIPANTS = 60;
-
-    /** < 60 participants: 1.5 months ahead; 60 or more: 3 months ahead. */
-    public function earliestStart(int $expectedParticipants, CarbonInterface $submittedOn): CarbonInterface
+    /** Earliest event date for a proposal submitted on $submittedOn: SLD's lead time (default 14 days) ahead. */
+    public function earliestStart(CarbonInterface $submittedOn, ?int $leadDays = null): CarbonInterface
     {
-        $date = $submittedOn->copy()->startOfDay();
-
-        return $expectedParticipants >= self::LARGE_EVENT_PARTICIPANTS
-            ? $date->addMonthsNoOverflow(3)
-            : $date->addMonthsNoOverflow(1)->addDays(15);
+        return $submittedOn->copy()->startOfDay()->addDays($leadDays ?? app(SldRules::class)->get('proposal_lead_days'));
     }
 
-    public function assertLeadTime(int $expectedParticipants, CarbonInterface $startsAt, CarbonInterface $submittedOn): void
+    /**
+     * A proposal inside the lead time needs a reason; SLD then decides (it is shown to SLD as an exception to approve).
+     */
+    public function assertLeadTime(CarbonInterface $startsAt, CarbonInterface $submittedOn, ?string $lateReason, ?int $leadDays = null): void
     {
-        $earliest = $this->earliestStart($expectedParticipants, $submittedOn);
-        if ($startsAt->lt($earliest)) {
-            $lead = $expectedParticipants >= self::LARGE_EVENT_PARTICIPANTS ? '3 months' : '1.5 months';
-            throw new DomainException("Events with this many participants must be submitted at least {$lead} ahead. The earliest date is {$earliest->format('j M Y')}.");
+        $earliest = $this->earliestStart($submittedOn, $leadDays);
+        if ($startsAt->lt($earliest) && trim((string) $lateReason) === '') {
+            $days = $leadDays ?? app(SldRules::class)->get('proposal_lead_days');
+            throw new DomainException("Proposals are submitted at least {$days} days before the event (earliest {$earliest->format('j M Y')}). To submit later, give a reason; SLD decides.");
         }
+    }
+
+    /**
+     * Exceptions SLD must approve explicitly: a late submission and a budget that does not break even, each with the
+     * committee's reason.
+     *
+     * @param  array<string, mixed>  $data
+     * @return list<array{kind: string, label: string, reason: string}>
+     */
+    public function exceptions(array $data, CarbonInterface $submittedOn, ?int $leadDays = null): array
+    {
+        $out = [];
+        $starts = rescue(fn () => CarbonImmutable::parse((string) ($data['starts_at'] ?? '')), null, false);
+        if ($starts && ($data['starts_at'] ?? '') !== '' && $starts->lt($this->earliestStart($submittedOn, $leadDays))) {
+            $out[] = ['kind' => 'late', 'label' => 'Submitted inside the '.($leadDays ?? app(SldRules::class)->get('proposal_lead_days')).'-day lead time', 'reason' => (string) ($data['late_reason'] ?? '')];
+        }
+        $totals = $this->budgetTotals((array) ($data['budget'] ?? []));
+        if (! $totals['covers_expenses']) {
+            $out[] = ['kind' => 'deficit', 'label' => 'Budget deficit of RM '.number_format(-$totals['profit_sen'] / 100, 2), 'reason' => (string) ($data['deficit_reason'] ?? '')];
+        }
+
+        return $out;
     }
 
     /**

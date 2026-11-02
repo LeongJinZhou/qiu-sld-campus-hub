@@ -89,8 +89,10 @@ const particles = Array.from({ length: 14 }, (_, i) => ({
         <span class="shine" aria-hidden="true" />
 
         <header class="relative">
-            <div v-if="ticket.event.poster_url" class="relative m-3 mb-0 h-32 overflow-hidden rounded-[20px] ring-1 ring-white/30">
-                <img :src="ticket.event.poster_url" alt="" class="poster size-full object-cover object-top" />
+            <!-- The whole poster, never cropped: shown in full over a blurred copy of itself. -->
+            <div v-if="ticket.event.poster_url" class="relative m-3 mb-0 aspect-[16/9] overflow-hidden rounded-[20px] bg-black/20 ring-1 ring-white/30">
+                <img :src="ticket.event.poster_url" alt="" aria-hidden="true" class="poster absolute inset-0 size-full scale-110 object-cover opacity-60 blur-xl" />
+                <img :src="ticket.event.poster_url" alt="" class="relative size-full object-contain" />
             </div>
             <div class="relative px-6 pb-4 pt-4">
                 <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
@@ -136,7 +138,7 @@ const particles = Array.from({ length: 14 }, (_, i) => ({
             </p>
 
             <div class="grid grid-cols-2 gap-3 text-xs">
-                <div><p class="text-ink-muted">Ticket / transaction ID</p><p class="break-all font-mono font-semibold">{{ ticket.order_id ?? '—' }}</p></div>
+                <div><p class="text-ink-muted">Ticket / transaction ID</p><p class="font-mono font-semibold [overflow-wrap:anywhere]">{{ ticket.order_id?.replaceAll('_', '_\u200b') ?? '—' }}</p></div>
                 <div class="text-right">
                     <p class="text-ink-muted">Check-in</p>
                     <p class="font-semibold">
