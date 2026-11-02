@@ -23,7 +23,7 @@ class AgmReportDocx
         $d = $document->data() ?: $this->form->current($document);
         // Submitted versions hold a snapshot of the computed sections; a draft shows today's records.
         $c = $d['computed'] ?? $this->form->computed($document->agm);
-        $output = storage_path("app/private/generated/agm-{$document->id}-".now()->format('YmdHis').'.docx');
+        $output = storage_path("app/private/generated/agm-{$document->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.docx');
 
         return $this->docx->render(self::TEMPLATE, function (TemplateProcessor $t) use ($document, $d, $c): void {
             $t->setValues([

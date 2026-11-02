@@ -32,7 +32,7 @@ class AttendanceListExport
         $preparer = new Signer($signed(ChainRole::Preparer)?->signer_name ?? $secretary?->name, $signed(ChainRole::Preparer)?->position_at_time ?? 'Secretary', $signed(ChainRole::Preparer));
         $reviewer = new Signer($signed(ChainRole::Advisor)?->signer_name ?? $advisor?->name, 'Club Advisor', $signed(ChainRole::Advisor));
 
-        $output = storage_path("app/private/generated/attendance-{$event->id}-".now()->format('YmdHis').'.xlsx');
+        $output = storage_path("app/private/generated/attendance-{$event->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.xlsx');
 
         return $this->xlsx->render(self::TEMPLATE, function (Spreadsheet $book) use ($event, $participants, $committee, $preparer, $reviewer): void {
             $sheet = $book->getSheetByName('Participant');
