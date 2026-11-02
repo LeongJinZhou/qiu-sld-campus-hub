@@ -7,11 +7,12 @@ use App\Enums\DocumentType;
 use App\Events\DocumentApproved;
 use App\Models\EventDocumentItem;
 use App\Models\Post;
+use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
 use App\Services\Social\SocialNotifier;
 
 /**
- * On final proposal approval: feed post, CCA values locked in, document checklist,
+ * On final proposal approval: feed post (and the committee told it is live), CCA values locked in, document checklist,
  * registration and QR attendance unlocked (fund withdrawal checks approval status in Phase 3).
  */
 class EventApprovalActions
@@ -39,6 +40,9 @@ class EventApprovalActions
         ]);
         if ($post->wasRecentlyCreated) {
             app(SocialNotifier::class)->tellFollowers($post);
+            // The committee is told the announcement is live, with the post to share or add photos to.
+            $document->creator?->notify(new DocumentNotification("{$event->name} is on the feed",
+                'Your approved event has been announced to everyone. Open it to share it or add photos.', route('posts.show', $post)));
         }
 
         foreach (EventDocumentItem::KINDS as $kind => [, $days]) {
