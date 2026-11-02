@@ -134,6 +134,8 @@ it('gives one ticket per position, changeable 3 times, no self-votes, alumni onl
         ->and($roles->actsForClub($winner, $club, $now))->toBeFalse()     // but not act
         ->and($winner->can('treasure', $club))->toBeFalse()
         ->and($roles->actsForClub($this->secretary, $club, $now))->toBeTrue();
+    $this->actingAs($winner)->get("/clubs/{$club->slug}/meetings")->assertOk();                            // training opens pages
+    $this->actingAs($winner)->post("/clubs/{$club->slug}/meetings", ['kind' => 'committee'])->assertForbidden(); // but changes nothing
 
     $this->travelTo($election->fresh()->handoverOn()->addMinutes(30));
     $this->artisan('schedule:test', ['--name' => 'election-handover'])->assertSuccessful();

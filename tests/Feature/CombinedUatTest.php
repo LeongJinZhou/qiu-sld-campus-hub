@@ -380,6 +380,7 @@ it('runs weekly activity minutes AGM elections report and handover in one sessio
     $meeting = $this->club->meetings()->firstOrFail();
     $this->travelTo($meeting->ends_at->addMinute());
     uatCall($this, $this->secretary, 'post', '/meetings/'.$meeting->id.'/attendance', ['present' => array_column(array_map(fn ($u) => ['id' => $u->id], $members), 'id')]);
+    withPhotos($meeting); // Spec change: a weekly activity report needs SLD's minimum evidence photos (default 3).
     uatCall($this, $this->secretary, 'post', '/meetings/'.$meeting->id.'/minutes/submit', [
         'purpose' => 'UAT weekly training', 'summary' => ['Training completed'], 'actions' => [], 'notes' => '',
         'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(),
@@ -407,6 +408,7 @@ it('runs weekly activity minutes AGM elections report and handover in one sessio
     }
     $this->travelTo($election->voting_close_at->addMinute());
     uatCall($this, $this->secretary, 'post', '/elections/'.$election->id.'/publish');
+    withPhotos($agm); // Spec change: the AGM report needs SLD's minimum evidence photos (default 3).
     uatCall($this, $this->secretary, 'post', '/agms/'.$agm->id.'/report/submit', [
         'objectives' => ['Review achievements', 'Elect incoming committee'], 'speech' => ['Welcome to the UAT AGM'],
         'agenda' => [['start' => '16:00', 'end' => '18:00', 'item' => 'Review and election']], 'adjournment' => '18:00',
@@ -435,7 +437,13 @@ it('runs weekly activity minutes AGM elections report and handover in one sessio
         $this->uat['exports'][] = $target;
     }
     $this->flushSession();
-    $this->travelTo($election->handoverOn()->addHour());
+    // Spec change: the handover is started by SLD once it has acknowledged the AGM (package submitted first), with
+    // the SLD-configured overlap; it is no longer automatic seven days after publication.
+    uatCall($this, $this->secretary, 'post', '/agms/'.$agm->id.'/package');
+    $sld = sldOfficer();
+    uatCall($this, $sld, 'post', '/admin/agms/'.$agm->id.'/acknowledge');
+    uatCall($this, $sld, 'post', '/admin/elections/'.$election->id.'/handover');
+    $this->travelTo($election->fresh()->handoverOn()->addHour());
     $this->artisan('schedule:test', ['--name' => 'election-handover'])->assertSuccessful();
     expect($this->secretary->can('viewInternal', $this->club))->toBeFalse()
         ->and($members[0]->can('viewInternal', $this->club))->toBeTrue()

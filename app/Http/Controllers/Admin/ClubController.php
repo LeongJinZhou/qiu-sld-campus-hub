@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ClubRequest;
 use App\Models\AcademicSession;
 use App\Models\Club;
+use App\Models\ClubApplication;
 use App\Models\ClubCategory;
 use App\Models\Staff;
 use App\Services\AuditLogger;
@@ -42,6 +43,8 @@ class ClubController extends Controller
                 'last_activity' => app(ClubStatusService::class)->lastActivity($club)?->format('j M Y'),
                 'missing' => $compulsory->missing(ScopeType::Club, $club->id, $session->id),
             ]),
+            'applications' => ClubApplication::with('applicant')->whereIn('status', ['advisor', 'sld'])->oldest()->get()
+                ->map(fn (ClubApplication $a) => ['id' => $a->id, 'name' => $a->data['name'], 'applicant' => $a->applicant->name, 'status' => ClubApplication::STATUSES[$a->status], 'ready' => $a->status === 'sld']),
         ]);
     }
 

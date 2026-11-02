@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import EvidencePhotos from '@/Components/reports/EvidencePhotos.vue';
+import AutosaveNote from '@/Components/forms/AutosaveNote.vue';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import DynamicTable from '@/Components/forms/DynamicTable.vue';
 import FormSection from '@/Components/forms/FormSection.vue';
@@ -12,6 +13,7 @@ import Modal from '@/Components/ui/Modal.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useAutosave } from '@/composables/useAutosave';
 import { dateTime } from '@/lib/format';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/vue3';
@@ -76,6 +78,12 @@ const draftWithAi = (): void => {
 // While the AI drafts, refresh until the draft lands, then load it into the form.
 const drafting = computed(() => props.minutes.ai === 'pending');
 usePoll(2500, { only: ['minutes'], onSuccess: () => drafting.value || Object.assign(form, props.minutes.data) }, { autoStart: drafting.value });
+const autosaved = useAutosave(
+    url,
+    () => plain(form.data()),
+    () => props.minutes.editable && !drafting.value,
+    () => form.processing,
+);
 
 const summaryRows = computed({
     get: () => form.summary.map((text) => ({ text })),
@@ -173,6 +181,7 @@ const readOnly = computed(() => !props.minutes.editable);
                 </FormSection>
 
                 <div v-if="minutes.editable" class="flex flex-wrap justify-end gap-2">
+                    <AutosaveNote :state="autosaved" class="mr-auto self-center" />
                     <Button variant="secondary" :loading="form.processing" @click="save">Save draft</Button>
                     <Button @click="signing = true">Sign &amp; submit</Button>
                 </div>

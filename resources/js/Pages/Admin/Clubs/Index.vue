@@ -8,6 +8,7 @@ import { Head, Link } from '@inertiajs/vue3';
 defineProps<{
     session: string;
     clubs: { id: number; slug: string; name: string; category: string | null; managed_by: string; missing: string[]; status: string; last_activity: string | null }[];
+    applications?: { id: number; name: string; applicant: string; status: string; ready: boolean }[];
 }>();
 
 const columns = [
@@ -27,6 +28,15 @@ const columns = [
                 <p class="text-sm text-ink-muted">Session {{ session }}</p>
                 <Link href="/admin/clubs/create"><Button>New club</Button></Link>
             </div>
+            <section v-if="applications?.length" class="grid gap-2 rounded-card border border-line bg-surface p-4 shadow-card">
+                <h2 class="text-sm font-semibold">New club applications</h2>
+                <Link v-for="a in applications" :key="a.id" :href="`/club-applications/${a.id}`" class="flex flex-wrap justify-between gap-2 text-sm hover:underline">
+                    <span
+                        ><strong>{{ a.name }}</strong> · {{ a.applicant }}</span
+                    >
+                    <span :class="a.ready ? 'font-semibold text-brand-blue' : 'text-ink-muted'">{{ a.ready ? 'Ready for your decision' : a.status }}</span>
+                </Link>
+            </section>
             <Table :columns="columns" :rows="clubs" row-key="id">
                 <template #cell-name="{ row }">
                     <Link :href="`/admin/clubs/${row.slug}/edit`" class="font-medium hover:underline">{{ row.name }}</Link>
@@ -35,7 +45,9 @@ const columns = [
                     <Badge :tone="row.managed_by === 'committee' ? 'success' : 'neutral'">{{ row.managed_by === 'committee' ? 'Committee' : 'SLD' }}</Badge>
                 </template>
                 <template #cell-status="{ row }">
-                    <Badge :tone="row.status === 'active' ? 'success' : row.status === 'inactive' ? 'danger' : 'warning'">{{ row.status === 'at_risk' ? 'At risk' : row.status === 'inactive' ? 'Inactive' : 'Active' }}</Badge>
+                    <Badge :tone="row.status === 'active' ? 'success' : row.status === 'inactive' ? 'danger' : 'warning'">{{
+                        row.status === 'at_risk' ? 'At risk' : row.status === 'inactive' ? 'Inactive' : 'Active'
+                    }}</Badge>
                     <span class="ml-2 text-xs text-ink-muted">{{ row.last_activity ? `Last activity ${row.last_activity}` : 'No activity yet' }}</span>
                 </template>
                 <template #cell-missing="{ row }">

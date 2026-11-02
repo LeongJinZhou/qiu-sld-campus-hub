@@ -41,6 +41,16 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 - AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance
 - Elections: nominations with full-term check, one vote per position, SLD flags, results into the AGM Report, role handover on 1 July
 - Annual Activities Report (12) as PPTX/PDF from the official template, AI-written event details, SLD themes; AGM package checklist
+- Approval routes per the spec: proposals Preparer → Advisor → SLD (final); withdrawals Treasurer → President → Advisor → SLD, then Finance transfers and the Treasurer uploads the bank-in receipt
+- SLD rules editable in Settings: proposal lead time (14 days), minimum photos (3), Finance transfer deadline (14 days), handover overlap (7 days). A late proposal or a budget deficit needs a reason that SLD explicitly approves, and the approval is recorded
+- Evidence photos required for weekly activity reports, AGMs and finished events. Event photos download as a ZIP named `Club_Event_YYYYMMDD_01.jpg`
+- After SLD acknowledges the AGM, a yearly archive ZIP is built (AGM, finance, members, annual report, events, weekly reports, photos), visible only to the club and SLD
+- Handover started by SLD after the acknowledged AGM: the incoming committee gets view-only training access during the overlap
+- SLD submissions tracker: weekly reports missing by month, incomplete event completion packages, AGM state, overdue transfers. Finance has monthly and yearly income/expense charts for one club or all clubs
+- One calendar: approved events plus my meetings, weekly activities, weekly-report due dates and AGMs, with a whole-year view
+- New-club registration: the proposed President applies and signs → the advisor signs → SLD approves. The club, its committee and its advisor only exist after approval
+- Role-aware assistant: answers only from records the person may open, links to them, and keeps a private history the person can delete
+- Report and long forms save drafts automatically (on the server for reports, on the device for new requests); every submission ends with one sign-and-confirm step
 
 ## Tech stack
 
@@ -52,6 +62,14 @@ An Instagram-style social face for clubs and student life, plus a back-office po
 | Auth | Google OAuth (Laravel Socialite), spatie/laravel-permission |
 | Documents | PhpWord, PhpSpreadsheet, python-pptx, LibreOffice headless |
 | Tests | Pest |
+
+**Backend choice vs the original tech spec.** The spec named a Python backend with MySQL. This project uses Laravel (PHP) with MySQL/MariaDB in production and SQLite locally. It covers the same requirements:
+- The same relational database design.
+- The same REST-style endpoints, served through Inertia.
+- Background jobs and a daily scheduler.
+- Python is still used where it is the better tool (`python-pptx` for the annual report).
+
+Rewriting the backend in Python would change nothing for users and would put the tested behaviour at risk (over 1,500 automated tests), so no rewrite is planned.
 
 ## Getting started
 

@@ -116,6 +116,9 @@ const peopleHint = computed(() => show('people') && q.value.trim().length < 2);
                     </li>
                 </ul>
             </section>
+            <p v-if="type === 'clubs'" class="text-center text-sm text-ink-muted">
+                Can't find your club? <Link href="/clubs-apply" class="font-medium text-brand-blue hover:underline">Start a new club</Link>
+            </p>
         </div>
     </AppLayout>
 </template>
