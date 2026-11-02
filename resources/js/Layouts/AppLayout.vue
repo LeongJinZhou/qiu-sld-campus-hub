@@ -3,6 +3,7 @@ import CommitteeFeePopup from '@/Components/payments/CommitteeFeePopup.vue';
 import GuidedTour from '@/Components/ui/GuidedTour.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Icon, { type IconName } from '@/Components/ui/Icon.vue';
+import Celebration from '@/Components/ui/Celebration.vue';
 import Toast from '@/Components/ui/Toast.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { useIntervalFn } from '@vueuse/core';
@@ -50,6 +51,7 @@ const logout = (): void => router.post('/logout');
 <template>
     <div class="min-h-dvh bg-surface-muted md:grid md:grid-cols-[4.5rem_minmax(0,1fr)] lg:grid-cols-[15rem_minmax(0,1fr)]">
         <Toast />
+        <Celebration :text="page.props.flash.celebrate" />
         <CommitteeFeePopup />
         <GuidedTour />
 
