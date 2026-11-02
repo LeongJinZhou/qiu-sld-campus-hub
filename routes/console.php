@@ -26,3 +26,8 @@ Schedule::call(fn () => app(ClubStatusService::class)->run(CarbonImmutable::toda
 
 // Election winners take their positions when the new term starts (1 July).
 Schedule::call(fn () => app(Elections::class)->handOverDue(CarbonImmutable::today()))->dailyAt('00:20')->name('election-handover');
+
+// Cron-only hosting (QUEUE_VIA_SCHEDULER=true): drain the queue each minute instead of a long-running worker.
+if (config('sld.queue_via_scheduler')) {
+    Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')->everyMinute()->withoutOverlapping()->name('queue-via-scheduler');
+}
