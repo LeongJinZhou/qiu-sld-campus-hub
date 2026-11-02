@@ -170,7 +170,17 @@
     .animate-float-soft, .animate-shimmer { animation: none; }
 }
 
-/* html5-qrcode camera views: the video fills its frame and the library's own overlay is replaced by ours. */
+/*
+ * html5-qrcode camera views: the video fills its frame and the library's own overlay is replaced by ours.
+ * The library sets position: relative on its container when it starts, which collapsed it to 0 px high: the camera
+ * showed black and the scan box was too small to start. The container is pinned to the frame whatever it sets.
+ */
+.camera-frame > [id] {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
 .camera-frame video {
     position: absolute;
     inset: 0;

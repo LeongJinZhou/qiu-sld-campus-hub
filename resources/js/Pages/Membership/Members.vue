@@ -16,8 +16,21 @@ import { watchDebounced } from '@vueuse/core';
 import { computed, reactive, ref } from 'vue';
 
 type Filters = Record<string, string | number | string[] | string[][] | undefined>;
+interface ClubLine {
+    club: string;
+    club_id: number;
+    club_slug: string;
+    position: string;
+    status: string;
+    payment: string;
+    method: string | null;
+    collected_by: string | null;
+    expires: string | null;
+}
 interface Row {
     id: number | string;
+    /** All clubs (SLD): the person's clubs, one row per person. */
+    clubs?: ClubLine[];
     club: string;
     name: string;
     email: string;
@@ -181,12 +194,52 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 
             <p class="text-xs text-ink-muted">Sorted by {{ sort.map(([k = '', d]) => `${sortFields[k as keyof typeof sortFields] ?? k} ${d === 'asc' ? '↑' : '↓'}`).join(', then ') }} · click a column to sort by it first.</p>
 
-            <div class="overflow-x-auto rounded-card border border-line bg-surface">
+            <!-- All clubs: one row per person, their clubs listed together. -->
+            <div v-if="!club" class="overflow-x-auto rounded-card border border-line bg-surface">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-surface-muted text-left text-xs uppercase tracking-wide text-ink-muted">
                         <tr>
-                            <th v-if="!club" class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('club')">Club</button></th>
                             <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('name')">Name</button></th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('student_number')">Student ID</button></th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('programme')">Programme</button></th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('year_group')">Year</button></th>
+                            <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('club')">Clubs</button></th>
+                            <th class="px-3 py-3 text-right"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('events')">Events</button></th>
+                            <th class="px-3 py-3 text-right"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('cca')">CCA</button></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="r in rows" :key="r.id" class="border-t border-line align-top">
+                            <td class="px-3 py-2"><div class="font-medium">{{ r.name }}</div><div class="text-xs text-ink-muted">{{ r.email }}</div></td>
+                            <td class="px-3 py-2 font-mono text-xs">{{ r.student_number }}</td>
+                            <td class="px-3 py-2">{{ r.programme_short }}</td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ r.year_group }}</td>
+                            <td class="px-3 py-2">
+                                <ul class="grid min-w-[22rem] gap-2">
+                                    <li v-for="c in r.clubs ?? []" :key="c.club_id" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3">
+                                        <span class="min-w-0">
+                                            <Link :href="`/admin/clubs/${c.club_slug}/members`" class="block truncate font-medium hover:underline">{{ c.club }}</Link>
+                                            <span class="block truncate text-xs text-ink-muted">{{ c.position }}<template v-if="c.expires"> · until {{ date(c.expires) }}</template></span>
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <Badge :tone="tone[c.status] ?? 'neutral'">{{ c.status }}</Badge>
+                                            <Badge :tone="tone[c.payment] ?? 'neutral'">{{ c.payment }}</Badge>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </td>
+                            <td class="px-3 py-2 text-right tabular-nums">{{ r.events }}</td>
+                            <td class="px-3 py-2 text-right tabular-nums">{{ r.cca }}</td>
+                        </tr>
+                        <tr v-if="!rows.length"><td colspan="7" class="px-3 py-8 text-center text-ink-muted">No members match.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-else class="overflow-x-auto rounded-card border border-line bg-surface">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-surface-muted text-left text-xs uppercase tracking-wide text-ink-muted">
+                        <tr>
+                                                        <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('name')">Name</button></th>
                             <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('student_number')">Student ID</button></th>
                             <th class="px-3 py-3 font-medium">Position</th>
                             <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('programme')">Programme</button></th>
@@ -200,8 +253,7 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
                     </thead>
                     <tbody>
                         <tr v-for="r in rows" :key="r.id" class="border-t border-line">
-                            <td v-if="!club" class="px-3 py-2">{{ r.club }}</td>
-                            <td class="px-3 py-2"><div class="font-medium">{{ r.name }}</div><div class="text-xs text-ink-muted">{{ r.email }}</div></td>
+                                                        <td class="px-3 py-2"><div class="font-medium">{{ r.name }}</div><div class="text-xs text-ink-muted">{{ r.email }}</div></td>
                             <td class="px-3 py-2 font-mono text-xs">{{ r.student_number }}</td>
                             <td class="px-3 py-2">{{ r.position }}</td>
                             <td class="px-3 py-2">{{ r.programme_short }}</td>

@@ -85,8 +85,8 @@ async function start(): Promise<void> {
                 fps: 8,
                 // Scan the middle of the picture, but photograph the whole frame (QR and cash together).
                 qrbox: (w: number, h: number) => ({
-                    width: Math.round(Math.min(w, h) * 0.6),
-                    height: Math.round(Math.min(w, h) * 0.6),
+                    width: Math.max(50, Math.round(Math.min(w, h) * 0.6)),
+                    height: Math.max(50, Math.round(Math.min(w, h) * 0.6)),
                 }),
                 videoConstraints: {
                     facingMode: "environment",
