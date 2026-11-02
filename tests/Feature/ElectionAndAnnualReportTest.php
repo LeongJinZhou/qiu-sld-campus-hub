@@ -2,11 +2,13 @@
 
 use App\Enums\DocumentStatus;
 use App\Exceptions\PdfConversionFailed;
+use App\Models\Certificate;
 use App\Models\Election;
 use App\Models\GeneratedFile;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Models\Vote;
+use App\Notifications\DocumentNotification;
 use App\Services\Agm\AgmReportForm;
 use App\Services\Agm\Elections;
 use App\Services\Documents\PdfConverter;
@@ -142,6 +144,9 @@ it('gives one ticket per position, changeable 3 times, no self-votes, alumni onl
     expect($election->fresh()->handed_over_at)->not->toBeNull()
         ->and($roles->belongsToClub($this->secretary, $club, $now))->toBeFalse()
         ->and($roles->actsForClub($winner, $club, $now))->toBeTrue();
+    // The outgoing committee is thanked, each with their committee certificate issued.
+    expect(Certificate::where('user_id', $this->secretary->id)->where('kind', 'club_committee')->exists())->toBeTrue();
+    Notification::assertSentTo($this->secretary, DocumentNotification::class, fn ($n) => $n->toArray($this->secretary)['title'] === 'Thank you for your service');
 });
 
 it('blocks publishing while a compulsory position has no candidate', function () {
