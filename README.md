@@ -213,6 +213,8 @@ The hard-audit tests use the in-memory test databases and fake upload disks. The
 
 Combined UAT is opt-in and uses the same isolated databases/disks. It issues over 5,000 sequential in-process requests, retains dummy Excel/Word/PowerPoint exports and reconciliation JSON under `/private/tmp/sld-uat-20261102`, and checks advances versus purchases, empty workbooks and formula injection. Receipt OCR is mocked; QR photo decoding, approval signatures and exports use the application code. This is workflow/volume testing, not a concurrent production benchmark. All scenarios pass.
 
+Cash-payment camera regressions: `node --test tests/Frontend/cash-camera.mjs` covers generated camera IDs, duplicate captures, incorrect QR codes and camera cleanup in both frontends. Test camera permission and capture on a real phone over HTTPS before release.
+
 Deep UAT covers workflow and privacy boundaries (moderation, public profiles, query fuzzing, approvals bound to the signed version, cancellations, account revocation); all cases pass. Frontend contract tests execute the actual calendar, theme and navigation scripts with boundary stubs; they do not verify rendered layouts, keyboard focus, touch interaction or accessibility. Run browser/device UAT separately before release.
 
 ## Security and privacy

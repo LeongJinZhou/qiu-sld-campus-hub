@@ -15,6 +15,8 @@ const state = ref<
     "starting" | "looking" | "steady" | "wrong" | "captured" | "error"
 >("starting");
 let scanner: Html5Qrcode | null = null;
+let disposed = false;
+let capturing = false;
 let hits = 0;
 let lastHit = 0;
 
@@ -22,15 +24,24 @@ const tokenOf = (text: string): string | null =>
     text.match(/\/p\/([A-Za-z0-9_-]+)/)?.[1] ?? null;
 
 function grabFrame(): void {
-    const video = document.querySelector<HTMLVideoElement>(`#${id} video`);
-    if (!video || !video.videoWidth) return;
+    if (disposed || capturing || state.value === "captured") return;
+    const video = document.getElementById(id)?.querySelector("video");
+    if (!video || !video.videoWidth || !video.videoHeight) return;
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.drawImage(video, 0, 0);
+    capturing = true;
     canvas.toBlob(
         (blob) => {
-            if (!blob) return;
+            capturing = false;
+            if (disposed) return;
+            if (!blob) {
+                state.value = "error";
+                return;
+            }
             state.value = "captured";
             void stop();
             emit("capture", blob);
@@ -41,7 +52,7 @@ function grabFrame(): void {
 }
 
 function onScan(text: string): void {
-    if (state.value === "captured") return;
+    if (disposed || capturing || state.value === "captured") return;
     const token = tokenOf(text);
     if (token !== props.expectToken) {
         state.value = "wrong";
@@ -60,9 +71,14 @@ async function stop(): Promise<void> {
     if (scanner?.isScanning) await scanner.stop().catch(() => undefined);
 }
 
-onMounted(async () => {
-    scanner = new Html5Qrcode(id, { verbose: false });
+async function start(): Promise<void> {
+    state.value = "starting";
+    hits = 0;
+    lastHit = 0;
+    await stop();
+    if (disposed) return;
     try {
+        scanner = new Html5Qrcode(id, { verbose: false });
         await scanner.start(
             { facingMode: "environment" },
             {
@@ -81,12 +97,17 @@ onMounted(async () => {
             onScan,
             () => undefined,
         );
-        state.value = "looking";
+        if (disposed) await stop();
+        else state.value = "looking";
     } catch {
-        state.value = "error";
+        if (!disposed) state.value = "error";
     }
+}
+onMounted(() => void start());
+onBeforeUnmount(() => {
+    disposed = true;
+    void stop();
 });
-onBeforeUnmount(() => void stop());
 
 const messages = {
     starting: "Starting the camera…",
@@ -94,7 +115,7 @@ const messages = {
     steady: "QR found — hold still…",
     wrong: `That QR code belongs to someone else. Ask ${props.personName} to show their own QR.`,
     captured: "Photo captured — checking…",
-    error: "Camera unavailable. Allow camera access in your browser and reload this page.",
+    error: "Camera unavailable. Allow camera access in your browser, then try again.",
 };
 </script>
 
@@ -142,6 +163,7 @@ const messages = {
                 {{ messages[state] }}
             </span>
         </div>
+        <Button v-if="state === 'error'" variant="secondary" @click="start">Try camera again</Button>
         <Button
             v-if="
                 state === 'looking' || state === 'steady' || state === 'wrong'

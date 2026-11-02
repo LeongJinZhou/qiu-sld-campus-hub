@@ -18,6 +18,9 @@ interface LiveQrCaptureProps {
 export default function LiveQrCapture({ expectToken, personName, onCapture }: LiveQrCaptureProps) {
     const id = `live-qr-${useId().replace(/:/g, '')}`;
     const [state, setState] = useState<State>('starting');
+    const [attempt, setAttempt] = useState(0);
+    const active = useRef(false);
+    const capturing = useRef(false);
     const stateRef = useRef<State>('starting');
     const scanner = useRef<Html5Qrcode | null>(null);
     const hits = useRef({ count: 0, last: 0 });
@@ -32,15 +35,24 @@ export default function LiveQrCapture({ expectToken, personName, onCapture }: Li
     };
 
     const grabFrame = (): void => {
-        const video = document.querySelector<HTMLVideoElement>(`#${id} video`);
-        if (!video || !video.videoWidth) return;
+        if (!active.current || capturing.current || stateRef.current === 'captured') return;
+        const video = document.getElementById(id)?.querySelector('video');
+        if (!video || !video.videoWidth || !video.videoHeight) return;
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        canvas.getContext('2d')?.drawImage(video, 0, 0);
+        const context = canvas.getContext('2d');
+        if (!context) return;
+        context.drawImage(video, 0, 0);
+        capturing.current = true;
         canvas.toBlob(
             (blob) => {
-                if (!blob) return;
+                capturing.current = false;
+                if (!active.current) return;
+                if (!blob) {
+                    set('error');
+                    return;
+                }
                 set('captured');
                 void stop();
                 capture.current(blob);
@@ -51,8 +63,13 @@ export default function LiveQrCapture({ expectToken, personName, onCapture }: Li
     };
 
     useEffect(() => {
+        let disposed = false;
+        active.current = true;
+        capturing.current = false;
+        hits.current = { count: 0, last: 0 };
+        set('starting');
         const onScan = (text: string): void => {
-            if (stateRef.current === 'captured') return;
+            if (disposed || capturing.current || stateRef.current === 'captured') return;
             if (tokenOf(text) !== expectToken) {
                 set('wrong');
                 hits.current.count = 0;
@@ -65,8 +82,9 @@ export default function LiveQrCapture({ expectToken, personName, onCapture }: Li
             set('steady');
             if (hits.current.count >= 2) grabFrame();
         };
-        scanner.current = new Html5Qrcode(id, { verbose: false });
-        scanner.current
+        const current = new Html5Qrcode(id, { verbose: false });
+        scanner.current = current;
+        current
             .start(
                 { facingMode: 'environment' },
                 {
@@ -78,11 +96,19 @@ export default function LiveQrCapture({ expectToken, personName, onCapture }: Li
                 onScan,
                 () => undefined,
             )
-            .then(() => set('looking'))
-            .catch(() => set('error'));
-        return () => void stop();
+            .then(async () => {
+                if (disposed) {
+                    if (current.isScanning) await current.stop().catch(() => undefined);
+                } else set('looking');
+            })
+            .catch(() => { if (!disposed) set('error'); });
+        return () => {
+            disposed = true;
+            active.current = false;
+            if (current.isScanning) void current.stop().catch(() => undefined);
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id, expectToken]);
+    }, [id, expectToken, attempt]);
 
     const messages: Record<State, string> = {
         starting: 'Starting the camera…',
@@ -90,7 +116,7 @@ export default function LiveQrCapture({ expectToken, personName, onCapture }: Li
         steady: 'QR found — hold still…',
         wrong: `That QR code belongs to someone else. Ask ${personName} to show their own QR.`,
         captured: 'Photo captured — checking…',
-        error: 'Camera unavailable. Allow camera access in your browser and reload this page.',
+        error: 'Camera unavailable. Allow camera access in your browser, then try again.',
     };
     const outline = state === 'steady' ? 'outline-4 outline-success' : state === 'wrong' ? 'outline-4 outline-danger' : 'outline-2 outline-white/80';
     const bar = state === 'wrong' || state === 'error' ? 'bg-danger/90' : state === 'steady' ? 'bg-success/90' : 'bg-black/60';
@@ -110,6 +136,7 @@ export default function LiveQrCapture({ expectToken, personName, onCapture }: Li
                 </div>
                 <span className={`pointer-events-none absolute inset-x-3 bottom-3 rounded-control px-3 py-2 text-center text-sm font-medium text-white backdrop-blur ${bar}`}>{messages[state]}</span>
             </div>
+            {state === 'error' && <Button variant="secondary" onClick={() => setAttempt((value) => value + 1)}>Try camera again</Button>}
             {(state === 'looking' || state === 'steady' || state === 'wrong') && (
                 <Button variant="secondary" onClick={grabFrame}>
                     Capture now
