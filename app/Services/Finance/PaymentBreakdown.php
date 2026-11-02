@@ -71,7 +71,8 @@ class PaymentBreakdown
         $paid = $payments->filter(fn (MembershipPayment $p) => $p->status->isPaid());
         $free = MembershipPayment::where('club_id', $club->id)->whereNotNull('membership_id')->where('method', 'free')
             ->whereBetween('created_at', [$session->starts_on->startOfDay(), $session->ends_on->endOfDay()])->count();
-        $ledgerSen = LedgerEntry::where('club_id', $club->id)->where('category', 'membership')->where('source_type', $this->paymentMorph())
+        // (int): MySQL returns SUM() as a decimal string.
+        $ledgerSen = (int) LedgerEntry::where('club_id', $club->id)->where('category', 'membership')->where('source_type', $this->paymentMorph())
             ->whereIn('source_id', $paid->pluck('id'))->sum('income_sen');
         $drives = MembershipDrive::where(fn ($q) => $q->whereNull('club_id')->orWhere('club_id', $club->id))
             ->where('starts_at', '<=', $session->ends_on->endOfDay())->where('ends_at', '>=', $session->starts_on->startOfDay())->orderBy('starts_at')->get();
