@@ -25,7 +25,19 @@ interface CalEvent {
     google_url: string;
 }
 
-const props = defineProps<{ month: string; today: string; events: CalEvent[]; years: number[]; feedUrl: string }>();
+// Meetings, weekly activities, weekly-report due dates and AGMs for the clubs this person belongs to.
+interface CalItem {
+    key: string;
+    kind: 'meeting' | 'activity' | 'report_due' | 'agm';
+    title: string;
+    club: string;
+    starts_at: string;
+    ends_at: string;
+    url: string;
+}
+
+const props = defineProps<{ month: string; today: string; events: CalEvent[]; years: number[]; feedUrl: string; items?: CalItem[]; view?: 'month' | 'year' }>();
+const ITEM_ICON: Record<CalItem['kind'], 'users' | 'calendar' | 'file' | 'award'> = { meeting: 'users', activity: 'calendar', report_due: 'file', agm: 'award' };
 
 const TZ = 'Asia/Kuala_Lumpur';
 const dayKey = (iso: string): string => new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
@@ -57,11 +69,35 @@ const days = computed(() => {
             day: d.getDate(),
             inMonth: d.getMonth() === mon - 1,
             events: shown.value.filter((e) => dayKey(e.starts_at) <= key && lastDayKey(e.starts_at, e.ends_at) >= key),
+            items: filter.value === 'followed' ? [] : (props.items ?? []).filter((it) => dayKey(it.starts_at) <= key && lastDayKey(it.starts_at, it.ends_at) >= key),
         };
     }).filter((d, i, all) => i < 35 || all.slice(35).some((x) => x.inMonth));
 });
 
-const go = (month: string): void => router.get('/calendar', { month }, { preserveState: true, preserveScroll: true, replace: true, only: ['month', 'events'] });
+const go = (month: string, view: 'month' | 'year' = props.view ?? 'month'): void =>
+    router.get(
+        '/calendar',
+        { month, ...(view === 'year' ? { view } : {}) },
+        { preserveState: true, preserveScroll: true, replace: true, only: ['month', 'events', 'items', 'view'] },
+    );
+
+// Year view: 12 small months; each day shows how many things are on.
+const yearMonths = computed(() =>
+    Array.from({ length: 12 }, (_, m) => {
+        const first = new Date(ym.value[0], m, 1);
+        const lead = (first.getDay() + 6) % 7;
+        const count = new Date(ym.value[0], m + 1, 0).getDate();
+        const cells = Array.from({ length: lead + count }, (_, i) => {
+            if (i < lead) return null;
+            const key = `${ym.value[0]}-${String(m + 1).padStart(2, '0')}-${String(i - lead + 1).padStart(2, '0')}`;
+            const n =
+                shown.value.filter((e) => dayKey(e.starts_at) <= key && lastDayKey(e.starts_at, e.ends_at) >= key).length +
+                (props.items ?? []).filter((it) => dayKey(it.starts_at) <= key && lastDayKey(it.starts_at, it.ends_at) >= key).length;
+            return { key, day: i - lead + 1, n };
+        });
+        return { key: `${ym.value[0]}-${String(m + 1).padStart(2, '0')}`, label: first.toLocaleDateString('en-MY', { month: 'long' }), cells };
+    }),
+);
 const shift = (by: number): void => {
     const d = new Date(ym.value[0], ym.value[1] - 1 + by, 1);
     go(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
@@ -78,6 +114,7 @@ watch(
     (m) => (selectedDay.value = props.today.startsWith(m) ? props.today : null),
 );
 const dayEvents = computed(() => days.value.find((d) => d.key === selectedDay.value)?.events ?? []);
+const dayItems = computed(() => days.value.find((d) => d.key === selectedDay.value)?.items ?? []);
 const open = ref<CalEvent | null>(null);
 const subscribing = ref(false);
 const googleSubscribe = computed(() => `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(props.feedUrl.replace(/^https?:/, 'webcal:'))}`);
@@ -124,6 +161,28 @@ const tone = (e: CalEvent): string => (e.registered ? 'bg-success text-white' : 
                         aria-label="Go to month"
                         @change="pickMonth"
                     />
+                    <div class="flex rounded-control border border-line p-0.5 text-xs font-semibold" role="radiogroup" aria-label="View">
+                        <button
+                            type="button"
+                            role="radio"
+                            :aria-checked="(view ?? 'month') === 'month'"
+                            class="rounded-[0.55rem] px-3 py-1.5"
+                            :class="(view ?? 'month') === 'month' ? 'bg-ink text-white' : 'text-ink-muted'"
+                            @click="go(month, 'month')"
+                        >
+                            Month
+                        </button>
+                        <button
+                            type="button"
+                            role="radio"
+                            :aria-checked="view === 'year'"
+                            class="rounded-[0.55rem] px-3 py-1.5"
+                            :class="view === 'year' ? 'bg-ink text-white' : 'text-ink-muted'"
+                            @click="go(month, 'year')"
+                        >
+                            Year
+                        </button>
+                    </div>
                     <Button size="sm" variant="secondary" @click="subscribing = true"><Icon name="calendar" :size="16" /> Add to Google Calendar</Button>
                 </div>
             </header>
@@ -145,7 +204,31 @@ const tone = (e: CalEvent): string => (e.registered ? 'bg-success text-white' : 
                 </button>
             </div>
 
-            <div ref="grid" class="overflow-hidden rounded-card border border-line bg-surface shadow-card" data-no-motion>
+            <!-- Year view: every month at a glance; tap a month to open it. -->
+            <section v-if="view === 'year'" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Year">
+                <button
+                    v-for="m in yearMonths"
+                    :key="m.key"
+                    type="button"
+                    class="grid gap-1 rounded-card border border-line bg-surface p-3 text-left shadow-card transition hover:shadow-pop"
+                    @click="go(m.key, 'month')"
+                >
+                    <span class="font-semibold">{{ m.label }}</span>
+                    <span class="grid grid-cols-7 gap-0.5 text-center text-[10px]">
+                        <span
+                            v-for="(c, i) in m.cells"
+                            :key="i"
+                            class="grid aspect-square place-items-center rounded"
+                            :class="c && c.n ? 'bg-brand-magenta/80 font-bold text-white' : c && c.key === today ? 'ring-1 ring-brand-magenta' : 'text-ink-muted'"
+                        >
+                            {{ c?.day ?? '' }}
+                        </span>
+                    </span>
+                    <span class="text-xs text-ink-muted">{{ m.cells.reduce((s, c) => s + (c?.n ?? 0), 0) }} things on</span>
+                </button>
+            </section>
+
+            <div v-else ref="grid" class="overflow-hidden rounded-card border border-line bg-surface shadow-card" data-no-motion>
                 <div class="grid grid-cols-7 border-b border-line bg-surface-muted text-center text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
                     <span v-for="d in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="d" class="py-2">{{ d }}</span>
                 </div>
@@ -175,6 +258,16 @@ const tone = (e: CalEvent): string => (e.registered ? 'bg-success text-white' : 
                                     {{ time(e.starts_at) }} {{ e.name }}
                                 </span>
                                 <span v-if="d.events.length > 3" class="px-1 text-[11px] text-ink-muted">+{{ d.events.length - 3 }} more</span>
+                                <Link
+                                    v-for="it in d.items.slice(0, 2)"
+                                    :key="it.key"
+                                    :href="it.url"
+                                    class="flex items-center gap-1 truncate rounded border border-line px-1 py-0.5 text-[11px] font-medium"
+                                    :class="it.kind === 'report_due' ? 'text-danger' : 'text-ink'"
+                                    @click.stop
+                                >
+                                    <Icon :name="ITEM_ICON[it.kind]" :size="11" class="shrink-0" /><span class="truncate">{{ it.title }}</span>
+                                </Link>
                             </span>
                             <span v-if="d.events.length" class="flex flex-wrap gap-0.5 sm:hidden">
                                 <span
@@ -192,12 +285,32 @@ const tone = (e: CalEvent): string => (e.registered ? 'bg-success text-white' : 
                 <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-success" /> Registered</span>
                 <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-brand-blue" /> Club you follow</span>
                 <span class="flex items-center gap-1"><span class="size-2 rounded-full bg-brand-magenta" /> Other events</span>
-                <span>Swipe the calendar to change month.</span>
+                <span class="flex items-center gap-1"><Icon name="users" :size="12" /> Meeting</span>
+                <span class="flex items-center gap-1"><Icon name="calendar" :size="12" /> Weekly activity</span>
+                <span class="flex items-center gap-1 text-danger"><Icon name="file" :size="12" /> Report due</span>
+                <span class="flex items-center gap-1"><Icon name="award" :size="12" /> AGM</span>
             </p>
 
-            <section v-if="selectedDay" class="grid gap-2">
+            <section v-if="selectedDay && view !== 'year'" class="grid gap-2">
                 <h2 class="font-semibold">{{ new Date(selectedDay).toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }}</h2>
-                <p v-if="!dayEvents.length" class="rounded-card border border-dashed border-line p-4 text-sm text-ink-muted">No events this day.</p>
+                <p v-if="!dayEvents.length && !dayItems.length" class="rounded-card border border-dashed border-line p-4 text-sm text-ink-muted">Nothing on this day.</p>
+                <ul v-if="dayItems.length" class="grid gap-2">
+                    <li v-for="it in dayItems" :key="it.key">
+                        <Link :href="it.url" class="flex items-center gap-3 rounded-card border border-line bg-surface p-3 text-sm shadow-card transition hover:shadow-pop">
+                            <span
+                                class="grid size-10 shrink-0 place-items-center rounded-lg"
+                                :class="it.kind === 'report_due' ? 'bg-danger/10 text-danger' : 'bg-surface-muted text-ink'"
+                                ><Icon :name="ITEM_ICON[it.kind]" :size="18"
+                            /></span>
+                            <span class="min-w-0 flex-1">
+                                <strong class="block truncate">{{ it.title }}</strong>
+                                <span class="block truncate text-xs text-ink-muted"
+                                    >{{ it.kind === 'report_due' ? 'Due today' : `${time(it.starts_at)} – ${time(it.ends_at)}` }} · {{ it.club }}</span
+                                >
+                            </span>
+                        </Link>
+                    </li>
+                </ul>
                 <TransitionGroup tag="ul" name="list" class="relative grid gap-2">
                     <li v-for="e in dayEvents" :key="e.slug">
                         <button
