@@ -15,7 +15,9 @@ const props = defineProps<{
     sessions: { name: string; starts_on: string; ends_on: string }[];
     currentSession: string;
     ccaLimit: number;
+    rules: { proposal_lead_days: number; min_photos: number; transfer_days: number; handover_days: number };
 }>();
+const rules = useForm({ ...props.rules });
 const cca = useForm({ max_hours: props.ccaLimit });
 
 const programmes = useForm({
@@ -51,6 +53,7 @@ const save = {
             }))
             .put('/admin/settings/statuses', options),
     cca: () => cca.put('/admin/settings/cca', options),
+    rules: () => rules.put('/admin/settings/rules', options),
     session: () =>
         session.put('/admin/settings/sessions', {
             ...options,
@@ -98,6 +101,18 @@ const save = {
                         >
                         <Button type="submit" :loading="programmes.processing">Save</Button>
                     </div>
+                </form>
+            </Card>
+
+            <Card>
+                <template #title>Deadlines and requirements</template>
+                <p class="mb-4 text-sm text-ink-muted">Rules every club works to. Exceptions (a late proposal, a budget deficit) need a reason and your approval.</p>
+                <form class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2" @submit.prevent="save.rules">
+                    <Input v-model="rules.proposal_lead_days" type="number" label="Proposal lead time (days)" hint="Days before the event a proposal must be in" required :error="rules.errors.proposal_lead_days" />
+                    <Input v-model="rules.min_photos" type="number" label="Minimum photos" hint="Weekly report, AGM and completed event" required :error="rules.errors.min_photos" />
+                    <Input v-model="rules.transfer_days" type="number" label="Transfer deadline (days)" hint="Finance transfers an approved withdrawal within" required :error="rules.errors.transfer_days" />
+                    <Input v-model="rules.handover_days" type="number" label="Handover overlap (days)" hint="Incoming committee's view-only training" required :error="rules.errors.handover_days" />
+                    <div class="sm:col-span-2"><Button type="submit" :loading="rules.processing">Save rules</Button></div>
                 </form>
             </Card>
 

@@ -19,11 +19,12 @@ import Modal from '@/Components/ui/Modal.vue';
 import Select from '@/Components/ui/Select.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
+import Celebration from '@/Components/ui/Celebration.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { date, dateTime, hoursBetween, rm } from '@/lib/format';
 import type { ApprovalProgress, ApprovalStep, ProposalData } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 const props = defineProps<{
     event: { slug: string; name: string };
@@ -55,7 +56,7 @@ const props = defineProps<{
         fundSources: Record<string, string>;
         compulsoryPositions: string[];
     };
-    leadTime: { threshold: number; small: string; large: string };
+    leadTime: { earliest: string; days: number };
     lastEdit: { by: string | null; at: string | null };
     clubCommittee: { id: number; name: string }[];
     canDiscard: boolean;
@@ -78,7 +79,9 @@ watch(duration, (hours, previous) => {
     if (form.cca_participant === cappedCca(previous)) form.cca_participant = cappedCca(hours);
     if (form.cca_committee === cappedCca(previous)) form.cca_committee = cappedCca(hours);
 });
-const minStart = computed(() => (form.expected_participants >= props.leadTime.threshold ? props.leadTime.large : props.leadTime.small));
+const minStart = computed(() => props.leadTime.earliest);
+// Inside the lead time or below break-even: allowed only with a reason, which SLD must approve.
+const isLate = computed(() => !!form.starts_at && form.starts_at.slice(0, 10) < props.leadTime.earliest);
 const expensesSen = computed(() => form.budget.expenses.reduce((s, i) => s + i.price_sen * i.quantity, 0));
 
 const objectiveRows = computed({
@@ -236,7 +239,8 @@ const blockers = computed(() => [
     ...props.missingClubCommittee.map((p) => `Club committee: ${p}`),
     ...missingList.value.map((p) => `Event committee: ${p}`),
     ...(form.objectives.filter((o) => o.trim()).length < 2 ? ['At least 2 objectives'] : []),
-    ...(breakEven.value ? [] : ['Revenue must cover expenses']),
+    ...(breakEven.value || (form.deficit_reason ?? '').trim() ? [] : ['Explain the budget deficit (or break even)']),
+    ...(!isLate.value || (form.late_reason ?? '').trim() ? [] : [`Give a reason for submitting inside ${props.leadTime.days} days`]),
 ]);
 const submit = (): void => {
     form.transform((data) => data).post(`/events/${props.event.slug}/proposal/submit`, {
@@ -315,6 +319,20 @@ const removeMember = (id: number): void =>
     router.delete(`/events/${props.event.slug}/committee/${id}`, {
         preserveScroll: true,
     });
+
+// The first time the committee opens its approved proposal on this device, celebrate it.
+const celebrate = ref<string | null>(null);
+onMounted(() => {
+    if (props.status !== 'approved') return;
+    const key = `celebrated:proposal:${props.event.slug}`;
+    try {
+        if (localStorage.getItem(key)) return;
+        localStorage.setItem(key, '1');
+    } catch {
+        return;
+    }
+    celebrate.value = 'Proposal approved!';
+});
 </script>
 
 <template>
@@ -368,10 +386,22 @@ const removeMember = (id: number): void =>
                         required
                         :readonly="readOnly"
                         :error="form.errors.starts_at"
-                        :hint="`Earliest: ${date(minStart)}`"
+                        :hint="`Submit ${leadTime.days} days ahead: earliest ${date(minStart)}`"
                     />
                     <Input v-model="form.ends_at" type="datetime-local" label="Event ends" required :readonly="readOnly" :error="form.errors.ends_at" />
                 </div>
+                <Transition name="fade-up">
+                    <Textarea
+                        v-if="isLate"
+                        v-model="form.late_reason"
+                        label="Why it is submitted late"
+                        required
+                        :rows="2"
+                        :readonly="readOnly"
+                        :placeholder="`This is inside the ${leadTime.days}-day lead time. Explain why; SLD decides.`"
+                        :error="form.errors.late_reason"
+                    />
+                </Transition>
                 <fieldset class="grid gap-2">
                     <legend class="mb-1 text-sm font-medium">Nature of event<span class="text-danger"> *</span></legend>
                     <CheckboxGroup v-model="form.nature" :options="options.natures" :columns="3" :disabled="readOnly" />
@@ -618,6 +648,18 @@ const removeMember = (id: number): void =>
 
             <FormSection title="Estimated Budget" section="budget" :flag="flag('budget')" :editors="editorsIn('budget')" required>
                 <BudgetTable v-model="form.budget" :disabled="readOnly" :errors="form.errors" />
+                <Transition name="fade-up">
+                    <Textarea
+                        v-if="!breakEven"
+                        v-model="form.deficit_reason"
+                        label="Why the event runs at a deficit"
+                        required
+                        :rows="2"
+                        :readonly="readOnly"
+                        placeholder="e.g. A community service event funded from the club account; SLD decides."
+                        :error="form.errors.deficit_reason"
+                    />
+                </Transition>
             </FormSection>
 
             <FormSection title="Conclusion" section="conclusion" :flag="flag('conclusion')" :editors="editorsIn('conclusion')" required>
@@ -687,5 +729,6 @@ const removeMember = (id: number): void =>
                 <Button :disabled="!form.signature" :loading="form.processing" @click="submit">Submit proposal</Button>
             </div>
         </Modal>
+        <Celebration :text="celebrate" detail="Every signature is in. Time to announce it on the feed." />
     </AppLayout>
 </template>

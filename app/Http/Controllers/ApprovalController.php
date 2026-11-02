@@ -3,21 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ApprovalDecision;
+use App\Enums\ChainRole;
 use App\Enums\DocumentStatus;
 use App\Http\Requests\DecideApprovalRequest;
 use App\Models\Approval;
 use App\Services\Approvals\ApprovalEngine;
+use App\Services\Approvals\PaperSignoff;
 use App\Services\Documents\DocumentExporter;
 use App\Services\Documents\DocumentPresenter;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ApprovalController extends Controller
 {
-    public function __construct(private readonly ApprovalEngine $engine) {}
+    public function __construct(private readonly ApprovalEngine $engine, private readonly PaperSignoff $paper) {}
 
     /** Approver inbox: steps currently waiting for this user, soonest due first. */
     public function index(Request $request): Response
@@ -74,6 +78,10 @@ class ApprovalController extends Controller
             'canAct' => $this->engine->canAct($approval, $request->user()),
             'downloads' => app(DocumentExporter::class)->formats($approval->document),
             'document' => $presenter->present($approval->document),
+            'exceptions' => $this->engine->exceptions($approval->document),
+            'decidesExceptions' => $approval->role === ChainRole::SldOfficer,
+            'paper' => $this->paper->present($approval),
+            'paperOptions' => $approval->role === ChainRole::SldOfficer && $this->engine->canAct($approval, $request->user()) ? $this->paper->options() : [],
         ]);
     }
 
@@ -84,7 +92,7 @@ class ApprovalController extends Controller
 
         try {
             match ($request->validated('decision')) {
-                'approve' => $this->engine->approve($approval, $user, (string) $request->validated('signature'), $comment ?: null, $request->validated('signature_strokes')),
+                'approve' => $this->engine->approve($approval, $user, (string) $request->validated('signature'), $comment ?: null, $request->validated('signature_strokes'), $request->boolean('accept_exceptions')),
                 'return' => $this->engine->returnToClub($approval, $user, $comment, $request->validated('sections') ?? []),
                 'reject' => $this->engine->reject($approval, $user, $comment, $request->validated('sections') ?? []),
             };
@@ -92,6 +100,54 @@ class ApprovalController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        // The final approval: a moment worth celebrating.
+        if ($request->validated('decision') === 'approve' && $approval->document->fresh()->status === DocumentStatus::Approved) {
+            return to_route('approvals.index')->with('success', 'Decision recorded.')->with('celebrate', "{$approval->document->type->label()} approved");
+        }
+
         return to_route('approvals.index')->with('success', 'Decision recorded.');
+    }
+
+    /** SLD sends the document to higher authorities to sign on paper. */
+    public function paperStart(Request $request, Approval $approval): RedirectResponse
+    {
+        $signers = $request->validate(['signers' => ['required', 'array', 'min:1', 'max:10'], 'signers.*' => ['required', 'string', 'max:120']])['signers'];
+
+        return $this->paperAttempt(fn () => $this->paper->start($approval, $request->user(), $signers), 'Export it, have it signed, then upload the scan and tick who signed.');
+    }
+
+    /** SLD uploads the signed scan and ticks who has signed. */
+    public function paperRecord(Request $request, Approval $approval): RedirectResponse
+    {
+        $data = $request->validate([
+            'scan' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480'],
+            'signed' => ['present', 'array'], 'signed.*' => ['string', 'max:120'],
+        ]);
+
+        return $this->paperAttempt(fn () => $this->paper->record($approval, $request->user(), $request->file('scan'), $data['signed']), 'Saved.');
+    }
+
+    public function paperCancel(Request $request, Approval $approval): RedirectResponse
+    {
+        return $this->paperAttempt(fn () => $this->paper->cancel($approval, $request->user()), 'No paper signatures needed.');
+    }
+
+    public function paperScan(Request $request, Approval $approval): StreamedResponse
+    {
+        abort_unless($this->engine->canAct($approval, $request->user()) || $request->user()->can('view', $approval->document), 403);
+        abort_unless($approval->paper_scan_path && Storage::disk('local')->exists($approval->paper_scan_path), 404);
+
+        return Storage::disk('local')->response($approval->paper_scan_path);
+    }
+
+    private function paperAttempt(callable $action, string $success): RedirectResponse
+    {
+        try {
+            $action();
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', $success);
     }
 }

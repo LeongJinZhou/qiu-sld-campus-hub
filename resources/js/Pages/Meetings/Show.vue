@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import EvidencePhotos from '@/Components/reports/EvidencePhotos.vue';
+import AutosaveNote from '@/Components/forms/AutosaveNote.vue';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import DynamicTable from '@/Components/forms/DynamicTable.vue';
 import FormSection from '@/Components/forms/FormSection.vue';
@@ -11,6 +13,7 @@ import Modal from '@/Components/ui/Modal.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useAutosave } from '@/composables/useAutosave';
 import { dateTime } from '@/lib/format';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/vue3';
@@ -27,10 +30,31 @@ interface Minutes {
 }
 
 const props = defineProps<{
-    meeting: { id: number; title: string; kind: string; kind_label: string; starts_at: string; ends_at: string; venue: string | null; meet_link: string | null; club: { slug: string; name: string }; hours: number };
+    evidence: { type: string; id: number; minimum: number; photos: { id: number | null; url: string }[] } | null;
+    meeting: {
+        id: number;
+        title: string;
+        kind: string;
+        kind_label: string;
+        starts_at: string;
+        ends_at: string;
+        venue: string | null;
+        meet_link: string | null;
+        club: { slug: string; name: string };
+        hours: number;
+    };
     people: { id: number; name: string; photo_url: string | null }[];
     present: number[];
-    minutes: { id: number; status: string; editable: boolean; data: Minutes; approval: { progress: ApprovalProgress; steps: ApprovalStep[] } | null; downloads: string[]; ai: string | null; ai_available: boolean };
+    minutes: {
+        id: number;
+        status: string;
+        editable: boolean;
+        data: Minutes;
+        approval: { progress: ApprovalProgress; steps: ApprovalStep[] } | null;
+        downloads: string[];
+        ai: string | null;
+        ai_available: boolean;
+    };
 }>();
 
 const attendance = ref<number[]>([...props.present]);
@@ -54,6 +78,12 @@ const draftWithAi = (): void => {
 // While the AI drafts, refresh until the draft lands, then load it into the form.
 const drafting = computed(() => props.minutes.ai === 'pending');
 usePoll(2500, { only: ['minutes'], onSuccess: () => drafting.value || Object.assign(form, props.minutes.data) }, { autoStart: drafting.value });
+const autosaved = useAutosave(
+    url,
+    () => plain(form.data()),
+    () => props.minutes.editable && !drafting.value,
+    () => form.processing,
+);
 
 const summaryRows = computed({
     get: () => form.summary.map((text) => ({ text })),
@@ -77,20 +107,37 @@ const readOnly = computed(() => !props.minutes.editable);
                         <span class="flex items-center gap-1"><Icon name="calendar" :size="16" />{{ dateTime(meeting.starts_at) }}</span>
                         <span v-if="meeting.venue" class="flex items-center gap-1"><Icon name="pin" :size="16" />{{ meeting.venue }}</span>
                     </p>
-                    <a v-if="meeting.meet_link" :href="meeting.meet_link" target="_blank" rel="noopener" class="justify-self-start"><Button><Icon name="camera" :size="16" /> Join Google Meet</Button></a>
+                    <a v-if="meeting.meet_link" :href="meeting.meet_link" target="_blank" rel="noopener" class="justify-self-start"
+                        ><Button><Icon name="camera" :size="16" /> Join Google Meet</Button></a
+                    >
                 </header>
+                <EvidencePhotos v-if="evidence" :evidence="evidence" can-edit title="Weekly activity photos" />
 
                 <section v-if="minutes.approval" class="rounded-card border border-line bg-surface p-5 shadow-card">
                     <ApprovalTracker :progress="minutes.approval.progress" :steps="minutes.approval.steps" />
                 </section>
 
                 <div v-if="minutes.downloads.length" class="flex flex-wrap gap-2">
-                    <a v-for="f in minutes.downloads" :key="f" :href="`/documents/${minutes.id}/download/${f}`"><Button variant="secondary" size="sm">Official 13 Minutes ({{ f.toUpperCase() }})</Button></a>
+                    <a v-for="f in minutes.downloads" :key="f" :href="`/documents/${minutes.id}/download/${f}`"
+                        ><Button variant="secondary" size="sm">Official 13 Minutes ({{ f.toUpperCase() }})</Button></a
+                    >
                 </div>
 
                 <FormSection title="Secretary's notes" hint="Jot down what happened; AI can turn the notes into minutes you then edit.">
-                    <Textarea v-model="form.notes" :rows="5" :readonly="readOnly" placeholder="- attendance taken, 9 present&#10;- Aisyah updated on beach cleanup permits&#10;- Wei Zhang to design poster by 10 Nov" />
-                    <Button v-if="minutes.editable && minutes.ai_available" variant="secondary" class="justify-self-start" :loading="drafting" :disabled="!form.notes.trim()" @click="draftWithAi">
+                    <Textarea
+                        v-model="form.notes"
+                        :rows="5"
+                        :readonly="readOnly"
+                        placeholder="- attendance taken, 9 present&#10;- Aisyah updated on beach cleanup permits&#10;- Wei Zhang to design poster by 10 Nov"
+                    />
+                    <Button
+                        v-if="minutes.editable && minutes.ai_available"
+                        variant="secondary"
+                        class="justify-self-start"
+                        :loading="drafting"
+                        :disabled="!form.notes.trim()"
+                        @click="draftWithAi"
+                    >
                         <Icon name="sparkles" :size="16" /> {{ drafting ? 'Drafting…' : 'Draft minutes with AI' }}
                     </Button>
                     <p v-if="minutes.ai === 'failed'" class="text-sm text-warning">AI couldn't draft from these notes — fill the sections below yourself.</p>
@@ -100,10 +147,30 @@ const readOnly = computed(() => !props.minutes.editable);
                     <Input v-model="form.purpose" :readonly="readOnly" :error="form.errors.purpose" />
                 </FormSection>
                 <FormSection title="2. Summary of Activities / Discussion">
-                    <DynamicTable v-model="summaryRows" :columns="[{ key: 'text', label: 'Point', type: 'textarea' }]" :blank="{ text: '' }" :disabled="readOnly" :errors="form.errors" error-prefix="summary" add-label="Add point" />
+                    <DynamicTable
+                        v-model="summaryRows"
+                        :columns="[{ key: 'text', label: 'Point', type: 'textarea' }]"
+                        :blank="{ text: '' }"
+                        :disabled="readOnly"
+                        :errors="form.errors"
+                        error-prefix="summary"
+                        add-label="Add point"
+                    />
                 </FormSection>
                 <FormSection title="3. Decisions / Action Items" hint='Leave empty if there are none — the form prints "N/A".'>
-                    <DynamicTable v-model="form.actions" :columns="[{ key: 'task', label: 'Task/Action' }, { key: 'pic', label: 'Person in Charge' }, { key: 'deadline', label: 'Deadline' }]" :blank="{ task: '', pic: '', deadline: '' }" :disabled="readOnly" :errors="form.errors" error-prefix="actions" add-label="Add action" />
+                    <DynamicTable
+                        v-model="form.actions"
+                        :columns="[
+                            { key: 'task', label: 'Task/Action' },
+                            { key: 'pic', label: 'Person in Charge' },
+                            { key: 'deadline', label: 'Deadline' },
+                        ]"
+                        :blank="{ task: '', pic: '', deadline: '' }"
+                        :disabled="readOnly"
+                        :errors="form.errors"
+                        error-prefix="actions"
+                        add-label="Add action"
+                    />
                 </FormSection>
                 <FormSection title="4. Next Meeting / Activity">
                     <div class="grid gap-3 sm:grid-cols-3">
@@ -114,6 +181,7 @@ const readOnly = computed(() => !props.minutes.editable);
                 </FormSection>
 
                 <div v-if="minutes.editable" class="flex flex-wrap justify-end gap-2">
+                    <AutosaveNote :state="autosaved" class="mr-auto self-center" />
                     <Button variant="secondary" :loading="form.processing" @click="save">Save draft</Button>
                     <Button @click="signing = true">Sign &amp; submit</Button>
                 </div>
@@ -122,10 +190,17 @@ const readOnly = computed(() => !props.minutes.editable);
             <aside class="grid content-start gap-4">
                 <section class="rounded-card border border-line bg-surface p-5 shadow-card">
                     <h2 class="mb-1 font-semibold">Attendance</h2>
-                    <p class="mb-3 text-xs text-ink-muted">{{ attendance.length }} present<template v-if="meeting.kind === 'activity'"> · {{ meeting.hours }} CCA each once minutes are approved</template></p>
+                    <p class="mb-3 text-xs text-ink-muted">
+                        {{ attendance.length }} present<template v-if="meeting.kind === 'activity'"> · {{ meeting.hours }} CCA each once minutes are approved</template>
+                    </p>
                     <ul class="grid max-h-96 gap-1 overflow-y-auto">
                         <li v-for="p in people" :key="p.id">
-                            <button type="button" class="flex w-full items-center gap-3 rounded-control p-2 text-left text-sm transition" :class="attendance.includes(p.id) ? 'bg-success/10' : 'hover:bg-surface-muted'" @click="toggle(p.id)">
+                            <button
+                                type="button"
+                                class="flex w-full items-center gap-3 rounded-control p-2 text-left text-sm transition"
+                                :class="attendance.includes(p.id) ? 'bg-success/10' : 'hover:bg-surface-muted'"
+                                @click="toggle(p.id)"
+                            >
                                 <Avatar :src="p.photo_url" :name="p.name" size="xs" />
                                 <span class="flex-1">{{ p.name }}</span>
                                 <Icon v-if="attendance.includes(p.id)" name="check" :size="16" class="text-success" />

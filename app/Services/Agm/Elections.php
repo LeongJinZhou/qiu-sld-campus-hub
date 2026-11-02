@@ -15,8 +15,10 @@ use App\Models\User;
 use App\Models\Vote;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
+use App\Services\Profiles\Certificates;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Roles\RoleService;
+use App\Services\SldRules;
 use App\Services\Time\SessionResolver;
 use App\Services\Uploads\ImageUpload;
 use Carbon\CarbonImmutable;
@@ -31,19 +33,18 @@ use Illuminate\Support\Facades\Notification;
  * Elections inside the AGM. The committee sets the nomination and voting times and the positions (the 4
  * compulsory ones plus any others), and names candidates (or members stand themselves). Every member has one
  * ticket per position, may change their mind up to 3 times, and cannot vote for themselves. The most votes wins.
- * Winners are named at once; the outgoing committee keeps access for 7 days to hand over, then the new committee
- * takes the titles and the access.
+ * Winners are named at once. After SLD acknowledges the AGM and starts the handover, the incoming committee has
+ * training (view-only) access for the overlap, then the outgoing committee's roles end and the new one takes over.
  */
 class Elections
 {
-    public const HANDOVER_DAYS = 7;
-
     public const VOTE_CHANGES = 3;
 
     public function __construct(
         private readonly SessionResolver $sessions,
         private readonly RoleService $roles,
         private readonly AuditLogger $audit,
+        private readonly Certificates $certificates,
     ) {}
 
     /**
@@ -213,19 +214,45 @@ class Elections
                 $position->update(['winner_candidate_id' => $this->leaders($position)->first()?->id]);
             }
             $election->update(['results_published_at' => now()]);
-            // Winners hold their titles for the new term at once; their access starts on the handover day.
-            $handover = $election->handoverOn();
+            // Winners hold their titles for the new term at once, with no access yet: SLD starts the handover after
+            // acknowledging the AGM.
             foreach ($election->positions()->with('winner.user')->get() as $position) {
                 if ($position->winner) {
                     $this->roles->assignClubPosition($election->agm->club, $election->termSession, $position->winner->user, $position->position)
-                        ->update(['starts_on' => $handover->toDateString()]);
+                        ->update(['handover_state' => 'pending']);
                 }
             }
-            $this->audit->log('election.published', $election, ['handover_on' => $handover->toDateString()]);
+            $this->audit->log('election.published', $election);
         });
-        $this->tellCommittees($election->fresh(), 'Election results are out', 'The new committee takes over on '.$election->handoverOn()->format('D, j M Y').'. Until then the current committee hands over.');
+        $this->tellCommittees($election->fresh(), 'Election results are out', 'The handover starts once SLD has acknowledged the AGM.');
+    }
 
-        if ($election->handoverOn()->lte(CarbonImmutable::today())) {
+    /**
+     * SLD starts the handover once the AGM is acknowledged and results are published. The incoming committee gets
+     * training (view-only) access for the overlap (SLD setting, default 7 days); then the outgoing committee's roles
+     * end and the incoming committee gets full access.
+     */
+    public function startHandover(Election $election, User $sld): void
+    {
+        if (! $sld->isSldAdmin()) {
+            throw new DomainException('Only SLD starts the handover.');
+        }
+        if (! $election->agm->acknowledged_at) {
+            throw new DomainException('Acknowledge the AGM first.');
+        }
+        if (! $election->results_published_at || $election->handover_started_at) {
+            throw new DomainException($election->handover_started_at ? 'The handover has already started.' : 'Publish the election results first.');
+        }
+        $days = app(SldRules::class)->get('handover_days');
+        DB::transaction(function () use ($election, $days): void {
+            RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $election->agm->club_id)->where('session_id', $election->term_session_id)
+                ->where('handover_state', 'pending')->update(['handover_state' => 'training', 'starts_on' => today()->toDateString()]);
+            $election->update(['handover_started_at' => now(), 'handover_ends_on' => today()->addDays($days)->toDateString()]);
+            $this->audit->log('election.handover_started', $election, ['overlap_days' => $days]);
+        });
+        $this->tellCommittees($election->fresh(), 'Handover started',
+            "The incoming committee has training access (view only) for {$days} days; on ".today()->addDays($days)->format('D, j M Y').' it takes over fully.');
+        if ($days === 0) {
             $this->handOver($election->fresh());
         }
     }
@@ -236,24 +263,43 @@ class Elections
      */
     public function handOver(Election $election): void
     {
-        if ($election->handed_over_at || ! $election->results_published_at || $election->handoverOn()->isFuture()) {
+        if ($election->handed_over_at || ! $election->handover_started_at || $election->handoverOn()?->isFuture()) {
             return;
         }
         $club = $election->agm->club;
         DB::transaction(function () use ($election, $club): void {
             RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $club->id)->where('session_id', $election->agm->session_id)
                 ->where('role', ScopedRole::ClubCommittee)->update(['ends_on' => $election->handoverOn()->subDay()->toDateString()]);
+            RoleAssignment::where('scope_type', ScopeType::Club)->where('scope_id', $club->id)->where('session_id', $election->term_session_id)
+                ->where('handover_state', 'training')->update(['handover_state' => null]);
             $election->update(['handed_over_at' => now()]);
             $this->audit->log('election.handed_over', $election);
         });
         $this->tellCommittees($election, "Handover done: welcome, new {$club->name} committee", 'The new committee now has committee access. Thank you to the outgoing committee.');
+        $this->thankOutgoing($election);
     }
 
-    /** Daily: every published election whose handover day has come. */
+    /** Each outgoing committee member: their committee certificate is issued, with a thank-you. */
+    private function thankOutgoing(Election $election): void
+    {
+        $club = $election->agm->club;
+        $outgoing = RoleAssignment::with('user')->where('scope_type', ScopeType::Club)->where('scope_id', $club->id)
+            ->where('session_id', $election->agm->session_id)->where('role', ScopedRole::ClubCommittee)->get();
+        foreach ($outgoing as $role) {
+            $this->certificates->issue($role->user, 'club_committee', $role->id);
+            $role->user->notify(new DocumentNotification(
+                'Thank you for your service',
+                "Your term as {$role->position} of {$club->name} has ended and the new committee has taken over. Your certificate is ready to download.",
+                route('certificates.download', ['kind' => 'club_committee', 'source' => $role->id]),
+            ));
+        }
+    }
+
+    /** Daily: every handover whose overlap has ended. */
     public function handOverDue(CarbonImmutable $today): int
     {
-        $due = Election::whereNotNull('results_published_at')->whereNull('handed_over_at')->get()
-            ->filter(fn (Election $e) => $e->handoverOn()->lte($today));
+        $due = Election::whereNotNull('handover_started_at')->whereNull('handed_over_at')->get()
+            ->filter(fn (Election $e) => $e->handoverOn()?->lte($today));
         $due->each(fn (Election $e) => $this->handOver($e));
 
         return $due->count();

@@ -56,6 +56,7 @@ class ProposalForm
             'departure_time' => '', 'departure_pickup' => '', 'return_time' => '', 'return_pickup' => '',
             'budget' => ['revenue' => [], 'expenses' => []],
             'conclusion' => '',
+            'late_reason' => '', 'deficit_reason' => '',
         ];
     }
 

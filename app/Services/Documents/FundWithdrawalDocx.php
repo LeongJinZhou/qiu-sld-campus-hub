@@ -26,7 +26,7 @@ class FundWithdrawalDocx
     {
         $document->loadMissing(['club', 'event', 'approvals.signature']);
         $d = $document->data();
-        $output = storage_path("app/private/generated/fund-{$document->id}-".now()->format('YmdHis').'.docx');
+        $output = storage_path("app/private/generated/fund-{$document->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.docx');
 
         return $this->docx->render(self::TEMPLATE, function (TemplateProcessor $t) use ($document, $d): void {
             $rm = fn (int $sen) => number_format($sen / 100, 2);

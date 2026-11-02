@@ -6,18 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Jobs\DraftAnnualReport;
 use App\Models\Agm;
 use App\Models\Club;
+use App\Models\GeneratedFile;
 use App\Models\ReportTheme;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Agm\AgmPackage;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Agm\Agms;
+use App\Services\Agm\YearInReview;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Events\AttendanceQr;
 use App\Services\Google\CalendarMeetService;
 use App\Services\Meetings\Meetings;
 use App\Services\QrCodes;
 use App\Services\Reports\AnnualReports;
+use App\Services\Reports\EvidencePhotos;
 use App\Support\QueryInput;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -59,6 +62,9 @@ class AgmController extends Controller
                 'election' => $agm->election?->phase(),
                 'package_submitted_at' => $agm->package_submitted_at?->format('D, j M Y, g:i A'),
                 'checklist' => $package->checklist($agm),
+                'evidence' => app(EvidencePhotos::class)->panel($agm),
+                'archive_session_id' => GeneratedFile::where(['club_id' => $agm->club_id, 'session_id' => $agm->session_id, 'kind' => GeneratedFile::ANNUAL_ARCHIVE])->whereNotNull('zip_path')->exists() ? $agm->session_id : null,
+                'acknowledged_at' => $agm->acknowledged_at?->format('D, j M Y'),
             ] : null,
             'people' => $agm ? $meetings->committee($club)
                 ->merge($club->memberships()->whereIn('status', ['active', 'grace'])->with('user')->get()->pluck('user'))
@@ -73,6 +79,8 @@ class AgmController extends Controller
                 'ai_available' => (bool) config('services.anthropic.key'),
             ] : null,
             'themes' => ReportTheme::orderBy('name')->get(['id', 'name']),
+            // The whole year compiled for the AGM: that session's events, weekly activities and money only.
+            'year' => $period ? app(YearInReview::class)->for($club, $period->session) : null,
         ]);
     }
 

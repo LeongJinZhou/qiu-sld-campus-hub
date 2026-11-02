@@ -2,6 +2,7 @@
 import CommitteeFeePopup from '@/Components/payments/CommitteeFeePopup.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
 import Drawer from '@/Components/ui/Drawer.vue';
+import Celebration from '@/Components/ui/Celebration.vue';
 import Toast from '@/Components/ui/Toast.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -15,6 +16,7 @@ const menuOpen = ref(false);
 const links = computed(() => [
     { label: 'Dashboard', href: '/admin' },
     { label: 'Club performance', href: '/admin/performance' },
+    { label: 'Submissions tracker', href: '/admin/tracking' },
     { label: 'Clubs', href: '/admin/clubs' },
     { label: 'Staff', href: '/admin/staff' },
     { label: 'All members', href: '/admin/members' },
@@ -40,6 +42,7 @@ const isActive = (href: string): boolean => (href === '/admin' ? page.url === '/
 <template>
     <div class="min-h-dvh md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
         <Toast />
+        <Celebration :text="page.props.flash.celebrate" />
         <CommitteeFeePopup />
         <aside class="hidden border-r border-line bg-surface md:block">
             <div class="sticky top-0 grid gap-6 p-5">

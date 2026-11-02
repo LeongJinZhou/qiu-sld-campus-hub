@@ -9,6 +9,7 @@ import Icon from '@/Components/ui/Icon.vue';
 import Input from '@/Components/ui/Input.vue';
 import Select from '@/Components/ui/Select.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PortalLayout from '@/Layouts/PortalLayout.vue';
 import { copy } from '@/lib/clone';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { watchDebounced } from '@vueuse/core';
@@ -37,6 +38,8 @@ interface Row {
 
 const props = defineProps<{
     club: { slug: string; name: string } | null;
+    portal?: boolean;
+    committeeFees?: { name: string; student_number: string | null; position: string | null; status: 'paid' | 'unpaid' | 'checking' | 'no_fee' }[];
     filters: Filters;
     counts: Record<string, number>;
     rows: Row[];
@@ -54,7 +57,12 @@ const props = defineProps<{
     views: { id: number; name: string; filters: Filters }[];
 }>();
 
-const url = props.club ? `/clubs/${props.club.slug}/members` : '/admin/members';
+// SLD stays inside the admin portal; the club's own committee and advisor use the club page.
+const url = props.club ? (props.portal ? `/admin/clubs/${props.club.slug}/members` : `/clubs/${props.club.slug}/members`) : '/admin/members';
+const layout = computed(() => (props.portal ? PortalLayout : AppLayout));
+const layoutProps = computed(() => (props.portal ? { title: props.club ? `Members · ${props.club.name}` : 'All members' } : { wide: true }));
+const feeTone = { paid: 'success', unpaid: 'danger', checking: 'info', no_fee: 'neutral' } as const;
+const feeLabel = { paid: 'Paid', unpaid: 'Not paid', checking: 'Payment being checked', no_fee: 'No fee set' } as const;
 const f = reactive<Filters>({ status: [], position: [], payment: [], method: [], collected_by: [], year_group: [], programme_short: [], intake: [], club_id: [], category: [], club_status: [], ...(copy(props.filters) as Partial<Filters>) });
 const sort = ref<string[][]>(Array.isArray(props.filters.sort) ? (props.filters.sort as string[][]) : [['name', 'asc']]);
 const search = ref(typeof props.filters.search === 'string' ? props.filters.search : '');
@@ -89,12 +97,12 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 
 <template>
     <Head :title="club ? `Members · ${club.name}` : 'All members'" />
-    <AppLayout wide>
+    <component :is="layout" v-bind="layoutProps">
         <div class="grid gap-5">
             <header class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 class="text-xl font-bold">Members<template v-if="club"> · {{ club.name }}</template></h1>
-                    <Link v-if="club" :href="`/clubs/${club.slug}`" class="text-sm text-brand-blue">Back to club</Link>
+                    <Link v-if="club" :href="portal ? '/admin/clubs' : `/clubs/${club.slug}`" class="text-sm text-brand-blue">{{ portal ? 'All clubs' : 'Back to club' }}</Link>
                 </div>
                 <div v-if="club" class="flex flex-wrap gap-2">
                     <a :href="`/clubs/${club.slug}/members/export/xlsx?${exportQuery}`"><Button variant="secondary" size="sm"><Icon name="file" :size="16" /> 10 Full Member List (Excel)</Button></a>
@@ -102,6 +110,18 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
                     <Button size="sm" variant="secondary" @click="router.post(`/clubs/${club.slug}/members/remind`, {}, { preserveScroll: true })"><Icon name="bell" :size="16" /> Remind unpaid</Button>
                 </div>
             </header>
+
+            <section v-if="committeeFees?.length" class="grid gap-2 rounded-card border border-line bg-surface p-4 shadow-card">
+                <h2 class="text-sm font-semibold">Committee club fees · this session</h2>
+                <ul class="grid gap-2 sm:grid-cols-2">
+                    <li v-for="c in committeeFees" :key="`${c.position}-${c.student_number}`" class="flex items-center justify-between gap-2 text-sm">
+                        <span class="min-w-0 truncate"
+                            ><strong>{{ c.position }}</strong> · {{ c.name }} <span class="text-ink-muted">{{ c.student_number }}</span></span
+                        >
+                        <Badge :tone="feeTone[c.status]">{{ feeLabel[c.status] }}</Badge>
+                    </li>
+                </ul>
+            </section>
 
             <dl class="grid grid-cols-4 gap-2 sm:grid-cols-8">
                 <button v-for="[key, label] in cards" :key="key" type="button" class="rounded-card border border-line bg-surface p-3 text-center shadow-card transition hover:shadow-pop" @click="apply(key === 'total' ? {} : ['paid', 'pending', 'unpaid'].includes(key) ? { payment: [key] } : { status: [key] })">
@@ -208,5 +228,5 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
                 <Button type="submit">Apply filters</Button>
             </form>
         </Drawer>
-    </AppLayout>
+    </component>
 </template>

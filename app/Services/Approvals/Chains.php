@@ -13,18 +13,10 @@ class Chains
     public function for(Document $document): array
     {
         return match ($document->type) {
-            DocumentType::Proposal => array_values(array_filter([
-                ChainRole::Preparer,
-                ChainRole::Advisor,
-                $document->event?->is_faculty_event ? ChainRole::Dean : null,
-                ChainRole::SldOfficer,
-                ChainRole::AssistantRegistrar,
-                ChainRole::Registrar,
-                ChainRole::Bursar,
-                ChainRole::Coo,
-            ])),
-            // Treasurer signs, Advisor, then SLD; Finance signs the exported form on paper (see FundWithdrawals).
-            DocumentType::FundWithdrawal => [ChainRole::Treasurer, ChainRole::Advisor, ChainRole::SldOfficer],
+            // The preparer confirms and submits, the Advisor signs, SLD has the final say.
+            DocumentType::Proposal => [ChainRole::Preparer, ChainRole::Advisor, ChainRole::SldOfficer],
+            // Treasurer → President → Advisor → SLD; Finance signs the exported form on paper, then transfer and receipt.
+            DocumentType::FundWithdrawal => [ChainRole::Treasurer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer],
             // The first signature on every form is whoever prepares and submits it, with their own position.
             DocumentType::AgmReport => [ChainRole::Preparer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer],
             // The official 13 template is signed by the preparer, the President and the Advisor.

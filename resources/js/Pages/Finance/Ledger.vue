@@ -253,7 +253,7 @@ const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, .
                     <h1 class="text-xl font-bold">Finance · {{ club.name }}</h1>
                     <Link :href="`/clubs/${club.slug}`" class="text-sm text-brand-blue">Back to club</Link>
                 </div>
-                <div class="text-right">
+                <div class="sm:text-right">
                     <p class="text-xs uppercase tracking-wide text-ink-muted">Total club money</p>
                     <p class="text-3xl font-bold tabular-nums" :class="position.total_sen < 0 ? 'text-danger' : ''">
                         {{ rm(position.total_sen) }}

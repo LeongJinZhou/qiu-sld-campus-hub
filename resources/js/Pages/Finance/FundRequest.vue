@@ -7,9 +7,10 @@ import Select from '@/Components/ui/Select.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useLocalDraft } from '@/composables/useAutosave';
 import { date, rm } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 
 type Person = { id: number; name: string };
 const props = defineProps<{
@@ -46,6 +47,19 @@ watch(
     },
     { immediate: true },
 );
+// The unfinished request stays on this device (bank details excluded: they are always typed and confirmed afresh).
+const draft = useLocalDraft(
+    `fund-request:${props.club.slug}:${props.selectedEvent ?? 'any'}`,
+    () => ({ scope: form.scope, event_id: form.event_id, purpose: form.purpose, needed_by: form.needed_by, items: form.items }),
+    (saved) => {
+        // An event that is no longer open for withdrawals is not brought back.
+        const eventOk = saved.scope !== 'event' || props.events.some((e) => e.id === saved.event_id);
+        if (!eventOk) return;
+        Object.assign(form, { scope: saved.scope ?? form.scope, event_id: saved.event_id ?? form.event_id, purpose: saved.purpose ?? '', needed_by: saved.needed_by ?? '' });
+        // Items are set after the scope watcher has filled the defaults for the restored scope.
+        if (saved.items?.length) void nextTick(() => (form.items = saved.items!));
+    },
+);
 const total = computed(() => form.items.reduce((s, i) => s + i.unit_sen * Number(i.quantity || 0), 0));
 const treasurer = computed<Person | null>(() => (form.scope === 'event' ? (form.event_id ? (props.eventTreasurers[form.event_id] ?? null) : null) : props.clubTreasurer));
 const iAmTreasurer = computed(() => treasurer.value?.id === props.me);
@@ -66,6 +80,7 @@ const confirming = ref(false);
 const send = (): void => {
     form.bank_confirmed = true;
     form.post(`/clubs/${props.club.slug}/fund-requests`, {
+        onSuccess: () => draft.clear(),
         onFinish: () => (confirming.value = false),
         onError: () => (form.bank_confirmed = false),
     });
@@ -78,6 +93,7 @@ const send = (): void => {
         <div class="grid gap-6">
             <header>
                 <h1 class="text-xl font-bold">Fund Withdrawal / Transfer</h1>
+                <p v-if="draft.restored" class="text-xs text-ink-muted">Your unfinished request was restored from this device. Bank details are typed afresh.</p>
                 <p class="text-sm text-ink-muted">
                     07 template · {{ club.name }} · Treasurer signs → Advisor → SLD → Finance signs → bank-in → Treasurer uploads proof → SLD confirms. You are told at every step.
                 </p>

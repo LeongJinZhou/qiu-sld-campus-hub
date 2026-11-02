@@ -2,19 +2,19 @@
 
 namespace App\Models;
 
-use App\Services\Agm\Elections;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['agm_id', 'term_session_id', 'allow_alumni_vote', 'nominations_open_at', 'nominations_close_at', 'voting_open_at', 'voting_close_at', 'results_published_at', 'handed_over_at'])]
+#[Fillable(['agm_id', 'term_session_id', 'allow_alumni_vote', 'nominations_open_at', 'nominations_close_at', 'voting_open_at', 'voting_close_at', 'results_published_at', 'handover_started_at', 'handover_ends_on', 'handed_over_at'])]
 class Election extends Model
 {
     protected function casts(): array
     {
         return [
+            'handover_started_at' => 'datetime', 'handover_ends_on' => 'date',
             'allow_alumni_vote' => 'boolean',
             'nominations_open_at' => 'datetime', 'nominations_close_at' => 'datetime',
             'voting_open_at' => 'datetime', 'voting_close_at' => 'datetime',
@@ -55,9 +55,9 @@ class Election extends Model
         return $this->hasMany(ElectionPosition::class)->orderBy('sort');
     }
 
-    /** The day the elected committee takes over: 7 days after voting closes (the old committee hands over until then). */
-    public function handoverOn(): CarbonImmutable
+    /** The day the elected committee gets full access: the end of the SLD-started overlap (null until SLD starts it). */
+    public function handoverOn(): ?CarbonImmutable
     {
-        return CarbonImmutable::instance($this->voting_close_at)->addDays(Elections::HANDOVER_DAYS)->startOfDay();
+        return $this->handover_ends_on ? CarbonImmutable::parse($this->handover_ends_on)->startOfDay() : null;
     }
 }

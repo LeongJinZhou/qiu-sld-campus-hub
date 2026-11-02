@@ -60,6 +60,27 @@ class CommitteeFees
         return $out;
     }
 
+    /**
+     * A club's current committee and whether each has paid the club fee (advisors are staff and never pay).
+     *
+     * @return list<array{name: string, student_number: ?string, position: ?string, status: string}>
+     */
+    public function forClub(Club $club): array
+    {
+        $fee = $this->memberships->fee($club);
+
+        return RoleAssignment::query()->actingFor($club->id, $this->sessions->current())->where('role', ScopedRole::ClubCommittee)->with('user.student')->get()
+            ->map(function (RoleAssignment $a) use ($club, $fee): array {
+                $membership = Membership::where('club_id', $club->id)->where('user_id', $a->user_id)->first();
+                $checking = $membership && MembershipPayment::where('membership_id', $membership->id)
+                    ->whereIn('status', [PaymentStatus::Reading, PaymentStatus::PendingReview, PaymentStatus::CashPending])->exists();
+                $status = ! $fee || $fee->amount_sen <= 0 ? 'no_fee'
+                    : (in_array($membership?->status, [MembershipStatus::Active, MembershipStatus::Grace], true) ? 'paid' : ($checking ? 'checking' : 'unpaid'));
+
+                return ['name' => $a->user->name, 'student_number' => $a->user->student?->student_number, 'position' => $a->position, 'status' => $status];
+            })->sortBy(fn ($r) => [$r['status'] === 'unpaid' ? 0 : 1, $r['position']])->values()->all();
+    }
+
     /** Active or renewing member, or a payment already sent and being checked. */
     private function paidUp(User $user, Club $club): bool
     {

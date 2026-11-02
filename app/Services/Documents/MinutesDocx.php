@@ -24,7 +24,7 @@ class MinutesDocx
         $document->loadMissing(['club', 'meeting', 'approvals.signature']);
         $d = $document->data() ?: $this->form->current($document);
         $meeting = $document->meeting;
-        $output = storage_path("app/private/generated/minutes-{$document->id}-".now()->format('YmdHis').'.docx');
+        $output = storage_path("app/private/generated/minutes-{$document->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.docx');
 
         return $this->docx->render(self::TEMPLATE, function (TemplateProcessor $t) use ($document, $d, $meeting): void {
             $logo = $document->club->logo_path ? Storage::disk('public')->path($document->club->logo_path) : null;

@@ -12,6 +12,7 @@ use App\Models\Student;
 use App\Services\AuditLogger;
 use App\Services\Camsys\StatusMapper;
 use App\Services\Events\ProposalRules;
+use App\Services\SldRules;
 use App\Services\Time\SessionResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,7 @@ class SettingsController extends Controller
             ]),
             'currentSession' => $sessions->current()->name,
             'ccaLimit' => app(ProposalRules::class)->ccaLimit(),
+            'rules' => app(SldRules::class)->all(),
         ]);
     }
 
@@ -46,12 +48,15 @@ class SettingsController extends Controller
                 'intakes' => $this->replace(IntakeMap::class, $data['items']),
                 'statuses' => Setting::write(StatusMapper::SETTING_KEY, ['active' => $data['active'], 'alumni' => $data['alumni']]),
                 'sessions' => $sessions->forName($data['name']),
+                'rules' => app(SldRules::class)->save($data),
                 'cca' => Setting::write(ProposalRules::CCA_SETTING, ['max_hours' => (float) $data['max_hours']]),
             };
         });
         $audit->log("settings.{$section}", null, $data);
 
-        return back()->with('success', $section === 'cca' ? 'CCA limit saved.' : 'Settings saved. Changes apply from the next camsys sync.');
+        return back()->with('success', match ($section) {
+            'cca' => 'CCA limit saved.', 'rules' => 'Rules saved. They apply from now on.', default => 'Settings saved. Changes apply from the next camsys sync.',
+        });
     }
 
     /**
