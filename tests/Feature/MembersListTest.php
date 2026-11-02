@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\MembershipStatus;
+use App\Models\Club;
 use App\Models\Membership;
 use App\Models\Student;
 use App\Models\User;
@@ -73,4 +74,19 @@ it('saves and reuses filter views per user', function () {
 
     $this->actingAs($this->f['president'])->get("/clubs/{$this->club->slug}/members")
         ->assertInertia(fn (Assert $p) => $p->where('views.0.name', 'Expiring soon'));
+});
+
+it('lists each person once across all clubs, with all their clubs together', function () {
+    $other = Club::create(['name' => 'Second Club']);
+    $kavitha = Student::where('student_number', 'STD20240010')->first()->ensureUser();
+    Membership::create(['club_id' => $other->id, 'user_id' => $kavitha->id, 'status' => MembershipStatus::Active, 'starts_on' => today()->subMonth(), 'expires_on' => today()->addYear()]);
+
+    $this->actingAs(sldOfficer())->get('/admin/members')->assertInertia(fn (Assert $p) => $p
+        ->where('rows', fn ($rows) => collect($rows)->where('student_number', 'STD20240010')->count() === 1
+            && collect(collect($rows)->firstWhere('student_number', 'STD20240010')['clubs'])->pluck('club')->sort()->values()->all() === ['Fixture Club', 'Second Club'])
+        ->where('pagination.total', fn ($total) => $total === collect(app(MembersQuery::class)->rows(null))->pluck('student_number')->unique()->count()));
+
+    // Filtering by one club lists only that club for the person; a club's own page is unchanged (one row per member).
+    $this->actingAs(sldOfficer())->get("/admin/members?club_id[]={$other->id}")->assertInertia(fn (Assert $p) => $p->has('rows', 1)->where('rows.0.clubs.0.club', 'Second Club')->where('counts.total', 1));
+    $this->actingAs($this->f['president'])->get("/clubs/{$this->club->slug}/members")->assertInertia(fn (Assert $p) => $p->where('rows.0.club', fn ($c) => is_string($c)));
 });

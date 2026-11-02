@@ -94,17 +94,19 @@ class MembersController extends Controller
         $filters = $this->filters($request);
         $rows = $this->members->rows($club ? [$club->id] : null, $filters);
         $all = $this->members->rows($club ? [$club->id] : null);
+        // All clubs: one row per person, with their clubs together (no repeated names).
+        $listed = $club ? $rows : $this->members->people($rows);
 
         return Inertia::render('Membership/Members', [
             'club' => $club?->only('slug', 'name'),
             'portal' => $portal,
             'committeeFees' => $club ? app(CommitteeFees::class)->forClub($club) : [],
             'filters' => (object) $filters, // always a JSON object, even with no filters
-            'counts' => $this->members->counts($rows),
+            'counts' => $club ? $this->members->counts($rows) : $this->members->peopleCounts($listed),
             // Every member is reachable: 100 per page, with the total shown (the export has everything at once).
-            'rows' => $rows->forPage($page = max(1, $request->integer('page', 1)), self::PER_PAGE)->values(),
-            'pagination' => ['page' => min($page, max(1, (int) ceil($rows->count() / self::PER_PAGE))), 'per_page' => self::PER_PAGE, 'total' => $rows->count(),
-                'last_page' => max(1, (int) ceil($rows->count() / self::PER_PAGE))],
+            'rows' => $listed->forPage($page = max(1, $request->integer('page', 1)), self::PER_PAGE)->values(),
+            'pagination' => ['page' => min($page, max(1, (int) ceil($listed->count() / self::PER_PAGE))), 'per_page' => self::PER_PAGE, 'total' => $listed->count(),
+                'last_page' => max(1, (int) ceil($listed->count() / self::PER_PAGE))],
             'options' => [
                 'positions' => $all->pluck('position')->unique()->sort()->values(),
                 'year_groups' => $all->pluck('year_group')->filter()->unique()->sort()->values(),
