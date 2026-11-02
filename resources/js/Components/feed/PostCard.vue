@@ -43,6 +43,10 @@ const openComments = (): void => {
     if (commenting.value) void nextTick(() => commentInput.value?.focus());
 };
 const sendComment = (): void => comment.post(`/posts/${props.post.id}/comments`, { preserveScroll: true, onSuccess: () => comment.reset() });
+// SLD and the club's committee can delete comments.
+const removeComment = (id: number): void => {
+    if (confirm('Delete this comment for everyone?')) router.delete(`/comments/${id}`, { preserveScroll: true });
+};
 const register = (): void => router.post(`/events/${props.post.event?.slug}/register`, {}, { preserveScroll: true });
 </script>
 
@@ -92,7 +96,12 @@ const register = (): void => router.post(`/events/${props.post.event?.slug}/regi
 
             <template v-if="!full">
                 <Link v-if="post.comments_count > post.comments.length" :href="post.url" class="text-sm text-ink-muted">View all {{ post.comments_count }} comments</Link>
-                <p v-for="c in post.comments" :key="c.id" class="text-sm"><strong>{{ c.user }}</strong> {{ c.body }}</p>
+                <p v-for="c in post.comments" :key="c.id" class="group flex gap-2 text-sm">
+                    <span class="min-w-0 flex-1"><strong>{{ c.user }}</strong> {{ c.body }}</span>
+                    <button v-if="post.can_moderate" type="button" class="text-xs text-ink-muted hover:text-danger" :aria-label="`Delete comment by ${c.user}`" @click="removeComment(c.id)">
+                        Delete
+                    </button>
+                </p>
             </template>
 
             <form v-if="commenting" class="flex gap-2 border-t border-line pt-3" @submit.prevent="sendComment">

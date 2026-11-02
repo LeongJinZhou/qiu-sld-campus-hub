@@ -153,6 +153,7 @@ export interface PostCardData {
     comments_count: number;
     liked: boolean;
     saved: boolean;
+    can_moderate?: boolean;
     comments: CommentData[];
     url: string;
 }

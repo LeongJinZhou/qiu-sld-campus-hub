@@ -83,6 +83,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/like', [PostController::class, 'like'])->middleware('throttle:likes')->name('posts.like');
     Route::post('/posts/{post}/save', [PostController::class, 'save'])->middleware('throttle:likes')->name('posts.save');
     Route::post('/posts/{post}/comments', [PostController::class, 'comment'])->middleware('throttle:comments')->name('posts.comment');
+    Route::delete('/comments/{comment}', [PostController::class, 'destroyComment'])->name('comments.destroy');
     Route::post('/posts/{post}/report', [PostController::class, 'report'])->middleware('throttle:reports')->name('posts.report');
 
     Route::get('/search', SearchController::class)->name('search');

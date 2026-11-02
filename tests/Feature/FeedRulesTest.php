@@ -92,3 +92,19 @@ it('shows the real like count and the viewer\'s own like on the feed after likin
     $this->actingAs($this->student)->get('/feed')->assertInertia(fn (Assert $page) => $page
         ->where('posts.data.0.likes_count', 2)->where('posts.data.0.liked', true));
 });
+
+it('lets only SLD and the club\'s committee delete a comment', function () {
+    $p = $this->club->posts()->create(['type' => 'general', 'caption' => 'Hello', 'published_at' => now(), 'created_at' => now()]);
+    $this->actingAs($this->student)->post("/posts/{$p->id}/comments", ['body' => 'Nice one']);
+    $comment = $p->comments()->sole();
+
+    $this->actingAs($this->student)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('posts.data.0.can_moderate', false));
+    $this->actingAs($this->student)->delete("/comments/{$comment->id}")->assertForbidden();   // not even the author
+    $this->actingAs(otherStudent('STD20249912'))->delete("/comments/{$comment->id}")->assertForbidden();
+    $this->actingAs($this->president)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('posts.data.0.can_moderate', true));
+    $this->actingAs($this->president)->delete("/comments/{$comment->id}")->assertSessionHas('success');
+    expect($p->comments()->count())->toBe(0);
+
+    $this->actingAs($this->student)->post("/posts/{$p->id}/comments", ['body' => 'Great event']);
+    $this->actingAs(sldOfficer())->delete('/comments/'.$p->comments()->sole()->id)->assertSessionHas('success');
+});
