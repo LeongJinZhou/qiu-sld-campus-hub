@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Agm\AgmPackage;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Agm\Agms;
+use App\Services\Agm\YearInReview;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Events\AttendanceQr;
 use App\Services\Google\CalendarMeetService;
@@ -78,6 +79,8 @@ class AgmController extends Controller
                 'ai_available' => (bool) config('services.anthropic.key'),
             ] : null,
             'themes' => ReportTheme::orderBy('name')->get(['id', 'name']),
+            // The whole year compiled for the AGM: that session's events, weekly activities and money only.
+            'year' => $period ? app(YearInReview::class)->for($club, $period->session) : null,
         ]);
     }
 

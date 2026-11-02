@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import YearInReview from '@/Components/agm/YearInReview.vue';
 import EvidencePhotos from '@/Components/reports/EvidencePhotos.vue';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import Avatar from '@/Components/ui/Avatar.vue';
@@ -47,6 +48,7 @@ const props = defineProps<{
         ai_available: boolean;
     } | null;
     themes: { id: number; name: string }[];
+    year?: InstanceType<typeof YearInReview>['$props']['year'] | null;
 }>();
 
 const daysLeft = (date: string): number => Math.ceil((new Date(`${date}T23:59:59`).getTime() - Date.now()) / 86_400_000);
@@ -106,6 +108,7 @@ const packageReady = computed(() => Object.values(props.agm?.checklist ?? {}).ev
                         <p class="text-lg font-bold">{{ Math.max(0, daysLeft(period.report_deadline)) }} days left</p>
                     </div>
                 </section>
+                <YearInReview v-if="year" :club="club" :year="year" />
 
                 <Card v-if="!agm">
                     <template #title>1. Schedule the AGM</template>
