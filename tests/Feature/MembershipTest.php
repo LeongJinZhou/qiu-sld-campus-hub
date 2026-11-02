@@ -74,7 +74,7 @@ it('auto-confirms an online payment the AI reads cleanly and records ledger inco
 
     expect($payment->fresh()->status)->toBe(PaymentStatus::AutoConfirmed)
         ->and($m->fresh()->status)->toBe(MembershipStatus::Active)
-        ->and(LedgerEntry::where('club_id', $this->club->id)->sum('income_sen'))->toBe(3000);
+        ->and((int) LedgerEntry::where('club_id', $this->club->id)->sum('income_sen'))->toBe(3000); // MySQL returns SUM() as a string
 });
 
 it('queues unclear receipts for the Treasurer, who confirms or rejects', function () {

@@ -185,8 +185,11 @@ it('cannot file a report against a comment belonging to another post', function 
 
 it('does not allow a club assignment removal route to delete an event assignment with the same numeric scope id', function () {
     $assignment = $this->f['event']->committee()->firstOrFail();
-    expect($assignment->scope_id)->toBe($this->f['club']->id);
-    $this->actingAs(sldOfficer())->delete('/admin/clubs/'.$this->f['club']->slug.'/assignments/'.$assignment->id)->assertNotFound();
+    // The scenario needs a club whose id equals the event assignment's scope id. A fresh SQLite database gives
+    // that by chance (both are 1); on MySQL auto-increments are not reset between tests, so make one explicitly.
+    $club = Club::find($assignment->scope_id) ?? Club::forceCreate(['id' => $assignment->scope_id, 'name' => 'Same Id Club', 'slug' => 'same-id-club']);
+    expect($assignment->scope_id)->toBe($club->id);
+    $this->actingAs(sldOfficer())->delete('/admin/clubs/'.$club->slug.'/assignments/'.$assignment->id)->assertNotFound();
     $this->assertDatabaseHas('role_assignments', ['id' => $assignment->id]);
 })->group('deep-uat');
 

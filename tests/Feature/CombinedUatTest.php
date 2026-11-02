@@ -36,7 +36,12 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 // Explicitly opt in: these tests issue thousands of in-process HTTP requests.
 // They never start a server, transfer real money, or use the developer database.
 beforeEach(function () {
-    expect(config('database.connections.sqlite.database'))->toBe(':memory:');
+    // Never the developer database: SQLite in memory, or (to verify MySQL, as on Exabytes) a dedicated throwaway
+    // database whose name ends in _test.
+    $connection = config('database.default');
+    $database = (string) config("database.connections.{$connection}.database");
+    expect($connection === 'sqlite' ? $database === ':memory:' : $connection === 'mysql' && str_ends_with($database, '_test'))
+        ->toBeTrue("Combined UAT refuses the {$connection} database '{$database}'.");
     $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', config('app.timezone')));
     Http::preventStrayRequests();
     config(['services.anthropic.key' => null]);

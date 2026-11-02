@@ -201,7 +201,13 @@ php artisan test --group=deep-uat  # multi-task permutations, moderation, profil
 node --test tests/Frontend/deep-contracts.mjs  # execute actual theme, calendar and navigation scripts without a browser
 SLD_UAT=1 php artisan test --group=combined-uat  # 3,000 joins, payments, connected event/AGM journeys and native exports
 QA_TEMPLATES=1 php artisan test --filter=TemplateFidelity   # every official template → storage/qa/ side by side
+
+# The same suites on MySQL (what Exabytes runs). Tests only ever use :memory: or a database named *_test.
+mysql -uroot -e "CREATE DATABASE sld_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=sld_test DB_USERNAME=root DB_PASSWORD= php artisan test
 ```
+
+Deploying to Exabytes (cPanel or VPS): see [docs/DEPLOY_EXABYTES.md](docs/DEPLOY_EXABYTES.md); `scripts/package-exabytes.sh` builds the upload ZIP.
 
 The hard-audit tests use the in-memory test databases and fake upload disks. They cover access, payment, withdrawal and signature boundaries and all pass; a future failure is evidence to investigate, not a reason to weaken the expected boundary. They do not perform live Google sign-in, bank transfers, browser/camera testing or concurrent load testing.
 
