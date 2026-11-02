@@ -3,12 +3,13 @@ import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
 import ProposalView from '@/Components/forms/ProposalView.vue';
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
+import Modal from '@/Components/ui/Modal.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import type { PresentedDocument } from '@/types';
 import { PROPOSAL_SECTIONS, type ProposalSection } from '@/lib/proposal';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 
 const props = defineProps<{
@@ -19,7 +20,21 @@ const props = defineProps<{
     downloads: string[];
     exceptions: { kind: string; label: string; reason: string }[];
     decidesExceptions: boolean;
+    paper?: { signers: { label: string; signed: boolean }[]; scan_url: string | null; complete: boolean } | null;
+    paperOptions?: string[];
 }>();
+
+// Higher authorities signing on paper (SLD's step): choose who, export, upload the signed scan, tick who signed.
+const chosen = ref<string[]>([]);
+const other = ref('');
+const startPaper = (): void =>
+    router.post(`/approvals/${props.approvalId}/paper`, { signers: [...chosen.value, ...(other.value.trim() ? [other.value.trim()] : [])] }, { preserveScroll: true });
+const paperForm = useForm({ scan: null as File | null, signed: (props.paper?.signers ?? []).filter((s) => s.signed).map((s) => s.label) });
+const savePaper = (): void => paperForm.post(`/approvals/${props.approvalId}/paper/record`, { preserveScroll: true, forceFormData: true, onSuccess: () => (paperForm.scan = null) });
+const cancelPaper = (): void => {
+    if (confirm('No paper signatures needed after all? The uploaded scan is removed.')) router.delete(`/approvals/${props.approvalId}/paper`, { preserveScroll: true });
+};
+const confirming = ref(false);
 
 const form = useForm({
     decision: 'approve' as 'approve' | 'return' | 'reject',
@@ -118,10 +133,13 @@ const decide = (decision: 'approve' | 'return' | 'reject'): void => {
                                     I approve these exceptions as SLD: {{ exceptions.map((e) => e.label).join('; ') }}.
                                 </label>
                                 <SignaturePad v-model="form.signature" v-model:strokes="form.signature_strokes" label="Sign to approve" />
+                                <p v-if="paper && !paper.complete" class="rounded-control bg-warning/10 px-3 py-2 text-xs text-warning">
+                                    Waiting for the paper signatures: upload the signed scan and tick everyone who signed.
+                                </p>
                                 <Button
-                                    :disabled="!form.signature || !form.no_problems || (exceptions.length > 0 && decidesExceptions && !form.accept_exceptions)"
+                                    :disabled="!form.signature || !form.no_problems || (exceptions.length > 0 && decidesExceptions && !form.accept_exceptions) || (!!paper && !paper.complete)"
                                     :loading="form.processing && form.decision === 'approve'"
-                                    @click="decide('approve')"
+                                    @click="confirming = true"
                                 >
                                     Approve &amp; sign
                                 </Button>
@@ -183,11 +201,72 @@ const decide = (decision: 'approve' | 'return' | 'reject'): void => {
                         </Transition>
                     </div>
                 </Card>
+                <Card v-if="paperOptions?.length || paper">
+                    <template #title>Higher-authority signatures (paper)</template>
+                    <div v-if="!paper" class="grid gap-3 text-sm">
+                        <p class="text-ink-muted">If this needs a higher authority's signature, choose who signs. You then export it, have it signed, and upload the scan.</p>
+                        <label v-for="o in paperOptions" :key="o" class="flex items-center gap-2">
+                            <input v-model="chosen" type="checkbox" :value="o" class="size-4 accent-brand-blue" /> {{ o }}
+                        </label>
+                        <input v-model="other" maxlength="120" placeholder="Someone else (name and title)" class="h-9 rounded-control border border-line bg-surface px-2 text-sm" />
+                        <Button variant="secondary" :disabled="!chosen.length && !other.trim()" @click="startPaper">Send for signature on paper</Button>
+                    </div>
+                    <div v-else class="grid gap-3 text-sm">
+                        <ol class="grid gap-3">
+                            <li class="grid gap-1">
+                                <p class="font-medium">1. Export and have it signed</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <a v-for="format in downloads" :key="format" :href="`/documents/${document.id}/download/${format}`" class="text-brand-blue underline">{{ format.toUpperCase() }}</a>
+                                </div>
+                            </li>
+                            <li v-if="canAct" class="grid gap-1">
+                                <p class="font-medium">2. Upload the signed scan</p>
+                                <input type="file" accept="application/pdf,image/*" class="text-xs" @change="paperForm.scan = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                                <p v-if="paperForm.errors.scan" class="text-xs text-danger">{{ paperForm.errors.scan }}</p>
+                                <a v-if="paper.scan_url" :href="paper.scan_url" target="_blank" rel="noopener" class="text-xs text-brand-blue underline">Signed scan on file</a>
+                            </li>
+                            <li class="grid gap-1">
+                                <p class="font-medium">{{ canAct ? '3. Tick who has signed' : 'Signatures' }}</p>
+                                <label v-for="sgn in paper.signers" :key="sgn.label" class="flex items-center gap-2">
+                                    <input v-if="canAct" v-model="paperForm.signed" type="checkbox" :value="sgn.label" class="size-4 accent-success" />
+                                    <span v-else>{{ sgn.signed ? '✓' : '…' }}</span>
+                                    {{ sgn.label }}
+                                </label>
+                            </li>
+                        </ol>
+                        <div v-if="canAct" class="flex flex-wrap gap-2">
+                            <Button size="sm" :loading="paperForm.processing" @click="savePaper">Save</Button>
+                            <Button size="sm" variant="ghost" @click="cancelPaper">Not needed</Button>
+                        </div>
+                        <p class="text-xs" :class="paper.complete ? 'text-success' : 'text-ink-muted'">
+                            {{ paper.complete ? '✓ All signed and the scan is on file. You can now give the final approval.' : 'The final approval opens once every signatory is ticked and the scan is uploaded.' }}
+                        </p>
+                    </div>
+                </Card>
                 <Card>
                     <template #title>Approval progress</template>
                     <ApprovalTracker :progress="document.progress" :steps="document.steps" />
                 </Card>
             </aside>
         </div>
+        <Modal v-model:open="confirming" title="Confirm the approval">
+            <div class="grid gap-3 text-sm">
+                <p>
+                    You are approving this {{ document.type_label.toLowerCase() }}<template v-if="decidesExceptions"> as the final step</template>.
+                    <template v-if="paper"> It records that {{ paper.signers.map((s) => s.label).join(', ') }} signed on paper.</template>
+                </p>
+                <div class="flex justify-end gap-2">
+                    <Button variant="secondary" @click="confirming = false">Go back</Button>
+                    <Button
+                        :loading="form.processing"
+                        @click="
+                            confirming = false;
+                            decide('approve');
+                        "
+                        >Yes, approve</Button
+                    >
+                </div>
+            </div>
+        </Modal>
     </AppLayout>
 </template>

@@ -12,6 +12,7 @@ export interface AuthUser {
 export interface Flash {
     success: string | null;
     error: string | null;
+    celebrate?: string | null;
 }
 
 export interface CommitteeFeeDue {

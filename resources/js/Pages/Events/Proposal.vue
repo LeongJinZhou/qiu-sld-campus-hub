@@ -19,11 +19,12 @@ import Modal from '@/Components/ui/Modal.vue';
 import Select from '@/Components/ui/Select.vue';
 import SignaturePad from '@/Components/ui/SignaturePad.vue';
 import Textarea from '@/Components/ui/Textarea.vue';
+import Celebration from '@/Components/ui/Celebration.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { date, dateTime, hoursBetween, rm } from '@/lib/format';
 import type { ApprovalProgress, ApprovalStep, ProposalData } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 const props = defineProps<{
     event: { slug: string; name: string };
@@ -318,6 +319,20 @@ const removeMember = (id: number): void =>
     router.delete(`/events/${props.event.slug}/committee/${id}`, {
         preserveScroll: true,
     });
+
+// The first time the committee opens its approved proposal on this device, celebrate it.
+const celebrate = ref<string | null>(null);
+onMounted(() => {
+    if (props.status !== 'approved') return;
+    const key = `celebrated:proposal:${props.event.slug}`;
+    try {
+        if (localStorage.getItem(key)) return;
+        localStorage.setItem(key, '1');
+    } catch {
+        return;
+    }
+    celebrate.value = 'Proposal approved!';
+});
 </script>
 
 <template>
@@ -714,5 +729,6 @@ const removeMember = (id: number): void =>
                 <Button :disabled="!form.signature" :loading="form.processing" @click="submit">Submit proposal</Button>
             </div>
         </Modal>
+        <Celebration :text="celebrate" detail="Every signature is in. Time to announce it on the feed." />
     </AppLayout>
 </template>

@@ -115,6 +115,14 @@ class ApprovalEngine
             $comment = trim(($comment ? "{$comment}\n" : '').'Exceptions approved: '.implode('; ', array_map(fn (array $e) => "{$e['label']} (reason: {$e['reason']})", $exceptions)));
         }
 
+        // Higher authorities asked to sign on paper: every one ticked and the signed scan on file, recorded with the approval.
+        if ($blocker = PaperSignoff::blocker($approval)) {
+            throw new DomainException($blocker);
+        }
+        if ($approval->paper) {
+            $comment = trim(($comment ? "{$comment}\n" : '').'Signed on paper by: '.collect($approval->paper['signers'])->pluck('label')->implode(', ').' (signed scan on file).');
+        }
+
         DB::transaction(function () use ($approval, $user, $signature, $comment, $strokes): void {
             $this->decide($approval, $user, ApprovalDecision::Approved, $comment, $signature, $approval->document->latestVersion?->id, $strokes);
             $this->audit->log('approval.approved', $approval->document, ['step' => $approval->step_no, 'role' => $approval->role->value]);

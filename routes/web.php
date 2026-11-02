@@ -175,6 +175,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
     Route::get('/approvals/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
     Route::post('/approvals/{approval}', [ApprovalController::class, 'decide'])->name('approvals.decide');
+    Route::post('/approvals/{approval}/paper', [ApprovalController::class, 'paperStart'])->name('approvals.paper.start');
+    Route::post('/approvals/{approval}/paper/record', [ApprovalController::class, 'paperRecord'])->middleware('throttle:uploads')->name('approvals.paper.record');
+    Route::delete('/approvals/{approval}/paper', [ApprovalController::class, 'paperCancel'])->name('approvals.paper.cancel');
+    Route::get('/approvals/{approval}/paper/scan', [ApprovalController::class, 'paperScan'])->name('approvals.paper.scan');
 
     Route::get('/notifications', NotificationController::class)->name('notifications');
 
