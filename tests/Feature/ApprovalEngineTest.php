@@ -16,20 +16,11 @@ beforeEach(function () {
     $this->data = ['name' => 'Beach Cleanup', 'budget' => ['revenue' => [], 'expenses' => []], 'starts_at' => '2027-03-01T08:00', 'ends_at' => '2027-03-01T12:30'];
 });
 
-it('builds the proposal chain in the official order', function () {
-    $this->engine->submit($this->f['document'], $this->f['president'], $this->data, signaturePng());
-
-    expect($this->f['document']->approvals()->pluck('role')->all())->toBe([
-        ChainRole::Preparer, ChainRole::Advisor, ChainRole::SldOfficer, ChainRole::AssistantRegistrar,
-        ChainRole::Registrar, ChainRole::Bursar, ChainRole::Coo,
-    ]);
-});
-
-it('adds the Dean step for faculty events', function () {
+it('routes proposals Preparer → Advisor → SLD, with SLD as the final authority (faculty events too)', function () {
     $this->f['event']->update(['is_faculty_event' => true]);
     $this->engine->submit($this->f['document']->fresh(), $this->f['president'], $this->data, signaturePng());
 
-    expect($this->f['document']->approvals()->pluck('role')->all())->toContain(ChainRole::Dean);
+    expect($this->f['document']->approvals()->pluck('role')->all())->toBe([ChainRole::Preparer, ChainRole::Advisor, ChainRole::SldOfficer]);
 });
 
 it('signs the preparer step on submit with server time and a verification code', function () {
@@ -59,13 +50,13 @@ it('only lets the current step act, and only the right person', function () {
         ->and($this->engine->canAct($sldStep, sldOfficer()))->toBeFalse();
 });
 
-it('runs through all seven signers, then posts to the feed, unlocks attendance and creates the checklist', function () {
+it('runs through all three signers, then posts to the feed, unlocks attendance and creates the checklist', function () {
     $this->engine->submit($this->f['document'], $this->f['president'], $this->data, signaturePng());
     approveRemainingSteps($this->f['document']);
 
     $event = $this->f['event']->fresh();
     expect($this->f['document']->fresh()->status)->toBe(DocumentStatus::Approved)
-        ->and($this->f['document']->signatures()->count())->toBe(7)
+        ->and($this->f['document']->signatures()->count())->toBe(3)
         ->and($event->status)->toBe(DocumentStatus::Approved)
         ->and($event->attendance_open)->toBeTrue()
         ->and($event->registration_open)->toBeTrue()

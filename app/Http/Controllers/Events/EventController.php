@@ -14,6 +14,7 @@ use App\Services\Documents\DocumentPresenter;
 use App\Services\Events\EventRegistrations;
 use App\Services\Events\ProposalDrafts;
 use App\Services\Events\ProposalRules;
+use App\Services\SldRules;
 use App\Services\Time\SessionResolver;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -32,11 +33,8 @@ class EventController extends Controller
 
         return Inertia::render('Events/Create', [
             'club' => $club->only('slug', 'name'),
-            'earliest' => [
-                'small' => $rules->earliestStart(1, now())->toDateString(),
-                'large' => $rules->earliestStart(ProposalRules::LARGE_EVENT_PARTICIPANTS, now())->toDateString(),
-            ],
-            'largeThreshold' => ProposalRules::LARGE_EVENT_PARTICIPANTS,
+            'earliest' => $rules->earliestStart(now())->toDateString(),
+            'leadDays' => app(SldRules::class)->get('proposal_lead_days'),
         ]);
     }
 

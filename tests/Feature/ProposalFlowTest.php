@@ -37,12 +37,23 @@ it('saves a draft and syncs the event row', function () {
     expect($this->f['event']->fresh()->cca_participant)->toBe(3.0)->and($this->f['event']->fresh()->venue)->toBe('Pantai Remis');
 });
 
-it('enforces the lead-time rule on submit', function () {
-    $data = completeProposal($this->f, ['starts_at' => now()->addWeeks(2)->format('Y-m-d\TH:i'), 'ends_at' => now()->addWeeks(2)->addHours(3)->format('Y-m-d\TH:i')]);
+it('enforces the lead-time rule on submit, and lets SLD approve a late proposal with a reason as an exception', function () {
+    $data = completeProposal($this->f, ['starts_at' => now()->addWeek()->format('Y-m-d\TH:i'), 'ends_at' => now()->addWeek()->addHours(3)->format('Y-m-d\TH:i')]);
+    $submit = fn (array $extra = []) => $this->actingAs($this->f['president'])
+        ->post("/events/{$this->f['event']->slug}/proposal/submit", [...$data, ...$extra, 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()]);
 
-    $this->actingAs($this->f['president'])
-        ->post("/events/{$this->f['event']->slug}/proposal/submit", [...$data, 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes()])
-        ->assertSessionHas('error', fn (string $m) => str_contains($m, '1.5 months'));
+    $submit()->assertSessionHas('error', fn (string $m) => str_contains($m, '14 days'));
+    $submit(['late_reason' => 'The beach permit only came through this week.'])->assertRedirect();
+
+    $engine = app(\App\Services\Approvals\ApprovalEngine::class);
+    $engine->approve($engine->currentStep($this->f['document']->fresh()), $this->f['advisor'], signaturePng());
+    $sldStep = $engine->currentStep($this->f['document']->fresh());
+    $sld = sldOfficer();
+    expect(fn () => $engine->approve($sldStep, $sld, signaturePng()))->toThrow(DomainException::class, 'exceptions');
+    $engine->approve($sldStep->fresh(), $sld, signaturePng(), acceptExceptions: true);
+
+    expect($this->f['document']->fresh()->status)->toBe(DocumentStatus::Approved)
+        ->and($sldStep->fresh()->comment)->toContain('Exceptions approved')->toContain('beach permit');
 });
 
 it('submits, runs the chain over HTTP and lands in the feed', function () {
@@ -138,7 +149,7 @@ it('refuses a submission with fewer than 2 objectives, a loss-making budget, fra
         ->assertSessionHasErrors(['objectives', 'cca_participant', 'budget.expenses.0.quantity']);
     $this->actingAs($f['president'])->post(route('proposals.submit', $f['event']), [...$data, 'cca_participant' => 3, 'cca_committee' => 3,
         'budget' => ['revenue' => [['description' => 'Fund', 'price_sen' => 100, 'quantity' => 1]], 'expenses' => [['description' => 'Gloves', 'price_sen' => 500, 'quantity' => 1]]]])
-        ->assertSessionHasErrors('budget');
+        ->assertSessionHasErrors('deficit_reason');
 });
 
 it('lets two committee members edit different parts at once without overwriting each other, and shows who is editing', function () {

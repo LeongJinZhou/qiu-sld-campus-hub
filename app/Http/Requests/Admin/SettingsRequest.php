@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Club;
+use App\Services\SldRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 /** One form per settings section; `section` picks which rules apply. */
@@ -33,6 +34,7 @@ class SettingsRequest extends FormRequest
                 'alumni' => ['required', 'array'],
                 'alumni.*' => ['required', 'string', 'max:50'],
             ],
+            'rules' => collect(SldRules::LIMITS)->map(fn (array $l) => ['required', 'integer', "min:{$l[0]}", "max:{$l[1]}"])->all(),
             'cca' => [
                 'max_hours' => ['required', 'numeric', 'min:0.5', 'max:100'],
             ],

@@ -3,6 +3,7 @@
 namespace App\Services\Approvals;
 
 use App\Enums\ApprovalDecision;
+use App\Enums\ChainRole;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Enums\ScopeType;
@@ -13,6 +14,7 @@ use App\Models\Signature;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
+use App\Services\Events\ProposalRules;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -91,9 +93,17 @@ class ApprovalEngine
         $this->advance($document->fresh());
     }
 
-    public function approve(Approval $approval, User $user, string $signature, ?string $comment = null, ?string $strokes = null): void
+    public function approve(Approval $approval, User $user, string $signature, ?string $comment = null, ?string $strokes = null, bool $acceptExceptions = false): void
     {
         $this->assertCanAct($approval, $user);
+        // SLD's final approval of a proposal with exceptions (late, deficit) must approve them explicitly, on record.
+        $exceptions = $this->exceptions($approval->document);
+        if ($exceptions !== [] && $approval->role === ChainRole::SldOfficer) {
+            if (! $acceptExceptions) {
+                throw new DomainException('This proposal has exceptions (late submission or budget deficit). Approve them explicitly, or return it.');
+            }
+            $comment = trim(($comment ? "{$comment}\n" : '').'Exceptions approved: '.implode('; ', array_map(fn (array $e) => "{$e['label']} (reason: {$e['reason']})", $exceptions)));
+        }
 
         DB::transaction(function () use ($approval, $user, $signature, $comment, $strokes): void {
             $this->decide($approval, $user, ApprovalDecision::Approved, $comment, $signature, $approval->document->latestVersion?->id, $strokes);
@@ -124,6 +134,16 @@ class ApprovalEngine
         }
         $this->close($approval, $user, ApprovalDecision::Rejected, DocumentStatus::Rejected, $comment);
         $approval->update(['sections' => $sections ?: null]);
+    }
+
+    /** @return list<array{kind: string, label: string, reason: string}> exceptions on a submitted proposal */
+    public function exceptions(Document $document): array
+    {
+        if ($document->type !== DocumentType::Proposal || ! $document->latestVersion) {
+            return [];
+        }
+
+        return app(ProposalRules::class)->exceptions($document->latestVersion->data, $document->submitted_at ?? now());
     }
 
     /** The step waiting for action, if the document is in review. */

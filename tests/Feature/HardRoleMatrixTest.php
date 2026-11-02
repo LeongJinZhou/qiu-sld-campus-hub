@@ -136,7 +136,8 @@ it('enforces the role and club boundary on each page', function (string $role, s
         'club' => $club,
         'organiser' => $organiser,
         'desk' => $organiser || $role === 'helper',
-        'document' => $organiser || in_array($role, ['assistant_registrar', 'registrar', 'bursar', 'coo', 'dean'], true),
+        // Proposals now go Preparer → Advisor → SLD (spec), so senior staff outside the chain no longer see them.
+        'document' => $organiser,
         'treasure' => $admin || in_array($role, ['president', 'vice_president', 'secretary', 'treasurer'], true),
         'other' => $admin || $role === 'other_committee',
         'admin' => $admin,
