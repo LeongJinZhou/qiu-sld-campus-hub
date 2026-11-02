@@ -34,6 +34,13 @@ return [
         'model' => env('ANTHROPIC_MODEL', 'claude-opus-5-5'),
     ],
 
+    // Toxic-comment classifier (Hugging Face Inference API). Without a token only the word filter applies.
+    'huggingface' => [
+        'token' => env('HF_TOKEN'),
+        'toxicity_url' => env('HF_TOXICITY_URL', 'https://router.huggingface.co/hf-inference/models/martin-ha/toxic-comment-model'),
+        'toxicity_threshold' => (float) env('HF_TOXICITY_THRESHOLD', 0.8),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
