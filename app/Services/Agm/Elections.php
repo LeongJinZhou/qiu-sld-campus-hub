@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\Vote;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
+use App\Services\Profiles\Certificates;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\Roles\RoleService;
 use App\Services\SldRules;
@@ -43,6 +44,7 @@ class Elections
         private readonly SessionResolver $sessions,
         private readonly RoleService $roles,
         private readonly AuditLogger $audit,
+        private readonly Certificates $certificates,
     ) {}
 
     /**
@@ -274,6 +276,23 @@ class Elections
             $this->audit->log('election.handed_over', $election);
         });
         $this->tellCommittees($election, "Handover done: welcome, new {$club->name} committee", 'The new committee now has committee access. Thank you to the outgoing committee.');
+        $this->thankOutgoing($election);
+    }
+
+    /** Each outgoing committee member: their committee certificate is issued, with a thank-you. */
+    private function thankOutgoing(Election $election): void
+    {
+        $club = $election->agm->club;
+        $outgoing = RoleAssignment::with('user')->where('scope_type', ScopeType::Club)->where('scope_id', $club->id)
+            ->where('session_id', $election->agm->session_id)->where('role', ScopedRole::ClubCommittee)->get();
+        foreach ($outgoing as $role) {
+            $this->certificates->issue($role->user, 'club_committee', $role->id);
+            $role->user->notify(new DocumentNotification(
+                'Thank you for your service',
+                "Your term as {$role->position} of {$club->name} has ended and the new committee has taken over. Your certificate is ready to download.",
+                route('certificates.download', ['kind' => 'club_committee', 'source' => $role->id]),
+            ));
+        }
     }
 
     /** Daily: every handover whose overlap has ended. */
