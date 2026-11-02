@@ -107,17 +107,11 @@ const save = {
             <Card>
                 <template #title>Deadlines and requirements</template>
                 <p class="mb-4 text-sm text-ink-muted">Rules every club works to. Exceptions (a late proposal, a budget deficit) need a reason and your approval.</p>
-                <form class="grid gap-3 sm:grid-cols-2" @submit.prevent="save.rules">
-                    <Input
-                        v-model="rules.proposal_lead_days"
-                        type="number"
-                        label="Submit proposals at least (days before the event)"
-                        required
-                        :error="rules.errors.proposal_lead_days"
-                    />
-                    <Input v-model="rules.min_photos" type="number" label="Photos required (weekly report, AGM, completed event)" required :error="rules.errors.min_photos" />
-                    <Input v-model="rules.transfer_days" type="number" label="Finance transfers withdrawals within (days)" required :error="rules.errors.transfer_days" />
-                    <Input v-model="rules.handover_days" type="number" label="Committee handover overlap (days)" required :error="rules.errors.handover_days" />
+                <form class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2" @submit.prevent="save.rules">
+                    <Input v-model="rules.proposal_lead_days" type="number" label="Proposal lead time (days)" hint="Days before the event a proposal must be in" required :error="rules.errors.proposal_lead_days" />
+                    <Input v-model="rules.min_photos" type="number" label="Minimum photos" hint="Weekly report, AGM and completed event" required :error="rules.errors.min_photos" />
+                    <Input v-model="rules.transfer_days" type="number" label="Transfer deadline (days)" hint="Finance transfers an approved withdrawal within" required :error="rules.errors.transfer_days" />
+                    <Input v-model="rules.handover_days" type="number" label="Handover overlap (days)" hint="Incoming committee's view-only training" required :error="rules.errors.handover_days" />
                     <div class="sm:col-span-2"><Button type="submit" :loading="rules.processing">Save rules</Button></div>
                 </form>
             </Card>

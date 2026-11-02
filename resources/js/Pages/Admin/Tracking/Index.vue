@@ -59,19 +59,19 @@ const cell = (w: { held: number; submitted: number }): { text: string; cls: stri
             </div>
 
             <section class="grid gap-3 sm:grid-cols-4">
-                <div class="rounded-card border border-line bg-surface p-4 shadow-card">
+                <div class="flex flex-col justify-between gap-1 rounded-card border border-line bg-surface p-4 shadow-card">
                     <p class="text-xs text-ink-muted">Weekly reports missing</p>
                     <p class="text-2xl font-bold tabular-nums" :class="totals.weekly_missing ? 'text-danger' : 'text-success'">{{ totals.weekly_missing }}</p>
                 </div>
-                <div class="rounded-card border border-line bg-surface p-4 shadow-card">
+                <div class="flex flex-col justify-between gap-1 rounded-card border border-line bg-surface p-4 shadow-card">
                     <p class="text-xs text-ink-muted">Events with an incomplete package</p>
                     <p class="text-2xl font-bold tabular-nums" :class="totals.events_incomplete ? 'text-danger' : 'text-success'">{{ totals.events_incomplete }}</p>
                 </div>
-                <div class="rounded-card border border-line bg-surface p-4 shadow-card">
+                <div class="flex flex-col justify-between gap-1 rounded-card border border-line bg-surface p-4 shadow-card">
                     <p class="text-xs text-ink-muted">Clubs without an AGM package</p>
                     <p class="text-2xl font-bold tabular-nums" :class="totals.agm_missing ? 'text-warning' : 'text-success'">{{ totals.agm_missing }}</p>
                 </div>
-                <div class="rounded-card border border-line bg-surface p-4 shadow-card">
+                <div class="flex flex-col justify-between gap-1 rounded-card border border-line bg-surface p-4 shadow-card">
                     <p class="text-xs text-ink-muted">Withdrawal transfers overdue</p>
                     <p class="text-2xl font-bold tabular-nums" :class="transfers.length ? 'text-danger' : 'text-success'">{{ transfers.length }}</p>
                 </div>
