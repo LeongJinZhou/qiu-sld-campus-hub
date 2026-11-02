@@ -5,7 +5,7 @@ import Icon from '@/Components/ui/Icon.vue';
 import { dateTime } from '@/lib/format';
 import type { PostCardData } from '@/types';
 import { Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import Carousel from './Carousel.vue';
 
 const props = defineProps<{ post: PostCardData; full?: boolean }>();
@@ -35,6 +35,13 @@ function report(): void {
     if (reason) router.post(`/posts/${props.post.id}/report`, { reason }, options);
 }
 const comment = useForm({ body: '' });
+// The comment box opens when the comment button is tapped (always open on a post's own page).
+const commenting = ref(!!props.full);
+const commentInput = ref<HTMLInputElement | null>(null);
+const openComments = (): void => {
+    commenting.value = !commenting.value || !!props.full;
+    if (commenting.value) void nextTick(() => commentInput.value?.focus());
+};
 const sendComment = (): void => comment.post(`/posts/${props.post.id}/comments`, { preserveScroll: true, onSuccess: () => comment.reset() });
 const register = (): void => router.post(`/events/${props.post.event?.slug}/register`, {}, { preserveScroll: true });
 </script>
@@ -61,11 +68,18 @@ const register = (): void => router.post(`/events/${props.post.event?.slug}/regi
                 <button type="button" :aria-pressed="liked" aria-label="Like" class="transition active:scale-125" :class="liked ? 'text-danger' : 'hover:text-ink-muted'" @click="like">
                     <Icon name="heart" :filled="liked" :size="26" />
                 </button>
-                <Link :href="post.url" aria-label="Comments" class="hover:text-ink-muted"><Icon name="message" :size="26" /></Link>
+                <button type="button" aria-label="Comment" :aria-expanded="commenting" class="hover:text-ink-muted" :class="commenting ? 'text-brand-blue' : ''" @click="openComments">
+                    <Icon name="message" :size="26" />
+                </button>
                 <button type="button" aria-label="Share" class="hover:text-ink-muted" @click="share"><Icon name="send" :size="24" /></button>
                 <button type="button" class="ml-auto hover:text-ink-muted" :aria-pressed="saved" aria-label="Save" @click="save"><Icon name="bookmark" :filled="saved" :size="26" /></button>
             </div>
-            <p class="text-sm font-semibold">{{ likes }} like{{ likes === 1 ? '' : 's' }}</p>
+            <p class="text-sm font-semibold">
+                {{ likes }} like{{ likes === 1 ? '' : 's' }}
+                <button v-if="post.comments_count && !full" type="button" class="ml-2 font-normal text-ink-muted hover:underline" @click="openComments">
+                    · {{ post.comments_count }} comment{{ post.comments_count === 1 ? '' : 's' }}
+                </button>
+            </p>
 
             <div v-if="post.event" class="grid gap-2 rounded-card border border-line bg-gradient-to-br from-brand-yellow/10 to-brand-magenta/10 p-4 text-sm">
                 <Link :href="`/events/${post.event.slug}`" class="text-base font-bold">{{ post.event.name }}</Link>
@@ -81,11 +95,11 @@ const register = (): void => router.post(`/events/${props.post.event?.slug}/regi
                 <p v-for="c in post.comments" :key="c.id" class="text-sm"><strong>{{ c.user }}</strong> {{ c.body }}</p>
             </template>
 
-            <form class="flex gap-2 border-t border-line pt-3" @submit.prevent="sendComment">
-                <input v-model="comment.body" maxlength="1000" placeholder="Add a comment…" aria-label="Add a comment" class="flex-1 bg-transparent text-sm outline-none" />
+            <form v-if="commenting" class="flex gap-2 border-t border-line pt-3" @submit.prevent="sendComment">
+                <input ref="commentInput" v-model="comment.body" maxlength="1000" placeholder="Add a comment…" aria-label="Add a comment" class="flex-1 bg-transparent text-sm outline-none" />
                 <button type="submit" :disabled="!comment.body.trim() || comment.processing" class="text-sm font-semibold text-brand-blue disabled:opacity-40">Post</button>
             </form>
-            <p v-if="comment.errors.body" role="alert" class="-mt-1 text-xs text-danger">{{ comment.errors.body }}</p>
+            <p v-if="commenting && comment.errors.body" role="alert" class="-mt-1 text-xs text-danger">{{ comment.errors.body }}</p>
         </div>
     </article>
 </template>

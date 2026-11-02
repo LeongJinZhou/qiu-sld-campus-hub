@@ -43,9 +43,9 @@ class FeedQuery
         // Pages carry the viewer's own likes and saves, so only the inputs are cached, never the page.
         $followed = $this->followed($viewer);
 
-        return $this->posts->withCardData(Post::query()->visible(), $viewer)
+        // Columns first: a select() after withCount()/withExists() would drop the like count and the viewer's state.
+        return $this->posts->withCardData(Post::query()->visible()->select('posts.*'), $viewer)
             ->where(fn ($q) => $q->whereNotNull('pinned_at')->orWhere('published_at', '>=', now()->subDays(self::FULL_DAYS)))
-            ->select('posts.*')
             ->selectRaw('CASE WHEN pinned_at IS NULL THEN 0 ELSE 1 END AS is_pinned')
             ->selectRaw(
                 $followed->isEmpty() ? '0 AS is_followed' : 'CASE WHEN club_id IN ('.implode(',', array_fill(0, $followed->count(), '?')).') THEN 1 ELSE 0 END AS is_followed',
