@@ -7,6 +7,7 @@ use App\Http\Controllers\Agm\AgmReportController;
 use App\Http\Controllers\Agm\AnnualReportController;
 use App\Http\Controllers\Agm\ElectionController;
 use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\Auth\DevLoginController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LogoutController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Events\PosterController;
 use App\Http\Controllers\Events\PostMortemController;
 use App\Http\Controllers\Events\ProposalController;
 use App\Http\Controllers\Events\TicketController;
+use App\Http\Controllers\EvidencePhotoController;
 use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Finance\PaymentBreakdownController;
 use App\Http\Controllers\Finance\WithdrawalController;
@@ -83,6 +85,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/search', SearchController::class)->name('search');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+    Route::post('/evidence/{type}/{id}', [EvidencePhotoController::class, 'store'])->whereIn('type', ['meeting', 'agm', 'event'])->whereNumber('id')->middleware('throttle:uploads')->name('evidence.store');
+    Route::delete('/evidence-photos/{photo}', [EvidencePhotoController::class, 'destroy'])->name('evidence.destroy');
+    Route::get('/events/{event}/photos.zip', [EvidencePhotoController::class, 'eventZip'])->middleware('throttle:exports')->name('events.photos.zip');
+    Route::get('/clubs/{club}/archive/{session}', ArchiveController::class)->middleware('throttle:exports')->name('clubs.archive');
     Route::put('/me/theme', [PreferencesController::class, 'theme'])->name('me.theme');
     Route::post('/me/tours', [PreferencesController::class, 'tour'])->name('me.tours');
     Route::get('/people/lookup', PeopleLookupController::class)->middleware('throttle:directory')->name('people.lookup');
@@ -260,6 +266,8 @@ Route::middleware('auth')->group(function () {
         Route::get('requests', [SldRequestController::class, 'index'])->name('requests.index');
         Route::post('requests', [SldRequestController::class, 'store'])->name('requests.store');
         Route::get('agm', [Admin\AgmController::class, 'index'])->name('agm.index');
+        Route::post('agms/{agm}/acknowledge', [Admin\AgmController::class, 'acknowledge'])->name('agm.acknowledge');
+        Route::post('elections/{election}/handover', [Admin\AgmController::class, 'startHandover'])->name('election.handover');
         Route::post('agm/periods', [Admin\AgmController::class, 'open'])->name('agm.open');
         Route::post('agm/periods/{period}/close', [Admin\AgmController::class, 'close'])->name('agm.close');
         Route::post('agm/themes', [Admin\AgmController::class, 'theme'])->name('agm.themes');

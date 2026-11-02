@@ -36,13 +36,13 @@ class ClubPolicy
     public function update(User $user, Club $club): bool
     {
         return $user->isSldAdmin()
-            || ($club->isTransferred() && $this->roles->belongsToClub($user, $club, $this->sessions->current()));
+            || ($club->isTransferred() && $this->roles->actsForClub($user, $club, $this->sessions->current()));
     }
 
     /** Posts, stories, highlights, gallery and FAQ: the club's own people and SLD. */
     public function publish(User $user, Club $club): bool
     {
-        return $this->viewInternal($user, $club);
+        return $user->isSldAdmin() || $this->roles->actsForClub($user, $club, $this->sessions->current());
     }
 
     /**

@@ -24,6 +24,14 @@ interface ClubRow {
         flags: { position: string; issue: string }[];
         checklist: Record<string, { label: string; ready: boolean }>;
         package_submitted_at: string | null;
+        id: number;
+        acknowledged_at: string | null;
+        election_id: number | null;
+        results_published: boolean;
+        handover_started: boolean;
+        handover_ends_on: string | null;
+        handed_over: boolean;
+        archive: boolean;
     } | null;
     annual: boolean;
 }
@@ -42,7 +50,9 @@ const close = (): void => {
 };
 const theme = useForm({ name: '', background_color: '#FFFFFF', title_color: '#14213D', body_color: '#333333', font: 'Poppins', background: [] as File[], is_default: false });
 const saveTheme = (): void =>
-    theme.transform((d) => ({ ...d, background: d.background[0] ?? null })).post('/admin/agm/themes', { forceFormData: true, preserveScroll: true, onSuccess: () => theme.reset() });
+    theme
+        .transform((d) => ({ ...d, background: d.background[0] ?? null }))
+        .post('/admin/agm/themes', { forceFormData: true, preserveScroll: true, onSuccess: () => theme.reset() });
 const flagText: Record<string, string> = { no_candidate: 'no candidate', uncontested: 'uncontested', tie: 'tie' };
 </script>
 
@@ -87,12 +97,46 @@ const flagText: Record<string, string> = { no_candidate: 'no candidate', unconte
                             <p class="font-medium">Package <Badge v-if="c.agm.package_submitted_at" tone="success">submitted</Badge></p>
                             <p v-for="(item, key) in c.agm.checklist" :key="key" class="flex items-center gap-1 text-xs">
                                 <Icon :name="item.ready ? 'check' : 'x'" :size="14" :class="item.ready ? 'text-success' : 'text-ink-muted'" />
-                                <template v-if="item.ready && key === 'report' && c.agm.report_id"><Link :href="`/documents/${c.agm.report_id}`" class="underline">{{ item.label }}</Link></template>
-                                <template v-else-if="item.ready && key === 'finance'"><a :href="`/clubs/${c.slug}/finance/export/pdf`" class="underline">{{ item.label }}</a></template>
-                                <template v-else-if="key === 'members'"><a :href="`/clubs/${c.slug}/members/export/xlsx`" class="underline">{{ item.label }}</a></template>
-                                <template v-else-if="item.ready && key === 'annual'"><a :href="`/clubs/${c.slug}/annual-report/pdf?session=${period.session_id}`" class="underline">{{ item.label }}</a></template>
+                                <template v-if="item.ready && key === 'report' && c.agm.report_id"
+                                    ><Link :href="`/documents/${c.agm.report_id}`" class="underline">{{ item.label }}</Link></template
+                                >
+                                <template v-else-if="item.ready && key === 'finance'"
+                                    ><a :href="`/clubs/${c.slug}/finance/export/pdf`" class="underline">{{ item.label }}</a></template
+                                >
+                                <template v-else-if="key === 'members'"
+                                    ><a :href="`/clubs/${c.slug}/members/export/xlsx`" class="underline">{{ item.label }}</a></template
+                                >
+                                <template v-else-if="item.ready && key === 'annual'"
+                                    ><a :href="`/clubs/${c.slug}/annual-report/pdf?session=${period.session_id}`" class="underline">{{ item.label }}</a></template
+                                >
                                 <template v-else>{{ item.label }}</template>
                             </p>
+                            <!-- SLD: acknowledge (archives the year), then start the committee handover. -->
+                            <div class="mt-2 grid gap-1.5 border-t border-line pt-2 text-xs">
+                                <Button
+                                    v-if="!c.agm.acknowledged_at"
+                                    size="sm"
+                                    :disabled="!c.agm.package_submitted_at"
+                                    @click="router.post(`/admin/agms/${c.agm.id}/acknowledge`, {}, { preserveScroll: true })"
+                                >
+                                    Acknowledge AGM
+                                </Button>
+                                <p v-else class="text-success">
+                                    Acknowledged {{ c.agm.acknowledged_at }}
+                                    <a v-if="c.agm.archive && period" :href="`/clubs/${c.slug}/archive/${period.session_id}`" class="ml-1 underline">Archive (ZIP)</a>
+                                    <span v-else class="ml-1 text-ink-muted">· archive being built</span>
+                                </p>
+                                <Button
+                                    v-if="c.agm.acknowledged_at && c.agm.election_id && c.agm.results_published && !c.agm.handover_started"
+                                    size="sm"
+                                    variant="secondary"
+                                    @click="router.post(`/admin/elections/${c.agm.election_id}/handover`, {}, { preserveScroll: true })"
+                                >
+                                    Start handover
+                                </Button>
+                                <p v-else-if="c.agm.handed_over" class="text-success">New committee in charge</p>
+                                <p v-else-if="c.agm.handover_started" class="text-warning">Handover · training access until {{ c.agm.handover_ends_on }}</p>
+                            </div>
                         </div>
                     </li>
                 </ul>
@@ -102,7 +146,10 @@ const flagText: Record<string, string> = { no_candidate: 'no candidate', unconte
                 <template #title>Annual report themes</template>
                 <ul class="mb-4 flex flex-wrap gap-3">
                     <li v-for="t in themes" :key="t.id" class="w-40 overflow-hidden rounded-card border border-line text-xs">
-                        <div class="grid h-20 place-items-center bg-cover bg-center" :style="{ backgroundColor: t.background_color, backgroundImage: t.background_url ? `url(${t.background_url})` : undefined, fontFamily: t.font }">
+                        <div
+                            class="grid h-20 place-items-center bg-cover bg-center"
+                            :style="{ backgroundColor: t.background_color, backgroundImage: t.background_url ? `url(${t.background_url})` : undefined, fontFamily: t.font }"
+                        >
                             <span class="font-bold" :style="{ color: t.title_color }">Aa</span>
                         </div>
                         <p class="p-2">{{ t.name }} <Badge v-if="t.is_default" tone="info">default</Badge></p>

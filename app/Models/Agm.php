@@ -10,13 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['club_id', 'agm_period_id', 'session_id', 'starts_at', 'ends_at', 'venue', 'meet_link', 'google_event_id', 'attendance_secret', 'organiser_id', 'package_submitted_at'])]
+#[Fillable(['club_id', 'agm_period_id', 'session_id', 'starts_at', 'ends_at', 'venue', 'meet_link', 'google_event_id', 'attendance_secret', 'organiser_id', 'package_submitted_at', 'acknowledged_at', 'acknowledged_by'])]
 #[Hidden(['attendance_secret'])]
 class Agm extends Model
 {
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'package_submitted_at' => 'datetime'];
+        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'package_submitted_at' => 'datetime', 'acknowledged_at' => 'datetime'];
     }
 
     /** @return BelongsTo<Club, $this> */
