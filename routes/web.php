@@ -280,6 +280,7 @@ Route::middleware('auth')->group(function () {
         Route::put('staff/{staff}', [Admin\StaffController::class, 'update'])->name('staff.update');
 
         Route::get('members', [MembersController::class, 'all'])->name('members.all');
+        Route::get('clubs/{club}/members', [MembersController::class, 'adminClub'])->name('members.admin-club');
         Route::get('finance', Admin\FinanceOverviewController::class)->name('finance.index');
         Route::get('requests', [SldRequestController::class, 'index'])->name('requests.index');
         Route::post('requests', [SldRequestController::class, 'store'])->name('requests.store');

@@ -104,7 +104,7 @@ const flagText: Record<string, string> = { no_candidate: 'no candidate', unconte
                                     ><a :href="`/clubs/${c.slug}/finance/export/pdf`" class="underline">{{ item.label }}</a></template
                                 >
                                 <template v-else-if="key === 'members'"
-                                    ><a :href="`/clubs/${c.slug}/members/export/xlsx`" class="underline">{{ item.label }}</a></template
+                                    ><Link :href="`/admin/clubs/${c.slug}/members`" class="underline">{{ item.label }}</Link></template
                                 >
                                 <template v-else-if="item.ready && key === 'annual'"
                                     ><a :href="`/clubs/${c.slug}/annual-report/pdf?session=${period.session_id}`" class="underline">{{ item.label }}</a></template

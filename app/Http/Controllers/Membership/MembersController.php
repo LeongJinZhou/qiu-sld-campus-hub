@@ -11,6 +11,7 @@ use App\Models\SavedView;
 use App\Notifications\DocumentNotification;
 use App\Services\Documents\MemberListExport;
 use App\Services\Documents\PdfConverter;
+use App\Services\Membership\CommitteeFees;
 use App\Services\Membership\MembersQuery;
 use App\Services\Time\SessionResolver;
 use Illuminate\Http\RedirectResponse;
@@ -37,7 +38,13 @@ class MembersController extends Controller
 
     public function all(Request $request, SessionResolver $sessions): Response
     {
-        return $this->page($request, null, $sessions);
+        return $this->page($request, null, $sessions, portal: true);
+    }
+
+    /** SLD's own view of one club's members and committee fees, inside the admin portal. */
+    public function adminClub(Request $request, Club $club, SessionResolver $sessions): Response
+    {
+        return $this->page($request, $club, $sessions, portal: true);
     }
 
     public function export(Request $request, Club $club, string $format, MemberListExport $export, PdfConverter $pdf): BinaryFileResponse
@@ -82,7 +89,7 @@ class MembersController extends Controller
         return back();
     }
 
-    private function page(Request $request, ?Club $club, SessionResolver $sessions): Response
+    private function page(Request $request, ?Club $club, SessionResolver $sessions, bool $portal = false): Response
     {
         $filters = $this->filters($request);
         $rows = $this->members->rows($club ? [$club->id] : null, $filters);
@@ -90,6 +97,8 @@ class MembersController extends Controller
 
         return Inertia::render('Membership/Members', [
             'club' => $club?->only('slug', 'name'),
+            'portal' => $portal,
+            'committeeFees' => $club ? app(CommitteeFees::class)->forClub($club) : [],
             'filters' => (object) $filters, // always a JSON object, even with no filters
             'counts' => $this->members->counts($rows),
             // Every member is reachable: 100 per page, with the total shown (the export has everything at once).

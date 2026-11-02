@@ -40,6 +40,7 @@ const columns = [
             <Table :columns="columns" :rows="clubs" row-key="id">
                 <template #cell-name="{ row }">
                     <Link :href="`/admin/clubs/${row.slug}/edit`" class="font-medium hover:underline">{{ row.name }}</Link>
+                    <Link :href="`/admin/clubs/${row.slug}/members`" class="ml-2 text-xs text-brand-blue hover:underline">Members</Link>
                 </template>
                 <template #cell-managed_by="{ row }">
                     <Badge :tone="row.managed_by === 'committee' ? 'success' : 'neutral'">{{ row.managed_by === 'committee' ? 'Committee' : 'SLD' }}</Badge>
