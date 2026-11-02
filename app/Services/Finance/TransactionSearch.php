@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\URL;
 
 /**
  * SLD's transaction finder: any part of a transaction ID, or several parts in any order (club, event, student
- * ID, name, date, time, bank reference), matches student payments of every status and the club ledger.
+ * ID, name, date, time, bank reference), matches student payments of every status and the club ledger. The club,
+ * event and student are also matched by their own records, so a transaction is found even without its ID.
  */
 class TransactionSearch
 {
@@ -25,7 +26,7 @@ class TransactionSearch
         }
 
         $payments = MembershipPayment::with(['club', 'event', 'user.student'])
-            ->where(fn (Builder $q) => $this->matchAll($q, $tokens))
+            ->where(fn (Builder $q) => $this->matchAll($q, $tokens, ['reference', 'method'], ['club' => 'name', 'event' => 'name', 'user' => 'name', 'user.student' => 'student_number']))
             ->latest('id')->limit(self::LIMIT)->get()
             ->map(fn (MembershipPayment $p) => [
                 'key' => "p{$p->id}", 'order_id' => $p->order_id, 'kind' => 'payment',
@@ -39,7 +40,7 @@ class TransactionSearch
         // Ledger lines that are not a student payment (expenses, withdrawals, other income).
         $entries = LedgerEntry::with(['club', 'event'])
             ->where(fn (Builder $q) => $q->whereNull('source_type')->orWhere('source_type', '!=', (new MembershipPayment)->getMorphClass()))
-            ->where(fn (Builder $q) => $this->matchAll($q, $tokens, ['description']))
+            ->where(fn (Builder $q) => $this->matchAll($q, $tokens, ['description', 'category', 'method'], ['club' => 'name', 'event' => 'name']))
             ->latest('id')->limit(self::LIMIT)->get()
             ->map(fn (LedgerEntry $e) => [
                 'key' => "l{$e->id}", 'order_id' => $e->order_id, 'kind' => $e->category ?? 'ledger',
@@ -53,21 +54,31 @@ class TransactionSearch
     }
 
     /**
-     * Every token must appear in the ID (compared without _ and -) or in one of the extra columns.
+     * Every token must appear somewhere: in the ID, in one of the extra columns, or in a related record's column
+     * (club, event, student name and number). Everything is compared upper case without spaces, _ and -.
      *
      * @param  list<string>  $tokens
      * @param  list<string>  $extra
+     * @param  array<string, string>  $related  relation => column
      */
-    private function matchAll(Builder $query, array $tokens, array $extra = []): void
+    private function matchAll(Builder $query, array $tokens, array $extra = [], array $related = []): void
     {
         foreach ($tokens as $token) {
             $like = '%'.addcslashes($token, '%_\\').'%';
-            $query->where(function (Builder $q) use ($like, $extra): void {
+            $query->where(function (Builder $q) use ($like, $extra, $related): void {
                 $q->whereRaw("REPLACE(REPLACE(UPPER(order_id), '_', ''), '-', '') LIKE ?", [$like]);
                 foreach ($extra as $column) {
-                    $q->orWhereRaw("REPLACE(REPLACE(UPPER({$column}), ' ', ''), '-', '') LIKE ?", [$like]);
+                    $q->orWhereRaw($this->normalised($column).' LIKE ?', [$like]);
+                }
+                foreach ($related as $relation => $column) {
+                    $q->orWhereHas($relation, fn (Builder $r) => $r->whereRaw($this->normalised($column).' LIKE ?', [$like]));
                 }
             });
         }
+    }
+
+    private function normalised(string $column): string
+    {
+        return "REPLACE(REPLACE(REPLACE(UPPER({$column}), ' ', ''), '-', ''), '_', '')";
     }
 }

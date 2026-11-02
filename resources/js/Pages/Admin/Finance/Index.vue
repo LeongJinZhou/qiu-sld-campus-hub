@@ -62,7 +62,7 @@ const searching = ref(false);
 watchDebounced(
     q,
     (value) =>
-        router.get('/admin/finance', value.trim() ? { q: value.trim() } : {}, {
+        router.get('/admin/finance', { ...(value.trim() ? { q: value.trim() } : {}), ...(props.moneyClub ? { club: props.moneyClub } : {}) }, {
             only: ['q', 'transactions'],
             preserveState: true,
             preserveScroll: true,
