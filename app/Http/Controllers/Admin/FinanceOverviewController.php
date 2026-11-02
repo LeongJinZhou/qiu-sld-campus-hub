@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Club;
+use App\Services\Dashboard\ClubTracking;
 use App\Services\Finance\Ledger;
 use App\Services\Finance\TransactionSearch;
+use App\Services\Time\SessionResolver;
 use App\Support\QueryInput;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +23,9 @@ class FinanceOverviewController extends Controller
         return Inertia::render('Admin/Finance/Index', [
             'q' => $q,
             'transactions' => $q === '' ? [] : $search->find($q),
+            // Money month by month (this session) and year by year, all clubs or one (?club=slug).
+            'money' => fn () => app(ClubTracking::class)->money(app(SessionResolver::class)->current(), ($slug = QueryInput::text($request, 'club', 100)) ? Club::where('slug', $slug)->first() : null),
+            'moneyClub' => QueryInput::text($request, 'club', 100) ?: null,
             'clubs' => fn () => Club::with('openingBalance')->orderBy('name')->get()->map(fn (Club $c) => [
                 'slug' => $c->slug,
                 'name' => $c->name,

@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Approvals\ApproverResolver;
+use App\Services\Dashboard\ClubTracking;
 use App\Services\Events\IndemnityService;
 use App\Services\Events\ProposalRules;
 use App\Services\Meetings\Meetings;
@@ -61,9 +62,22 @@ class Reminders
         $this->indemnityClosing($today);
         $this->agmDeadlines($today);
         $this->sldRequests($today);
+        $this->overdueTransfers($today);
         $this->halfway();
 
         return $this->sent;
+    }
+
+    /** SLD and the club: each day an approved withdrawal's transfer is past SLD's deadline (default 14 days). */
+    private function overdueTransfers(CarbonImmutable $today): void
+    {
+        $sld = User::role(['admin', 'superadmin'])->get();
+        foreach (app(ClubTracking::class)->overdueTransfers() as $t) {
+            $this->send("transfer-overdue:{$t['id']}:{$today->toDateString()}", $sld,
+                "Withdrawal transfer overdue: {$t['club']}",
+                'RM '.number_format($t['total_sen'] / 100, 2)." for {$t['for']} was due {$t['due_on']} ({$t['days_late']} days late).",
+                route('withdrawals.show', $t['id']));
+        }
     }
 
     /** Approvers: the day before a step is due, and each day it is overdue. */
