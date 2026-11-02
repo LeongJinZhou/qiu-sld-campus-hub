@@ -152,6 +152,8 @@ flowchart TB
 - When the handover overlap ends, the outgoing committee loses access and each member gets a thank-you and their committee certificate
 - SLD views a club's members and committee fee status (paid, not paid, being checked) inside the admin portal; advisors and committees see the same on the club page
 - Light and dark mode belong to each account, never the device, so a shared phone never shows the previous person's theme
+- Moderation for posts, comments and assistant questions: a word filter that sees through disguises (f_u_c_k, f*u*c*k, fvck, run-together words) with English, Malay, Manglish and dialect slang, then the [toxic-comment model](https://huggingface.co/martin-ha/toxic-comment-model) (set `HF_TOKEN`). Only SLD and the club's committee can delete comments
+- The assistant answers by retrieval from role-scoped facts: fees and approved events for everyone; a club's money, payments and reports only for that club's committee and advisor; everything for SLD. It suggests related follow-up questions and asks when a request is unclear
 
 ## Tech stack
 
