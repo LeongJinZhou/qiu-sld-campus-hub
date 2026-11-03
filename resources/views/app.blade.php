@@ -18,7 +18,8 @@
         })();
     </script>
     @fonts
-    @vite(['resources/css/app.css', 'resources/js/app.ts'])
+    @viteReactRefresh
+    @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     @inertiaHead
 </head>
 <body class="bg-surface-muted font-sans text-ink antialiased">

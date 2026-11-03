@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/vue3';
+import { router } from '@inertiajs/react';
 
 /**
  * App-wide motion with no per-page code: cards (.shadow-card) and .reveal elements rise in as they scroll into
