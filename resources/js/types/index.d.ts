@@ -27,7 +27,7 @@ export interface CommitteeFeeDue {
 
 export interface SharedProps {
     auth: { user: AuthUser | null };
-    committeeFees: CommitteeFeeDue[];
+    committeeFeeDues: CommitteeFeeDue[];
     nav: { unread: number; actions: number; isStaff: boolean; isAdmin: boolean; canPublish: boolean } | null;
     flash: Flash;
     [key: string]: unknown;

@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 
 /** At every sign-in: club committee members who have not paid their own club fee are reminded (7 days to pay). */
 export default function CommitteeFeePopup() {
-    const fees = usePage().props.committeeFees;
+    const fees = usePage().props.committeeFeeDues;
     const [dues, setDues] = useState(fees ?? []);
     const [open, setOpen] = useState(false);
 

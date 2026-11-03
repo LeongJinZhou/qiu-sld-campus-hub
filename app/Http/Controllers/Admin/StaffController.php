@@ -18,7 +18,7 @@ class StaffController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Staff/Index', [
-            'staff' => Staff::orderBy('name')->get()->map(fn (Staff $s) => [
+            'staff' => Staff::with('user:id,last_login_at')->orderBy('name')->get()->map(fn (Staff $s) => [
                 ...$s->only('id', 'email', 'staff_number', 'name', 'title', 'active'),
                 'approver_role' => $s->approver_role?->value,
                 'signed_in' => $s->user?->last_login_at !== null,
