@@ -8,8 +8,8 @@ use App\Http\Requests\Admin\AddAdvisorRequest;
 use App\Http\Requests\Admin\AssignPositionRequest;
 use App\Models\Club;
 use App\Models\RoleAssignment;
+use App\Models\Staff;
 use App\Models\Student;
-use App\Models\User;
 use App\Services\Roles\RoleService;
 use App\Services\Time\SessionResolver;
 use DomainException;
@@ -36,12 +36,15 @@ class ClubCommitteeController extends Controller
     public function addAdvisor(AddAdvisorRequest $request, Club $club): RedirectResponse
     {
         try {
-            $this->roles->addAdvisor($club, $this->sessions->forName($request->validated('session')), User::findOrFail($request->validated('user_id')));
+            $staff = $request->validated('staff_id')
+                ? Staff::findOrFail($request->validated('staff_id'))
+                : Staff::where('user_id', $request->validated('user_id'))->firstOrFail();
+            $this->roles->addAdvisor($club, $this->sessions->forName($request->validated('session')), $staff->ensureUser());
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Advisor added.');
+        return back()->with('success', "{$staff->name} is now an advisor.");
     }
 
     public function remove(Club $club, RoleAssignment $assignment): RedirectResponse

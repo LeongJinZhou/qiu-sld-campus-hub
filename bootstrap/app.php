@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            'throttle:global',
             EnsureAccountActive::class,
             HandleInertiaRequests::class,
             SecurityHeaders::class,

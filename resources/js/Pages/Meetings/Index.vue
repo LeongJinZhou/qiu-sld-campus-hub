@@ -46,7 +46,10 @@ const inviteLabel = computed(() => (isActivity.value && form.audience === 'membe
             <div class="grid content-start gap-4">
                 <header>
                     <h1 class="text-xl font-bold">Meetings &amp; activities · {{ club.name }}</h1>
-                    <Link :href="`/clubs/${club.slug}`" class="text-sm text-brand-blue">Back to club</Link>
+                    <span class="flex flex-wrap gap-4 text-sm">
+                        <Link :href="`/clubs/${club.slug}`" class="text-brand-blue">Back to club</Link>
+                        <Link :href="`/clubs/${club.slug}/meetings/report`" class="text-brand-blue">Meetings report</Link>
+                    </span>
                 </header>
                 <EmptyState v-if="!meetings.length" title="No meetings yet" description="Create one to invite the committee and keep minutes." />
                 <ul class="grid gap-3">

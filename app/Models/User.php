@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'google_id', 'avatar_url', 'avatar_path', 'cover_path', 'personal_email', 'hidden_sections', 'notification_mutes', 'last_login_at', 'theme', 'tours_seen'])]
-#[Hidden(['remember_token', 'google_id', 'google_token', 'google_refresh_token'])]
+#[Hidden(['remember_token', 'google_id', 'google_token', 'google_refresh_token', 'qr_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */

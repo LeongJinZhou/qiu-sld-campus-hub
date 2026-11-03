@@ -10,8 +10,12 @@ class UpdateUserRolesRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->hasRole(GlobalRole::SuperAdmin->value)
-            && $this->route('user')?->isNot($this->user());
+        $actor = $this->user();
+        $target = $this->route('user');
+
+        // Never your own roles; an SLD Officer never touches a Super Admin.
+        return $actor?->isSldAdmin() && $target?->isNot($actor)
+            && ($actor->hasRole(GlobalRole::SuperAdmin->value) || ! $target->hasRole(GlobalRole::SuperAdmin->value));
     }
 
     /** @return array<string, list<mixed>> */
