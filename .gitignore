@@ -64,3 +64,16 @@ _ide_helper.php
 # Firebase CLI state
 /.firebase
 /storage/framework/lo-profile
+
+# Clean-install SQL is generated into the deployment package, not kept in Git
+/database/schema/
+
+# Test suites, QA material, screenshots and dev-only scripts: kept locally, not published
+/tests/
+/docs/QA_TEMPLATES.md
+/docs/PILOT.md
+/docs/REACT_MIGRATION.md
+/docs/screenshots/
+/tools/pwa/
+/tools/templates/
+/qiu-sld-campus-hub-plesk.zip

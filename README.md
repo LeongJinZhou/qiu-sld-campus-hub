@@ -13,7 +13,7 @@ web form, routes it through digital approval chains, and prints it back in the e
 
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php&logoColor=white)
-![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-2%2C800%2B_Pest-F28D1A)
@@ -23,24 +23,6 @@ web form, routes it through digital approval chains, and prints it back in the e
 
 > Core principle: **nobody types a fact the system already knows.** Identity, programme, year group, positions, club and event
 > details come from university records and are locked.
-
-## A look inside
-
-| Student feed | Event ticket | Club page |
-| :---: | :---: | :---: |
-| <img src="docs/screenshots/feed.png" width="240" alt="Feed with an approved event post"> | <img src="docs/screenshots/ticket.png" width="240" alt="Animated event ticket with QR"> | <img src="docs/screenshots/club.png" width="240" alt="Club profile with follow and join"> |
-
-| AGM: the year in review, compiled automatically |
-| :---: |
-| <img src="docs/screenshots/agm-year.png" alt="AGM year in review: events, weekly activities, money by month and category, documents"> |
-
-| SLD submissions tracker | SLD club finance |
-| :---: | :---: |
-| <img src="docs/screenshots/sld-tracker.png" alt="What every club has submitted and what is missing"> | <img src="docs/screenshots/sld-finance.png" alt="Monthly and yearly income and expenses, balances"> |
-
-| SLD view of a club's members and committee fees | Role-aware assistant |
-| :---: | :---: |
-| <img src="docs/screenshots/sld-members.png" alt="Members with committee fee status, inside the admin portal"> | <img src="docs/screenshots/assistant.png" width="240" alt="Assistant answering only from records the person may open"> |
 
 ## How it works
 
@@ -91,7 +73,7 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph Browser
-        V[Vue 3 + Inertia · TypeScript<br/>installable PWA]
+        V[React 19 + Inertia · TypeScript<br/>installable PWA]
     end
     subgraph Laravel
         C[Thin controllers + form requests] --> S[Services: business rules]
@@ -167,7 +149,7 @@ flowchart TB
 | Layer | Choice |
 | --- | --- |
 | Backend | Laravel 13, PHP 8.3+ |
-| Frontend | Vue 3 (TypeScript) + Inertia.js, Tailwind CSS 4, Vite |
+| Frontend | React 19 (strict TypeScript) + Inertia.js, Tailwind CSS 4, Vite |
 | Database | MariaDB / MySQL (production), SQLite (local) |
 | Auth | Google OAuth (Laravel Socialite), spatie/laravel-permission |
 | Documents | PhpWord, PhpSpreadsheet, python-pptx, LibreOffice headless |
@@ -179,7 +161,7 @@ flowchart TB
 - Background jobs and a daily scheduler.
 - Python is still used where it is the better tool (`python-pptx` for the annual report).
 
-Rewriting the backend in Python would change nothing for users and would put the tested behaviour at risk (over 1,500 automated tests), so no rewrite is planned.
+Rewriting the backend in Python would change nothing for users and would put the tested behaviour at risk (over 1,600 automated tests), so no rewrite is planned.
 
 ## Getting started
 
@@ -200,29 +182,23 @@ composer run dev                        # or: php artisan serve + npm run dev
 
 ## Tests
 
-```bash
-composer test     # Pest
-npm run build     # vue-tsc type-check + Vite build
-php artisan test --group=hard-audit  # role matrices, input boundaries, receipts and adversarial workflow checks
-php artisan test --group=deep-uat  # multi-task permutations, moderation, profile privacy, query fuzzing and account revocation
-node --test tests/Frontend/deep-contracts.mjs  # execute actual theme, calendar and navigation scripts without a browser
-SLD_UAT=1 php artisan test --group=combined-uat  # 3,000 joins, payments, connected event/AGM journeys and native exports
-QA_TEMPLATES=1 php artisan test --filter=TemplateFidelity   # every official template → storage/qa/ side by side
+The automated suite (Pest, about 1,600 feature and unit tests covering roles, payments, signatures, attendance and
+security boundaries, plus frontend contract tests) is kept in the private development copy and is not published.
+Before every release: `php artisan test --parallel` on SQLite and on MySQL, then `npm run build`
+(strict `tsc --noEmit` + Vite).
 
-# The same suites on MySQL (what Exabytes runs). Tests only ever use :memory: or a database named *_test.
-mysql -uroot -e "CREATE DATABASE sld_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=sld_test DB_USERNAME=root DB_PASSWORD= php artisan test
-```
+## Database
 
-Deploying to Exabytes (cPanel or VPS): see [docs/DEPLOY_EXABYTES.md](docs/DEPLOY_EXABYTES.md); `scripts/package-exabytes.sh` builds the upload ZIP.
+MySQL schema, tables, keys and an ER diagram: [docs/DATABASE.md](docs/DATABASE.md).
 
-The hard-audit tests use the in-memory test databases and fake upload disks. They cover access, payment, withdrawal and signature boundaries and all pass; a future failure is evidence to investigate, not a reason to weaken the expected boundary. They do not perform live Google sign-in, bank transfers, browser/camera testing or concurrent load testing.
+## Deploying
 
-Combined UAT is opt-in and uses the same isolated databases/disks. It issues over 5,000 sequential in-process requests, retains dummy Excel/Word/PowerPoint exports and reconciliation JSON under `/private/tmp/sld-uat-20261102`, and checks advances versus purchases, empty workbooks and formula injection. Receipt OCR is mocked; QR photo decoding, approval signatures and exports use the application code. This is workflow/volume testing, not a concurrent production benchmark. All scenarios pass.
+- **Exabytes (Plesk)**: `scripts/package-plesk.sh` builds `qiu-sld-campus-hub-plesk.zip` (built frontend, production
+  packages, clean-install SQL, no demo data). Steps: [docs/DEPLOY_PLESK.md](docs/DEPLOY_PLESK.md).
+- **Render / any Docker host**: the repository `Dockerfile` (includes LibreOffice and python-pptx).
 
-Cash-payment camera regressions: `node --test tests/Frontend/cash-camera.mjs` covers generated camera IDs, duplicate captures, incorrect QR codes and camera cleanup in both frontends. Test camera permission and capture on a real phone over HTTPS before release.
-
-Deep UAT covers workflow and privacy boundaries (moderation, public profiles, query fuzzing, approvals bound to the signed version, cancellations, account revocation); all cases pass. Frontend contract tests execute the actual calendar, theme and navigation scripts with boundary stubs; they do not verify rendered layouts, keyboard focus, touch interaction or accessibility. Run browser/device UAT separately before release.
+Starting accounts on a clean install: Super Admin `ai@qiu.edu.my`; SLD Officer `yeeshiu.chong@qiu.edu.my` (Admin),
+who can add and remove other SLD admins under **SLD Admin → Roles**. Only a Super Admin can grant Super Admin.
 
 ## Security and privacy
 
@@ -247,7 +223,7 @@ Everything sensitive stays on the server:
 - [x] Phase 4: AGM, elections, Annual Activities Report
 - [x] Phase 5: Dashboards, reminders, hardening, pilot
 
-Guides: [SLD admin](docs/ADMIN_GUIDE.md) · [Committees](docs/COMMITTEE_GUIDE.md) · [Pilot checklist](docs/PILOT.md) · [Template fidelity check](docs/QA_TEMPLATES.md)
+Guides: [SLD admin](docs/ADMIN_GUIDE.md) · [Committees](docs/COMMITTEE_GUIDE.md) · [Deploy on Plesk](docs/DEPLOY_PLESK.md) · [Database](docs/DATABASE.md)
 
 ## Project layout
 

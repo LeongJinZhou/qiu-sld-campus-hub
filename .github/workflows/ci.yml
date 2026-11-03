@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,12 +17,8 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: pip install python-pptx
       - run: composer install --no-interaction --prefer-dist
       - run: npm ci
       - run: npm run build
-      - run: cp .env.example .env && php artisan key:generate
-      - run: composer test
+      - run: find app bootstrap config database routes -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+      - run: cp .env.example .env && php artisan key:generate && php artisan route:list > /dev/null
