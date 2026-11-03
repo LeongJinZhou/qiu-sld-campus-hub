@@ -132,7 +132,7 @@ flowchart TB
 - Finance workbook (Excel/PDF): Overview, then membership drive, normal registration, each event, other; this session or all years; pick the sheets
 - Event purchases and claims: snap the receipt (AI reads items and prices), budget vs spending, helpers claim back, event committee verifies, pay back by cash (QR photo) or transfer (name checked)
 - Outdoor events: indemnity pre-filled, sign once registered or paid, ticket appears after signing
-- Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA
+- Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA. Committee meetings invite the committee and advisors only; weekly activities invite the committee or all members, with expected pax and location, and everyone invited is notified
 - Venue booking (La Place, semester venues, big rooms) with SLD confirmation; daily club status (Active / At risk / Inactive)
 - AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance
 - Elections: nominations with full-term check, one vote per position, SLD flags, results into the AGM Report, role handover on 1 July
@@ -142,7 +142,8 @@ flowchart TB
 - Evidence photos required for weekly activity reports, AGMs and finished events. Event photos download as a ZIP named `Club_Event_YYYYMMDD_01.jpg`
 - After SLD acknowledges the AGM, a yearly archive ZIP is built (AGM, finance, members, annual report, events, weekly reports, photos), visible only to the club and SLD
 - Handover started by SLD after the acknowledged AGM: the incoming committee gets view-only training access during the overlap
-- Event proposal form: live gauge of the compulsory parts; Sign & submit jumps to the first problem (flashes red) and then to each next one (blinks until touched); workshops list speakers and need only 2 persons in charge; several trips with drop-off points; extra headings, paragraphs, bullets and tables after the conclusion; the export adds a committee chart with student and employee IDs
+- Event proposal form: live gauge of the compulsory parts; Sign & submit jumps to the first problem (flashes red) and then to each next one (blinks until touched); workshops list speakers (photo required) and need only 2 persons in charge; at least 2 objectives; collaboration with partner clubs or typed-in partners; several trips, each departure → places on the way (last = drop-off) → return, all within the event time; extra headings, paragraphs, bullets, tables and pictures (printed centred, fitted for A4) after the conclusion; unticked ICT prints "Not required"; the export adds a committee chart with student and employee IDs
+- Clubs you run → All events: ongoing, upcoming and past events, with past events by year
 - SLD Proposals & exports: every proposal as PDF or Word, the list as Excel/PDF, and one ZIP per event with all its documents and finance lines
 - My Activities: each club's requests by stage (Draft, Submitted with approval progress, Approved, Rejected); rejected requests clear after 30 days or by hand. Approvers, Treasurers (receipts to check) and the committee (proposal submitted) are notified
 - SLD submissions tracker: weekly reports missing by month, incomplete event completion packages, AGM state, overdue transfers. Finance has monthly and yearly income/expense charts for one club or all clubs

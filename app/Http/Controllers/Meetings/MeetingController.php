@@ -34,9 +34,11 @@ class MeetingController extends Controller
             'club' => $club->only('slug', 'name'),
             'calendarConnected' => $calendar->isConnected($request->user()),
             'kinds' => Meeting::KINDS,
+            'audiences' => Meeting::AUDIENCES,
             'meetings' => $club->meetings()->with('minutes.approvals')->orderByDesc('starts_at')->limit(50)->get()->map(fn (Meeting $m) => [
                 'id' => $m->id, 'title' => $m->title, 'kind' => $m->kind, 'starts_at' => $m->starts_at->toIso8601String(),
                 'venue' => $m->venue, 'meet_link' => $m->meet_link, 'upcoming' => $m->ends_at->isFuture(),
+                'audience' => $m->kind === 'activity' ? Meeting::AUDIENCES[$m->audience] ?? null : Meeting::AUDIENCES['committee'], 'pax' => $m->pax,
                 'minutes' => $m->minutes ? $presenter->progress($m->minutes) : null,
             ]),
         ]);
@@ -50,9 +52,12 @@ class MeetingController extends Controller
             'title' => ['required', 'string', 'max:150'],
             'starts_at' => ['required', 'date', 'after:now'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
-            'venue' => ['nullable', 'required_unless:online,true', 'string', 'max:150'],
+            // A weekly activity always has a place and an expected head count; a committee meeting may be online only.
+            'venue' => ['nullable', 'required_if:kind,activity', 'required_unless:online,true', 'string', 'max:150'],
             'online' => ['boolean'],
-        ]);
+            'audience' => ['nullable', 'required_if:kind,activity', 'in:'.implode(',', array_keys(Meeting::AUDIENCES))],
+            'pax' => ['nullable', 'required_if:kind,activity', 'integer', 'min:1', 'max:5000'],
+        ], ['venue.required_if' => 'Enter the location of the weekly activity.', 'pax.required_if' => 'Enter the expected pax.', 'audience.required_if' => 'Choose who is invited.']);
 
         try {
             $meeting = $this->meetings->create($club, $request->user(), [...$data, 'online' => $request->boolean('online')]);
@@ -60,7 +65,9 @@ class MeetingController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return to_route('meetings.show', $meeting)->with('success', $meeting->meet_link ? 'Meeting created — Meet link sent to the committee.' : 'Meeting created and the committee notified.');
+        $who = $meeting->kind === 'activity' && $meeting->audience === 'members' ? 'every member' : 'the committee and advisors';
+
+        return to_route('meetings.show', $meeting)->with('success', $meeting->meet_link ? "Meeting created — Meet link sent to {$who}." : "Created and {$who} notified.");
     }
 
     public function show(Request $request, Meeting $meeting, DocumentPresenter $presenter, DocumentExporter $exporter, ApprovalEngine $engine): Response
@@ -74,12 +81,11 @@ class MeetingController extends Controller
                 'id' => $meeting->id, 'title' => $meeting->title, 'kind' => $meeting->kind, 'kind_label' => Meeting::KINDS[$meeting->kind],
                 'starts_at' => $meeting->starts_at->toIso8601String(), 'ends_at' => $meeting->ends_at->toIso8601String(),
                 'venue' => $meeting->venue, 'meet_link' => $meeting->meet_link, 'club' => $meeting->club->only('slug', 'name'),
+                'audience' => Meeting::AUDIENCES[$meeting->kind === 'activity' ? $meeting->audience : 'committee'] ?? null, 'pax' => $meeting->pax,
                 'hours' => round($meeting->starts_at->diffInMinutes($meeting->ends_at, absolute: true) / 60, 1),
             ],
             'evidence' => $meeting->kind === 'activity' ? app(EvidencePhotos::class)->panel($meeting) : null,
-            'people' => $this->meetings->committee($meeting->club)
-                ->merge($meeting->club->memberships()->whereIn('status', ['active', 'grace'])->with('user')->get()->pluck('user'))
-                ->unique('id')->sortBy('name')->values()->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'photo_url' => $u->photoUrl()]),
+            'people' => $this->meetings->invitees($meeting)->sortBy('name')->values()->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'photo_url' => $u->photoUrl()]),
             'present' => $present,
             'minutes' => [
                 'id' => $document->id,

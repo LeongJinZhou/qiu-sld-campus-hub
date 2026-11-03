@@ -6,6 +6,9 @@ use App\Services\Documents\DocxRenderer;
 use App\Services\Documents\PdfConverter;
 use App\Services\Documents\ProposalDocx;
 use App\Services\Events\ProposalForm;
+use App\Services\Uploads\ImageUpload;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 /** Golden-file checks: every placeholder replaced, table rows match the data, original never touched. */
 beforeEach(fn () => $this->f = proposalFixture());
@@ -95,34 +98,53 @@ it('sets every PDF export in a sans-serif font at 12 pt', function () {
     unlink($path);
 });
 
-it('prints speakers, every trip, the committee chart and the club\'s own parts in the proposal', function () {
+it('prints speakers with photos, every trip, the committee chart and the club\'s own parts in the proposal', function () {
     Staff::where('email', 'advisor1.demo@qiu.edu.my')->update(['staff_number' => 'E1234']);
+    Storage::fake('public');
+    $picture = fn (int $w, int $h) => app(ImageUpload::class)->store(UploadedFile::fake()->image('p.jpg', $w, $h), "proposal-images/{$this->f['event']->id}");
+    $photo = $picture(400, 500);
+    $wide = $picture(2000, 600);
+    $day = $this->f['event']->starts_at->format('Y-m-d');
     $data = array_replace(proposalPayload($this->f), [
         'nature' => ['seminar'],
-        'speakers' => [['name' => 'Dr Aida Rahman', 'phone' => '012-3456789', 'designation' => 'Data Scientist, Petronas', 'linkedin' => '']],
+        'collaboration' => ['Robotics Club', 'Penang Green Society'],
+        'ict_required' => false, 'ict_requirements' => 'Projector (unticked, so not printed)',
+        'speakers' => [['name' => 'Dr Aida Rahman', 'phone' => '012-3456789', 'designation' => 'Data Scientist, Petronas', 'linkedin' => '', 'photo' => $photo]],
         'transport_required' => true,
         'trips' => [
-            ['arrangement' => 'University bus', 'departure_time' => '07:30', 'departure_pickup' => 'Main gate', 'dropoff_time' => '08:00', 'dropoff_point' => 'Pantai Remis', 'return_time' => '13:00', 'return_pickup' => 'Pantai Remis car park'],
-            ['arrangement' => 'Van', 'departure_time' => '09:00', 'departure_pickup' => 'Hostel', 'dropoff_time' => '09:30', 'dropoff_point' => 'Jetty', 'return_time' => '12:30', 'return_pickup' => 'Jetty'],
+            ['arrangement' => 'University bus', 'departure_at' => "{$day}T08:00", 'departure_pickup' => 'Main gate',
+                'stops' => [['name' => 'Penang Hill', 'at' => "{$day}T08:40", 'point' => 'Lower station'], ['name' => 'Pantai Remis', 'at' => "{$day}T09:30", 'point' => 'Car park']],
+                'return_at' => "{$day}T12:30", 'return_pickup' => 'Pantai Remis car park'],
+            ['arrangement' => 'Van', 'departure_at' => "{$day}T09:00", 'departure_pickup' => 'Hostel', 'stops' => [['name' => 'Jetty', 'at' => "{$day}T09:30", 'point' => 'Pier 2']], 'return_at' => "{$day}T12:30", 'return_pickup' => 'Jetty'],
         ],
         'extra_sections' => [
-            ['kind' => 'heading', 'text' => 'Risk Assessment', 'rows' => []],
-            ['kind' => 'subheading', 'text' => 'Weather', 'rows' => []],
-            ['kind' => 'paragraph', 'text' => 'We check the forecast the day before.', 'rows' => []],
-            ['kind' => 'bullets', 'text' => "Sunscreen\nWater", 'rows' => []],
-            ['kind' => 'table', 'text' => '', 'rows' => [['Risk', 'Action'], ['Rain', 'Move indoors']]],
+            ['kind' => 'heading', 'text' => 'Risk Assessment', 'rows' => [], 'image' => ''],
+            ['kind' => 'subheading', 'text' => 'Weather', 'rows' => [], 'image' => ''],
+            ['kind' => 'paragraph', 'text' => 'We check the forecast the day before.', 'rows' => [], 'image' => ''],
+            ['kind' => 'bullets', 'text' => "Sunscreen\nWater", 'rows' => [], 'image' => ''],
+            ['kind' => 'image', 'text' => 'Site map of the beach', 'rows' => [], 'image' => $wide],
+            ['kind' => 'table', 'text' => '', 'rows' => [['Risk', 'Action'], ['Rain', 'Move indoors']], 'image' => ''],
         ],
     ]);
     app(ApprovalEngine::class)->submit($this->f['document'], $this->f['president'], $data, signaturePng());
 
     $path = app(ProposalDocx::class)->render($this->f['document']->fresh());
     $text = docxText($path);
+    $zip = new ZipArchive;
+    $zip->open($path);
+    $xml = (string) $zip->getFromName('word/document.xml');
+    $media = collect(range(0, $zip->numFiles - 1))->map(fn (int $i) => $zip->getNameIndex($i))->filter(fn (string $n) => str_starts_with($n, 'word/media/'))->count();
+    $zip->close();
 
     expect(DocxRenderer::remainingPlaceholders($path))->toBe([])
         ->and($text)->toContain('Speaker / External Profile')->toContain('Dr Aida Rahman')->toContain('Data Scientist, Petronas')
-        ->toContain('Main gate')->toContain('Pantai Remis car park')->toContain('Jetty')->toContain('Drop-off')
+        ->toContain('Robotics Club, Penang Green Society')->not->toContain('Projector')
+        ->toContain('Main gate')->toContain('Penang Hill')->toContain('Lower station')->toContain('Drop-off: Pantai Remis')->toContain('Pantai Remis car park')->toContain('Jetty')
         ->toContain('Event Committee Chart')->toContain('Club Advisor')->toContain('Employee ID: E1234')->toContain('Student ID: ')
-        ->toContain('Risk Assessment')->toContain('Weather')->toContain('forecast')->toContain('Sunscreen')->toContain('Move indoors');
+        ->toContain('Risk Assessment')->toContain('Weather')->toContain('forecast')->toContain('Sunscreen')->toContain('Site map of the beach')->toContain('Move indoors')
+        // Both pictures are embedded (plus the preparer's signature); the wide one fits 12 cm (340.2 pt) across.
+        ->and($media)->toBeGreaterThanOrEqual(3)
+        ->and($xml)->toContain('width:340.2pt')->toContain('Not required');
     if (getenv('PROPOSAL_SAMPLE_DIR')) {
         copy($path, getenv('PROPOSAL_SAMPLE_DIR').'/proposal-sample.docx');
     }

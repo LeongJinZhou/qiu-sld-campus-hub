@@ -28,6 +28,7 @@ function meeting(object $t, string $kind = 'committee', bool $online = false): M
     return app(Meetings::class)->create($t->club, $t->secretary, [
         'kind' => $kind, 'title' => 'Weekly meeting', 'starts_at' => now()->addDay()->setTime(20, 0)->toDateTimeString(),
         'ends_at' => now()->addDay()->setTime(21, 30)->toDateTimeString(), 'venue' => 'Student Lounge', 'online' => $online,
+        'audience' => 'members', 'pax' => 20,
     ]);
 }
 

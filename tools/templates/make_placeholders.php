@@ -70,7 +70,12 @@ $d->block(34)->parentNode->removeChild($d->block(34)); // second sample numbered
 
 $d->setText($d->paragraphContaining('Expected number of participants:'), 'Expected number of participants: ${expected_participants}');
 $d->setText($d->paragraphContaining('Eligibility:'), 'Eligibility: ${eligibility}');
-$d->insertAfter($d->paragraphContaining('ICT & Maintenance Requirement'), '${ict_requirements}', $body);
+$ict = $d->paragraphContaining('ICT & Maintenance Requirement');
+// The blank form's page break after this heading would leave it alone at the foot of a page, away from its answer.
+foreach (iterator_to_array($ict->getElementsByTagNameNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', 'br')) as $break) {
+    $break->parentNode->removeChild($break);
+}
+$d->insertAfter($ict, '${ict_requirements}', $body);
 $d->setText($d->paragraphContaining('Transportation required / not required'), '${transport}');
 // Trips (out, drop-off, back; several when places or times differ) print as one table where the four sample lines were.
 foreach ([$d->paragraphContaining('Pickup Point:', 1), $d->paragraphContaining('Estimated Return Time:'), $d->paragraphContaining('Pickup Point:', 0)] as $sample) {

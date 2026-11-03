@@ -19,6 +19,7 @@ use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ClubQrController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Events\AttendanceController;
+use App\Http\Controllers\Events\ClubEventsController;
 use App\Http\Controllers\Events\EventCommitteeController;
 use App\Http\Controllers\Events\EventController;
 use App\Http\Controllers\Events\EventDocumentController;
@@ -119,6 +120,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/clubs/{club}', [ClubController::class, 'show'])->name('clubs.show');
     Route::get('/c/{token}', ClubQrController::class)->name('clubs.qr');
 
+    Route::get('/clubs/{club}/events', ClubEventsController::class)->name('clubs.events');
     Route::get('/clubs/{club}/events/create', [EventController::class, 'create'])->name('events.create');
     Route::post('/clubs/{club}/events', [EventController::class, 'store'])->name('events.store');
     Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
@@ -165,6 +167,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/events/{event}/proposal', [ProposalController::class, 'update'])->name('proposals.update');
     Route::get('/events/{event}/proposal/live', [ProposalController::class, 'live'])->middleware('throttle:live-editing')->name('proposals.live');
     Route::patch('/events/{event}/proposal/live', [ProposalController::class, 'patch'])->middleware('throttle:live-editing')->name('proposals.patch');
+    Route::post('/events/{event}/proposal/image', [ProposalController::class, 'image'])->middleware('throttle:uploads')->name('proposals.image');
     Route::post('/events/{event}/proposal/submit', [ProposalController::class, 'submit'])->name('proposals.submit');
     Route::post('/events/{event}/proposal/ask', [ProposalController::class, 'askToSubmit'])->middleware('throttle:nudges')->name('proposals.ask');
     Route::delete('/events/{event}/proposal', [ProposalController::class, 'discard'])->name('proposals.discard');
