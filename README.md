@@ -142,6 +142,9 @@ flowchart TB
 - Evidence photos required for weekly activity reports, AGMs and finished events. Event photos download as a ZIP named `Club_Event_YYYYMMDD_01.jpg`
 - After SLD acknowledges the AGM, a yearly archive ZIP is built (AGM, finance, members, annual report, events, weekly reports, photos), visible only to the club and SLD
 - Handover started by SLD after the acknowledged AGM: the incoming committee gets view-only training access during the overlap
+- Event proposal form: live gauge of the compulsory parts; Sign & submit jumps to the first problem (flashes red) and then to each next one (blinks until touched); workshops list speakers and need only 2 persons in charge; several trips with drop-off points; extra headings, paragraphs, bullets and tables after the conclusion; the export adds a committee chart with student and employee IDs
+- SLD Proposals & exports: every proposal as PDF or Word, the list as Excel/PDF, and one ZIP per event with all its documents and finance lines
+- My Activities: each club's requests by stage (Draft, Submitted with approval progress, Approved, Rejected); rejected requests clear after 30 days or by hand. Approvers, Treasurers (receipts to check) and the committee (proposal submitted) are notified
 - SLD submissions tracker: weekly reports missing by month, incomplete event completion packages, AGM state, overdue transfers. Finance has monthly and yearly income/expense charts for one club or all clubs
 - One calendar: approved events plus my meetings, weekly activities, weekly-report due dates and AGMs, with a whole-year view
 - New-club registration: the proposed President applies and signs → the advisor signs → SLD approves. The club, its committee and its advisor only exist after approval

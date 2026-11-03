@@ -320,6 +320,9 @@ const options = (rec: Record<string, string>) => [{ value: '', label: 'All' }, .
                                 ><Button variant="secondary"><Icon name="file" :size="16" /> 02 Finance Record (AGM)</Button></a
                             >
                             <a :href="exportUrl('pdf')"><Button variant="secondary">PDF</Button></a>
+                            <Link v-if="can.edit" :href="`/clubs/${club.slug}/payments/review`"
+                                ><Button variant="secondary"><Icon name="check" :size="16" /> Payment review</Button></Link
+                            >
                             <Link :href="`/clubs/${club.slug}/fund-requests/create`"><Button>＋ Fund withdrawal (07)</Button></Link>
                         </div>
                     </div>

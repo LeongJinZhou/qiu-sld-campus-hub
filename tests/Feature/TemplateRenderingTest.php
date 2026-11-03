@@ -94,3 +94,45 @@ it('sets every PDF export in a sans-serif font at 12 pt', function () {
     expect(array_unique($fonts[1]))->toBe(['Arial'])->and(array_values(array_unique($sizes[1])))->toBe(['24']);
     unlink($path);
 });
+
+it('prints speakers, every trip, the committee chart and the club\'s own parts in the proposal', function () {
+    Staff::where('email', 'advisor1.demo@qiu.edu.my')->update(['staff_number' => 'E1234']);
+    $data = array_replace(proposalPayload($this->f), [
+        'nature' => ['seminar'],
+        'speakers' => [['name' => 'Dr Aida Rahman', 'phone' => '012-3456789', 'designation' => 'Data Scientist, Petronas', 'linkedin' => '']],
+        'transport_required' => true,
+        'trips' => [
+            ['arrangement' => 'University bus', 'departure_time' => '07:30', 'departure_pickup' => 'Main gate', 'dropoff_time' => '08:00', 'dropoff_point' => 'Pantai Remis', 'return_time' => '13:00', 'return_pickup' => 'Pantai Remis car park'],
+            ['arrangement' => 'Van', 'departure_time' => '09:00', 'departure_pickup' => 'Hostel', 'dropoff_time' => '09:30', 'dropoff_point' => 'Jetty', 'return_time' => '12:30', 'return_pickup' => 'Jetty'],
+        ],
+        'extra_sections' => [
+            ['kind' => 'heading', 'text' => 'Risk Assessment', 'rows' => []],
+            ['kind' => 'subheading', 'text' => 'Weather', 'rows' => []],
+            ['kind' => 'paragraph', 'text' => 'We check the forecast the day before.', 'rows' => []],
+            ['kind' => 'bullets', 'text' => "Sunscreen\nWater", 'rows' => []],
+            ['kind' => 'table', 'text' => '', 'rows' => [['Risk', 'Action'], ['Rain', 'Move indoors']]],
+        ],
+    ]);
+    app(ApprovalEngine::class)->submit($this->f['document'], $this->f['president'], $data, signaturePng());
+
+    $path = app(ProposalDocx::class)->render($this->f['document']->fresh());
+    $text = docxText($path);
+
+    expect(DocxRenderer::remainingPlaceholders($path))->toBe([])
+        ->and($text)->toContain('Speaker / External Profile')->toContain('Dr Aida Rahman')->toContain('Data Scientist, Petronas')
+        ->toContain('Main gate')->toContain('Pantai Remis car park')->toContain('Jetty')->toContain('Drop-off')
+        ->toContain('Event Committee Chart')->toContain('Club Advisor')->toContain('Employee ID: E1234')->toContain('Student ID: ')
+        ->toContain('Risk Assessment')->toContain('Weather')->toContain('forecast')->toContain('Sunscreen')->toContain('Move indoors');
+    if (getenv('PROPOSAL_SAMPLE_DIR')) {
+        copy($path, getenv('PROPOSAL_SAMPLE_DIR').'/proposal-sample.docx');
+    }
+    unlink($path);
+});
+
+it('leaves out the speakers part when the event is not a workshop', function () {
+    app(ApprovalEngine::class)->submit($this->f['document'], $this->f['president'], proposalPayload($this->f), signaturePng());
+    $path = app(ProposalDocx::class)->render($this->f['document']->fresh());
+
+    expect(DocxRenderer::remainingPlaceholders($path))->toBe([])->and(docxText($path))->not->toContain('Speaker / External Profile');
+    unlink($path);
+});

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Events;
 
-use App\Enums\ScopedRole;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\User;
@@ -61,8 +60,9 @@ class EventPaymentController extends Controller
                 'order_id' => $latest->order_id, 'method' => $latest->method, 'status' => $latest->status->value, 'flags' => $latest->flags ?? [],
                 'review_note' => $latest->review_note, 'handover_id' => $latest->handover?->id,
             ] : null,
-            'committee' => $event->club->roleAssignments()->where('session_id', $event->session_id)->where('role', ScopedRole::ClubCommittee)
-                ->with('user')->get()->map(fn ($a) => ['id' => $a->user_id, 'name' => $a->user->name, 'position' => $a->position, 'photo_url' => $a->user->photoUrl()]),
+            // Cash for an event goes to that event's committee, never to the payer themself.
+            'committee' => $event->committee()->where('user_id', '!=', $request->user()->id)->with('user')->get()->unique('user_id')->values()
+                ->map(fn ($a) => ['id' => $a->user_id, 'name' => $a->user->name, 'position' => $a->position, 'photo_url' => $a->user->photoUrl()]),
         ]);
     }
 

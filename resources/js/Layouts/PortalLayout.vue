@@ -17,6 +17,7 @@ const links = computed(() => [
     { label: 'Dashboard', href: '/admin' },
     { label: 'Club performance', href: '/admin/performance' },
     { label: 'Submissions tracker', href: '/admin/tracking' },
+    { label: 'Proposals & exports', href: '/admin/proposals' },
     { label: 'Clubs', href: '/admin/clubs' },
     { label: 'Staff', href: '/admin/staff' },
     { label: 'All members', href: '/admin/members' },

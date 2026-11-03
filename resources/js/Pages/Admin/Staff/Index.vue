@@ -14,6 +14,7 @@ interface StaffRow {
     email: string;
     name: string;
     title: string | null;
+    staff_number: string | null;
     approver_role: string | null;
     active: boolean;
     signed_in: boolean;
@@ -21,19 +22,25 @@ interface StaffRow {
 
 const props = defineProps<{ staff: StaffRow[]; approverRoles: Option[] }>();
 
-const form = useForm({ email: '', name: '', title: '', approver_role: null as string | null });
+const form = useForm({ email: '', staff_number: '', name: '', title: '', approver_role: null as string | null });
 const create = (): void => form.post('/admin/staff', { preserveScroll: true, onSuccess: () => form.reset() });
 
 const roleLabel = (value: string | null) => props.approverRoles.find((r) => r.value === value)?.label ?? '—';
 
-function toggle(row: StaffRow): void {
-    router.put(`/admin/staff/${row.id}`, { name: row.name, title: row.title, approver_role: row.approver_role, active: !row.active }, { preserveScroll: true });
+const save = (row: StaffRow, changes: Partial<StaffRow>): void =>
+    router.put(`/admin/staff/${row.id}`, { name: row.name, title: row.title, staff_number: row.staff_number, approver_role: row.approver_role, active: row.active, ...changes }, { preserveScroll: true });
+const toggle = (row: StaffRow): void => save(row, { active: !row.active });
+// Employee ID: printed beside advisors on the proposal's committee chart.
+function editStaffNumber(row: StaffRow): void {
+    const value = window.prompt(`Employee ID for ${row.name}`, row.staff_number ?? '');
+    if (value !== null) save(row, { staff_number: value.trim() || null });
 }
 
 const columns = [
     { key: 'name' as const, label: 'Name', sortable: true },
     { key: 'email' as const, label: 'Email', sortable: true },
     { key: 'title' as const, label: 'Title' },
+    { key: 'staff_number' as const, label: 'Employee ID' },
     { key: 'approver_role' as const, label: 'Approver role', sortable: true },
     { key: 'active' as const, label: 'Status' },
 ];
@@ -45,9 +52,10 @@ const columns = [
         <div class="grid gap-6">
             <Card>
                 <template #title>Add staff</template>
-                <form class="grid gap-3 md:grid-cols-[1fr_1fr_1fr_12rem_auto] md:items-end" @submit.prevent="create">
+                <form class="grid gap-3 md:grid-cols-[1fr_1fr_8rem_1fr_12rem_auto] md:items-end" @submit.prevent="create">
                     <Input v-model="form.email" type="email" label="QIU email" required :error="form.errors.email" />
                     <Input v-model="form.name" label="Name" required :error="form.errors.name" />
+                    <Input v-model="form.staff_number" label="Employee ID" :error="form.errors.staff_number" />
                     <Input v-model="form.title" label="Title" :error="form.errors.title" />
                     <Select v-model="form.approver_role" label="Approver role" :options="[{ value: '', label: 'None' }, ...approverRoles]" :error="form.errors.approver_role" />
                     <Button type="submit" :loading="form.processing">Add</Button>
@@ -57,6 +65,9 @@ const columns = [
             <Table :columns="columns" :rows="staff" row-key="id">
                 <template #cell-name="{ row }">
                     {{ row.name }} <Badge v-if="!row.signed_in">not signed in yet</Badge>
+                </template>
+                <template #cell-staff_number="{ row }">
+                    <button type="button" class="text-left hover:text-brand-blue" title="Set employee ID" @click="editStaffNumber(row)">{{ row.staff_number || 'Set' }}</button>
                 </template>
                 <template #cell-approver_role="{ row }">{{ roleLabel(row.approver_role) }}</template>
                 <template #cell-active="{ row }">

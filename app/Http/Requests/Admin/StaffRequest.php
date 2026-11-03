@@ -25,6 +25,7 @@ class StaffRequest extends FormRequest
                 : ['prohibited'],
             'name' => ['required', 'string', 'max:255'],
             'title' => ['nullable', 'string', 'max:255'],
+            'staff_number' => ['nullable', 'string', 'max:50'],
             'approver_role' => ['nullable', Rule::enum(ApproverRole::class)],
             'active' => [$creating ? 'prohibited' : 'required', 'boolean'],
         ];

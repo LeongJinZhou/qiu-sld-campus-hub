@@ -5,6 +5,7 @@ namespace App\Services\Auth;
 use App\Enums\GlobalRole;
 use App\Enums\StudentStatus;
 use App\Exceptions\NotInRecordsException;
+use App\Http\Controllers\PreferencesController;
 use App\Models\Staff;
 use App\Models\User;
 use App\Services\Camsys\CamsysSync;
@@ -38,6 +39,7 @@ class SignInService
         }
 
         $user = User::firstOrNew(['email' => $email]);
+        $returning = $user->last_login_at !== null;
         $user->fill([
             // camsys/staff names are the official ones printed on SLD forms.
             'name' => $student->name ?? $staff->name ?? $googleName,
@@ -45,6 +47,9 @@ class SignInService
             'avatar_url' => $avatarUrl ?? $user->avatar_url,
             'last_login_at' => now(),
         ])->save();
+        if ($returning) {
+            $this->retireTours($user);
+        }
 
         $student?->update(['user_id' => $user->id]);
         $staff?->update(['user_id' => $user->id]);
@@ -82,7 +87,15 @@ class SignInService
             $this->camsys->syncByEmail($user->email);
         }
         $user->forceFill(['last_login_at' => now()])->save();
+        $this->retireTours($user);
 
         return $user;
+    }
+
+    /** The student and committee guides open by themselves during the first sign-in only; Profile can replay them. */
+    private function retireTours(User $user): void
+    {
+        $seen = array_values(array_unique([...($user->tours_seen ?? []), ...PreferencesController::TOURS]));
+        $user->forceFill(['tours_seen' => $seen])->save();
     }
 }
