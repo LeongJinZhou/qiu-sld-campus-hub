@@ -106,7 +106,7 @@ function hardReadCases(): array
         'fee administration' => ['/admin/fees', 'admin'],
         'moderation' => ['/admin/moderation', 'admin'],
         'settings' => ['/admin/settings', 'admin'],
-        'global roles' => ['/admin/roles', 'superadmin'],
+        'admins and roles' => ['/admin/roles', 'admin'],
         'audit log' => ['/admin/audit', 'superadmin'],
         'camsys sync' => ['/admin/sync', 'superadmin'],
     ];

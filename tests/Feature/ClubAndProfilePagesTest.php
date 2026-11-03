@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Club;
+use App\Models\Staff;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\Camsys\CamsysSync;
@@ -68,8 +69,8 @@ it('accepts a personal email but not a QIU one', function () {
 it('keeps admin pages to SLD and super-admin pages to Super Admin', function () {
     $this->actingAs($this->user)->get('/admin/clubs')->assertForbidden();
     $this->actingAs(sldOfficer())->get('/admin/clubs')->assertOk();
-    $this->actingAs(sldOfficer())->get('/admin/roles')->assertForbidden();
-    $this->actingAs(superAdmin())->get('/admin/roles')->assertOk();
+    $this->actingAs(sldOfficer())->get('/admin/audit')->assertForbidden();
+    $this->actingAs(superAdmin())->get('/admin/audit')->assertOk();
 });
 
 it('lets SLD assign a committee position by student ID', function () {
@@ -87,6 +88,26 @@ it('lets a Super Admin grant SLD Officer but not change their own roles', functi
     expect($this->user->fresh()->hasRole('admin'))->toBeTrue();
 
     $this->actingAs($boss)->put("/admin/roles/{$boss->id}", ['roles' => []])->assertForbidden();
+});
+
+it('lets an SLD Officer add and manage SLD admins, but never Super Admins or herself', function () {
+    $officer = sldOfficer();
+    $boss = superAdmin();
+
+    $this->actingAs($officer)->get('/admin/roles')->assertInertia(fn ($page) => $page->where('managedRoles', [['value' => 'admin', 'label' => 'SLD Officer']]));
+    $this->actingAs($officer)->post('/admin/roles', ['name' => 'New Officer', 'email' => 'new.officer@qiu.edu.my'])->assertSessionHas('success');
+    $new = User::where('email', 'new.officer@qiu.edu.my')->sole();
+    expect($new->hasRole('admin'))->toBeTrue()->and($new->hasRole('staff'))->toBeTrue()
+        ->and(Staff::where('email', 'new.officer@qiu.edu.my')->value('active'))->toBeTrue();
+    $this->actingAs($officer)->post('/admin/roles', ['name' => 'Outsider', 'email' => 'someone@gmail.com'])->assertSessionHasErrors('email');
+
+    $this->actingAs($officer)->put("/admin/roles/{$new->id}", ['roles' => []])->assertSessionHas('success');
+    expect($new->fresh()->hasRole('admin'))->toBeFalse();
+    $this->actingAs($officer)->put("/admin/roles/{$this->user->id}", ['roles' => ['admin', 'superadmin']])->assertSessionHas('success');
+    expect($this->user->fresh()->hasRole('admin'))->toBeTrue()->and($this->user->fresh()->hasRole('superadmin'))->toBeFalse();
+    $this->actingAs($officer)->put("/admin/roles/{$boss->id}", ['roles' => []])->assertForbidden();
+    $this->actingAs($officer)->put("/admin/roles/{$officer->id}", ['roles' => []])->assertForbidden();
+    expect($boss->fresh()->hasRole('superadmin'))->toBeTrue();
 });
 
 it('lists clubs a student simply joined on their profile, and keeps hidden members off the club member wall', function () {

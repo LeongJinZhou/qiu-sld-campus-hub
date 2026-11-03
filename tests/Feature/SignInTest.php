@@ -4,6 +4,7 @@ use App\Exceptions\NotInRecordsException;
 use App\Models\Staff;
 use App\Models\User;
 use App\Services\Auth\SignInService;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
@@ -75,6 +76,7 @@ it('locks the hosted demo login behind a passcode before showing or using any ac
     seedCamsys();
     config(['sld.demo_login' => true, 'sld.demo_passcode_hash' => Hash::make('right-passcode-123')]);
     Route::middleware('web')->group(base_path('routes/web.php'));
+    $this->withoutMiddleware(ThrottleRequests::class); // other sign-in tests share the login limiter
 
     $this->get('/dev/login-as')->assertInertia(fn ($page) => $page->where('locked', true)->where('accounts', []));
     $this->post('/dev/login-as', ['email' => 'student1.demo@qiu.edu.my'])->assertForbidden();
