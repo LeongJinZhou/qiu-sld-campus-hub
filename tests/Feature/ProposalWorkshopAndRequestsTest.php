@@ -163,3 +163,10 @@ it('gives SLD every proposal with PDF, Word, a list export and one ZIP per event
     $this->actingAs($sld)->get("/admin/proposals/{$this->f['document']->id}/package.zip")->assertOk()->assertDownload();
     $this->actingAs($this->f['president'])->get('/admin/proposals')->assertForbidden();
 });
+
+it('still builds the event ZIP when the server cannot make PDFs', function () use ($submit) {
+    $submit($this->f)->assertRedirect();
+    config(['sld.soffice' => '']);
+
+    $this->actingAs(sldOfficer())->get("/admin/proposals/{$this->f['document']->id}/package.zip")->assertOk()->assertDownload();
+});
