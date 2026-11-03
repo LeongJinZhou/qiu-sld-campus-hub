@@ -38,6 +38,9 @@ class ProposalDocx
     /** Signature blocks printed on the template, in order. SLD Officer and Dean sign in the system only. */
     private const SIGNERS = [ChainRole::Preparer, ChainRole::Advisor, ChainRole::AssistantRegistrar, ChainRole::Registrar, ChainRole::Bursar, ChainRole::Coo];
 
+    /** Pictures waiting to replace their ${placeholder} once the parts holding them are in the document. @var array<string, array<string, mixed>> */
+    private array $images = [];
+
     public function __construct(
         private readonly DocxRenderer $docx,
         private readonly ProposalForm $form,
@@ -48,6 +51,7 @@ class ProposalDocx
     {
         $document->loadMissing(['club', 'event.committee.user.student', 'event.committee.user.staff', 'approvals.signature', 'approvals.approver.staff']);
         $data = ProposalForm::upgrade($document->data() ?: $this->form->current($document));
+        $this->images = [];
         $output = storage_path("app/private/generated/proposal-{$document->id}-".now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.docx');
 
         return $this->docx->render(self::TEMPLATE, fn (TemplateProcessor $t) => $this->fill($t, $document, $data), $output);
@@ -78,15 +82,15 @@ class ProposalDocx
             'venue' => $d['venue'],
             'mode_physical' => $tick($d['mode'] === 'physical'),
             'mode_virtual' => $tick($d['mode'] === 'virtual'),
-            'collaboration' => $d['collaboration'] ?: '-',
+            'collaboration' => implode(', ', array_filter(array_map('trim', (array) $d['collaboration']))) ?: '-',
             'total_budget' => 'RM '.$this->rm($totals['expenses_sen']),
             'tentative_date' => $start->format('d/m/Y').' – '.$end->format('d/m/Y'),
             'time_range' => $start->format('g.i A').' – '.$end->format('g.i A'),
             'introduction' => $d['introduction'],
             'expected_participants' => (string) $d['expected_participants'],
             'eligibility' => $d['eligibility'],
-            // Unticked = "Not required" on the form.
-            'ict_requirements' => ($d['ict_required'] ?? filled($d['ict_requirements'] ?? null)) && filled($d['ict_requirements'] ?? null) ? $d['ict_requirements'] : 'Not required',
+            // Not ticked (or nothing written) = "Not required" on the form.
+            'ict_requirements' => ! empty($d['ict_required']) && filled($d['ict_requirements'] ?? null) ? $d['ict_requirements'] : 'Not required',
             'transport' => $d['transport_required'] ? 'Transportation required' : 'Not required',
             'revenue_sum' => $this->rm($totals['revenue_sen']),
             'expense_sum' => $this->rm($totals['expenses_sen']),
@@ -129,6 +133,9 @@ class ProposalDocx
         $this->trips($t, $d);
         $this->chart($t, $document, $d);
         $this->extras($t, $d['extra_sections'] ?? []);
+        foreach ($this->images as $key => $image) {
+            $t->setImageValue($key, $image);
+        }
         $this->signatures($t, $document);
     }
 
@@ -137,9 +144,11 @@ class ProposalDocx
     {
         $speakers = ProposalForm::isWorkshop($d) ? array_values($d['speakers'] ?? []) : [];
         $this->optional($t, 'speakers', $speakers ? ['speakers_table' => $this->grid(
-            ['No', 'Name', 'Designation', 'Phone', 'LinkedIn'],
-            array_map(fn (array $p, int $i) => [(string) ($i + 1), $p['name'] ?? '', $p['designation'] ?? '', $p['phone'] ?? '', ($p['linkedin'] ?? '') ?: '-'], $speakers, array_keys($speakers)),
-            [600, 2350, 2350, 1550, 2050],
+            ['No', 'Photo', 'Name', 'Designation', 'Phone', 'LinkedIn'],
+            array_map(fn (array $p, int $i) => [
+                (string) ($i + 1), $this->picture("speaker_photo_{$i}", $p['photo'] ?? null, 2.2, 2.8), $p['name'] ?? '', $p['designation'] ?? '', $p['phone'] ?? '', ($p['linkedin'] ?? '') ?: '-',
+            ], $speakers, array_keys($speakers)),
+            [550, 1500, 1950, 1950, 1400, 1550],
         )] : []);
     }
 
@@ -152,16 +161,22 @@ class ProposalDocx
 
             return;
         }
-        $at = fn (?string $time, ?string $place) => trim((filled($time) ? $this->time((string) $time) : '-')."\n".(filled($place) ? $place : '-'));
+        $at = fn (?string $when, ?string $place) => (filled($when) ? $this->when((string) $when) : '-')."\n".(filled($place) ? $place : '-');
         $t->setComplexBlock('trips_table', $this->grid(
-            ['No', 'Arrangement', 'Departure Time / Pickup Point', 'Est. Drop-off Time / Drop-off Point', 'Est. Return Time / Pickup Point'],
-            array_map(fn (array $trip, int $i) => [
-                (string) ($i + 1), ($trip['arrangement'] ?? '') ?: '-',
-                $at($trip['departure_time'] ?? null, $trip['departure_pickup'] ?? null),
-                $at($trip['dropoff_time'] ?? null, $trip['dropoff_point'] ?? null),
-                $at($trip['return_time'] ?? null, $trip['return_pickup'] ?? null),
-            ], $trips, array_keys($trips)),
-            [600, 1850, 2150, 2150, 2150],
+            ['No', 'Arrangement', 'Departure / Pickup Point', 'Destinations (last = Drop-off Point)', 'Est. Return / Pickup Point'],
+            array_map(function (array $trip, int $i) use ($at): array {
+                $stops = array_values((array) ($trip['stops'] ?? []));
+                $route = array_map(fn (array $stop, int $s) => ($s === count($stops) - 1 ? 'Drop-off: ' : ($s + 1).'. ').(($stop['name'] ?? '') ?: '-')
+                    ."\n".(filled($stop['at'] ?? null) ? $this->when($stop['at']) : '-').(filled($stop['point'] ?? null) ? " · {$stop['point']}" : ''), $stops, array_keys($stops));
+
+                return [
+                    (string) ($i + 1), ($trip['arrangement'] ?? '') ?: '-',
+                    $at($trip['departure_at'] ?? null, $trip['departure_pickup'] ?? null),
+                    implode("\n", $route) ?: '-',
+                    $at($trip['return_at'] ?? null, $trip['return_pickup'] ?? null),
+                ];
+            }, $trips, array_keys($trips)),
+            [550, 1700, 1950, 2800, 1900],
         ));
     }
 
@@ -232,9 +247,21 @@ class ProposalDocx
     private function extras(TemplateProcessor $t, array $blocks): void
     {
         $items = [];
-        foreach ($blocks as $block) {
+        foreach ($blocks as $b => $block) {
             $text = trim((string) ($block['text'] ?? ''));
             $kind = $block['kind'] ?? '';
+            if ($kind === 'image') {
+                // Centred, sized to read clearly on A4 without filling the page; the caption (if any) underneath.
+                $placeholder = $this->picture("extra_image_{$b}", $block['image'] ?? null, 12, 9);
+                if ($placeholder !== '') {
+                    $items[] = $this->paragraph($placeholder, [], ['alignment' => Jc::CENTER, 'indentation' => ['left' => 567], 'spaceBefore' => 120, 'spaceAfter' => $text === '' ? 160 : 40, 'keepNext' => $text !== '']);
+                    if ($text !== '') {
+                        $items[] = $this->paragraph($text, ['italic' => true, 'size' => 10, 'color' => '404040'], ['alignment' => Jc::CENTER, 'indentation' => ['left' => 567], 'spaceAfter' => 160]);
+                    }
+                }
+
+                continue;
+            }
             $item = match (true) {
                 $kind === 'heading' && $text !== '' => $this->paragraph($text, ['bold' => true, 'size' => 12], ['spaceBefore' => 240, 'spaceAfter' => 120, 'keepNext' => true]),
                 $kind === 'subheading' && $text !== '' => $this->paragraph($text, ['bold' => true], ['spaceBefore' => 120, 'spaceAfter' => 80, 'keepNext' => true, 'indentation' => ['left' => 567]]),
@@ -248,6 +275,24 @@ class ProposalDocx
             }
         }
         $this->optional($t, 'extra', $items, 'extra_item');
+    }
+
+    /**
+     * A picture from the public disk, fitted inside a box (cm) keeping its shape: returns the ${placeholder} to print
+     * where it goes (set once the part is in the document), or '' when there is no usable picture.
+     */
+    private function picture(string $key, ?string $path, float $maxWidthCm, float $maxHeightCm): string
+    {
+        $file = is_string($path) && preg_match(ProposalForm::IMAGE_PATH, $path) ? Storage::disk('public')->path($path) : null;
+        $size = $file && is_file($file) ? @getimagesize($file) : false;
+        if (! $size || ! $size[0] || ! $size[1]) {
+            return '';
+        }
+        $points = 28.35;
+        $scale = min($maxWidthCm * $points / $size[0], $maxHeightCm * $points / $size[1]);
+        $this->images[$key] = ['path' => $file, 'width' => round($size[0] * $scale, 1).'pt', 'height' => round($size[1] * $scale, 1).'pt', 'ratio' => false];
+
+        return '${'.$key.'}';
     }
 
     /** @param array<string, mixed> $font @param array<string, mixed> $paragraph */
@@ -300,7 +345,7 @@ class ProposalDocx
             foreach ($row as $c => $value) {
                 $cell = $table->addCell($widths[$c] ?? 1500, $r === 0 ? ['bgColor' => 'D9D9D9', 'valign' => 'center'] : ['valign' => 'top']);
                 foreach (explode("\n", (string) $value) as $line) {
-                    $cell->addText($line, ['name' => 'Arial', 'size' => 10, 'bold' => $r === 0], ['spaceAfter' => 0, 'alignment' => $r === 0 || ($numbered && $c === 0) ? Jc::CENTER : Jc::START]);
+                    $cell->addText($line, ['name' => 'Arial', 'size' => 10, 'bold' => $r === 0], ['spaceAfter' => 0, 'alignment' => $r === 0 || ($numbered && $c === 0) || str_starts_with($line, '${') ? Jc::CENTER : Jc::START]);
                 }
             }
         }
@@ -403,6 +448,11 @@ class ProposalDocx
     private function number(float|int|string $value): string
     {
         return rtrim(rtrim(number_format((float) $value, 1), '0'), '.');
+    }
+
+    private function when(string $dateTime): string
+    {
+        return CarbonImmutable::parse($dateTime)->format('j M Y, g.ia');
     }
 
     private function time(string $hhmm): string
