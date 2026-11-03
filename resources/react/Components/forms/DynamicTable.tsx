@@ -13,10 +13,14 @@ interface DynamicTableProps<Row extends Record<string, string>> {
     errors?: Record<string, string>;
     errorPrefix: string;
     addLabel?: string;
+    /** Rows that always stay (e.g. 2 objectives): their remove button is hidden. */
+    min?: number;
+    /** Columns that may be left empty, shown as "(optional)". */
+    optional?: string[];
 }
 
 /** Repeating rows (activities, itinerary, objectives) with add/remove, matching the template tables. */
-export default function DynamicTable<Row extends Record<string, string>>({ columns, rows, onChange, blank, disabled, errors, errorPrefix, addLabel }: DynamicTableProps<Row>) {
+export default function DynamicTable<Row extends Record<string, string>>({ columns, rows, onChange, blank, disabled, errors, errorPrefix, addLabel, min = 0, optional }: DynamicTableProps<Row>) {
     const set = (index: number, key: keyof Row & string, value: string): void => onChange(rows.map((r, i) => (i === index ? { ...r, [key]: value } : r)));
 
     return (
@@ -29,6 +33,7 @@ export default function DynamicTable<Row extends Record<string, string>>({ colum
                             {columns.map((column) => (
                                 <th key={column.key} className="px-3 py-2">
                                     {column.label}
+                                    {optional?.includes(column.key) && <span className="font-normal normal-case"> (optional)</span>}
                                 </th>
                             ))}
                             {!disabled && <th className="w-10" />}
@@ -67,9 +72,11 @@ export default function DynamicTable<Row extends Record<string, string>>({ colum
                                 })}
                                 {!disabled && (
                                     <td className="px-2 py-2">
-                                        <button type="button" className="text-ink-muted hover:text-danger" aria-label={`Remove row ${index + 1}`} onClick={() => onChange(rows.filter((_, i) => i !== index))}>
-                                            ✕
-                                        </button>
+                                        {rows.length > min && (
+                                            <button type="button" className="text-ink-muted hover:text-danger" aria-label={`Remove row ${index + 1}`} onClick={() => onChange(rows.filter((_, i) => i !== index))}>
+                                                ✕
+                                            </button>
+                                        )}
                                     </td>
                                 )}
                             </tr>

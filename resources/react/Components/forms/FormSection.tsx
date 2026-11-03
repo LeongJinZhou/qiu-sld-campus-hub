@@ -7,6 +7,8 @@ interface FormSectionProps {
     section?: string;
     flag?: string | null;
     editors?: { id: number; name: string; photo_url: string | null }[];
+    /** Pointing someone at a problem: 'flash' three times, or 'blink' until they touch the part. */
+    alert?: 'flash' | 'blink' | null;
     children?: ReactNode;
 }
 
@@ -14,10 +16,11 @@ interface FormSectionProps {
  * One part of a form. `required` marks it with a red *, `flag` highlights it with the reviewer's note (a returned
  * proposal), and `editors` shows who else is working on this part right now.
  */
-export default function FormSection({ title, hint, required, section, flag, editors, children }: FormSectionProps) {
+export default function FormSection({ title, hint, required, section, flag, editors, alert, children }: FormSectionProps) {
+    const pulse = alert === 'flash' ? 'problem-flash' : alert === 'blink' ? 'problem-blink' : '';
     const border = flag ? 'border-danger ring-4 ring-danger/15' : editors?.length ? 'border-brand-cyan ring-2 ring-brand-cyan/20' : 'border-line';
     return (
-        <section data-section={section} className={`grid scroll-mt-24 gap-4 rounded-card border bg-surface p-5 shadow-card transition-[box-shadow,border-color] duration-300 ${border}`}>
+        <section data-section={section} className={`grid scroll-mt-24 gap-4 rounded-card border bg-surface p-5 shadow-card transition-[box-shadow,border-color] duration-300 ${pulse} ${border}`}>
             <header className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                     <h2 className="text-base font-semibold">

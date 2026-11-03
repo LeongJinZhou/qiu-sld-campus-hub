@@ -39,7 +39,7 @@ export default function ApprovalTracker({ progress, steps = [], compact = false 
         return () => cancelAnimationFrame(frame);
     }, [percent]);
     const bar = cx(
-        'h-full rounded-full transition-[width] duration-1000 ease-out',
+        'h-full rounded-full transition-[width] duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
         progress.status === 'approved' ? 'bg-success' : progress.status === 'returned' ? 'bg-warning' : progress.status === 'rejected' ? 'bg-danger' : 'bg-gradient-to-r from-brand-orange via-brand-magenta to-brand-cyan',
         progress.status === 'in_review' && 'animate-tracker-flow',
     );

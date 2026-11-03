@@ -45,7 +45,7 @@ export function useAutosave(url: string, body: object, enabled: boolean, busy = 
  * device, per signed-in person, restores it on the first render and forgets it once the form is sent.
  * Storage can be unavailable (private mode, blocked site data); the form then simply works without a draft.
  */
-export function useLocalDraft<T extends object>(key: string, data: T, restore: (saved: Partial<T>) => void): { restored: boolean; clear: () => void } {
+export function useLocalDraft<T extends object>(key: string, data: T, restore: (saved: Partial<T>) => void, enabled = true): { restored: boolean; clear: () => void } {
     const userId = usePage().props.auth.user?.id ?? 'guest';
     const storageKey = `draft:${userId}:${key}`;
     const [restored, setRestored] = useState(false);
@@ -53,7 +53,7 @@ export function useLocalDraft<T extends object>(key: string, data: T, restore: (
     const json = JSON.stringify(data);
 
     useEffect(() => {
-        if (loaded.current) return;
+        if (loaded.current || !enabled) return;
         loaded.current = true;
         try {
             const raw = localStorage.getItem(storageKey);
@@ -65,10 +65,10 @@ export function useLocalDraft<T extends object>(key: string, data: T, restore: (
             // No storage, or a corrupt draft: start fresh.
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [storageKey]);
+    }, [storageKey, enabled]);
 
     useEffect(() => {
-        if (!loaded.current) return;
+        if (!loaded.current || !enabled) return;
         const timer = setTimeout(() => {
             try {
                 localStorage.setItem(storageKey, json);
@@ -77,7 +77,7 @@ export function useLocalDraft<T extends object>(key: string, data: T, restore: (
             }
         }, 800);
         return () => clearTimeout(timer);
-    }, [json, storageKey]);
+    }, [json, storageKey, enabled]);
 
     return {
         restored,

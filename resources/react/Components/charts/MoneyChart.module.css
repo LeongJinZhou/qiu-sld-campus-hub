@@ -1,0 +1,14 @@
+.chart {
+    --income: #2a78d6;
+    --expense: #eb6834;
+}
+:global(:root[data-theme='dark']) .chart {
+    --income: #3987e5;
+    --expense: #d95926;
+}
+@media (prefers-color-scheme: dark) {
+    :global(:root[data-theme='system']) .chart {
+        --income: #3987e5;
+        --expense: #d95926;
+    }
+}
