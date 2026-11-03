@@ -103,6 +103,19 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                 <p>Expected number of participants: {{ d.expected_participants }}</p>
                 <p>Eligibility: {{ d.eligibility }}</p>
             </div>
+            <div v-if="d.speakers?.length">
+                <h3 class="font-semibold">Speaker / External Profile</h3>
+                <table class="mt-1 w-full border border-line">
+                    <tbody>
+                        <tr v-for="(p, i) in d.speakers" :key="i" class="border-t border-line">
+                            <td class="px-3 py-2 font-medium">{{ p.name }}</td>
+                            <td class="px-3 py-2">{{ p.designation }}</td>
+                            <td class="px-3 py-2">{{ p.phone }}</td>
+                            <td class="px-3 py-2 break-all">{{ p.linkedin || '—' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <div>
                 <h3 class="font-semibold">Proposed Activities</h3>
                 <table class="mt-1 w-full border border-line">
@@ -132,10 +145,14 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
             </div>
             <div>
                 <h3 class="font-semibold">Logistic Arrangements</h3>
-                <p>
-                    Transportation {{ d.transport_required ? 'required' : 'not required' }}<template v-if="d.transport_arrangement">: {{ d.transport_arrangement }}</template>
-                </p>
-                <p v-if="d.transport_required">Departure {{ d.departure_time }} from {{ d.departure_pickup }} · Return {{ d.return_time }} at {{ d.return_pickup }}</p>
+                <p>Transportation {{ d.transport_required ? 'required' : 'not required' }}</p>
+                <ol v-if="d.transport_required" class="mt-1 grid gap-1">
+                    <li v-for="(t, i) in d.trips" :key="i" class="rounded-control border border-line px-3 py-2">
+                        <strong>Trip {{ i + 1 }}<template v-if="t.arrangement">: {{ t.arrangement }}</template></strong>
+                        <p>Departure {{ t.departure_time || '-' }} from {{ t.departure_pickup || '-' }} · Drop-off {{ t.dropoff_time || '-' }} at {{ t.dropoff_point || '-' }}</p>
+                        <p>Return {{ t.return_time || '-' }} from {{ t.return_pickup || '-' }}</p>
+                    </li>
+                </ol>
             </div>
             <div>
                 <h3 class="font-semibold">Event Committee &amp; Responsibilities</h3>
@@ -161,6 +178,21 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                 <h3 class="font-semibold">Conclusion</h3>
                 <p class="whitespace-pre-line">{{ d.conclusion }}</p>
             </div>
+            <template v-for="(b, i) in d.extra_sections ?? []" :key="`x${i}`">
+                <h3 v-if="b.kind === 'heading'" class="text-base font-bold">{{ b.text }}</h3>
+                <h4 v-else-if="b.kind === 'subheading'" class="font-semibold">{{ b.text }}</h4>
+                <p v-else-if="b.kind === 'paragraph'" class="whitespace-pre-line">{{ b.text }}</p>
+                <ul v-else-if="b.kind === 'bullets'" class="list-disc pl-5">
+                    <li v-for="(line, j) in b.text.split('\n').filter((l) => l.trim())" :key="j">{{ line }}</li>
+                </ul>
+                <table v-else-if="b.kind === 'table'" class="w-full border border-line">
+                    <tbody>
+                        <tr v-for="(row, r) in b.rows" :key="r" class="border-t border-line" :class="r === 0 ? 'bg-surface-muted font-medium' : ''">
+                            <td v-for="(cell, c) in row" :key="c" class="border-l border-line px-3 py-2">{{ cell }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </template>
         </section>
     </article>
 </template>

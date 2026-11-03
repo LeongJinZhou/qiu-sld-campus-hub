@@ -4,7 +4,7 @@ import Avatar from '@/Components/ui/Avatar.vue';
 import Modal from '@/Components/ui/Modal.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import type { CommentData, PostCardData } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 interface Liker {
@@ -19,6 +19,10 @@ const props = defineProps<{
 }>();
 
 const showLikers = ref(false);
+// SLD and the club's committee can delete comments.
+const removeComment = (id: number): void => {
+    if (confirm('Delete this comment for everyone?')) router.delete(`/comments/${id}`, { preserveScroll: true });
+};
 const likedBy = computed(() => {
     const [first, second] = props.likers;
     if (!first) return '';
@@ -52,6 +56,9 @@ const likedBy = computed(() => {
                             {{ c.body }}
                             <span class="block text-xs text-ink-muted">{{ c.at }}</span>
                         </p>
+                        <button v-if="post.can_moderate" type="button" class="ml-auto self-start text-xs text-ink-muted hover:text-danger" :aria-label="`Delete comment by ${c.user}`" @click="removeComment(c.id)">
+                            Delete
+                        </button>
                     </li>
                 </TransitionGroup>
             </section>

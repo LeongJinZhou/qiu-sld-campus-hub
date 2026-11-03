@@ -14,6 +14,7 @@ use App\Models\Signature;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
+use App\Services\Events\ProposalForm;
 use App\Services\Events\ProposalRules;
 use App\Services\Reports\EvidencePhotos;
 use App\Services\Roles\CompulsoryPositionsCheck;
@@ -45,7 +46,7 @@ class ApprovalEngine
         }
         $this->compulsory->assertComplete(ScopeType::Club, $document->club_id, $document->session_id);
         if ($document->type === DocumentType::Proposal) {
-            $this->compulsory->assertComplete(ScopeType::Event, (int) $document->event_id, null);
+            $this->compulsory->assertEventComplete((int) $document->event_id, ProposalForm::isWorkshop($data));
         }
 
         // Photo evidence (SLD minimum): a weekly activity report and the AGM report.

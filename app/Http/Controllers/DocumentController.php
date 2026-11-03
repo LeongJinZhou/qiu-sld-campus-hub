@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Services\Clubs\ClubRequests;
 use App\Services\Documents\DocumentExporter;
 use App\Services\Documents\DocumentPresenter;
+use DomainException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,5 +36,18 @@ class DocumentController extends Controller
         $name = ($document->event->name ?? $document->club->name)." - {$document->type->label()}.{$format}";
 
         return response()->download($file, $name)->deleteFileAfterSend();
+    }
+
+    /** The committee clears a rejected request from its board (otherwise it goes after 30 days). */
+    public function destroyRejected(Document $document, ClubRequests $requests): RedirectResponse
+    {
+        Gate::authorize('treasure', $document->club);
+        try {
+            $requests->remove($document);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Rejected request deleted.');
     }
 }

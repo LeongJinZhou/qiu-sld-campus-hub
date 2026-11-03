@@ -6,9 +6,10 @@ import EmptyState from '@/Components/ui/EmptyState.vue';
 import Icon, { type IconName } from '@/Components/ui/Icon.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { dateTime } from '@/lib/format';
-import type { Ticket } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import ApprovalTracker from '@/Components/forms/ApprovalTracker.vue';
+import type { ApprovalProgress, Ticket } from '@/types';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, reactive } from 'vue';
 
 interface EventCard {
     slug: string;
@@ -22,6 +23,19 @@ interface EventCard {
     registered: number;
     unpaid: number;
 }
+interface RequestItem {
+    id: number;
+    type: string;
+    title: string;
+    event: { slug: string; name: string } | null;
+    status: string;
+    column: Column;
+    progress: ApprovalProgress | null;
+    url: string;
+    updated_at: string | null;
+    removed_on: string | null;
+}
+type Column = 'draft' | 'submitted' | 'approved' | 'rejected';
 interface MyClub {
     slug: string;
     name: string;
@@ -31,6 +45,8 @@ interface MyClub {
     manages: boolean;
     events: EventCard[];
     membership: { status: string; expires_on: string | null } | null;
+    requests: RequestItem[];
+    can_delete: boolean;
 }
 
 const props = defineProps<{ tickets: Ticket[]; helping: EventCard[]; clubs: MyClub[] }>();
@@ -45,7 +61,6 @@ const tools = (slug: string): { label: string; icon: IconName; href: string }[] 
     { label: 'Finance', icon: 'file', href: `/clubs/${slug}/finance` },
     { label: 'Members', icon: 'users', href: `/clubs/${slug}/members` },
     { label: 'Participants', icon: 'ticket', href: `/clubs/${slug}/participants` },
-    { label: 'Payments', icon: 'check', href: `/clubs/${slug}/payments/review` },
     { label: 'Meetings', icon: 'calendar', href: `/clubs/${slug}/meetings` },
     { label: 'AGM', icon: 'award', href: `/clubs/${slug}/agm` },
     { label: 'Venues', icon: 'pin', href: `/clubs/${slug}/venues` },
@@ -53,6 +68,19 @@ const tools = (slug: string): { label: string; icon: IconName; href: string }[] 
 const statusTone = (s: string): 'success' | 'warning' | 'info' | 'neutral' =>
     s === 'active' ? 'success' : s === 'grace' || s === 'pending' ? 'warning' : s === 'alumni' ? 'info' : 'neutral';
 const statusLabel: Record<string, string> = { active: 'Member', grace: 'Renew soon', pending: 'Payment pending', alumni: 'Alumni' };
+// Requests board per club: Draft → Submitted → Approved, or Rejected (cleared after 30 days or by hand).
+const COLUMNS: { key: Column; label: string; empty: string }[] = [
+    { key: 'draft', label: 'Draft', empty: 'Nothing started and unsubmitted.' },
+    { key: 'submitted', label: 'Submitted', empty: 'Nothing waiting for approval.' },
+    { key: 'approved', label: 'Approved', empty: 'Nothing approved in the last 30 days.' },
+    { key: 'rejected', label: 'Rejected', empty: 'Nothing rejected.' },
+];
+const tab = reactive<Record<string, Column>>({});
+const tabOf = (c: MyClub): Column => tab[c.slug] ?? (c.requests.some((r) => r.column === 'submitted') ? 'submitted' : c.requests.some((r) => r.column === 'draft') ? 'draft' : 'submitted');
+const inColumn = (c: MyClub, col: Column): RequestItem[] => c.requests.filter((r) => r.column === col);
+const removeRequest = (r: RequestItem): void => {
+    if (confirm(`Delete the rejected ${r.type.toLowerCase()} "${r.title}"? This cannot be undone.`)) router.delete(`/documents/${r.id}/rejected`, { preserveScroll: true });
+};
 const ticketHref = (t: Ticket): string => (t.status === 'unpaid' ? `/events/${t.event.slug}/pay` : (t.url ?? `/events/${t.event.slug}`));
 </script>
 
@@ -158,6 +186,46 @@ const ticketHref = (t: Ticket): string => (t.status === 'unpaid' ? `/events/${t.
                                 ><Icon name="scan" :size="14" /> Door</Link
                             >
                         </div>
+                    </div>
+
+                    <!-- Everything this club has asked for approval, by stage. -->
+                    <div class="grid gap-2 border-t border-line p-3">
+                        <p class="px-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">Requests &amp; approvals</p>
+                        <div class="grid grid-cols-4 gap-1 rounded-control bg-surface-muted p-1 text-xs font-medium" role="tablist">
+                            <button
+                                v-for="col in COLUMNS"
+                                :key="col.key"
+                                type="button"
+                                role="tab"
+                                :aria-selected="tabOf(c) === col.key"
+                                class="rounded-control px-1 py-1.5 transition"
+                                :class="tabOf(c) === col.key ? 'bg-surface shadow-card' : 'text-ink-muted'"
+                                @click="tab[c.slug] = col.key"
+                            >
+                                {{ col.label }}
+                                <span
+                                    v-if="inColumn(c, col.key).length"
+                                    class="ml-0.5 rounded-full px-1.5 tabular-nums"
+                                    :class="col.key === 'rejected' ? 'bg-danger/15 text-danger' : col.key === 'approved' ? 'bg-success/15 text-success' : 'bg-ink/10'"
+                                    >{{ inColumn(c, col.key).length }}</span
+                                >
+                            </button>
+                        </div>
+                        <TransitionGroup name="list" tag="ul" class="relative grid gap-2">
+                            <li v-for="r in inColumn(c, tabOf(c))" :key="r.id" class="grid gap-2 rounded-control border border-line p-2.5 text-sm">
+                                <div class="flex items-start justify-between gap-2">
+                                    <Link :href="r.url" class="grid min-w-0">
+                                        <strong class="truncate">{{ r.title }}</strong>
+                                        <span class="text-xs text-ink-muted">{{ r.event ? `Event · ${r.type}` : r.type }}<template v-if="r.updated_at"> · updated {{ dateTime(r.updated_at) }}</template></span>
+                                    </Link>
+                                    <Badge v-if="r.status === 'returned'" tone="warning">Returned</Badge>
+                                    <button v-if="r.column === 'rejected' && c.can_delete" type="button" class="shrink-0 text-xs text-ink-muted hover:text-danger" @click="removeRequest(r)">Delete</button>
+                                </div>
+                                <ApprovalTracker v-if="r.progress && r.column === 'submitted'" :progress="r.progress" compact />
+                                <p v-if="r.removed_on" class="text-xs text-ink-muted">Removed automatically on {{ r.removed_on }}.</p>
+                            </li>
+                        </TransitionGroup>
+                        <p v-if="!inColumn(c, tabOf(c)).length" class="px-1 py-2 text-xs text-ink-muted">{{ COLUMNS.find((x) => x.key === tabOf(c))?.empty }}</p>
                     </div>
 
                     <nav class="grid grid-cols-4 gap-1 border-t border-line p-3" :aria-label="`Manage ${c.name}`">

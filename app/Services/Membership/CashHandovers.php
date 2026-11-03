@@ -44,7 +44,7 @@ class CashHandovers
     {
         $fee = $this->memberships->fee($membership->club) ?? throw new DomainException('This club has no approved fee.');
         $this->memberships->assertCanPay($membership);
-        $this->assertCanStart($membership->club_id, $committee, $membership->payments());
+        $this->assertCanStart($this->isCommittee($committee, $membership->club_id), $membership->user_id, $committee, $membership->payments());
 
         return DB::transaction(fn (): CashHandover => $this->start($membership->payments()->create([
             'club_id' => $membership->club_id, 'user_id' => $membership->user_id, 'method' => 'cash',
@@ -55,7 +55,8 @@ class CashHandovers
     /** Event fee in cash: the same handover, filed under the event when done. */
     public function requestForEvent(EventRegistration $registration, User $committee): CashHandover
     {
-        $this->assertCanStart($registration->event->club_id, $committee, $registration->payments());
+        $isEventCommittee = $registration->event->committee()->where('user_id', $committee->id)->exists();
+        $this->assertCanStart($isEventCommittee, $registration->user_id, $committee, $registration->payments(), 'Choose a member of this event\'s committee.');
 
         return DB::transaction(fn (): CashHandover => $this->start(app(EventPayments::class)->cashPayment($registration, $committee), $committee));
     }
@@ -77,10 +78,13 @@ class CashHandovers
     }
 
     /** @param HasMany<MembershipPayment, *> $payments */
-    private function assertCanStart(int $clubId, User $committee, $payments): void
+    private function assertCanStart(bool $collectorAllowed, int $payerId, User $committee, $payments, string $notAllowed = 'Choose a committee member of this club.'): void
     {
-        if (! $this->isCommittee($committee, $clubId)) {
-            throw new DomainException('Choose a committee member of this club.');
+        if ($committee->id === $payerId) {
+            throw new DomainException('You cannot collect your own cash. Choose another committee member.');
+        }
+        if (! $collectorAllowed) {
+            throw new DomainException($notAllowed);
         }
         if ($payments->whereHas('handover', fn ($q) => $q->whereNotIn('status', [HandoverStatus::Declined, HandoverStatus::Completed, HandoverStatus::Expired]))->exists()) {
             throw new DomainException('You already have a cash handover in progress.');

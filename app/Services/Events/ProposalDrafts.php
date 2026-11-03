@@ -50,6 +50,16 @@ class ProposalDrafts
         ));
     }
 
+    /** Everyone told about the draft hears that it went in and now waits for approval. */
+    public function submitted(Event $event, User $by): void
+    {
+        Notification::send($this->meetings->committee($event->club)->reject(fn (User $u) => $u->is($by)), new DocumentNotification(
+            "{$by->name} submitted the proposal: {$event->name}",
+            'Signed and sent for approval (advisor first). Track it on the proposal page.',
+            route('proposals.edit', $event),
+        ));
+    }
+
     /** @param list<int> $userIds committee members asked to review and submit */
     public function askToSubmit(Event $event, User $by, array $userIds, ?string $note): int
     {

@@ -27,7 +27,7 @@ class DocumentPresenter
     {
         $document->loadMissing(['club', 'event', 'latestVersion', 'approvals.approver', 'approvals.signature']);
         $current = $this->engine->currentStep($document);
-        $data = $document->data();
+        $data = $document->type === DocumentType::Proposal ? ProposalForm::upgrade($document->data()) : $document->data();
 
         return [
             'id' => $document->id,
