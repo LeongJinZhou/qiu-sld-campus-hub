@@ -23,6 +23,7 @@ use App\Services\Approvals\ApproverResolver;
 use App\Services\Events\AttendanceQr;
 use App\Services\Events\PostMortemForm;
 use App\Services\Finance\Ledger;
+use App\Services\Membership\MembersQuery;
 use App\Services\Membership\ReceiptReading;
 use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
@@ -35,7 +36,12 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 // Explicitly opt in: these tests issue thousands of in-process HTTP requests.
 // They never start a server, transfer real money, or use the developer database.
 beforeEach(function () {
-    expect(config('database.connections.sqlite.database'))->toBe(':memory:');
+    // Never the developer database: SQLite in memory, or (to verify MySQL, as on Exabytes) a dedicated throwaway
+    // database whose name ends in _test.
+    $connection = config('database.default');
+    $database = (string) config("database.connections.{$connection}.database");
+    expect($connection === 'sqlite' ? $database === ':memory:' : $connection === 'mysql' && str_ends_with($database, '_test'))
+        ->toBeTrue("Combined UAT refuses the {$connection} database '{$database}'.");
     $this->travelTo(CarbonImmutable::parse('2026-11-02 10:00:00', config('app.timezone')));
     Http::preventStrayRequests();
     config(['services.anthropic.key' => null]);
@@ -204,10 +210,15 @@ it('runs 3000 club joins plus online and cash payment requests and reconciles ev
             'active' => $club->memberships()->where('status', 'active')->count(),
             'expected_balance_sen' => $expected[$index], 'actual_balance_sen' => $actual];
         expect($club->memberships()->count())->toBe(1000)->and($actual)->toBe($expected[$index]);
+        // Spec change: every member type is listed, so the club's committee members and advisor who hold no
+        // membership row appear alongside the 1,000 members.
+        $officers = app(MembersQuery::class)->rows([$club->id])->whereIn('status', ['committee', 'advisor'])->count();
+        $listed = 1000 + $officers;
+        $lastPage = (int) ceil($listed / 100);
         uatCall($this, $this->treasurer, 'get', '/clubs/'.$club->slug.'/members', [], 200)
-            ->assertInertia(fn ($page) => $page->where('pagination.total', 1000)->where('pagination.last_page', 10)->has('rows', 100));
-        uatCall($this, $this->treasurer, 'get', '/clubs/'.$club->slug.'/members?page=10', [], 200)
-            ->assertInertia(fn ($page) => $page->where('pagination.page', 10)->has('rows', 100));
+            ->assertInertia(fn ($page) => $page->where('pagination.total', $listed)->where('pagination.last_page', $lastPage)->has('rows', 100));
+        uatCall($this, $this->treasurer, 'get', '/clubs/'.$club->slug.'/members?page='.$lastPage, [], 200)
+            ->assertInertia(fn ($page) => $page->where('pagination.page', $lastPage)->has('rows', $listed - ($lastPage - 1) * 100));
         uatCall($this, $this->treasurer, 'get', '/clubs/'.$club->slug.'/payments/review', [], 200);
         $path = uatExport($this, $this->treasurer, '/clubs/'.$club->slug.'/members/export/xlsx', 'capacity-members-'.$index.'.xlsx');
         $book = IOFactory::load($path);

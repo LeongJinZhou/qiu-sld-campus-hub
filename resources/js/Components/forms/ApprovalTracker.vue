@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Icon from '@/Components/ui/Icon.vue';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 // Shows exactly where a document is in its approval chain and whose approval it is waiting for.
 const props = withDefaults(defineProps<{ progress: ApprovalProgress; steps?: ApprovalStep[]; compact?: boolean }>(), { steps: () => [], compact: false });
@@ -10,6 +10,7 @@ const percent = computed(() => (props.progress.total ? Math.round((props.progres
 // Animate the bar from 0 on first paint so the movement is visible.
 const shown = ref(0);
 onMounted(() => requestAnimationFrame(() => (shown.value = percent.value)));
+watch(percent, (p) => (shown.value = p));
 
 const headline = computed(() => {
     const p = props.progress;
@@ -46,7 +47,7 @@ const stateOf = (s: ApprovalStep) => (s.decision === 'approved' ? 'done' : s.is_
     <!-- Compact: one line for lists -->
     <div v-if="compact" class="grid gap-1.5">
         <div class="h-1.5 overflow-hidden rounded-full bg-surface-muted">
-            <div class="h-full rounded-full transition-[width] duration-1000 ease-out" :class="[barColour, progress.status === 'in_review' ? 'animate-tracker-flow' : '']" :style="{ width: `${shown}%` }" />
+            <div class="h-full rounded-full transition-[width] duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]" :class="[barColour, progress.status === 'in_review' ? 'animate-tracker-flow' : '']" :style="{ width: `${shown}%` }" />
         </div>
         <p class="text-xs text-ink-muted">
             {{ progress.done }}/{{ progress.total }} signed
@@ -72,7 +73,7 @@ const stateOf = (s: ApprovalStep) => (s.decision === 'approved' ? 'done' : s.is_
             <div>
                 <div class="mb-1 flex justify-between text-xs font-medium text-ink-muted"><span>{{ progress.done }} of {{ progress.total }} signed</span><span>{{ percent }}%</span></div>
                 <div class="h-2.5 overflow-hidden rounded-full bg-surface/70">
-                    <div class="h-full rounded-full transition-[width] duration-1000 ease-out" :class="[barColour, progress.status === 'in_review' ? 'animate-tracker-flow' : '']" :style="{ width: `${shown}%` }" />
+                    <div class="h-full rounded-full transition-[width] duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]" :class="[barColour, progress.status === 'in_review' ? 'animate-tracker-flow' : '']" :style="{ width: `${shown}%` }" />
                 </div>
             </div>
         </div>

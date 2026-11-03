@@ -14,6 +14,7 @@ use App\Services\Membership\CashHandovers;
 use App\Services\Membership\MembershipService;
 use App\Services\Membership\ReceiptReading;
 use App\Services\Notifications\ActionItems;
+use App\Services\Roles\RoleService;
 use App\Services\Time\SessionResolver;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +54,10 @@ it('confirms an online event payment, files it under that event with an order ID
 it('takes event cash through the QR handover and keeps two events apart', function () {
     $other = Event::create(['club_id' => $this->club->id, 'session_id' => $this->event->session_id, 'name' => 'Movie Night', 'starts_at' => now()->addMonths(4), 'ends_at' => now()->addMonths(4)->addHours(3), 'registration_open' => true]);
     app(EventPayments::class)->configure($other, $this->treasurer, ['fee_rm' => 5, 'payment_url' => null, 'payment_account_name' => null]);
+    // Event cash goes to that event's committee: the club Treasurer also serves on both event committees here.
+    foreach ([$this->event, $other] as $event) {
+        app(RoleService::class)->assignEventPosition($event, $this->treasurer, 'Finance Helper', 'Collects cash');
+    }
     $handovers = app(CashHandovers::class);
 
     foreach ([$this->event, $other] as $event) {
@@ -135,4 +140,21 @@ it('lets SLD find a transaction by any parts of its ID as they type', function (
     $this->actingAs(sldOfficer())->get('/admin/finance?q=kavitha+'.today()->addDay()->format('Y-m-d'))
         ->assertInertia(fn ($p) => $p->has('transactions', 0));
     $this->actingAs($this->student)->get('/admin/finance?q=kavitha')->assertForbidden();
+});
+
+it('sends event cash only to that event\'s committee, never to the payer', function () {
+    $registration = app(EventRegistrations::class)->register($this->event->fresh(), $this->student);
+    $eventTreasurer = $this->event->committee()->where('position', 'Treasurer')->first()->user;
+
+    expect(fn () => app(CashHandovers::class)->requestForEvent($registration, $this->treasurer))->toThrow(DomainException::class, 'event\'s committee')
+        ->and(app(CashHandovers::class)->requestForEvent($registration, $eventTreasurer)->committee_user_id)->toBe($eventTreasurer->id);
+});
+
+it('lists the event committee (not the payer) as cash collectors', function () {
+    $eventTreasurer = $this->event->committee()->where('position', 'Treasurer')->first()->user;
+    app(EventRegistrations::class)->register($this->event->fresh(), $eventTreasurer);
+
+    $this->actingAs($eventTreasurer)->get("/events/{$this->event->slug}/pay")
+        ->assertInertia(fn ($page) => $page->where('committee', fn ($list) => collect($list)->pluck('id')->doesntContain($eventTreasurer->id)
+            && collect($list)->pluck('id')->sort()->values()->all() === $this->event->committee()->where('user_id', '!=', $eventTreasurer->id)->pluck('user_id')->sort()->values()->all()));
 });

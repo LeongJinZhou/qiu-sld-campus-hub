@@ -72,10 +72,23 @@ $d->setText($d->paragraphContaining('Expected number of participants:'), 'Expect
 $d->setText($d->paragraphContaining('Eligibility:'), 'Eligibility: ${eligibility}');
 $d->insertAfter($d->paragraphContaining('ICT & Maintenance Requirement'), '${ict_requirements}', $body);
 $d->setText($d->paragraphContaining('Transportation required / not required'), '${transport}');
-$d->setText($d->paragraphContaining('Departure Time:'), 'Departure Time: ${departure_time}');
-$d->setText($d->paragraphContaining('Pickup Point:', 0), 'Pickup Point: ${departure_pickup}');
-$d->setText($d->paragraphContaining('Estimated Return Time:'), 'Estimated Return Time: ${return_time}');
-$d->setText($d->paragraphContaining('Pickup Point:', 1), 'Pickup Point: ${return_pickup}');
+// Trips (out, drop-off, back; several when places or times differ) print as one table where the four sample lines were.
+foreach ([$d->paragraphContaining('Pickup Point:', 1), $d->paragraphContaining('Estimated Return Time:'), $d->paragraphContaining('Pickup Point:', 0)] as $sample) {
+    $sample->parentNode->removeChild($sample);
+}
+$d->setText($d->paragraphContaining('Departure Time:'), '${trips_table}');
+
+/*
+ * Parts printed only when they have content, each a clone block holding its own heading and generated items:
+ * speakers (workshops), the committee chart after the budget, and the club's own parts after the conclusion.
+ */
+$optional = function (DOMElement $after, string $block, ?string $heading, string $item) use ($d, $body): void {
+    $open = $d->insertAfter($after, "\${{$block}}", $body);
+    $last = $heading ? $d->insertAfter($open, $heading, $d->paragraphContaining('Proposed Activities')) : $open;
+    $d->insertAfter($d->insertAfter($last, "\${{$item}}", $body), "\${/{$block}}", $body);
+};
+$optional($d->paragraphContaining('Eligibility: ${eligibility}'), 'speakers', 'Speaker / External Profile', 'speakers_table');
+$optional($d->paragraphContaining('Remark: Revenue MUST'), 'chart', 'Event Committee Chart', 'chart_item');
 
 $table = fn (string $header) => $d->paragraphContaining($header)->parentNode->parentNode->parentNode;
 $activities = $table('Name of the Activity');
@@ -108,7 +121,7 @@ $d->removeRows($budget, 12, 13);
 $d->removeRows($budget, 3, 6);
 
 $conclusion = $d->paragraphContaining('Conclusion');
-$d->insertAfter($conclusion, '${conclusion}', $body);
+$optional($d->insertAfter($conclusion, '${conclusion}', $body), 'extra', null, 'extra_item');
 
 // Approval & Verification: six signers in chain order. Names come from records, never the printed ones.
 $labels = ['Prepared by:', 'Reviewed by:', 'Reviewed by:', 'Recommended by:', 'Verified by:', 'Approved by:'];

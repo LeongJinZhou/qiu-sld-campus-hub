@@ -48,22 +48,67 @@ class ProposalForm
             'nature' => [], 'nature_other' => '',
             'cca_participant' => $cca, 'cca_committee' => $cca,
             'sdgs' => [], 'collaboration' => '', 'source_of_fund' => [],
-            'introduction' => '', 'objectives' => ['', '', ''], 'eligibility' => '',
+            'introduction' => '', 'objectives' => ['', ''], 'eligibility' => '',
+            'speakers' => [],
             'activities' => [['name' => '', 'description' => '']],
             'itinerary' => [['start' => '', 'end' => '', 'agenda' => 'Arrival & Registration']],
             'ict_required' => false, 'ict_requirements' => '',
-            'transport_required' => false, 'transport_arrangement' => '',
-            'departure_time' => '', 'departure_pickup' => '', 'return_time' => '', 'return_pickup' => '',
+            'transport_required' => false,
+            'trips' => [self::BLANK_TRIP],
             'budget' => ['revenue' => [], 'expenses' => []],
             'conclusion' => '',
+            'extra_sections' => [],
             'late_reason' => '', 'deficit_reason' => '',
         ];
     }
 
+    /** One leg of transport: out, drop-off, and back. An event with several places or times adds more. */
+    public const BLANK_TRIP = [
+        'arrangement' => '', 'departure_time' => '', 'departure_pickup' => '',
+        'dropoff_time' => '', 'dropoff_point' => '', 'return_time' => '', 'return_pickup' => '',
+    ];
+
+    /** Kinds of block a club may add after the conclusion. */
+    public const EXTRA_KINDS = ['heading', 'subheading', 'paragraph', 'bullets', 'table'];
+
     /** @return array<string, mixed> current draft, falling back to defaults for a new proposal */
     public function current(Document $document): array
     {
-        return $this->drafts->current($document, $this->defaults($document->event));
+        return self::upgrade($this->drafts->current($document, $this->defaults($document->event)));
+    }
+
+    /**
+     * Older proposals kept one trip in flat fields; they read as a single trip now.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function upgrade(array $data): array
+    {
+        if (array_key_exists('departure_time', $data) || array_key_exists('transport_arrangement', $data)) {
+            $legacy = [
+                'arrangement' => (string) ($data['transport_arrangement'] ?? ''),
+                'departure_time' => (string) ($data['departure_time'] ?? ''), 'departure_pickup' => (string) ($data['departure_pickup'] ?? ''),
+                'dropoff_time' => '', 'dropoff_point' => '',
+                'return_time' => (string) ($data['return_time'] ?? ''), 'return_pickup' => (string) ($data['return_pickup'] ?? ''),
+            ];
+            $hasTrips = collect($data['trips'] ?? [])->contains(fn ($t) => collect((array) $t)->filter(fn ($v) => filled($v))->isNotEmpty());
+            if (! $hasTrips) {
+                $data['trips'] = [$legacy];
+            }
+            unset($data['transport_arrangement'], $data['departure_time'], $data['departure_pickup'], $data['return_time'], $data['return_pickup']);
+        }
+        $data['trips'] = array_values((array) ($data['trips'] ?? [])) ?: [self::BLANK_TRIP];
+        $data['speakers'] = array_values((array) ($data['speakers'] ?? []));
+        $data['extra_sections'] = array_values((array) ($data['extra_sections'] ?? []));
+
+        return $data;
+    }
+
+    /** "Seminars/Conference/Workshop": speakers are listed, and two persons in charge replace the four fixed offices. @param array<string, mixed> $data */
+    public static function isWorkshop(array $data): bool
+    {
+        return in_array('seminar', (array) ($data['nature'] ?? []), true);
     }
 
     /**

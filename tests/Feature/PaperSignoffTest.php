@@ -3,9 +3,11 @@
 use App\Enums\ChainRole;
 use App\Enums\DocumentStatus;
 use App\Models\Approval;
+use App\Notifications\DocumentNotification;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Approvals\ApproverResolver;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /** Submits the fixture proposal and signs every step before SLD's; returns SLD's step and an SLD officer. */
@@ -50,4 +52,19 @@ it('approves straight away when no paper signatures are asked for', function () 
     $this->actingAs($sld)->delete("/approvals/{$step->id}/paper")->assertSessionHas('success');
     $this->actingAs($sld)->post("/approvals/{$step->id}", ['decision' => 'approve', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(), 'no_problems' => true])
         ->assertSessionHas('celebrate');
+});
+
+it('tells the whole club committee and advisor the event is approved, and lets them download the signed proposal', function () {
+    Notification::fake();
+    $f = proposalFixture();
+    [$step, $sld] = atSldStep($f);
+    $this->actingAs($sld)->post("/approvals/{$step->id}", ['decision' => 'approve', 'signature' => signaturePng(), 'signature_strokes' => signatureStrokes(), 'no_problems' => true]);
+
+    $secretary = $f['club']->roleAssignments()->where('position', 'Secretary')->first()->user;
+    foreach ([$f['president'], $secretary, $f['advisor']] as $person) {
+        Notification::assertSentTo($person, DocumentNotification::class, fn ($n) => $n->toArray($person)['title'] === "Event approved: {$f['event']->name}");
+        $this->actingAs($person)->get("/documents/{$f['document']->id}/download/docx")->assertOk();
+    }
+    $this->actingAs($sld)->get("/documents/{$f['document']->id}/download/docx")->assertOk();
+    $this->actingAs(otherStudent())->get("/documents/{$f['document']->id}/download/docx")->assertForbidden();
 });

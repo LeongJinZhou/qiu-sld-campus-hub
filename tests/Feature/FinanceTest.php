@@ -108,7 +108,7 @@ it('runs an event withdrawal: event Treasurer signs, Advisor, SLD, Finance, bank
     $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/fund-requests", [...$form(), 'bank_confirmed' => '0'])->assertSessionHasErrors('bank_confirmed');
     $this->actingAs($this->secretary)->post("/clubs/{$this->club->slug}/fund-requests", $form())->assertRedirect();
     $document = Document::where('type', DocumentType::FundWithdrawal)->sole();
-    expect($document->status)->toBe(DocumentStatus::Draft)->and($eventTreasurer->notifications()->count())->toBe(1);
+    expect($document->status)->toBe(DocumentStatus::Draft)->and($eventTreasurer->notifications()->get()->reject(fn ($n) => str_starts_with($n->data['title'], 'Event approved'))->count())->toBe(1); // the event committee is now also told the event is approved
 
     $this->actingAs($eventTreasurer)->post("/withdrawals/{$document->id}/sign", ['signature' => signaturePng(), 'signature_strokes' => signatureStrokes(), 'bank_confirmed' => '1'])->assertSessionHasNoErrors();
     expect($document->approvals()->orderBy('step_no')->pluck('role')->all())->toBe([ChainRole::Treasurer, ChainRole::President, ChainRole::Advisor, ChainRole::SldOfficer]);

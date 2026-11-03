@@ -11,5 +11,9 @@ return [
     'soffice' => env('SOFFICE_PATH', PHP_OS_FAMILY === 'Darwin' ? '/Applications/LibreOffice.app/Contents/MacOS/soffice' : 'soffice'),
 
     // Python with python-pptx for the Annual Activities Report (tools/pptx). Local: python3 -m venv tools/pptx/.venv.
+    // Shared hosting (e.g. Exabytes cPanel) has cron but no always-on queue worker: when true, the per-minute
+    // scheduler also works through queued jobs (AI drafting, archives, PDFs) and then stops.
+    'queue_via_scheduler' => (bool) env('QUEUE_VIA_SCHEDULER', false),
+
     'python' => env('PYTHON_PATH', is_file(base_path('tools/pptx/.venv/bin/python')) ? base_path('tools/pptx/.venv/bin/python') : 'python3'),
 ];

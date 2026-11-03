@@ -39,6 +39,7 @@ class ProposalController extends Controller
         Gate::authorize('update', $event);
         $document = $event->proposal()->firstOrFail();
         $user = $request->user();
+        $data = $this->form->current($document);
 
         return Inertia::render('Events/Proposal', [
             'event' => $event->only('slug', 'name'),
@@ -46,7 +47,7 @@ class ProposalController extends Controller
             'status' => $document->status->value,
             'editable' => $document->status->isEditable(),
             'approval' => $document->approvals()->exists() ? ['progress' => $presenter->progress($document), 'steps' => $presenter->present($document)['steps']] : null,
-            'data' => $this->form->current($document),
+            'data' => $data,
             'lastEdit' => $this->lastEdit($document),
             'clubCommittee' => app(Meetings::class)->committee($event->club)->reject(fn ($u) => $u->is($user))->values()->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]),
             'canDiscard' => $document->status->value === 'draft' && ! $document->versions()->where('number', '>', 0)->exists(),
@@ -55,7 +56,7 @@ class ProposalController extends Controller
                 'prepared_by' => $user->name,
             ],
             'committee' => $this->committee($event),
-            'missingCommittee' => $compulsory->missing(ScopeType::Event, $event->id, null),
+            'missingCommittee' => $compulsory->missingForEvent($event->id, ProposalForm::isWorkshop($data)),
             'missingClubCommittee' => $compulsory->missing(ScopeType::Club, $event->club_id, $event->session_id),
             'returnComment' => ($returned = $document->approvals()->whereIn('decision', ['returned', 'rejected'])->latest('decided_at')->first())?->comment,
             // The parts the advisor or SLD asked to fix, highlighted on the form until it is resubmitted.
@@ -83,7 +84,7 @@ class ProposalController extends Controller
         return $request->boolean('autosave') ? back() : back()->with('success', 'Draft saved.');
     }
 
-    public function submit(ProposalRequest $request, Event $event, ApprovalEngine $engine): RedirectResponse
+    public function submit(ProposalRequest $request, Event $event, ApprovalEngine $engine, ProposalDrafts $drafts): RedirectResponse
     {
         $document = $event->proposal()->firstOrFail();
         $data = $request->proposalData();
@@ -101,6 +102,7 @@ class ProposalController extends Controller
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
+        $drafts->submitted($event, $request->user());
 
         return to_route('documents.show', $document)->with('success', 'Proposal submitted to your advisor.');
     }
@@ -122,11 +124,11 @@ class ProposalController extends Controller
 
         return response()->json([
             'status' => $document->status->value,
-            'data' => $this->form->current($document),
+            'data' => $data = $this->form->current($document),
             'lastEdit' => $this->lastEdit($document),
             'editors' => $present->except($user->id)->map(fn (array $p, int $id) => ['id' => $id, ...collect($p)->except('at')->all()])->values(),
             'committee' => $this->committee($event),
-            'missingCommittee' => $compulsory->missing(ScopeType::Event, $event->id, null),
+            'missingCommittee' => $compulsory->missingForEvent($event->id, ProposalForm::isWorkshop($data)),
         ]);
     }
 

@@ -51,7 +51,7 @@ it('lets a helper claim back, verified by the event committee, paid back by tran
 
     $verifier = $this->purchases->verifiers($this->event)->first();
     $this->purchases->submit($p, $this->helper, ['items' => $items, 'paid_with' => 'own', 'verifier_id' => $verifier->id, 'budget_line' => 'Gloves']);
-    expect($p->fresh()->status)->toBe(EventPurchase::PENDING)->and($verifier->notifications()->count())->toBe(1);
+    expect($p->fresh()->status)->toBe(EventPurchase::PENDING)->and($verifier->notifications()->get()->reject(fn ($n) => str_starts_with($n->data['title'], 'Event approved'))->count())->toBe(1); // the event committee is now also told the event is approved
 
     $this->purchases->verify($p->fresh(), $verifier, true, null, 'now');
     expect($p->fresh()->status)->toBe(EventPurchase::OWED);

@@ -29,7 +29,14 @@ async function start(name: TourName): Promise<void> {
     tour.value = name;
     steps.value = available;
     index.value = 0;
+    // Shown once: recorded as seen as soon as it opens, so leaving mid-way or signing out never brings it back
+    // at the next sign-in. Profile → "Show me around again" replays it on request.
+    markSeen(name);
     await show();
+}
+function markSeen(name: TourName): void {
+    if (user.value?.tours_seen?.includes(name)) return;
+    router.post('/me/tours', { tour: name, seen: true }, { preserveScroll: true, preserveState: true, only: ['auth'] });
 }
 
 async function show(): Promise<void> {
@@ -62,7 +69,7 @@ function finish(): void {
     const name = tour.value;
     tour.value = null;
     rect.value = null;
-    if (name) router.post('/me/tours', { tour: name, seen: true }, { preserveScroll: true, preserveState: true, only: ['auth'] });
+    if (name) markSeen(name);
 }
 useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (!tour.value) return;

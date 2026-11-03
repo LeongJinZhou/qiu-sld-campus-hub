@@ -119,8 +119,8 @@ const particles = Array.from({ length: 14 }, (_, i) => ({
             <span class="-mr-3 size-6 rounded-full bg-surface-muted" />
         </div>
 
-        <!-- Stub -->
-        <section class="relative m-4 grid gap-4 rounded-3xl bg-surface p-5 text-ink">
+        <!-- Stub: above the shine layer, so nothing sweeps across the QR the door scanner reads. -->
+        <section class="relative z-[2] m-4 grid gap-4 rounded-3xl bg-surface p-5 text-ink">
             <div class="flex items-center gap-3">
                 <Avatar :src="ticket.attendee.photo_url" :name="ticket.attendee.name" size="sm" />
                 <div class="min-w-0 flex-1">

@@ -8,6 +8,7 @@ use App\Models\Club;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\AuditLogger;
 use App\Services\Social\PostingRules;
 use App\Services\Social\PostPresenter;
 use App\Services\Social\SocialNotifier;
@@ -69,6 +70,16 @@ class PostController extends Controller
         }
 
         return back();
+    }
+
+    /** Only SLD and the committee of the club that posted can delete a comment. */
+    public function destroyComment(Request $request, Comment $comment, PostPresenter $presenter, AuditLogger $audit): RedirectResponse
+    {
+        abort_unless($presenter->canModerate($comment->post), 403);
+        $audit->log('comment.deleted', $comment->post, ['comment_id' => $comment->id, 'by' => $request->user()->id, 'body' => mb_substr($comment->body, 0, 200)]);
+        $comment->delete();
+
+        return back()->with('success', 'Comment deleted.');
     }
 
     public function comment(Request $request, Post $post, SocialNotifier $notifier, PostingRules $rules): RedirectResponse

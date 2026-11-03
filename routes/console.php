@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\Agm\Elections;
+use App\Services\Clubs\ClubRequests;
 use App\Services\ClubStatusService;
 use App\Services\Membership\CashHandovers;
 use App\Services\Membership\MembershipLifecycle;
@@ -21,8 +22,16 @@ Schedule::command('reminders:send')->hourly();
 Schedule::call(fn () => app(MembershipLifecycle::class)->run(CarbonImmutable::today()))->dailyAt('00:10')->name('membership-lifecycle');
 Schedule::call(fn () => app(CashHandovers::class)->expireStale())->hourly()->name('expire-cash-handovers');
 
+// Rejected requests leave the clubs' boards after 30 days.
+Schedule::call(fn () => app(ClubRequests::class)->prune())->dailyAt('00:30')->name('prune-rejected-requests');
+
 // Club status: Active / At-risk (2+ months without activity) / Inactive (3+ months).
 Schedule::call(fn () => app(ClubStatusService::class)->run(CarbonImmutable::today()))->dailyAt('01:00')->name('club-status');
 
 // Election winners take their positions when the new term starts (1 July).
 Schedule::call(fn () => app(Elections::class)->handOverDue(CarbonImmutable::today()))->dailyAt('00:20')->name('election-handover');
+
+// Cron-only hosting (QUEUE_VIA_SCHEDULER=true): drain the queue each minute instead of a long-running worker.
+if (config('sld.queue_via_scheduler')) {
+    Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')->everyMinute()->withoutOverlapping()->name('queue-via-scheduler');
+}
