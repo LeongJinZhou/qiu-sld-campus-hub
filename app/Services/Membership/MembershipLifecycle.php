@@ -29,7 +29,7 @@ class MembershipLifecycle
                 foreach ($memberships as $m) {
                     if ($m->user->student?->status === StudentStatus::Alumni) {
                         if ($m->status !== MembershipStatus::Pending) {
-                            $m->update(['status' => MembershipStatus::Alumni, 'alumni_since' => $today, 'grace_ends_on' => null]);
+                            $this->toAlumni($m, $today);
                             $counts['alumni']++;
                         }
 
@@ -41,7 +41,7 @@ class MembershipLifecycle
                     }
                     if ($m->status === MembershipStatus::Grace) {
                         if ($today->gte($m->grace_ends_on)) {
-                            $m->update(['status' => MembershipStatus::Terminated]);
+                            $this->terminate($m, 'Your 7-day grace period ended without a renewal.');
                             $counts['terminated']++;
 
                             continue;
@@ -50,7 +50,7 @@ class MembershipLifecycle
                         if (in_array($day, self::REMINDER_DAYS, true) && ! $m->last_reminded_at?->isSameDay($today)) {
                             $m->user->notify(new DocumentNotification(
                                 "Renew your {$m->club->name} membership",
-                                'Your membership expired on '.$m->expires_on->format('j M Y').'. Renew by '.$m->grace_ends_on->subDay()->format('j M Y').' to stay a member.',
+                                'Your membership expired on '.$m->expires_on->format('j M Y').'. Renew by '.$m->grace_ends_on->copy()->subDay()->format('j M Y').' to stay a member.',
                                 route('membership.join', $m->club),
                             ));
                             $m->update(['last_reminded_at' => $today]);
@@ -61,5 +61,38 @@ class MembershipLifecycle
             });
 
         return $counts;
+    }
+
+    /** Membership ends: the member is told why and how to rejoin. Their history (payments, CCA) is kept. */
+    public function terminate(Membership $m, string $reason): void
+    {
+        $m->update(['status' => MembershipStatus::Terminated, 'grace_ends_on' => null]);
+        $m->user->notify(new DocumentNotification(
+            "Your {$m->club->name} membership has ended",
+            "{$reason} You can rejoin at any time from the club page.",
+            route('membership.join', $m->club),
+        ));
+    }
+
+    /** Graduated: stays in the club as an alumnus, with no fee and no renewal reminders. */
+    public function toAlumni(Membership $m, CarbonImmutable $today): void
+    {
+        $m->update(['status' => MembershipStatus::Alumni, 'alumni_since' => $today, 'grace_ends_on' => null]);
+        $m->user->notify(new DocumentNotification(
+            "You're now a {$m->club->name} alumnus",
+            'Congratulations on graduating! You stay in the club as alumni, with no fee to pay.',
+            route('clubs.show', $m->club),
+        ));
+    }
+
+    /** Committee or SLD gives a member in grace more days to renew (up to 30 at a time). */
+    public function extendGrace(Membership $m, int $days): void
+    {
+        $m->update(['grace_ends_on' => ($m->grace_ends_on ?? now())->copy()->addDays($days)]);
+        $m->user->notify(new DocumentNotification(
+            "More time to renew your {$m->club->name} membership",
+            'Renew by '.$m->grace_ends_on->copy()->subDay()->format('j M Y').' to stay a member.',
+            route('membership.join', $m->club),
+        ));
     }
 }

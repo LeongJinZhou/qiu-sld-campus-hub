@@ -169,7 +169,8 @@ return [
 
     'devtools' => [
 
-        'enabled' => env('INERTIA_DEVTOOLS_ENABLED'),
+        // Never on a hosted server: the recorded page data would be readable over HTTP.
+        'enabled' => env('APP_ENV') === 'local' && (bool) env('INERTIA_DEVTOOLS_ENABLED', true),
 
         'except' => ['telescope*', 'horizon*', '_inertia/devtools*'],
 

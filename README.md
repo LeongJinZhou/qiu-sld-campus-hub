@@ -133,6 +133,9 @@ flowchart TB
 - Event purchases and claims: snap the receipt (AI reads items and prices), budget vs spending, helpers claim back, event committee verifies, pay back by cash (QR photo) or transfer (name checked)
 - Outdoor events: indemnity pre-filled, sign once registered or paid, ticket appears after signing
 - Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA. Committee meetings invite the committee and advisors only; weekly activities invite the committee or all members, with expected pax and location, and everyone invited is notified
+- Meeting check-in / check-out by rotating QR (like events): only the meeting's audience can check in (committee + advisors, or all members), with times kept per person
+- Meetings report for each club and for SLD (every club), with attendance rate and minutes status, exported to Excel/PDF
+- Membership grace, termination and alumni managed by the committee or SLD: remind, give more days, end with a reason, mark alumni, undo; members are notified
 - Venue booking (La Place, semester venues, big rooms) with SLD confirmation; daily club status (Active / At risk / Inactive)
 - AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance
 - Elections: nominations with full-term check, one vote per position, SLD flags, results into the AGM Report, role handover on 1 July
@@ -228,7 +231,9 @@ Everything sensitive stays on the server:
 - **Personal data:** student phone numbers are encrypted at rest; phone and email are hidden from serialisation; public profiles show portfolio fields only.
 - **Authorisation** is enforced server-side (policies, form requests, role middleware). The UI never decides access.
 - **AI calls** run server-side in queued jobs only, with minimal data.
-- Sign-in is rate-limited; every role and committee change is written to the audit log.
+- Sign-in is rate-limited, every feature has its own limit, and every request has a site-wide ceiling (per person or IP); every role, committee and membership change is written to the audit log.
+- **Browser hardening:** a strict Content-Security-Policy (scripts only from this site, by nonce), no framing, HSTS, no-sniff, server version hidden; hidden files and scripts in the uploads folder are never served.
+- **Demo login** (`DEMO_LOGIN`) is for testing only. On a hosted server it is locked behind a passcode (`DEMO_LOGIN_PASSCODE_HASH`, a bcrypt hash) and the account list is never sent before it is entered. Keep it off in production.
 - The sample `database/camsys/*.sql` is **dummy data**. Never commit real student records.
 
 ## Roadmap

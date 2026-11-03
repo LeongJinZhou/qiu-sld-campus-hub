@@ -12,7 +12,7 @@ import Textarea from '@/Components/ui/Textarea.vue';
 import PortalLayout from '@/Layouts/PortalLayout.vue';
 import type { MemberCard, Option } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 
 interface ClubData {
     id: number;
@@ -37,7 +37,7 @@ const props = defineProps<{
     advisors?: MemberCard[];
     compulsoryPositions?: string[];
     missingCompulsory?: string[];
-    staff?: { user_id: number; label: string }[];
+    staff?: { id: number; user_id: number | null; label: string }[];
 }>();
 
 const details = useForm({
@@ -68,13 +68,18 @@ function saveDetails(): void {
 }
 
 const assign = useForm({ session: props.session ?? '', student_number: '', position: '' });
-const advisor = useForm({ session: props.session ?? '', user_id: null as number | null });
+const advisor = useForm({ session: props.session ?? '', staff_id: null as number | null });
+const assignBox = ref<HTMLFormElement | null>(null);
 
 const holders = computed(() => new Map((props.committee ?? []).map((m) => [m.position, m])));
 const optional = computed(() => (props.committee ?? []).filter((m) => !m.is_compulsory));
 
+// "Assign"/"Replace" beside a post: pick that post in the form below, bring it into view and put the cursor in the name box.
 function assignTo(position: string): void {
     assign.position = position;
+    assign.clearErrors();
+    assignBox.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    void nextTick(() => assignBox.value?.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true }));
 }
 
 function submitAssign(): void {
@@ -82,7 +87,7 @@ function submitAssign(): void {
 }
 
 function submitAdvisor(): void {
-    advisor.post(`/admin/clubs/${props.club?.slug}/advisors`, { preserveScroll: true, onSuccess: () => advisor.reset('user_id') });
+    advisor.post(`/admin/clubs/${props.club?.slug}/advisors`, { preserveScroll: true, onSuccess: () => advisor.reset('staff_id') });
 }
 
 function remove(member: MemberCard): void {
@@ -159,10 +164,12 @@ const takeBack = (): void => router.delete(`/admin/clubs/${props.club?.slug}/tra
                         </li>
                     </ul>
 
-                    <form class="mt-5 grid gap-3 rounded-control bg-surface-muted p-4 sm:grid-cols-[1.4fr_1fr_auto] sm:items-end" @submit.prevent="submitAssign">
+                    <form ref="assignBox" class="mt-5 grid gap-3 rounded-control bg-surface-muted p-4 sm:grid-cols-[1.4fr_1fr_auto] sm:items-end" :class="assign.position ? 'ring-2 ring-brand-blue' : ''" @submit.prevent="submitAssign">
+                        <p v-if="assign.position" class="text-sm font-medium sm:col-span-3">Assign someone as {{ assign.position }}</p>
                         <PersonPicker v-model="assign.student_number" required :error="assign.errors.student_number" />
                         <PositionPicker v-model="assign.position" :required="compulsoryPositions" :taken="(committee ?? []).flatMap((m) => (m.position ? [m.position] : []))" :error="assign.errors.position" />
-                        <Button type="submit" :loading="assign.processing">Assign</Button>
+                        <Button type="submit" :loading="assign.processing" :disabled="!assign.student_number || !assign.position">Assign</Button>
+                        <p v-if="assign.errors.session" class="text-sm text-danger sm:col-span-3">{{ assign.errors.session }}</p>
                     </form>
                     <p v-if="missingCompulsory?.length" class="mt-3 text-sm text-warning">Still missing: {{ missingCompulsory.join(', ') }}</p>
                 </Card>
@@ -179,8 +186,9 @@ const takeBack = (): void => router.delete(`/admin/clubs/${props.club?.slug}/tra
                         <li v-if="!advisors?.length" class="text-sm text-ink-muted">No advisor yet.</li>
                     </ul>
                     <form class="grid gap-3" @submit.prevent="submitAdvisor">
-                        <Select v-model="advisor.user_id" :options="(staff ?? []).map((s) => ({ value: s.user_id, label: s.label }))" placeholder="Choose staff" :error="advisor.errors.user_id" />
-                        <Button type="submit" variant="secondary" :loading="advisor.processing">Add advisor</Button>
+                        <Select v-model="advisor.staff_id" :options="(staff ?? []).map((s) => ({ value: s.id, label: s.label }))" placeholder="Choose staff" :error="advisor.errors.staff_id ?? advisor.errors.session" />
+                        <p v-if="!staff?.length" class="text-xs text-ink-muted">No active staff yet. Add staff under Staff first.</p>
+                        <Button type="submit" variant="secondary" :loading="advisor.processing" :disabled="!advisor.staff_id">Add advisor</Button>
                     </form>
                 </Card>
 

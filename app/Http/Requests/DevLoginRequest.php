@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Controllers\Auth\DevLoginController;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DevLoginRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) config('sld.demo_login');
+        return (bool) config('sld.demo_login') && DevLoginController::unlocked($this);
     }
 
     /** @return array<string, list<string>> */

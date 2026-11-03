@@ -37,10 +37,12 @@ use App\Http\Controllers\Finance\PaymentBreakdownController;
 use App\Http\Controllers\Finance\WithdrawalController;
 use App\Http\Controllers\Meetings\GoogleCalendarController;
 use App\Http\Controllers\Meetings\MeetingController;
+use App\Http\Controllers\Meetings\MeetingReportController;
 use App\Http\Controllers\Membership\FeeController;
 use App\Http\Controllers\Membership\HandoverController;
 use App\Http\Controllers\Membership\MembersController;
 use App\Http\Controllers\Membership\MembershipController;
+use App\Http\Controllers\Membership\MembershipStatusController;
 use App\Http\Controllers\Membership\ParticipantsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PeopleLookupController;
@@ -68,6 +70,7 @@ Route::middleware('guest')->group(function () {
     if (config('sld.demo_login')) {
         Route::get('/dev/login-as', [DevLoginController::class, 'index'])->name('dev.login');
         Route::post('/dev/login-as', [DevLoginController::class, 'store'])->middleware('throttle:login');
+        Route::post('/dev/login-as/unlock', [DevLoginController::class, 'unlock'])->middleware('throttle:login')->name('dev.unlock');
     }
 });
 
@@ -196,6 +199,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/clubs/{club}/members', [MembersController::class, 'club'])->name('members.club');
     Route::get('/clubs/{club}/members/export/{format}', [MembersController::class, 'export'])->name('members.export');
     Route::post('/clubs/{club}/members/remind', [MembersController::class, 'remind'])->middleware('throttle:nudges')->name('members.remind');
+    Route::post('/clubs/{club}/memberships/{membership}/status', MembershipStatusController::class)->middleware('throttle:door')->name('memberships.status');
     Route::post('/saved-views', [MembersController::class, 'saveView'])->name('views.store');
     Route::delete('/saved-views/{view}', [MembersController::class, 'deleteView'])->name('views.destroy');
     Route::get('/clubs/{club}/finance', [FinanceController::class, 'show'])->name('finance.show');
@@ -221,7 +225,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/withdrawals/{document}/file/{kind}', [WithdrawalController::class, 'file'])->middleware('signed')->name('withdrawals.file');
     Route::get('/clubs/{club}/meetings', [MeetingController::class, 'index'])->name('meetings.index');
     Route::post('/clubs/{club}/meetings', [MeetingController::class, 'store'])->name('meetings.store');
+    Route::get('/clubs/{club}/meetings/report', [MeetingReportController::class, 'club'])->name('meetings.report');
+    Route::get('/clubs/{club}/meetings/report/export.{format}', [MeetingReportController::class, 'clubExport'])->middleware('throttle:exports')->name('meetings.report.export');
     Route::get('/meetings/{meeting}', [MeetingController::class, 'show'])->name('meetings.show');
+    Route::get('/meetings/{meeting}/attend', [MeetingController::class, 'attend'])->middleware('throttle:attend')->name('meetings.attend');
     Route::post('/meetings/{meeting}/attendance', [MeetingController::class, 'attendance'])->name('meetings.attendance');
     Route::put('/meetings/{meeting}/minutes', [MeetingController::class, 'save'])->name('meetings.minutes.save');
     Route::post('/meetings/{meeting}/minutes/draft', [MeetingController::class, 'draft'])->middleware('throttle:ai')->name('meetings.minutes.draft');
@@ -274,6 +281,8 @@ Route::middleware('auth')->group(function () {
         Route::get('performance', Admin\PerformanceController::class)->name('performance');
         Route::get('tracking', Admin\TrackingController::class)->name('tracking');
         Route::get('proposals', [Admin\ProposalExportController::class, 'index'])->name('proposals.index');
+        Route::get('meetings', [MeetingReportController::class, 'admin'])->name('meetings.index');
+        Route::get('meetings/export.{format}', [MeetingReportController::class, 'adminExport'])->middleware('throttle:exports')->name('meetings.export');
         Route::get('proposals/export.{format}', [Admin\ProposalExportController::class, 'list'])->middleware('throttle:exports')->name('proposals.list');
         Route::get('proposals/{document}/package.zip', [Admin\ProposalExportController::class, 'package'])->middleware('throttle:exports')->name('proposals.package');
         Route::resource('clubs', Admin\ClubController::class)->except(['show', 'destroy']);

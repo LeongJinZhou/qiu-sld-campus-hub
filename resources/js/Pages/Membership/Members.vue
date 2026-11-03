@@ -7,11 +7,13 @@ import Drawer from '@/Components/ui/Drawer.vue';
 import FilterBar from '@/Components/ui/FilterBar.vue';
 import Icon from '@/Components/ui/Icon.vue';
 import Input from '@/Components/ui/Input.vue';
+import Modal from '@/Components/ui/Modal.vue';
+import Textarea from '@/Components/ui/Textarea.vue';
 import Select from '@/Components/ui/Select.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PortalLayout from '@/Layouts/PortalLayout.vue';
 import { copy } from '@/lib/clone';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { watchDebounced } from '@vueuse/core';
 import { computed, reactive, ref } from 'vue';
 
@@ -42,6 +44,9 @@ interface Row {
     position: string;
     joined: string | null;
     expires: string | null;
+    grace_ends?: string | null;
+    alumni_since?: string | null;
+    manageable?: boolean;
     payment: string;
     method: string | null;
     collected_by: string | null;
@@ -52,6 +57,7 @@ interface Row {
 const props = defineProps<{
     club: { slug: string; name: string } | null;
     portal?: boolean;
+    canManage?: boolean;
     committeeFees?: { name: string; student_number: string | null; position: string | null; status: 'paid' | 'unpaid' | 'checking' | 'no_fee' }[];
     filters: Filters;
     counts: Record<string, number>;
@@ -74,6 +80,26 @@ const props = defineProps<{
 const url = props.club ? (props.portal ? `/admin/clubs/${props.club.slug}/members` : `/clubs/${props.club.slug}/members`) : '/admin/members';
 const layout = computed(() => (props.portal ? PortalLayout : AppLayout));
 const layoutProps = computed(() => (props.portal ? { title: props.club ? `Members · ${props.club.name}` : 'All members' } : { wide: true }));
+// Grace / termination / alumni: one dialog per action; terminate needs a reason, extend needs days.
+type ManageAction = 'remind' | 'extend' | 'terminate' | 'alumni' | 'restore';
+const ACTIONS: Record<string, { key: ManageAction; label: string }[]> = {
+    active: [{ key: 'terminate', label: 'End membership' }, { key: 'alumni', label: 'Mark alumni' }],
+    grace: [{ key: 'remind', label: 'Remind' }, { key: 'extend', label: 'Give more days' }, { key: 'terminate', label: 'End now' }, { key: 'alumni', label: 'Mark alumni' }],
+    terminated: [{ key: 'alumni', label: 'Mark alumni' }],
+    alumni: [{ key: 'restore', label: 'Undo alumni' }],
+};
+const managing = ref<{ row: Row; action: ManageAction } | null>(null);
+const manageForm = useForm({ action: '' as ManageAction | '', days: 7, reason: '' });
+function openManage(row: Row, action: ManageAction): void {
+    manageForm.reset();
+    manageForm.clearErrors();
+    manageForm.action = action;
+    managing.value = { row, action };
+}
+function sendManage(): void {
+    if (!managing.value || !props.club) return;
+    manageForm.post(`/clubs/${props.club.slug}/memberships/${managing.value.row.id}/status`, { preserveScroll: true, onSuccess: () => (managing.value = null) });
+}
 const feeTone = { paid: 'success', unpaid: 'danger', checking: 'info', no_fee: 'neutral' } as const;
 const feeLabel = { paid: 'Paid', unpaid: 'Not paid', checking: 'Payment being checked', no_fee: 'No fee set' } as const;
 const LISTS = ['status', 'position', 'payment', 'method', 'collected_by', 'year_group', 'programme_short', 'intake', 'club_id', 'category', 'club_status'] as const;
@@ -249,6 +275,7 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
                             <th class="px-3 py-3"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('expires')">Expires</button></th>
                             <th class="px-3 py-3 text-right"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('events')">Events</button></th>
                             <th class="px-3 py-3 text-right"><button type="button" class="font-medium uppercase tracking-wide hover:text-ink" @click="toggleSort('cca')">CCA</button></th>
+                            <th v-if="canManage" class="px-3 py-3 font-medium">Manage</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -258,11 +285,20 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
                             <td class="px-3 py-2">{{ r.position }}</td>
                             <td class="px-3 py-2">{{ r.programme_short }}</td>
                             <td class="px-3 py-2">{{ r.year_group }}</td>
-                            <td class="px-3 py-2"><Badge :tone="tone[r.status] ?? 'neutral'">{{ r.status }}</Badge></td>
+                            <td class="px-3 py-2">
+                                <Badge :tone="tone[r.status] ?? 'neutral'">{{ r.status }}</Badge>
+                                <div v-if="r.status === 'grace' && r.grace_ends" class="mt-0.5 text-xs text-warning">ends {{ date(r.grace_ends) }}</div>
+                                <div v-else-if="r.status === 'alumni' && r.alumni_since" class="mt-0.5 text-xs text-ink-muted">since {{ date(r.alumni_since) }}</div>
+                            </td>
                             <td class="px-3 py-2"><Badge :tone="tone[r.payment] ?? 'neutral'">{{ r.payment }}</Badge><span v-if="r.method" class="ml-1 text-xs text-ink-muted">{{ r.method }}<template v-if="r.collected_by"> · {{ r.collected_by }}</template></span></td>
                             <td class="px-3 py-2 text-xs">{{ r.expires ? date(r.expires) : '—' }}</td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ r.events }}</td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ r.cca }}</td>
+                            <td v-if="canManage" class="px-3 py-2">
+                                <div v-if="r.manageable" class="flex flex-wrap gap-1">
+                                    <button v-for="a in ACTIONS[r.status] ?? []" :key="a.key" type="button" class="rounded-full border border-line px-2 py-0.5 text-xs hover:bg-surface-muted" @click="openManage(r, a.key)">{{ a.label }}</button>
+                                </div>
+                            </td>
                         </tr>
                         <tr v-if="!rows.length"><td colspan="11" class="px-3 py-8 text-center text-ink-muted">No members match.</td></tr>
                     </tbody>
@@ -316,5 +352,19 @@ const tone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'
                 <Button type="submit">Apply filters</Button>
             </form>
         </Drawer>
+        <Modal :open="!!managing" :title="managing ? `${managing.row.name}` : ''" @update:open="(o: boolean) => !o && (managing = null)">
+            <form v-if="managing" class="grid gap-4" @submit.prevent="sendManage">
+                <p class="text-sm text-ink-muted">
+                    <template v-if="managing.action === 'remind'">Send a renewal reminder now.</template>
+                    <template v-else-if="managing.action === 'extend'">Give more days to renew. The member is told the new last day.</template>
+                    <template v-else-if="managing.action === 'terminate'">End this membership now. The member is told the reason and can rejoin later. Payments and CCA history are kept.</template>
+                    <template v-else-if="managing.action === 'alumni'">Mark as alumni (graduated): stays in the club with no fee and no renewal reminders.</template>
+                    <template v-else>Undo the alumni mark: back to active while paid up, otherwise a fresh 7-day grace to renew.</template>
+                </p>
+                <Input v-if="managing.action === 'extend'" v-model="manageForm.days" type="number" :min="1" :max="30" label="Extra days (1–30)" :error="manageForm.errors.days" />
+                <Textarea v-if="managing.action === 'terminate'" v-model="manageForm.reason" label="Reason (sent to the member)" :rows="3" :error="manageForm.errors.reason" />
+                <Button type="submit" :variant="managing.action === 'terminate' ? 'danger' : 'primary'" :loading="manageForm.processing">Confirm</Button>
+            </form>
+        </Modal>
     </component>
 </template>

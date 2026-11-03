@@ -37,6 +37,7 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public \
     HOME=/tmp
 RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf \
+    && printf 'ServerTokens Prod\nServerSignature Off\nTraceEnable Off\n' > /etc/apache2/conf-available/hardening.conf && a2enconf hardening \
     && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
     && printf 'upload_max_filesize=20M\npost_max_size=25M\nmemory_limit=512M\nexpose_php=Off\n' > "$PHP_INI_DIR/conf.d/campus-hub.ini"
 

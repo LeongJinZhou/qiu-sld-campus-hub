@@ -69,11 +69,66 @@ class Meetings
         });
     }
 
-    /** @param list<int> $presentUserIds */
+    /**
+     * The committee ticks people present by hand. Someone who scanned in keeps their scan times; anyone newly
+     * ticked is recorded as 'manual'.
+     *
+     * @param  list<int>  $presentUserIds
+     */
     public function recordAttendance(Meeting $meeting, array $presentUserIds): void
     {
+        $scanned = $meeting->attendees()->wherePivotNotNull('checked_in_at')->pluck('users.id')->all();
         $everyone = $this->invitees($meeting)->pluck('id');
-        $meeting->attendees()->sync($everyone->mapWithKeys(fn (int $id) => [$id => ['present' => in_array($id, $presentUserIds, true)]])->all());
+        $meeting->attendees()->sync($everyone->mapWithKeys(function (int $id) use ($presentUserIds, $scanned): array {
+            $present = in_array($id, $presentUserIds, true);
+
+            return [$id => ['present' => $present, ...(in_array($id, $scanned, true) ? [] : ['method' => $present ? 'manual' : null])]];
+        })->all());
+    }
+
+    /**
+     * Someone scanned the meeting's check-in or check-out QR with their own phone. Only the meeting's audience may:
+     * the committee and advisors for a committee meeting (or a committee-only activity), every member for an
+     * all-members activity. Check-in opens 30 minutes early; check-out stays open 2 hours after the end.
+     */
+    public function clock(Meeting $meeting, User $user, string $action): string
+    {
+        if (! $this->invitees($meeting)->contains('id', $user->id)) {
+            throw new DomainException($meeting->kind === 'activity' && $meeting->audience === 'members'
+                ? "This activity is for {$meeting->club->name} members only."
+                : "This meeting is for the {$meeting->club->name} committee and advisors only.");
+        }
+        $now = now();
+        $row = $meeting->attendees()->whereKey($user->id)->first()?->pivot;
+        if ($action === 'in') {
+            if ($now->lt($meeting->starts_at->copy()->subMinutes(Meeting::CHECK_IN_EARLY_MINUTES))) {
+                throw new DomainException('Check-in opens 30 minutes before the meeting starts.');
+            }
+            if ($now->gt($meeting->ends_at)) {
+                throw new DomainException('This meeting has ended, so check-in is closed.');
+            }
+            if ($row?->checked_in_at) {
+                throw new DomainException('You already checked in at '.CarbonImmutable::parse($row->checked_in_at)->format('g:i A').'.');
+            }
+            $meeting->attendees()->syncWithoutDetaching([$user->id => ['present' => true, 'checked_in_at' => $now, 'method' => 'qr']]);
+
+            return "Checked in to {$meeting->title}.";
+        }
+        if ($now->lt($meeting->starts_at)) {
+            throw new DomainException('Check-out opens when the meeting starts.');
+        }
+        if ($now->gt($meeting->ends_at->copy()->addMinutes(Meeting::CHECK_OUT_LATE_MINUTES))) {
+            throw new DomainException('Check-out for this meeting has closed.');
+        }
+        if (! $row?->checked_in_at) {
+            throw new DomainException('Check in first — scan the check-in code.');
+        }
+        if ($row->checked_out_at) {
+            throw new DomainException('You already checked out at '.CarbonImmutable::parse($row->checked_out_at)->format('g:i A').'.');
+        }
+        $meeting->attendees()->updateExistingPivot($user->id, ['checked_out_at' => $now]);
+
+        return "Checked out of {$meeting->title}. Thanks for coming!";
     }
 
     /** Weekly activity CCA: once its minutes are approved, every present attendee earns the activity's hours. */

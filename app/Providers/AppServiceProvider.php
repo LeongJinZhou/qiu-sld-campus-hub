@@ -70,6 +70,16 @@ class AppServiceProvider extends ServiceProvider
             RateLimiter::for($name, fn (Request $request) => Limit::perMinute($perMinute)->by($name.'|'.($request->user()?->id ?? $request->ip())));
         }
 
+        // A ceiling on every request (on top of the per-feature limits above): stops scraping and floods from one
+        // person or address without ever touching normal use. Changes (POST/PUT/DELETE) get a lower ceiling.
+        RateLimiter::for('global', function (Request $request) {
+            $key = $request->user()?->id ?? $request->ip();
+
+            return $request->isMethodSafe()
+                ? Limit::perMinute($request->user() ? 600 : 240)->by('global|'.$key)
+                : Limit::perMinute($request->user() ? 180 : 60)->by('global-write|'.$key);
+        });
+
         // Every spreadsheet export stores user text as text (no formula injection).
         Cell::setValueBinder(new SafeValueBinder);
 
