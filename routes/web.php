@@ -322,9 +322,12 @@ Route::middleware('auth')->group(function () {
         Route::get('settings', [Admin\SettingsController::class, 'index'])->name('settings.index');
         Route::put('settings/{section}', [Admin\SettingsController::class, 'update'])->name('settings.update');
 
+        // SLD Officers manage SLD admins too (the controller limits them to the SLD Officer role).
+        Route::get('roles', [Admin\RoleController::class, 'index'])->name('roles.index');
+        Route::post('roles', [Admin\RoleController::class, 'store'])->name('roles.store');
+        Route::put('roles/{user}', [Admin\RoleController::class, 'update'])->name('roles.update');
+
         Route::middleware('role:superadmin')->group(function () {
-            Route::get('roles', [Admin\RoleController::class, 'index'])->name('roles.index');
-            Route::put('roles/{user}', [Admin\RoleController::class, 'update'])->name('roles.update');
             Route::get('audit', [Admin\AuditController::class, 'index'])->name('audit.index');
             Route::get('sync', [Admin\SyncController::class, 'index'])->name('sync.index');
             Route::post('sync', [Admin\SyncController::class, 'store'])->name('sync.store');

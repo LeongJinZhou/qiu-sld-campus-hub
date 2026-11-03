@@ -29,9 +29,9 @@ const links = computed(() => [
     { label: 'Club finance', href: '/admin/finance' },
     { label: 'Moderation', href: '/admin/moderation' },
     { label: 'Settings', href: '/admin/settings' },
+    { label: 'Admins & roles', href: '/admin/roles' },
     ...(user.value?.roles.includes('superadmin')
         ? [
-              { label: 'Roles', href: '/admin/roles' },
               { label: 'Student records sync', href: '/admin/sync' },
               { label: 'Audit log', href: '/admin/audit' },
           ]
