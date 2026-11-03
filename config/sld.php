@@ -7,6 +7,10 @@ return [
     // "Log in as a demo account" page: always on locally; on a hosted demo only with DEMO_LOGIN=true. Never in a pilot.
     'demo_login' => (bool) env('DEMO_LOGIN', env('APP_ENV') === 'local'),
 
+    // Outside local development the demo login page is locked behind a passcode (bcrypt hash; set
+    // DEMO_LOGIN_PASSCODE_HASH to change it). Without the passcode nobody can see or use the account list.
+    'demo_passcode_hash' => env('DEMO_LOGIN_PASSCODE_HASH', '$2y$12$iF352YCX3tSORSQVJBYhLecnQiKN3418Y03f3mmXhUHSBopvtOKoS'),
+
     // LibreOffice headless, used to turn filled DOCX/XLSX templates into PDFs that match the originals.
     'soffice' => env('SOFFICE_PATH', PHP_OS_FAMILY === 'Darwin' ? '/Applications/LibreOffice.app/Contents/MacOS/soffice' : 'soffice'),
 

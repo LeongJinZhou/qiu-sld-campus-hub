@@ -4,9 +4,10 @@ namespace App\Services\Events;
 
 use App\Models\Agm;
 use App\Models\Event;
+use App\Models\Meeting;
 
 /**
- * Per-event (or per-AGM) signed, expiring clock-in/clock-out codes. A code is an HMAC of the event, the action
+ * Per-event (or per-AGM, per-meeting) signed, expiring clock-in/clock-out codes. A code is an HMAC of the event, the action
  * and the current time slot. The slot length is the event's own setting (10 s to 10 min, AGMs use a minute), and
  * the previous slot's code is still accepted so someone mid-scan is not refused.
  */
@@ -20,7 +21,7 @@ class AttendanceQr
 
     private const DEFAULT_SECONDS = 60;
 
-    public function seconds(Event|Agm $event): int
+    public function seconds(Event|Agm|Meeting $event): int
     {
         $seconds = $event instanceof Event ? (int) ($event->qr_rotate_seconds ?: self::DEFAULT_SECONDS) : self::DEFAULT_SECONDS;
 
@@ -28,17 +29,21 @@ class AttendanceQr
     }
 
     /** Seconds until the code on screen changes. */
-    public function secondsLeft(Event|Agm $event): int
+    public function secondsLeft(Event|Agm|Meeting $event): int
     {
         $slot = $this->seconds($event);
 
         return $slot - (now()->getTimestamp() % $slot);
     }
 
-    public function code(Event|Agm $event, string $action, ?int $at = null): string
+    public function code(Event|Agm|Meeting $event, string $action, ?int $at = null): string
     {
         $slot = intdiv($at ?? now()->getTimestamp(), $this->seconds($event));
-        $scope = $event instanceof Agm ? "agm:{$event->id}" : $event->id;
+        $scope = match (true) {
+            $event instanceof Agm => "agm:{$event->id}",
+            $event instanceof Meeting => "meeting:{$event->id}",
+            default => $event->id,
+        };
 
         return substr(hash_hmac('sha256', "{$scope}|{$action}|{$slot}", $event->attendance_secret.config('app.key')), 0, 24);
     }
@@ -48,7 +53,7 @@ class AttendanceQr
         return route('events.attend', ['event' => $event, 'action' => $action, 'code' => $this->code($event, $action)]);
     }
 
-    public function isValid(Event|Agm $event, string $action, string $code): bool
+    public function isValid(Event|Agm|Meeting $event, string $action, string $code): bool
     {
         $now = now()->getTimestamp();
 

@@ -79,8 +79,8 @@ class ClubController extends Controller
             ...$board->for($club, $session),
             'compulsoryPositions' => CompulsoryPositionsCheck::POSITIONS,
             'missingCompulsory' => $compulsory->missing(ScopeType::Club, $club->id, $session->id),
-            'staff' => Staff::where('active', true)->whereNotNull('user_id')->orderBy('name')->get()
-                ->map(fn (Staff $s) => ['user_id' => $s->user_id, 'label' => trim("{$s->name} · {$s->title}", ' ·')]),
+            'staff' => Staff::where('active', true)->orderBy('name')->get()
+                ->map(fn (Staff $s) => ['id' => $s->id, 'user_id' => $s->user_id, 'label' => trim("{$s->name} · {$s->title}", ' ·')]),
         ]);
     }
 

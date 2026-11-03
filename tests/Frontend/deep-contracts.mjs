@@ -13,7 +13,7 @@ const calendarJs = ts.transpileModule(calendarSource, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
 }).outputText;
 const themeScript = fs.readFileSync('resources/views/app.blade.php', 'utf8')
-    .match(/<script>([\s\S]*?)<\/script>/)[1];
+    .match(/<script[^>]*>([\s\S]*?)<\/script>/)[1];
 const layoutSource = fs.readFileSync('resources/js/Layouts/AppLayout.vue', 'utf8')
     .match(/<script setup lang="ts">([\s\S]*?)<\/script>/)[1]
     .replace(/^import .*;\s*$/gm, '');

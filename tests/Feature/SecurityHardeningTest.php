@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /** Phase 5 security pass: every route guarded, rate limits, uploads re-encoded, audit coverage. */
-const PUBLIC_ROUTES = ['up', '/', 'auth/google/redirect', 'auth/google/alumni', 'auth/google/callback', 'not-in-records', 'p/{token}', 'verify/{code}', 'certificates/{code}', 'dev/login-as', 'calendar/feed/{user}.ics'];
+const PUBLIC_ROUTES = ['up', '/', 'auth/google/redirect', 'auth/google/alumni', 'auth/google/callback', 'not-in-records', 'p/{token}', 'verify/{code}', 'certificates/{code}', 'dev/login-as', 'dev/login-as/unlock', 'calendar/feed/{user}.ics'];
 
 it('requires sign-in on every route except the public allow-list, and SLD rights on every admin route', function () {
     $open = [];
@@ -80,4 +80,17 @@ it('writes the audit log for submissions, approvals, role changes and payments',
     $actions = AuditLog::pluck('action')->unique()->all();
     expect($actions)->toContain('committee.assigned')->toContain('advisor.added')->toContain('document.submitted')
         ->toContain('approval.approved')->toContain('document.approved');
+});
+
+it('sends a Content-Security-Policy whose nonce is on every script tag of the page', function () {
+    $response = $this->get('/')->assertOk();
+    $csp = (string) $response->headers->get('Content-Security-Policy');
+    preg_match("/'nonce-([^']+)'/", $csp, $m);
+
+    expect($csp)->toContain("default-src 'self'")->toContain("frame-ancestors 'none'")->toContain("object-src 'none'")
+        ->and($m[1] ?? '')->not->toBe('');
+    preg_match_all('/<script(?![^>]*type="application\/json")[^>]*>/', $response->getContent(), $tags);
+    foreach ($tags[0] as $tag) {
+        expect($tag)->toContain('nonce="'.$m[1].'"');
+    }
 });

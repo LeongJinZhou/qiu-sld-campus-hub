@@ -4,6 +4,8 @@ use App\Exceptions\NotInRecordsException;
 use App\Models\Staff;
 use App\Models\User;
 use App\Services\Auth\SignInService;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as GoogleUser;
 
@@ -68,3 +70,17 @@ it('lets alumni sign in only with the personal email they linked', function () {
     expect(app(SignInService::class)->signInWithPersonalEmail('mei.alumni@gmail.com')->is($user))->toBeTrue();
     app(SignInService::class)->signInWithPersonalEmail('stranger@gmail.com');
 })->throws(NotInRecordsException::class);
+
+it('locks the hosted demo login behind a passcode before showing or using any account', function () {
+    seedCamsys();
+    config(['sld.demo_login' => true, 'sld.demo_passcode_hash' => Hash::make('right-passcode-123')]);
+    Route::middleware('web')->group(base_path('routes/web.php'));
+
+    $this->get('/dev/login-as')->assertInertia(fn ($page) => $page->where('locked', true)->where('accounts', []));
+    $this->post('/dev/login-as', ['email' => 'student1.demo@qiu.edu.my'])->assertForbidden();
+    $this->post('/dev/login-as/unlock', ['passcode' => 'wrong'])->assertSessionHasErrors('passcode');
+    $this->assertGuest();
+
+    $this->post('/dev/login-as/unlock', ['passcode' => 'right-passcode-123'])->assertRedirect('/dev/login-as');
+    $this->get('/dev/login-as')->assertInertia(fn ($page) => $page->where('locked', false)->has('accounts.0'));
+});

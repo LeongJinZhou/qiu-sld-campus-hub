@@ -9,13 +9,17 @@ use App\Models\Meeting;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\DocumentExporter;
 use App\Services\Documents\DocumentPresenter;
+use App\Services\Events\AttendanceQr;
 use App\Services\Google\CalendarMeetService;
 use App\Services\Meetings\Meetings;
 use App\Services\Meetings\MinutesForm;
+use App\Services\QrCodes;
 use App\Services\Reports\EvidencePhotos;
+use App\Support\QueryInput;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -70,11 +74,14 @@ class MeetingController extends Controller
         return to_route('meetings.show', $meeting)->with('success', $meeting->meet_link ? "Meeting created — Meet link sent to {$who}." : "Created and {$who} notified.");
     }
 
-    public function show(Request $request, Meeting $meeting, DocumentPresenter $presenter, DocumentExporter $exporter, ApprovalEngine $engine): Response
+    public function show(Request $request, Meeting $meeting, DocumentPresenter $presenter, DocumentExporter $exporter, ApprovalEngine $engine, AttendanceQr $qr, QrCodes $codes): Response
     {
         Gate::authorize('viewInternal', $meeting->club);
         $document = $meeting->minutes()->firstOrFail();
-        $present = $meeting->attendees()->wherePivot('present', true)->pluck('users.id')->all();
+        $rows = $meeting->attendees()->get();
+        $present = $rows->filter(fn ($u) => (bool) $u->pivot->present)->pluck('id')->values()->all();
+        $time = fn (?string $at): ?string => $at ? Carbon::parse($at)->toIso8601String() : null;
+        $open = now()->between($meeting->starts_at->copy()->subMinutes(Meeting::CHECK_IN_EARLY_MINUTES), $meeting->ends_at->copy()->addMinutes(Meeting::CHECK_OUT_LATE_MINUTES));
 
         return Inertia::render('Meetings/Show', [
             'meeting' => [
@@ -87,6 +94,15 @@ class MeetingController extends Controller
             'evidence' => $meeting->kind === 'activity' ? app(EvidencePhotos::class)->panel($meeting) : null,
             'people' => $this->meetings->invitees($meeting)->sortBy('name')->values()->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'photo_url' => $u->photoUrl()]),
             'present' => $present,
+            'checkins' => $rows->filter(fn ($u) => $u->pivot->checked_in_at || $u->pivot->method)->mapWithKeys(fn ($u) => [$u->id => [
+                'in' => $time($u->pivot->checked_in_at), 'out' => $time($u->pivot->checked_out_at), 'method' => $u->pivot->method,
+            ]]),
+            // The rotating check-in / check-out codes are shown on the organiser's screen while the meeting is on.
+            'qr' => $open && Gate::allows('publish', $meeting->club) ? [
+                'in' => $codes->svg(route('meetings.attend', ['meeting' => $meeting, 'action' => 'in', 'code' => $qr->code($meeting, 'in')])),
+                'out' => $codes->svg(route('meetings.attend', ['meeting' => $meeting, 'action' => 'out', 'code' => $qr->code($meeting, 'out')])),
+                'seconds' => $qr->seconds($meeting), 'seconds_left' => $qr->secondsLeft($meeting),
+            ] : null,
             'minutes' => [
                 'id' => $document->id,
                 'status' => $document->status->value,
@@ -107,6 +123,23 @@ class MeetingController extends Controller
         $this->meetings->recordAttendance($meeting, array_map('intval', $data['present']));
 
         return back()->with('success', 'Attendance saved.');
+    }
+
+    /** A committee member, advisor or (for an all-members activity) a member scanned the meeting QR with their phone. */
+    public function attend(Request $request, Meeting $meeting, AttendanceQr $qr): RedirectResponse
+    {
+        $action = QueryInput::text($request, 'action', 3);
+        $back = to_route('clubs.show', $meeting->club);
+        if (! $qr->isValid($meeting, $action, QueryInput::text($request, 'code', 100))) {
+            return $back->with('error', 'This QR code has expired. Scan the code on screen again.');
+        }
+        try {
+            $message = $this->meetings->clock($meeting, $request->user(), $action);
+        } catch (DomainException $e) {
+            return $back->with('error', $e->getMessage());
+        }
+
+        return $back->with('success', $message);
     }
 
     public function save(Request $request, Meeting $meeting): RedirectResponse

@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title inertia>{{ config('app.name') }}</title>
-    <script>
+    <script nonce="{{ Vite::cspNonce() }}">
         // Theme before first paint: the signed-in account's choice is authoritative ("system" follows the device);
         // nothing cached on the device can override it, so a shared phone never shows the previous person's theme.
         (function () {
