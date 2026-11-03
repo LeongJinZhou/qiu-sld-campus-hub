@@ -100,6 +100,8 @@ class MembersController extends Controller
         return Inertia::render('Membership/Members', [
             'club' => $club?->only('slug', 'name'),
             'portal' => $portal,
+            // Grace, termination and alumni can be managed by the club's committee and by SLD.
+            'canManage' => $club !== null && Gate::allows('treasure', $club),
             'committeeFees' => $club ? app(CommitteeFees::class)->forClub($club) : [],
             'filters' => (object) $filters, // always a JSON object, even with no filters
             'counts' => $club ? $this->members->counts($rows) : $this->members->peopleCounts($listed),

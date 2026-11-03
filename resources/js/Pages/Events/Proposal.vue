@@ -2,7 +2,9 @@
 import PersonPicker from '@/Components/ui/PersonPicker.vue';
 import PositionPicker from '@/Components/ui/PositionPicker.vue';
 import { useIntervalFn, watchDebounced } from '@vueuse/core';
-import { PROPOSAL_SECTIONS, type ProposalSection } from '@/lib/proposal';
+import { PROPOSAL_SECTIONS, sectionOfField, type ProposalSection } from '@/lib/proposal';
+import ProgressGauge from '@/Components/forms/ProgressGauge.vue';
+import PhotoField from '@/Components/forms/PhotoField.vue';
 import { useLeaveReminder } from '@/composables/useLeaveReminder';
 import BudgetTable from '@/Components/forms/BudgetTable.vue';
 import CheckboxGroup from '@/Components/forms/CheckboxGroup.vue';
@@ -22,9 +24,9 @@ import Textarea from '@/Components/ui/Textarea.vue';
 import Celebration from '@/Components/ui/Celebration.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { date, dateTime, hoursBetween, rm } from '@/lib/format';
-import type { ApprovalProgress, ApprovalStep, ProposalData } from '@/types';
+import type { ApprovalProgress, ApprovalStep, ProposalBlock, ProposalData, ProposalSpeaker, ProposalStop, ProposalTrip } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 
 const props = defineProps<{
     event: { slug: string; name: string };
@@ -62,6 +64,8 @@ const props = defineProps<{
     canDiscard: boolean;
     returnSections: { key: string; note: string }[];
     ccaLimit: number;
+    imageBase: string;
+    clubNames: string[];
 }>();
 
 const form = useForm<
@@ -88,6 +92,85 @@ const objectiveRows = computed({
     get: () => form.objectives.map((text) => ({ text })),
     set: (rows: { text: string }[]) => (form.objectives = rows.map((r) => r.text)),
 });
+const filled = (v: string | null | undefined): boolean => !!(v ?? '').toString().trim();
+const writtenObjectives = computed(() => form.objectives.filter(filled).length);
+
+// Pictures (speaker photos, pictures in added parts) upload straight away; the form keeps their stored path.
+const imageUrl = `/events/${props.event.slug}/proposal/image`;
+
+// "Seminars/Conference/Workshop": speakers are listed (each with a photo), and two persons in charge replace the four fixed offices.
+const isWorkshop = computed(() => form.nature.includes('seminar'));
+const blankSpeaker = (): ProposalSpeaker => ({ name: '', phone: '', designation: '', linkedin: '', photo: '' });
+const speakerDone = (p: ProposalSpeaker): boolean => filled(p.name) && filled(p.phone) && filled(p.designation) && filled(p.photo);
+const addSpeaker = (): void => void (form.speakers = [...form.speakers, blankSpeaker()]);
+const removeSpeaker = (i: number): void => void (form.speakers = form.speakers.filter((_, j) => j !== i));
+watch(isWorkshop, (on) => {
+    if (on && !form.speakers.length) form.speakers = [blankSpeaker()];
+});
+
+// Collaboration: pick partner clubs from the list, or type any other partner and add it.
+const partner = ref('');
+function addPartner(): void {
+    const name = partner.value.trim();
+    if (name && !form.collaboration.some((c) => c.toLowerCase() === name.toLowerCase())) form.collaboration = [...form.collaboration, name];
+    partner.value = '';
+}
+const removePartner = (i: number): void => void (form.collaboration = form.collaboration.filter((_, j) => j !== i));
+
+// Logistics: one card per trip: departure → places on the way (the last is the drop-off point) → return.
+// Every time must fall within the event, each after the one before it.
+const blankStop = (): ProposalStop => ({ name: '', at: '', point: '' });
+const blankTrip = (): ProposalTrip => ({ arrangement: '', departure_at: '', departure_pickup: '', stops: [blankStop()], return_at: '', return_pickup: '' });
+const addTrip = (): void => void (form.trips = [...form.trips, blankTrip()]);
+const removeTrip = (i: number): void => void (form.trips = form.trips.filter((_, j) => j !== i));
+const addStop = (trip: ProposalTrip): void => void trip.stops.push(blankStop());
+const removeStop = (trip: ProposalTrip, s: number): void => void trip.stops.splice(s, 1);
+const inEvent = (at: string): boolean => !!at && !!form.starts_at && !!form.ends_at && at >= form.starts_at && at <= form.ends_at;
+/** Problem with one time on a trip, given the time before it (or null when fine or not filled yet). */
+function timeProblem(at: string, previous: string | null): string | null {
+    if (!at || !form.starts_at || !form.ends_at) return null;
+    if (!inEvent(at)) return 'Must be within the event time.';
+    return previous && at < previous ? 'Must be after the time before it.' : null;
+}
+const tripTimes = (trip: ProposalTrip): string[] => [trip.departure_at, ...trip.stops.map((st) => st.at), trip.return_at];
+const tripDone = (trip: ProposalTrip): boolean => {
+    const times = tripTimes(trip);
+    return (
+        filled(trip.arrangement) && filled(trip.departure_pickup) && filled(trip.return_pickup) && trip.stops.length > 0 &&
+        trip.stops.every((st) => filled(st.name) && filled(st.point)) && times.every((t, i) => !!t && !timeProblem(t, times.slice(0, i).filter(Boolean).pop() ?? null))
+    );
+};
+const tripError = (i: number, field: string, at: string, previous: string | null): string | undefined =>
+    (form.errors as Record<string, string | undefined>)[`trips.${i}.${field}`] ?? timeProblem(at, previous) ?? undefined;
+
+// Parts the club adds after the conclusion. Anything added must be written (or deleted) before submitting.
+const BLOCK_LABELS: Record<ProposalBlock['kind'], string> = { heading: 'Heading', subheading: 'Sub-heading', paragraph: 'Paragraph', bullets: 'Bullet list', table: 'Table', image: 'Picture' };
+const tableSize = reactive({ rows: 3, columns: 3 });
+function addBlock(kind: ProposalBlock['kind']): void {
+    const rows = kind === 'table' ? Array.from({ length: Math.min(30, Math.max(1, tableSize.rows)) }, () => Array.from({ length: Math.min(8, Math.max(1, tableSize.columns)) }, () => '')) : [];
+    form.extra_sections = [...form.extra_sections, { kind, text: '', rows, image: '' }];
+}
+const removeBlock = (i: number): void => void (form.extra_sections = form.extra_sections.filter((_, j) => j !== i));
+function moveBlock(i: number, by: -1 | 1): void {
+    const list = [...form.extra_sections];
+    const j = i + by;
+    if (j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j]!, list[i]!];
+    form.extra_sections = list;
+}
+const setCell = (b: number, r: number, c: number, value: string): void => {
+    form.extra_sections = form.extra_sections.map((block, i) => (i === b ? { ...block, rows: block.rows.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? value : cell)) : row)) } : block));
+};
+const resizeTable = (b: number, what: 'row' | 'column', by: 1 | -1): void => {
+    form.extra_sections = form.extra_sections.map((block, i) => {
+        if (i !== b) return block;
+        const cols = block.rows[0]?.length ?? 1;
+        if (what === 'row') return { ...block, rows: by > 0 ? [...block.rows, Array.from({ length: cols }, () => '')] : block.rows.length > 1 ? block.rows.slice(0, -1) : block.rows };
+        return { ...block, rows: block.rows.map((row) => (by > 0 ? [...row, ''] : row.length > 1 ? row.slice(0, -1) : row)) };
+    });
+};
+const blockDone = (b: ProposalBlock): boolean =>
+    b.kind === 'table' ? b.rows.length > 0 && b.rows.every((row) => row.every(filled)) : b.kind === 'image' ? filled(b.image) : filled(b.text);
 
 const save = (): void => {
     form.transform(({ signature: _signature, signature_strokes: _strokes, ...data }) => data).put(`/events/${props.event.slug}/proposal`, { preserveScroll: true });
@@ -172,6 +255,7 @@ watchDebounced(
 const mySection = ref('');
 const onFocus = (e: FocusEvent): void => {
     mySection.value = (e.target as HTMLElement).closest<HTMLElement>('[data-section]')?.dataset.section ?? mySection.value;
+    stopBlink(e);
 };
 async function pull(): Promise<void> {
     if (document.hidden) return;
@@ -211,7 +295,7 @@ const { pause: stopPulling } = useIntervalFn(() => void pull(), 1500, {
 if (!props.editable) stopPulling();
 const editorsIn = (section: ProposalSection): Editor[] => editors.value.filter((e) => e.section === section);
 const editorsTitle = computed(() => editors.value.map((e) => (e.section ? `${e.name} · ${PROPOSAL_SECTIONS[e.section as ProposalSection] ?? e.section}` : e.name)).join('\n'));
-const jumpTo = (key: string): void => document.querySelector(`[data-section='${key}']`)?.scrollIntoView({ behavior: 'smooth' });
+const jumpTo = (key: string): void => document.querySelector(`[data-section='${key}']`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 const flag = (section: ProposalSection): string | null => props.returnSections.find((r) => r.key === section)?.note ?? null;
 
 useLeaveReminder(
@@ -235,18 +319,100 @@ const discard = (): void => {
 
 const signing = ref(false);
 const breakEven = computed(() => form.budget.revenue.reduce((s, i) => s + i.price_sen * i.quantity, 0) >= expensesSen.value);
+
+// Every compulsory part, checked as people type: drives the gauge and the "take me to the problem" guide.
+const checks = computed<{ key: ProposalSection; label: string; done: boolean }[]>(() => {
+    const list: { key: ProposalSection; label: string; done: boolean }[] = [
+        {
+            key: 'concept',
+            label: 'Concept paper',
+            done:
+                filled(form.name) && filled(form.summary) && filled(form.venue) && !!form.starts_at && !!form.ends_at && form.ends_at > form.starts_at &&
+                Number(form.expected_participants) >= 1 && form.nature.length > 0 && (!form.nature.includes('others') || filled(form.nature_other)) &&
+                form.source_of_fund.length > 0 && (!isLate.value || filled(form.late_reason)),
+        },
+        { key: 'introduction', label: 'Introduction', done: filled(form.introduction) },
+        { key: 'objectives', label: `Objectives (${writtenObjectives.value}/2)`, done: writtenObjectives.value >= 2 },
+        { key: 'participants', label: 'Target participants', done: filled(form.eligibility) },
+    ];
+    if (isWorkshop.value) list.push({ key: 'speakers', label: 'Speakers', done: form.speakers.length > 0 && form.speakers.every(speakerDone) });
+    list.push({ key: 'activities', label: 'Activities', done: form.activities.length > 0 && form.activities.every((a) => filled(a.name) && filled(a.description)) });
+    if (form.ict_required) list.push({ key: 'ict', label: 'ICT needs', done: filled(form.ict_requirements) });
+    if (form.transport_required) list.push({ key: 'logistics', label: 'Transport', done: form.trips.length > 0 && form.trips.every(tripDone) });
+    list.push(
+        { key: 'committee', label: isWorkshop.value ? 'Persons in charge' : 'Committee', done: !missingList.value.length && !props.missingClubCommittee.length },
+        {
+            key: 'budget',
+            label: 'Budget',
+            done: [...form.budget.revenue, ...form.budget.expenses].every((i) => filled(i.description) && i.quantity >= 1) && (breakEven.value || filled(form.deficit_reason)),
+        },
+        { key: 'conclusion', label: 'Conclusion', done: filled(form.conclusion) },
+    );
+    if (form.extra_sections.length) list.push({ key: 'extra', label: 'Other parts', done: form.extra_sections.every(blockDone) });
+    return list;
+});
 const blockers = computed(() => [
     ...props.missingClubCommittee.map((p) => `Club committee: ${p}`),
     ...missingList.value.map((p) => `Event committee: ${p}`),
-    ...(form.objectives.filter((o) => o.trim()).length < 2 ? ['At least 2 objectives'] : []),
-    ...(breakEven.value || (form.deficit_reason ?? '').trim() ? [] : ['Explain the budget deficit (or break even)']),
-    ...(!isLate.value || (form.late_reason ?? '').trim() ? [] : [`Give a reason for submitting inside ${props.leadTime.days} days`]),
+    ...checks.value.filter((c) => !c.done && c.key !== 'committee').map((c) => c.label),
 ]);
+
+// The guide: the first problem flashes red three times; once it is fixed, the next one blinks until it is touched.
+const ORDER = Object.keys(PROPOSAL_SECTIONS) as ProposalSection[];
+const problems = computed<ProposalSection[]>(() => {
+    const bad = new Set<ProposalSection>([...checks.value.filter((c) => !c.done).map((c) => c.key), ...Object.keys(form.errors).map(sectionOfField)]);
+    return ORDER.filter((k) => bad.has(k));
+});
+const guiding = ref(false);
+const target = ref<ProposalSection | null>(null);
+const alertOf = ref<{ key: ProposalSection; mode: 'flash' | 'blink' } | null>(null);
+const alertFor = (key: ProposalSection): 'flash' | 'blink' | null => (alertOf.value?.key === key ? alertOf.value.mode : null);
+function guideTo(key: ProposalSection, mode: 'flash' | 'blink'): void {
+    target.value = key;
+    alertOf.value = null;
+    void nextTick(() => {
+        alertOf.value = { key, mode };
+        jumpTo(key);
+        if (mode === 'flash') setTimeout(() => alertOf.value?.key === key && alertOf.value.mode === 'flash' && (alertOf.value = null), 2200);
+    });
+}
+function startGuide(): boolean {
+    const first = problems.value[0];
+    if (!first) return false;
+    guiding.value = true;
+    guideTo(first, 'flash');
+    return true;
+}
+let nextTimer: ReturnType<typeof setTimeout> | undefined;
+watch(problems, (list) => {
+    if (!guiding.value || !target.value || list.includes(target.value)) return;
+    // Fixed: after a short pause (so typing is not interrupted), move on to the next problem, top to bottom.
+    clearTimeout(nextTimer);
+    nextTimer = setTimeout(() => {
+        const next = problems.value[0];
+        if (!next) {
+            guiding.value = false;
+            target.value = alertOf.value = null;
+            return;
+        }
+        if (next !== target.value) guideTo(next, 'blink');
+    }, 900);
+});
+const stopBlink = (e: Event): void => {
+    const section = (e.target as HTMLElement).closest<HTMLElement>('[data-section]')?.dataset.section;
+    if (alertOf.value?.mode === 'blink' && section === alertOf.value.key) alertOf.value = null;
+};
+const trySubmit = (): void => {
+    if (!startGuide()) signing.value = true;
+};
 const submit = (): void => {
     form.transform((data) => data).post(`/events/${props.event.slug}/proposal/submit`, {
         preserveScroll: true,
         onSuccess: () => (signing.value = false),
-        onError: () => (signing.value = false),
+        onError: () => {
+            signing.value = false;
+            void nextTick(startGuide);
+        },
     });
 };
 
@@ -338,7 +504,7 @@ onMounted(() => {
 <template>
     <Head :title="`Proposal · ${event.name}`" />
     <AppLayout>
-        <form class="grid gap-6 pb-24" @submit.prevent="save" @focusin="onFocus">
+        <form class="grid gap-6 pb-8" @submit.prevent="save" @focusin="onFocus" @pointerdown="stopBlink">
             <header class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 class="text-xl font-bold">Event Proposal</h1>
@@ -370,7 +536,9 @@ onMounted(() => {
                 </ul>
             </div>
 
-            <FormSection title="Student Organization Concept Paper" section="concept" :flag="flag('concept')" :editors="editorsIn('concept')">
+            <ProgressGauge v-if="editable" :items="checks" title="Compulsory parts: tap one to go there" @jump="jumpTo" />
+
+            <FormSection title="Student Organization Concept Paper" section="concept" :alert="alertFor('concept')" :flag="flag('concept')" :editors="editorsIn('concept')">
                 <div class="grid gap-4 sm:grid-cols-3">
                     <LockedField label="To" :value="locked.to" />
                     <LockedField label="From" :value="locked.from" />
@@ -459,7 +627,31 @@ onMounted(() => {
                     <legend class="mb-1 text-sm font-medium">SDG Goals</legend>
                     <CheckboxGroup v-model="form.sdgs" :options="options.sdgs" :columns="2" numbered :disabled="readOnly" />
                 </fieldset>
-                <Input v-model="form.collaboration" label="Collaboration" :readonly="readOnly" />
+                <div class="grid gap-2">
+                    <span class="text-sm font-medium">Collaboration <span class="font-normal text-ink-muted">(optional)</span></span>
+                    <ul v-if="form.collaboration.length" class="flex flex-wrap gap-1.5">
+                        <li v-for="(c, i) in form.collaboration" :key="c" class="flex items-center gap-1 rounded-full border border-line bg-surface-muted py-1 pr-1.5 pl-3 text-sm">
+                            {{ c }}
+                            <button v-if="!readOnly" type="button" class="grid size-5 place-items-center rounded-full text-ink-muted hover:bg-danger/10 hover:text-danger" :aria-label="`Remove ${c}`" @click="removePartner(i)">✕</button>
+                        </li>
+                    </ul>
+                    <div v-if="!readOnly" class="flex gap-2">
+                        <input
+                            v-model="partner"
+                            list="partner-clubs"
+                            placeholder="Pick a club, or type another partner"
+                            aria-label="Add a partner"
+                            class="h-10 min-w-0 flex-1 rounded-control border border-line bg-surface px-3 text-sm"
+                            @keydown.enter.prevent="addPartner"
+                            @change="clubNames.includes(partner) && addPartner()"
+                        />
+                        <Button size="sm" variant="secondary" :disabled="!partner.trim()" @click="addPartner">Add</Button>
+                        <datalist id="partner-clubs">
+                            <option v-for="name in clubNames" :key="name" :value="name" />
+                        </datalist>
+                    </div>
+                    <p v-else-if="!form.collaboration.length" class="text-sm text-ink-muted">None</p>
+                </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <LockedField label="Total Budget" :value="rm(expensesSen)" />
                     <fieldset class="grid gap-2">
@@ -474,7 +666,7 @@ onMounted(() => {
 
             <FormSection
                 title="Introduction"
-                section="introduction"
+                section="introduction" :alert="alertFor('introduction')"
                 :flag="flag('introduction')"
                 :editors="editorsIn('introduction')"
                 required
@@ -483,7 +675,7 @@ onMounted(() => {
                 <Textarea v-model="form.introduction" :rows="5" required :readonly="readOnly" :error="form.errors.introduction" />
             </FormSection>
 
-            <FormSection title="Objectives" section="objectives" :flag="flag('objectives')" :editors="editorsIn('objectives')" required>
+            <FormSection title="Objectives" section="objectives" :alert="alertFor('objectives')" :flag="flag('objectives')" :editors="editorsIn('objectives')" required>
                 <DynamicTable
                     v-model="objectiveRows"
                     :columns="[{ key: 'text', label: 'Objective' }]"
@@ -491,22 +683,61 @@ onMounted(() => {
                     :disabled="readOnly"
                     :errors="form.errors"
                     error-prefix="objectives"
-                    add-label="Add objective"
+                    add-label="Add another objective"
+                    :min="2"
                 />
-                <p class="text-xs" :class="form.objectives.filter((o) => o.trim()).length < 2 ? 'text-warning' : 'text-ink-muted'">
-                    At least 2 objectives ({{ form.objectives.filter((o) => o.trim()).length }}
-                    written).
+                <p class="text-xs" :class="writtenObjectives < 2 ? 'text-warning' : 'text-success'">
+                    At least 2 objectives; add more if you need them ({{ writtenObjectives }} written).
                 </p>
                 <p v-if="form.errors.objectives" class="text-xs text-danger">
                     {{ form.errors.objectives }}
                 </p>
             </FormSection>
 
-            <FormSection title="Target Participants" section="participants" :flag="flag('participants')" :editors="editorsIn('participants')" required>
+            <FormSection title="Target Participants" section="participants" :alert="alertFor('participants')" :flag="flag('participants')" :editors="editorsIn('participants')" required>
                 <Input v-model="form.eligibility" label="Eligibility" required :readonly="readOnly" :error="form.errors.eligibility" />
             </FormSection>
 
-            <FormSection title="Proposed Activities" section="activities" :flag="flag('activities')" :editors="editorsIn('activities')" required>
+            <FormSection
+                v-if="isWorkshop"
+                title="Speaker / External Profile"
+                section="speakers"
+                :alert="alertFor('speakers')"
+                :flag="flag('speakers')"
+                :editors="editorsIn('speakers')"
+                required
+                hint="Workshop: every speaker or external person, with a photo, phone and designation. LinkedIn is optional."
+            >
+                <TransitionGroup name="list" tag="ol" class="relative grid gap-3">
+                    <li v-for="(p, i) in form.speakers" :key="i" class="grid gap-3 rounded-control border p-4 sm:grid-cols-[auto_1fr]" :class="speakerDone(p) ? 'border-line' : 'border-warning/60'">
+                        <PhotoField
+                            v-model="p.photo"
+                            :upload-url="imageUrl"
+                            :image-base="imageBase"
+                            label="Photo"
+                            required
+                            :readonly="readOnly"
+                            :error="form.errors[`speakers.${i}.photo`]"
+                        />
+                        <div class="grid content-start gap-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="text-sm font-semibold">Person {{ i + 1 }}</h3>
+                                <button v-if="!readOnly && form.speakers.length > 1" type="button" class="text-sm text-ink-muted hover:text-danger" @click="removeSpeaker(i)">Remove</button>
+                            </div>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <Input v-model="p.name" label="Name" required :readonly="readOnly" :error="form.errors[`speakers.${i}.name`]" />
+                                <Input v-model="p.designation" label="Designation" required :readonly="readOnly" :error="form.errors[`speakers.${i}.designation`]" />
+                                <Input v-model="p.phone" type="tel" label="Phone number" required :readonly="readOnly" :error="form.errors[`speakers.${i}.phone`]" />
+                                <Input v-model="p.linkedin" label="LinkedIn profile (optional)" :readonly="readOnly" :error="form.errors[`speakers.${i}.linkedin`]" />
+                            </div>
+                        </div>
+                    </li>
+                </TransitionGroup>
+                <button v-if="!readOnly" type="button" class="justify-self-start text-sm font-medium text-brand-blue" @click="addSpeaker">＋ Add another person</button>
+                <p v-if="form.errors.speakers" class="text-xs text-danger">{{ form.errors.speakers }}</p>
+            </FormSection>
+
+            <FormSection title="Proposed Activities" section="activities" :alert="alertFor('activities')" :flag="flag('activities')" :editors="editorsIn('activities')" required>
                 <DynamicTable
                     v-model="form.activities"
                     :columns="[
@@ -528,7 +759,7 @@ onMounted(() => {
             <FormSection
                 title="Tentative / Event Itinerary"
                 hint="Optional. List what you know so far; times can be left blank."
-                section="itinerary"
+                section="itinerary" :alert="alertFor('itinerary')"
                 :flag="flag('itinerary')"
                 :editors="editorsIn('itinerary')"
             >
@@ -546,7 +777,7 @@ onMounted(() => {
                 />
             </FormSection>
 
-            <FormSection title="ICT & Maintenance Requirement" section="ict" :flag="flag('ict')" :editors="editorsIn('ict')">
+            <FormSection title="ICT & Maintenance Requirement" section="ict" :alert="alertFor('ict')" :flag="flag('ict')" :editors="editorsIn('ict')">
                 <Checkbox v-model="form.ict_required" label="ICT or maintenance support required (projector, sound, Wi-Fi, room setup…)" :disabled="readOnly" />
                 <Transition name="fade-up">
                     <Textarea
@@ -562,34 +793,95 @@ onMounted(() => {
                 <p v-if="!form.ict_required" class="text-sm text-ink-muted">Not ticked: the form will say <strong>Not required</strong>.</p>
             </FormSection>
 
-            <FormSection title="Logistic Arrangements" section="logistics" :flag="flag('logistics')" :editors="editorsIn('logistics')">
+            <FormSection title="Logistic Arrangements" section="logistics" :alert="alertFor('logistics')" :flag="flag('logistics')" :editors="editorsIn('logistics')">
                 <Checkbox v-model="form.transport_required" label="Transportation required" :disabled="readOnly" />
                 <p v-if="!form.transport_required" class="text-sm text-ink-muted">Not ticked: the form will say <strong>Not required</strong>.</p>
-                <Input
-                    v-if="form.transport_required"
-                    v-model="form.transport_arrangement"
-                    label="Arrangement"
-                    required
-                    placeholder="By participants' own transport / university transport"
-                    :readonly="readOnly"
-                    :error="form.errors.transport_arrangement"
-                />
-                <div v-if="form.transport_required" class="grid gap-4 sm:grid-cols-2">
-                    <Input v-model="form.departure_time" type="time" label="Departure Time" :readonly="readOnly" />
-                    <Input v-model="form.departure_pickup" label="Pickup Point" :readonly="readOnly" />
-                    <Input v-model="form.return_time" type="time" label="Estimated Return Time" :readonly="readOnly" />
-                    <Input v-model="form.return_pickup" label="Pickup Point" :readonly="readOnly" />
-                </div>
+                <template v-else>
+                    <TransitionGroup name="list" tag="ol" class="relative grid gap-3">
+                        <li v-for="(trip, i) in form.trips" :key="i" class="grid gap-3 rounded-control border border-line p-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="text-sm font-semibold">Trip {{ i + 1 }}</h3>
+                                <button v-if="!readOnly && form.trips.length > 1" type="button" class="text-sm text-ink-muted hover:text-danger" @click="removeTrip(i)">Remove</button>
+                            </div>
+                            <Input
+                                v-model="trip.arrangement"
+                                label="Arrangement"
+                                required
+                                placeholder="By participants' own transport / university transport"
+                                :readonly="readOnly"
+                                :error="form.errors[`trips.${i}.arrangement`]"
+                            />
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <Input
+                                    v-model="trip.departure_at"
+                                    type="datetime-local"
+                                    label="Departure date & time"
+                                    required
+                                    :min="form.starts_at"
+                                    :max="form.ends_at"
+                                    :readonly="readOnly"
+                                    :error="tripError(i, 'departure_at', trip.departure_at, null)"
+                                />
+                                <Input v-model="trip.departure_pickup" label="Pickup point" required :readonly="readOnly" :error="form.errors[`trips.${i}.departure_pickup`]" />
+                            </div>
+                            <div class="grid gap-2 border-l-2 border-brand-cyan/50 pl-3">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Destinations in order · the last one is the drop-off point</p>
+                                <div v-for="(st, s) in trip.stops" :key="s" class="grid gap-2 rounded-control bg-surface-muted p-3">
+                                    <div class="flex items-center justify-between gap-2 text-sm font-medium">
+                                        <span>{{ s === trip.stops.length - 1 ? 'Drop-off point (last destination)' : `Stop ${s + 1}` }}</span>
+                                        <button v-if="!readOnly && trip.stops.length > 1" type="button" class="text-xs text-ink-muted hover:text-danger" @click="removeStop(trip, s)">Remove</button>
+                                    </div>
+                                    <div class="grid gap-2 sm:grid-cols-3">
+                                        <Input v-model="st.name" label="Location name" required :readonly="readOnly" :error="form.errors[`trips.${i}.stops.${s}.name`]" />
+                                        <Input
+                                            v-model="st.at"
+                                            type="datetime-local"
+                                            label="Date & time"
+                                            required
+                                            :min="form.starts_at"
+                                            :max="form.ends_at"
+                                            :readonly="readOnly"
+                                            :error="tripError(i, `stops.${s}.at`, st.at, [trip.departure_at, ...trip.stops.slice(0, s).map((x) => x.at)].filter(Boolean).pop() ?? null)"
+                                        />
+                                        <Input v-model="st.point" label="Point" placeholder="Main gate, lobby…" required :readonly="readOnly" :error="form.errors[`trips.${i}.stops.${s}.point`]" />
+                                    </div>
+                                </div>
+                                <p v-if="form.errors[`trips.${i}.stops`]" class="text-xs text-danger">{{ form.errors[`trips.${i}.stops`] }}</p>
+                                <button v-if="!readOnly" type="button" class="justify-self-start text-xs font-medium text-brand-blue" @click="addStop(trip)">＋ Add a place on the way</button>
+                            </div>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <Input
+                                    v-model="trip.return_at"
+                                    type="datetime-local"
+                                    label="Estimated return date & time"
+                                    required
+                                    :min="form.starts_at"
+                                    :max="form.ends_at"
+                                    :readonly="readOnly"
+                                    :error="tripError(i, 'return_at', trip.return_at, tripTimes(trip).slice(0, -1).filter(Boolean).pop() ?? null)"
+                                />
+                                <Input v-model="trip.return_pickup" label="Return pickup point" required :readonly="readOnly" :error="form.errors[`trips.${i}.return_pickup`]" />
+                            </div>
+                            <p class="text-xs text-ink-muted">All times must be within the event: {{ form.starts_at.replace('T', ' ') }} – {{ form.ends_at.replace('T', ' ') }}.</p>
+                        </li>
+                    </TransitionGroup>
+                    <button v-if="!readOnly" type="button" class="justify-self-start text-sm font-medium text-brand-blue" @click="addTrip">＋ Add another trip (different place or time)</button>
+                </template>
             </FormSection>
 
             <FormSection
                 title="Event Committee & Responsibilities"
-                section="committee"
+                section="committee" :alert="alertFor('committee')"
                 :flag="flag('committee')"
                 :editors="editorsIn('committee')"
                 required
-                hint="President, Vice President, Secretary and Treasurer are compulsory. Separate from the club committee."
+                :hint="
+                    isWorkshop
+                        ? 'Workshop: the four offices are optional, but at least 2 persons in charge are needed. Add them below (e.g. role: Person in Charge).'
+                        : 'President, Vice President, Secretary and Treasurer are compulsory. Separate from the club committee.'
+                "
             >
+                <p v-if="missingList.length" class="rounded-control bg-warning/10 px-3 py-2 text-sm text-warning">Still needed: {{ missingList.join(', ') }}</p>
                 <ol class="grid gap-2">
                     <li
                         v-for="(pos, i) in options.compulsoryPositions"
@@ -599,7 +891,7 @@ onMounted(() => {
                     >
                         <p class="flex items-center gap-2 pt-2 text-sm font-semibold">
                             <span class="grid size-6 place-items-center rounded-full text-xs text-white" :class="holderOf(pos) ? 'bg-success' : 'bg-ink'">{{ i + 1 }}</span
-                            >{{ pos }}<span class="text-danger">*</span>
+                            >{{ pos }}<span v-if="!isWorkshop" class="text-danger">*</span>
                         </p>
                         <div v-if="holderOf(pos)" class="flex flex-wrap items-center justify-between gap-2 pt-1 text-sm">
                             <span
@@ -622,7 +914,7 @@ onMounted(() => {
                             <Input v-model="slots[pos]!.responsibility" label="Responsibility" />
                             <Button variant="secondary" :disabled="!slots[pos]!.student_number" :loading="slots[pos]!.busy" @click="fillSlot(pos)">Add</Button>
                         </div>
-                        <p v-else class="pt-2 text-sm text-warning">Not filled</p>
+                        <p v-else class="pt-2 text-sm" :class="isWorkshop ? 'text-ink-muted' : 'text-warning'">{{ isWorkshop ? 'Optional' : 'Not filled' }}</p>
                     </li>
                 </ol>
 
@@ -654,7 +946,7 @@ onMounted(() => {
                 </div>
             </FormSection>
 
-            <FormSection title="Estimated Budget" section="budget" :flag="flag('budget')" :editors="editorsIn('budget')" required>
+            <FormSection title="Estimated Budget" section="budget" :alert="alertFor('budget')" :flag="flag('budget')" :editors="editorsIn('budget')" required>
                 <BudgetTable v-model="form.budget" :disabled="readOnly" :errors="form.errors" />
                 <Transition name="fade-up">
                     <Textarea
@@ -670,8 +962,93 @@ onMounted(() => {
                 </Transition>
             </FormSection>
 
-            <FormSection title="Conclusion" section="conclusion" :flag="flag('conclusion')" :editors="editorsIn('conclusion')" required>
+            <FormSection title="Conclusion" section="conclusion" :alert="alertFor('conclusion')" :flag="flag('conclusion')" :editors="editorsIn('conclusion')" required>
                 <Textarea v-model="form.conclusion" :rows="4" required :readonly="readOnly" :error="form.errors.conclusion" />
+            </FormSection>
+
+            <FormSection
+                v-if="form.extra_sections.length || !readOnly"
+                title="Other parts"
+                section="extra"
+                :alert="alertFor('extra')"
+                :flag="flag('extra')"
+                :editors="editorsIn('extra')"
+                hint="Optional. Add headings, paragraphs, bullet lists, pictures or tables; they print after the conclusion. Anything added must be filled in or deleted before submitting."
+            >
+                <TransitionGroup name="list" tag="ol" class="relative grid gap-3">
+                    <li v-for="(block, b) in form.extra_sections" :key="b" class="grid gap-2 rounded-control border p-3" :class="blockDone(block) ? 'border-line' : 'border-warning/60'">
+                        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <Badge>{{ BLOCK_LABELS[block.kind] }}</Badge>
+                            <div v-if="!readOnly" class="flex gap-3 text-ink-muted">
+                                <button type="button" class="hover:text-ink disabled:opacity-30" :disabled="b === 0" aria-label="Move up" @click="moveBlock(b, -1)">↑</button>
+                                <button type="button" class="hover:text-ink disabled:opacity-30" :disabled="b === form.extra_sections.length - 1" aria-label="Move down" @click="moveBlock(b, 1)">↓</button>
+                                <button type="button" class="hover:text-danger" @click="removeBlock(b)">Delete</button>
+                            </div>
+                        </div>
+                        <Input v-if="block.kind === 'heading' || block.kind === 'subheading'" v-model="block.text" :label="BLOCK_LABELS[block.kind]" :readonly="readOnly" :error="form.errors[`extra_sections.${b}.text`]" />
+                        <Textarea
+                            v-else-if="block.kind === 'paragraph' || block.kind === 'bullets'"
+                            v-model="block.text"
+                            :label="block.kind === 'bullets' ? 'Bullet points (one per line)' : 'Paragraph'"
+                            :rows="block.kind === 'bullets' ? 4 : 3"
+                            :readonly="readOnly"
+                            :error="form.errors[`extra_sections.${b}.text`]"
+                        />
+                        <div v-else-if="block.kind === 'image'" class="grid gap-2">
+                            <PhotoField
+                                v-model="block.image"
+                                :upload-url="imageUrl"
+                                :image-base="imageBase"
+                                label="Picture"
+                                shape="wide"
+                                required
+                                :readonly="readOnly"
+                                :error="form.errors[`extra_sections.${b}.image`]"
+                            />
+                            <Input v-model="block.text" label="Caption (optional)" :readonly="readOnly" />
+                            <p class="text-xs text-ink-muted">Printed centred, sized to read clearly on A4 (up to 12 × 9 cm).</p>
+                        </div>
+                        <div v-else class="grid gap-2">
+                            <div class="overflow-x-auto rounded-control border border-line">
+                                <table class="w-full text-sm">
+                                    <tbody>
+                                        <tr v-for="(row, r) in block.rows" :key="r" class="border-t border-line first:border-t-0" :class="r === 0 ? 'bg-surface-muted font-medium' : ''">
+                                            <td v-for="(cell, c) in row" :key="c" class="min-w-28 border-l border-line p-1 first:border-l-0">
+                                                <input
+                                                    :value="cell"
+                                                    :readonly="readOnly"
+                                                    :placeholder="r === 0 ? `Header ${c + 1}` : ''"
+                                                    :aria-label="`Row ${r + 1}, column ${c + 1}`"
+                                                    class="h-9 w-full rounded-control border px-2"
+                                                    :class="filled(cell) ? 'border-line' : 'border-warning/60'"
+                                                    @input="setCell(b, r, c, ($event.target as HTMLInputElement).value)"
+                                                />
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div v-if="!readOnly" class="flex flex-wrap gap-3 text-xs font-medium text-brand-blue">
+                                <button type="button" @click="resizeTable(b, 'row', 1)">＋ Row</button>
+                                <button type="button" @click="resizeTable(b, 'row', -1)">− Row</button>
+                                <button type="button" @click="resizeTable(b, 'column', 1)">＋ Column</button>
+                                <button type="button" @click="resizeTable(b, 'column', -1)">− Column</button>
+                            </div>
+                            <p v-if="form.errors[`extra_sections.${b}.rows`]" class="text-xs text-danger">{{ form.errors[`extra_sections.${b}.rows`] }}</p>
+                        </div>
+                    </li>
+                </TransitionGroup>
+                <div v-if="!readOnly" class="grid gap-3 rounded-control bg-surface-muted p-3">
+                    <p class="text-sm font-medium">＋ Add others</p>
+                    <div class="flex flex-wrap gap-2">
+                        <Button v-for="kind in ['heading', 'subheading', 'paragraph', 'bullets', 'image'] as const" :key="kind" size="sm" variant="secondary" @click="addBlock(kind)">{{ BLOCK_LABELS[kind] }}</Button>
+                    </div>
+                    <div class="flex flex-wrap items-end gap-2">
+                        <Input v-model.number="tableSize.rows" type="number" label="Rows" class="w-24" min="1" max="30" />
+                        <Input v-model.number="tableSize.columns" type="number" label="Columns" class="w-24" min="1" max="8" />
+                        <Button size="sm" variant="secondary" @click="addBlock('table')">Add table</Button>
+                    </div>
+                </div>
             </FormSection>
 
             <FormSection title="Approval & Verification">
@@ -684,8 +1061,9 @@ onMounted(() => {
                 </p>
             </FormSection>
 
-            <div v-if="editable" class="fixed inset-x-0 bottom-16 z-20 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur md:bottom-0">
-                <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-end gap-3">
+            <!-- At the end of the form (not docked), so it never covers the form on a phone or a laptop. -->
+            <div v-if="editable" class="rounded-card border border-line bg-surface p-4 shadow-card">
+                <div class="flex flex-wrap items-center justify-end gap-3">
                     <div v-if="editors.length" class="flex items-center gap-2 text-xs" :title="editorsTitle">
                         <span class="flex -space-x-2"
                             ><Avatar v-for="e in editors.slice(0, 4)" :key="e.id" :src="e.photo_url" :name="e.name" size="xs" class="ring-2 ring-surface"
@@ -701,11 +1079,11 @@ onMounted(() => {
                             <template v-else-if="lastEditLive.at">Saved · last edited by {{ lastEditLive.by }} {{ dateTime(lastEditLive.at) }}</template>
                             <template v-else>Saves automatically</template>
                         </span>
-                        <span v-if="blockers.length" class="text-warning">Before submitting: {{ blockers.join(' · ') }}</span>
+                        <span v-if="blockers.length" class="text-warning">Still to do: {{ blockers.join(' · ') }}. Press Sign &amp; submit to be taken there.</span>
                     </div>
                     <Button v-if="canDiscard" variant="ghost" @click="discard">Discard</Button>
                     <Button v-if="clubCommittee.length" variant="secondary" @click="asking = true">Ask someone to submit</Button>
-                    <Button :disabled="blockers.length > 0" @click="signing = true">Sign &amp; submit</Button>
+                    <Button @click="trySubmit">Sign &amp; submit</Button>
                 </div>
             </div>
         </form>

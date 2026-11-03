@@ -23,6 +23,9 @@ class PdfConverter
         if (! is_file($sourcePath)) {
             throw new PdfConversionFailed("PDF conversion failed: {$sourcePath} does not exist.");
         }
+        if (! filled(config('sld.soffice'))) {
+            throw new PdfConversionFailed('PDF conversion is not set up on this server (LibreOffice path is empty).');
+        }
         $this->normaliseFonts($sourcePath);
         $outDir = dirname($sourcePath);
         $pdf = $outDir.'/'.pathinfo($sourcePath, PATHINFO_FILENAME).'.pdf';

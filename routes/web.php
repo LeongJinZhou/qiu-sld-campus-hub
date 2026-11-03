@@ -19,6 +19,7 @@ use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ClubQrController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Events\AttendanceController;
+use App\Http\Controllers\Events\ClubEventsController;
 use App\Http\Controllers\Events\EventCommitteeController;
 use App\Http\Controllers\Events\EventController;
 use App\Http\Controllers\Events\EventDocumentController;
@@ -36,10 +37,12 @@ use App\Http\Controllers\Finance\PaymentBreakdownController;
 use App\Http\Controllers\Finance\WithdrawalController;
 use App\Http\Controllers\Meetings\GoogleCalendarController;
 use App\Http\Controllers\Meetings\MeetingController;
+use App\Http\Controllers\Meetings\MeetingReportController;
 use App\Http\Controllers\Membership\FeeController;
 use App\Http\Controllers\Membership\HandoverController;
 use App\Http\Controllers\Membership\MembersController;
 use App\Http\Controllers\Membership\MembershipController;
+use App\Http\Controllers\Membership\MembershipStatusController;
 use App\Http\Controllers\Membership\ParticipantsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PeopleLookupController;
@@ -67,6 +70,7 @@ Route::middleware('guest')->group(function () {
     if (config('sld.demo_login')) {
         Route::get('/dev/login-as', [DevLoginController::class, 'index'])->name('dev.login');
         Route::post('/dev/login-as', [DevLoginController::class, 'store'])->middleware('throttle:login');
+        Route::post('/dev/login-as/unlock', [DevLoginController::class, 'unlock'])->middleware('throttle:login')->name('dev.unlock');
     }
 });
 
@@ -119,6 +123,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/clubs/{club}', [ClubController::class, 'show'])->name('clubs.show');
     Route::get('/c/{token}', ClubQrController::class)->name('clubs.qr');
 
+    Route::get('/clubs/{club}/events', ClubEventsController::class)->name('clubs.events');
     Route::get('/clubs/{club}/events/create', [EventController::class, 'create'])->name('events.create');
     Route::post('/clubs/{club}/events', [EventController::class, 'store'])->name('events.store');
     Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
@@ -165,6 +170,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/events/{event}/proposal', [ProposalController::class, 'update'])->name('proposals.update');
     Route::get('/events/{event}/proposal/live', [ProposalController::class, 'live'])->middleware('throttle:live-editing')->name('proposals.live');
     Route::patch('/events/{event}/proposal/live', [ProposalController::class, 'patch'])->middleware('throttle:live-editing')->name('proposals.patch');
+    Route::post('/events/{event}/proposal/image', [ProposalController::class, 'image'])->middleware('throttle:uploads')->name('proposals.image');
     Route::post('/events/{event}/proposal/submit', [ProposalController::class, 'submit'])->name('proposals.submit');
     Route::post('/events/{event}/proposal/ask', [ProposalController::class, 'askToSubmit'])->middleware('throttle:nudges')->name('proposals.ask');
     Route::delete('/events/{event}/proposal', [ProposalController::class, 'discard'])->name('proposals.discard');
@@ -173,6 +179,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
     Route::get('/documents/{document}/download/{format}', [DocumentController::class, 'download'])->name('documents.download');
+    Route::delete('/documents/{document}/rejected', [DocumentController::class, 'destroyRejected'])->name('documents.destroy-rejected');
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
     Route::get('/approvals/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
     Route::post('/approvals/{approval}', [ApprovalController::class, 'decide'])->name('approvals.decide');
@@ -192,6 +199,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/clubs/{club}/members', [MembersController::class, 'club'])->name('members.club');
     Route::get('/clubs/{club}/members/export/{format}', [MembersController::class, 'export'])->name('members.export');
     Route::post('/clubs/{club}/members/remind', [MembersController::class, 'remind'])->middleware('throttle:nudges')->name('members.remind');
+    Route::post('/clubs/{club}/memberships/{membership}/status', MembershipStatusController::class)->middleware('throttle:door')->name('memberships.status');
     Route::post('/saved-views', [MembersController::class, 'saveView'])->name('views.store');
     Route::delete('/saved-views/{view}', [MembersController::class, 'deleteView'])->name('views.destroy');
     Route::get('/clubs/{club}/finance', [FinanceController::class, 'show'])->name('finance.show');
@@ -217,7 +225,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/withdrawals/{document}/file/{kind}', [WithdrawalController::class, 'file'])->middleware('signed')->name('withdrawals.file');
     Route::get('/clubs/{club}/meetings', [MeetingController::class, 'index'])->name('meetings.index');
     Route::post('/clubs/{club}/meetings', [MeetingController::class, 'store'])->name('meetings.store');
+    Route::get('/clubs/{club}/meetings/report', [MeetingReportController::class, 'club'])->name('meetings.report');
+    Route::get('/clubs/{club}/meetings/report/export.{format}', [MeetingReportController::class, 'clubExport'])->middleware('throttle:exports')->name('meetings.report.export');
     Route::get('/meetings/{meeting}', [MeetingController::class, 'show'])->name('meetings.show');
+    Route::get('/meetings/{meeting}/attend', [MeetingController::class, 'attend'])->middleware('throttle:attend')->name('meetings.attend');
     Route::post('/meetings/{meeting}/attendance', [MeetingController::class, 'attendance'])->name('meetings.attendance');
     Route::put('/meetings/{meeting}/minutes', [MeetingController::class, 'save'])->name('meetings.minutes.save');
     Route::post('/meetings/{meeting}/minutes/draft', [MeetingController::class, 'draft'])->middleware('throttle:ai')->name('meetings.minutes.draft');
@@ -269,6 +280,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
         Route::get('performance', Admin\PerformanceController::class)->name('performance');
         Route::get('tracking', Admin\TrackingController::class)->name('tracking');
+        Route::get('proposals', [Admin\ProposalExportController::class, 'index'])->name('proposals.index');
+        Route::get('meetings', [MeetingReportController::class, 'admin'])->name('meetings.index');
+        Route::get('meetings/export.{format}', [MeetingReportController::class, 'adminExport'])->middleware('throttle:exports')->name('meetings.export');
+        Route::get('proposals/export.{format}', [Admin\ProposalExportController::class, 'list'])->middleware('throttle:exports')->name('proposals.list');
+        Route::get('proposals/{document}/package.zip', [Admin\ProposalExportController::class, 'package'])->middleware('throttle:exports')->name('proposals.package');
         Route::resource('clubs', Admin\ClubController::class)->except(['show', 'destroy']);
         Route::post('clubs/{club}/committee', [Admin\ClubCommitteeController::class, 'assign'])->name('clubs.committee.assign');
         Route::post('clubs/{club}/advisors', [Admin\ClubCommitteeController::class, 'addAdvisor'])->name('clubs.advisors.store');
@@ -306,9 +322,12 @@ Route::middleware('auth')->group(function () {
         Route::get('settings', [Admin\SettingsController::class, 'index'])->name('settings.index');
         Route::put('settings/{section}', [Admin\SettingsController::class, 'update'])->name('settings.update');
 
+        // SLD Officers manage SLD admins too (the controller limits them to the SLD Officer role).
+        Route::get('roles', [Admin\RoleController::class, 'index'])->name('roles.index');
+        Route::post('roles', [Admin\RoleController::class, 'store'])->name('roles.store');
+        Route::put('roles/{user}', [Admin\RoleController::class, 'update'])->name('roles.update');
+
         Route::middleware('role:superadmin')->group(function () {
-            Route::get('roles', [Admin\RoleController::class, 'index'])->name('roles.index');
-            Route::put('roles/{user}', [Admin\RoleController::class, 'update'])->name('roles.update');
             Route::get('audit', [Admin\AuditController::class, 'index'])->name('audit.index');
             Route::get('sync', [Admin\SyncController::class, 'index'])->name('sync.index');
             Route::post('sync', [Admin\SyncController::class, 'store'])->name('sync.store');

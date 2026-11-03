@@ -10,6 +10,8 @@ defineProps<{
     section?: string;
     flag?: string | null;
     editors?: { id: number; name: string; photo_url: string | null }[];
+    /** Pointing someone at a problem: 'flash' three times, or 'blink' until they touch the part. */
+    alert?: 'flash' | 'blink' | null;
 }>();
 </script>
 
@@ -17,13 +19,14 @@ defineProps<{
     <section
         :data-section="section"
         class="grid scroll-mt-24 gap-4 rounded-card border bg-surface p-5 shadow-card transition-[box-shadow,border-color] duration-300"
-        :class="
+        :class="[
+            alert === 'flash' ? 'problem-flash' : alert === 'blink' ? 'problem-blink' : '',
             flag
                 ? 'border-danger ring-4 ring-danger/15'
                 : editors?.length
                   ? 'border-brand-cyan ring-2 ring-brand-cyan/20'
-                  : 'border-line'
-        "
+                  : 'border-line',
+        ]"
     >
         <header class="flex flex-wrap items-start justify-between gap-2">
             <div>

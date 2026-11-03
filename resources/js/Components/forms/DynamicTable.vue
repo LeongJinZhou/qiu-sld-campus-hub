@@ -7,6 +7,10 @@ const props = defineProps<{
     errors?: Record<string, string>;
     errorPrefix: string;
     addLabel?: string;
+    /** Rows that always stay (e.g. 2 objectives): their remove button is hidden. */
+    min?: number;
+    /** Columns that may be left empty, shown as "(optional)". */
+    optional?: string[];
 }>();
 const rows = defineModel<Row[]>({ required: true });
 
@@ -15,6 +19,10 @@ const add = (): void => {
 };
 const remove = (index: number): void => {
     rows.value = rows.value.filter((_, i) => i !== index);
+};
+// Each keystroke replaces the row, so the change always reaches the parent (rows may be a computed copy).
+const set = (index: number, key: keyof Row & string, value: string): void => {
+    rows.value = rows.value.map((row, i) => (i === index ? { ...row, [key]: value } : row));
 };
 </script>
 
@@ -25,7 +33,9 @@ const remove = (index: number): void => {
                 <thead class="bg-surface-muted text-left text-xs uppercase text-ink-muted">
                     <tr>
                         <th class="w-10 px-3 py-2">No</th>
-                        <th v-for="column in columns" :key="column.key" class="px-3 py-2">{{ column.label }}</th>
+                        <th v-for="column in columns" :key="column.key" class="px-3 py-2">
+                            {{ column.label }}<span v-if="optional?.includes(column.key)" class="font-normal normal-case"> (optional)</span>
+                        </th>
                         <th v-if="!disabled" class="w-10" />
                     </tr>
                 </thead>
@@ -35,7 +45,8 @@ const remove = (index: number): void => {
                         <td v-for="column in columns" :key="column.key" class="px-2 py-1.5">
                             <textarea
                                 v-if="column.type === 'textarea'"
-                                v-model="row[column.key]"
+                                :value="row[column.key]"
+                                @input="set(index, column.key, ($event.target as HTMLTextAreaElement).value)"
                                 :disabled="disabled"
                                 rows="2"
                                 :aria-label="`${column.label} ${index + 1}`"
@@ -43,7 +54,8 @@ const remove = (index: number): void => {
                             />
                             <input
                                 v-else
-                                v-model="row[column.key]"
+                                :value="row[column.key]"
+                                @input="set(index, column.key, ($event.target as HTMLInputElement).value)"
                                 :type="column.type ?? 'text'"
                                 :disabled="disabled"
                                 :aria-label="`${column.label} ${index + 1}`"
@@ -54,7 +66,7 @@ const remove = (index: number): void => {
                             </p>
                         </td>
                         <td v-if="!disabled" class="px-2 py-2">
-                            <button type="button" class="text-ink-muted hover:text-danger" :aria-label="`Remove row ${index + 1}`" @click="remove(index)">✕</button>
+                            <button v-if="rows.length > (min ?? 0)" type="button" class="text-ink-muted hover:text-danger" :aria-label="`Remove row ${index + 1}`" @click="remove(index)">✕</button>
                         </td>
                     </tr>
                 </tbody>

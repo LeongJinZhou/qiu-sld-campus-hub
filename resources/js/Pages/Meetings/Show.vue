@@ -17,7 +17,7 @@ import { useAutosave } from '@/composables/useAutosave';
 import { dateTime } from '@/lib/format';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 interface Minutes {
     purpose: string;
@@ -36,6 +36,8 @@ const props = defineProps<{
         title: string;
         kind: string;
         kind_label: string;
+        audience: string | null;
+        pax: number | null;
         starts_at: string;
         ends_at: string;
         venue: string | null;
@@ -45,6 +47,8 @@ const props = defineProps<{
     };
     people: { id: number; name: string; photo_url: string | null }[];
     present: number[];
+    checkins: Record<number, { in: string | null; out: string | null; method: string | null }>;
+    qr: { in: string; out: string; seconds: number; seconds_left: number } | null;
     minutes: {
         id: number;
         status: string;
@@ -90,7 +94,24 @@ const summaryRows = computed({
     set: (rows: { text: string }[]) => (form.summary = rows.map((r) => r.text)),
 });
 const signing = ref(false);
-const submit = (): void => form.post(`${url}/submit`, { preserveScroll: true, onFinish: () => (signing.value = false) });
+// useForm keeps the last transform: reset it so the signature (stripped for drafts) goes with the submission.
+const submit = (): void => {
+    form.transform((d) => d).post(`${url}/submit`, { preserveScroll: true, onSuccess: () => (signing.value = false) });
+};
+
+// Check-in / check-out QR on the organiser's screen: refreshes as each code expires.
+const qrAction = ref<'in' | 'out'>('in');
+const left = ref(props.qr?.seconds_left ?? 0);
+let timer: ReturnType<typeof setInterval> | undefined;
+onMounted(() => {
+    timer = setInterval(() => {
+        if (!props.qr) return;
+        left.value = Math.max(0, left.value - 1);
+        if (left.value === 0) router.reload({ only: ['qr', 'checkins', 'present'], onFinish: () => (left.value = props.qr?.seconds_left ?? 0) });
+    }, 1000);
+});
+onBeforeUnmount(() => clearInterval(timer));
+const clock = (at: string | null): string => (at ? new Date(at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '');
 const readOnly = computed(() => !props.minutes.editable);
 </script>
 
@@ -106,6 +127,7 @@ const readOnly = computed(() => !props.minutes.editable);
                         <Badge tone="info">{{ meeting.kind_label }}</Badge>
                         <span class="flex items-center gap-1"><Icon name="calendar" :size="16" />{{ dateTime(meeting.starts_at) }}</span>
                         <span v-if="meeting.venue" class="flex items-center gap-1"><Icon name="pin" :size="16" />{{ meeting.venue }}</span>
+                        <span v-if="meeting.audience" class="flex items-center gap-1"><Icon name="users" :size="16" />{{ meeting.audience }}<template v-if="meeting.pax"> · {{ meeting.pax }} pax</template></span>
                     </p>
                     <a v-if="meeting.meet_link" :href="meeting.meet_link" target="_blank" rel="noopener" class="justify-self-start"
                         ><Button><Icon name="camera" :size="16" /> Join Google Meet</Button></a
@@ -188,6 +210,16 @@ const readOnly = computed(() => !props.minutes.editable);
             </div>
 
             <aside class="grid content-start gap-4">
+                <section v-if="qr" class="grid gap-3 rounded-card border border-line bg-surface p-5 shadow-card">
+                    <h2 class="font-semibold">Attendance QR</h2>
+                    <p class="text-xs text-ink-muted">Only {{ meeting.audience?.toLowerCase() ?? 'the committee and advisors' }} can check in. Each person scans with their own phone.</p>
+                    <div class="grid grid-cols-2 gap-1 rounded-control bg-surface-muted p-1 text-sm" role="radiogroup">
+                        <button v-for="a in (['in', 'out'] as const)" :key="a" type="button" role="radio" :aria-checked="qrAction === a" class="rounded-control py-1.5" :class="qrAction === a ? 'bg-surface font-semibold shadow-card' : ''" @click="qrAction = a">Check {{ a }}</button>
+                    </div>
+                    <div class="mx-auto size-56 rounded-card bg-white p-3 [&>svg]:size-full" role="img" :aria-label="`QR to check ${qrAction}`" v-html="qr[qrAction]" />
+                    <div class="h-1.5 overflow-hidden rounded-full bg-surface-muted"><div class="h-full rounded-full bg-gradient-to-r from-brand-cyan to-brand-magenta transition-[width] duration-1000 ease-linear" :style="{ width: `${(left / qr.seconds) * 100}%` }" /></div>
+                    <p class="text-center text-xs text-ink-muted">New code in {{ left }} s</p>
+                </section>
                 <section class="rounded-card border border-line bg-surface p-5 shadow-card">
                     <h2 class="mb-1 font-semibold">Attendance</h2>
                     <p class="mb-3 text-xs text-ink-muted">
@@ -202,7 +234,11 @@ const readOnly = computed(() => !props.minutes.editable);
                                 @click="toggle(p.id)"
                             >
                                 <Avatar :src="p.photo_url" :name="p.name" size="xs" />
-                                <span class="flex-1">{{ p.name }}</span>
+                                <span class="grid flex-1">
+                                    <span>{{ p.name }}</span>
+                                    <span v-if="checkins[p.id]?.in" class="text-xs text-ink-muted">in {{ clock(checkins[p.id]!.in) }}<template v-if="checkins[p.id]!.out"> · out {{ clock(checkins[p.id]!.out) }}</template> · QR</span>
+                                    <span v-else-if="checkins[p.id]?.method === 'manual'" class="text-xs text-ink-muted">ticked by hand</span>
+                                </span>
                                 <Icon v-if="attendance.includes(p.id)" name="check" :size="16" class="text-success" />
                             </button>
                         </li>

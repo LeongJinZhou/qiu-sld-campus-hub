@@ -9,6 +9,8 @@ const d = computed(() => props.document.data);
 const opts = computed(() => props.document.options);
 const ticked = (selected: (string | number)[] | undefined, map: Record<string | number, string> | undefined) =>
     (selected ?? []).map((key) => map?.[key] ?? String(key)).join(', ') || '—';
+const img = (path: string): string => props.document.image_base.replace(/\/?$/, '/') + path;
+const at = (v: string): string => (v ? v.replace('T', ' ') : '-');
 const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.value.ends_at.replace('T', ' ')}`);
 </script>
 
@@ -72,7 +74,7 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                     </tr>
                     <tr>
                         <th>Collaboration</th>
-                        <td>{{ d.collaboration || '—' }}</td>
+                        <td>{{ (d.collaboration ?? []).join(', ') || '—' }}</td>
                     </tr>
                     <tr>
                         <th>Total Budget</th>
@@ -103,6 +105,20 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                 <p>Expected number of participants: {{ d.expected_participants }}</p>
                 <p>Eligibility: {{ d.eligibility }}</p>
             </div>
+            <div v-if="d.speakers?.length">
+                <h3 class="font-semibold">Speaker / External Profile</h3>
+                <table class="mt-1 w-full border border-line">
+                    <tbody>
+                        <tr v-for="(p, i) in d.speakers" :key="i" class="border-t border-line">
+                            <td class="w-20 px-3 py-2"><img v-if="p.photo" :src="img(p.photo)" :alt="p.name" class="size-14 rounded-control object-cover" /></td>
+                            <td class="px-3 py-2 font-medium">{{ p.name }}</td>
+                            <td class="px-3 py-2">{{ p.designation }}</td>
+                            <td class="px-3 py-2">{{ p.phone }}</td>
+                            <td class="px-3 py-2 break-all">{{ p.linkedin || '—' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <div>
                 <h3 class="font-semibold">Proposed Activities</h3>
                 <table class="mt-1 w-full border border-line">
@@ -132,10 +148,17 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
             </div>
             <div>
                 <h3 class="font-semibold">Logistic Arrangements</h3>
-                <p>
-                    Transportation {{ d.transport_required ? 'required' : 'not required' }}<template v-if="d.transport_arrangement">: {{ d.transport_arrangement }}</template>
-                </p>
-                <p v-if="d.transport_required">Departure {{ d.departure_time }} from {{ d.departure_pickup }} · Return {{ d.return_time }} at {{ d.return_pickup }}</p>
+                <p>Transportation {{ d.transport_required ? 'required' : 'not required' }}</p>
+                <ol v-if="d.transport_required" class="mt-1 grid gap-1">
+                    <li v-for="(t, i) in d.trips" :key="i" class="rounded-control border border-line px-3 py-2">
+                        <strong>Trip {{ i + 1 }}<template v-if="t.arrangement">: {{ t.arrangement }}</template></strong>
+                        <p>Departure {{ at(t.departure_at) }} from {{ t.departure_pickup || '-' }}</p>
+                        <p v-for="(s, j) in t.stops" :key="j">
+                            {{ j === t.stops.length - 1 ? 'Drop-off' : `Stop ${j + 1}` }}: {{ s.name || '-' }} · {{ at(s.at) }}<template v-if="s.point"> · {{ s.point }}</template>
+                        </p>
+                        <p>Return {{ at(t.return_at) }} from {{ t.return_pickup || '-' }}</p>
+                    </li>
+                </ol>
             </div>
             <div>
                 <h3 class="font-semibold">Event Committee &amp; Responsibilities</h3>
@@ -161,6 +184,25 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                 <h3 class="font-semibold">Conclusion</h3>
                 <p class="whitespace-pre-line">{{ d.conclusion }}</p>
             </div>
+            <template v-for="(b, i) in d.extra_sections ?? []" :key="`x${i}`">
+                <h3 v-if="b.kind === 'heading'" class="text-base font-bold">{{ b.text }}</h3>
+                <h4 v-else-if="b.kind === 'subheading'" class="font-semibold">{{ b.text }}</h4>
+                <p v-else-if="b.kind === 'paragraph'" class="whitespace-pre-line">{{ b.text }}</p>
+                <ul v-else-if="b.kind === 'bullets'" class="list-disc pl-5">
+                    <li v-for="(line, j) in b.text.split('\n').filter((l) => l.trim())" :key="j">{{ line }}</li>
+                </ul>
+                <figure v-else-if="b.kind === 'image' && b.image" class="grid justify-items-center gap-1">
+                    <img :src="img(b.image)" :alt="b.text || 'Picture'" class="max-h-80 max-w-full rounded-control object-contain" />
+                    <figcaption v-if="b.text" class="text-xs text-ink-muted italic">{{ b.text }}</figcaption>
+                </figure>
+                <table v-else-if="b.kind === 'table'" class="w-full border border-line">
+                    <tbody>
+                        <tr v-for="(row, r) in b.rows" :key="r" class="border-t border-line" :class="r === 0 ? 'bg-surface-muted font-medium' : ''">
+                            <td v-for="(cell, c) in row" :key="c" class="border-l border-line px-3 py-2">{{ cell }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </template>
         </section>
     </article>
 </template>

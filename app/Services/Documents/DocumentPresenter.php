@@ -11,6 +11,7 @@ use App\Services\Approvals\ApprovalEngine;
 use App\Services\Approvals\ApproverResolver;
 use App\Services\Events\ProposalForm;
 use App\Services\Events\ProposalRules;
+use Illuminate\Support\Facades\Storage;
 
 /** Read-only view of a document, its data and its approval trail, for review and history pages. */
 class DocumentPresenter
@@ -27,7 +28,7 @@ class DocumentPresenter
     {
         $document->loadMissing(['club', 'event', 'latestVersion', 'approvals.approver', 'approvals.signature']);
         $current = $this->engine->currentStep($document);
-        $data = $document->data();
+        $data = $document->type === DocumentType::Proposal ? ProposalForm::upgrade($document->data()) : $document->data();
 
         return [
             'id' => $document->id,
@@ -40,6 +41,8 @@ class DocumentPresenter
             'agm_id' => $document->agm_id,
             'submitted_at' => $document->submitted_at?->format('D, j M Y, g:i A'),
             'data' => $data,
+            // Pictures in the data (speaker photos, added pictures) are public-disk paths under this address.
+            'image_base' => Storage::disk('public')->url(''),
             'locked' => $document->type === DocumentType::Proposal ? $this->proposals->lockedFields($document) : [],
             'totals' => isset($data['budget']) ? $this->rules->budgetTotals($data['budget']) : null,
             'committee' => $document->event?->committee()->with('user')->get()->map(fn (RoleAssignment $a) => [

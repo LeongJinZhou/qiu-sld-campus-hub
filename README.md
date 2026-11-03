@@ -132,7 +132,10 @@ flowchart TB
 - Finance workbook (Excel/PDF): Overview, then membership drive, normal registration, each event, other; this session or all years; pick the sheets
 - Event purchases and claims: snap the receipt (AI reads items and prices), budget vs spending, helpers claim back, event committee verifies, pay back by cash (QR photo) or transfer (name checked)
 - Outdoor events: indemnity pre-filled, sign once registered or paid, ticket appears after signing
-- Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA
+- Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA. Committee meetings invite the committee and advisors only; weekly activities invite the committee or all members, with expected pax and location, and everyone invited is notified
+- Meeting check-in / check-out by rotating QR (like events): only the meeting's audience can check in (committee + advisors, or all members), with times kept per person
+- Meetings report for each club and for SLD (every club), with attendance rate and minutes status, exported to Excel/PDF
+- Membership grace, termination and alumni managed by the committee or SLD: remind, give more days, end with a reason, mark alumni, undo; members are notified
 - Venue booking (La Place, semester venues, big rooms) with SLD confirmation; daily club status (Active / At risk / Inactive)
 - AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance
 - Elections: nominations with full-term check, one vote per position, SLD flags, results into the AGM Report, role handover on 1 July
@@ -142,6 +145,10 @@ flowchart TB
 - Evidence photos required for weekly activity reports, AGMs and finished events. Event photos download as a ZIP named `Club_Event_YYYYMMDD_01.jpg`
 - After SLD acknowledges the AGM, a yearly archive ZIP is built (AGM, finance, members, annual report, events, weekly reports, photos), visible only to the club and SLD
 - Handover started by SLD after the acknowledged AGM: the incoming committee gets view-only training access during the overlap
+- Event proposal form: live gauge of the compulsory parts; Sign & submit jumps to the first problem (flashes red) and then to each next one (blinks until touched); workshops list speakers (photo required) and need only 2 persons in charge; at least 2 objectives; collaboration with partner clubs or typed-in partners; several trips, each departure → places on the way (last = drop-off) → return, all within the event time; extra headings, paragraphs, bullets, tables and pictures (printed centred, fitted for A4) after the conclusion; unticked ICT prints "Not required"; the export adds a committee chart with student and employee IDs
+- Clubs you run → All events: ongoing, upcoming and past events, with past events by year
+- SLD Proposals & exports: every proposal as PDF or Word, the list as Excel/PDF, and one ZIP per event with all its documents and finance lines
+- My Activities: each club's requests by stage (Draft, Submitted with approval progress, Approved, Rejected); rejected requests clear after 30 days or by hand. Approvers, Treasurers (receipts to check) and the committee (proposal submitted) are notified
 - SLD submissions tracker: weekly reports missing by month, incomplete event completion packages, AGM state, overdue transfers. Finance has monthly and yearly income/expense charts for one club or all clubs
 - One calendar: approved events plus my meetings, weekly activities, weekly-report due dates and AGMs, with a whole-year view
 - New-club registration: the proposed President applies and signs → the advisor signs → SLD approves. The club, its committee and its advisor only exist after approval
@@ -226,7 +233,9 @@ Everything sensitive stays on the server:
 - **Personal data:** student phone numbers are encrypted at rest; phone and email are hidden from serialisation; public profiles show portfolio fields only.
 - **Authorisation** is enforced server-side (policies, form requests, role middleware). The UI never decides access.
 - **AI calls** run server-side in queued jobs only, with minimal data.
-- Sign-in is rate-limited; every role and committee change is written to the audit log.
+- Sign-in is rate-limited, every feature has its own limit, and every request has a site-wide ceiling (per person or IP); every role, committee and membership change is written to the audit log.
+- **Browser hardening:** a strict Content-Security-Policy (scripts only from this site, by nonce), no framing, HSTS, no-sniff, server version hidden; hidden files and scripts in the uploads folder are never served.
+- **Demo login** (`DEMO_LOGIN`) is for testing only. On a hosted server it is locked behind a passcode (`DEMO_LOGIN_PASSCODE_HASH`, a bcrypt hash) and the account list is never sent before it is entered. Keep it off in production.
 - The sample `database/camsys/*.sql` is **dummy data**. Never commit real student records.
 
 ## Roadmap

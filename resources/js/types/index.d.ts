@@ -70,6 +70,39 @@ export interface Option {
     label: string;
 }
 
+export interface ProposalSpeaker {
+    name: string;
+    phone: string;
+    designation: string;
+    linkedin: string;
+    /** Public-disk path of the uploaded photo ('' until uploaded). */
+    photo: string;
+}
+
+/** A place on the way; the last one is the drop-off point. Times are "YYYY-MM-DDTHH:mm" within the event. */
+export interface ProposalStop {
+    name: string;
+    at: string;
+    point: string;
+}
+
+export interface ProposalTrip {
+    arrangement: string;
+    departure_at: string;
+    departure_pickup: string;
+    stops: ProposalStop[];
+    return_at: string;
+    return_pickup: string;
+}
+
+/** A part the club adds after the conclusion: heading, sub-heading, paragraph, bullets (one per line), a table or a picture (text = caption). */
+export interface ProposalBlock {
+    kind: 'heading' | 'subheading' | 'paragraph' | 'bullets' | 'table' | 'image';
+    text: string;
+    rows: string[][];
+    image: string;
+}
+
 export interface ProposalData {
     name: string;
     summary: string;
@@ -85,7 +118,7 @@ export interface ProposalData {
     cca_participant: number;
     cca_committee: number;
     sdgs: number[];
-    collaboration: string;
+    collaboration: string[];
     source_of_fund: string[];
     introduction: string;
     objectives: string[];
@@ -94,14 +127,12 @@ export interface ProposalData {
     itinerary: { start: string; end: string; agenda: string }[];
     ict_required?: boolean;
     ict_requirements: string;
+    speakers: ProposalSpeaker[];
     transport_required: boolean;
-    transport_arrangement: string;
-    departure_time: string;
-    departure_pickup: string;
-    return_time: string;
-    return_pickup: string;
+    trips: ProposalTrip[];
     budget: { revenue: { description: string; price_sen: number; quantity: number }[]; expenses: { description: string; price_sen: number; quantity: number }[] };
     conclusion: string;
+    extra_sections: ProposalBlock[];
     late_reason?: string;
     deficit_reason?: string;
 }
@@ -132,6 +163,7 @@ export interface PresentedDocument {
     agm_id: number | null;
     submitted_at: string | null;
     data: ProposalData;
+    image_base: string;
     locked: { to?: string; from?: string; submitted_on?: string | null };
     totals: { revenue_sen: number; expenses_sen: number; profit_sen: number; covers_expenses: boolean } | null;
     committee: { name: string; position: string; responsibility: string | null }[];

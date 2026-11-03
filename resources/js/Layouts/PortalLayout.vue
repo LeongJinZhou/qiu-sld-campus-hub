@@ -17,6 +17,8 @@ const links = computed(() => [
     { label: 'Dashboard', href: '/admin' },
     { label: 'Club performance', href: '/admin/performance' },
     { label: 'Submissions tracker', href: '/admin/tracking' },
+    { label: 'Proposals & exports', href: '/admin/proposals' },
+    { label: 'Meetings', href: '/admin/meetings' },
     { label: 'Clubs', href: '/admin/clubs' },
     { label: 'Staff', href: '/admin/staff' },
     { label: 'All members', href: '/admin/members' },
@@ -27,9 +29,9 @@ const links = computed(() => [
     { label: 'Club finance', href: '/admin/finance' },
     { label: 'Moderation', href: '/admin/moderation' },
     { label: 'Settings', href: '/admin/settings' },
+    { label: 'Admins & roles', href: '/admin/roles' },
     ...(user.value?.roles.includes('superadmin')
         ? [
-              { label: 'Roles', href: '/admin/roles' },
               { label: 'Student records sync', href: '/admin/sync' },
               { label: 'Audit log', href: '/admin/audit' },
           ]
