@@ -47,7 +47,7 @@ class ProposalForm
             'expected_participants' => $event->expected_participants,
             'nature' => [], 'nature_other' => '',
             'cca_participant' => $cca, 'cca_committee' => $cca,
-            'sdgs' => [], 'collaboration' => '', 'source_of_fund' => [],
+            'sdgs' => [], 'collaboration' => [], 'source_of_fund' => [],
             'introduction' => '', 'objectives' => ['', ''], 'eligibility' => '',
             'speakers' => [],
             'activities' => [['name' => '', 'description' => '']],
@@ -62,14 +62,23 @@ class ProposalForm
         ];
     }
 
-    /** One leg of transport: out, drop-off, and back. An event with several places or times adds more. */
+    /**
+     * One trip: the arrangement, departure (date-time, pickup point), the places on the way in order (the last one is
+     * the drop-off point), then the estimated return (date-time, pickup point). Every time falls within the event.
+     */
     public const BLANK_TRIP = [
-        'arrangement' => '', 'departure_time' => '', 'departure_pickup' => '',
-        'dropoff_time' => '', 'dropoff_point' => '', 'return_time' => '', 'return_pickup' => '',
+        'arrangement' => '', 'departure_at' => '', 'departure_pickup' => '',
+        'stops' => [self::BLANK_STOP], 'return_at' => '', 'return_pickup' => '',
     ];
 
+    /** A place on the way: its name, when they get there, and the exact point (gate, lobby…). */
+    public const BLANK_STOP = ['name' => '', 'at' => '', 'point' => ''];
+
     /** Kinds of block a club may add after the conclusion. */
-    public const EXTRA_KINDS = ['heading', 'subheading', 'paragraph', 'bullets', 'table'];
+    public const EXTRA_KINDS = ['heading', 'subheading', 'paragraph', 'bullets', 'table', 'image'];
+
+    /** Where proposal pictures (speaker photos, pictures in the added parts) live on the public disk. */
+    public const IMAGE_PATH = '/^proposal-images\/\d+\/[A-Za-z0-9]{40}\.(jpg|png)$/';
 
     /** @return array<string, mixed> current draft, falling back to defaults for a new proposal */
     public function current(Document $document): array
@@ -78,29 +87,49 @@ class ProposalForm
     }
 
     /**
-     * Older proposals kept one trip in flat fields; they read as a single trip now.
+     * Brings any saved draft to the current shape: older trips, speakers, parts and collaboration read in the new form.
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     public static function upgrade(array $data): array
     {
+        $day = substr((string) ($data['starts_at'] ?? ''), 0, 10);
+        $at = fn (mixed $time) => filled($time) && $day !== '' ? "{$day}T{$time}" : '';
+        // Oldest form: one trip in flat fields.
         if (array_key_exists('departure_time', $data) || array_key_exists('transport_arrangement', $data)) {
-            $legacy = [
-                'arrangement' => (string) ($data['transport_arrangement'] ?? ''),
-                'departure_time' => (string) ($data['departure_time'] ?? ''), 'departure_pickup' => (string) ($data['departure_pickup'] ?? ''),
-                'dropoff_time' => '', 'dropoff_point' => '',
-                'return_time' => (string) ($data['return_time'] ?? ''), 'return_pickup' => (string) ($data['return_pickup'] ?? ''),
-            ];
             $hasTrips = collect($data['trips'] ?? [])->contains(fn ($t) => collect((array) $t)->filter(fn ($v) => filled($v))->isNotEmpty());
             if (! $hasTrips) {
-                $data['trips'] = [$legacy];
+                $data['trips'] = [[
+                    'arrangement' => (string) ($data['transport_arrangement'] ?? ''),
+                    'departure_time' => (string) ($data['departure_time'] ?? ''), 'departure_pickup' => (string) ($data['departure_pickup'] ?? ''),
+                    'return_time' => (string) ($data['return_time'] ?? ''), 'return_pickup' => (string) ($data['return_pickup'] ?? ''),
+                ]];
             }
             unset($data['transport_arrangement'], $data['departure_time'], $data['departure_pickup'], $data['return_time'], $data['return_pickup']);
         }
-        $data['trips'] = array_values((array) ($data['trips'] ?? [])) ?: [self::BLANK_TRIP];
-        $data['speakers'] = array_values((array) ($data['speakers'] ?? []));
-        $data['extra_sections'] = array_values((array) ($data['extra_sections'] ?? []));
+        // Times-only trips (one drop-off) become dated trips with the drop-off as their only stop.
+        $data['trips'] = array_map(function ($trip) use ($at): array {
+            $trip = (array) $trip;
+            if (! array_key_exists('stops', $trip)) {
+                $trip = [
+                    'arrangement' => (string) ($trip['arrangement'] ?? ''),
+                    'departure_at' => $at($trip['departure_time'] ?? ''), 'departure_pickup' => (string) ($trip['departure_pickup'] ?? ''),
+                    'stops' => [['name' => (string) ($trip['dropoff_point'] ?? ''), 'at' => $at($trip['dropoff_time'] ?? ''), 'point' => (string) ($trip['dropoff_point'] ?? '')]],
+                    'return_at' => $at($trip['return_time'] ?? ''), 'return_pickup' => (string) ($trip['return_pickup'] ?? ''),
+                ];
+            }
+            $trip['stops'] = array_values((array) ($trip['stops'] ?? [])) ?: [self::BLANK_STOP];
+
+            return [...self::BLANK_TRIP, ...$trip];
+        }, array_values((array) ($data['trips'] ?? []))) ?: [self::BLANK_TRIP];
+        $data['speakers'] = array_map(fn ($p) => ['name' => '', 'phone' => '', 'designation' => '', 'linkedin' => '', 'photo' => '', ...(array) $p], array_values((array) ($data['speakers'] ?? [])));
+        $data['extra_sections'] = array_map(fn ($b) => ['kind' => 'paragraph', 'text' => '', 'rows' => [], 'image' => '', ...(array) $b], array_values((array) ($data['extra_sections'] ?? [])));
+        // Collaboration was one line of text; it is now a list (clubs picked, or names typed).
+        $collaboration = $data['collaboration'] ?? [];
+        $data['collaboration'] = is_array($collaboration) ? array_values($collaboration) : (filled($collaboration) ? [(string) $collaboration] : []);
+        // At least two objective lines are always on the form.
+        $data['objectives'] = array_pad(array_values((array) ($data['objectives'] ?? [])), 2, '');
 
         return $data;
     }

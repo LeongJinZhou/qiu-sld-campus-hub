@@ -10,6 +10,8 @@ withDefaults(
         readonly?: boolean;
         required?: boolean;
         placeholder?: string;
+        min?: string | number;
+        max?: string | number;
     }>(),
     { type: 'text', readonly: false, required: false },
 );
@@ -29,6 +31,8 @@ const id = useId();
             :readonly="readonly"
             :required="required"
             :placeholder="placeholder"
+            :min="min"
+            :max="max"
             :aria-invalid="!!error"
             :aria-describedby="error || hint ? `${id}-msg` : undefined"
             class="h-10 rounded-control border border-line bg-surface px-3 text-sm outline-none transition focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/30 read-only:bg-surface-muted read-only:text-ink-muted aria-invalid:border-danger"

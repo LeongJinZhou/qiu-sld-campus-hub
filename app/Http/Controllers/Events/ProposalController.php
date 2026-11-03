@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Events;
 use App\Enums\ScopeType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Events\ProposalRequest;
+use App\Http\Requests\Social\StorePostRequest;
+use App\Models\Club;
 use App\Models\Document;
 use App\Models\Event;
 use App\Models\RoleAssignment;
@@ -16,6 +18,7 @@ use App\Services\Events\ProposalRules;
 use App\Services\Meetings\Meetings;
 use App\Services\Roles\CompulsoryPositionsCheck;
 use App\Services\SldRules;
+use App\Services\Uploads\ImageUpload;
 use App\Support\QueryInput;
 use Carbon\CarbonImmutable;
 use DomainException;
@@ -26,6 +29,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -62,6 +66,9 @@ class ProposalController extends Controller
             // The parts the advisor or SLD asked to fix, highlighted on the form until it is resubmitted.
             'returnSections' => in_array($document->status->value, ['returned', 'rejected'], true) ? ($returned?->sections ?? []) : [],
             'ccaLimit' => $this->rules->ccaLimit(),
+            'imageBase' => Storage::disk('public')->url(''),
+            // Partner clubs to pick from (any other partner can be typed in).
+            'clubNames' => Club::where('id', '!=', $event->club_id)->orderBy('name')->pluck('name'),
             'options' => [
                 'natures' => ProposalForm::NATURES,
                 'sdgs' => ProposalForm::SDGS,
@@ -158,6 +165,16 @@ class ProposalController extends Controller
         $this->form->saveDraft($document, $merged, $request->user()->id);
 
         return response()->json(['lastEdit' => $this->lastEdit($document)]);
+    }
+
+    /** A speaker photo or a picture for an added part: cleaned (GD re-encode) and stored; the form keeps its path. */
+    public function image(Request $request, Event $event, ImageUpload $images): JsonResponse
+    {
+        Gate::authorize('update', $event);
+        $request->validate(['image' => ['required', ...StorePostRequest::IMAGE_RULES]]);
+        $path = $images->store($request->file('image'), "proposal-images/{$event->id}");
+
+        return response()->json(['path' => $path, 'url' => Storage::disk('public')->url($path)]);
     }
 
     /** @return Collection<int, array<string, mixed>> */

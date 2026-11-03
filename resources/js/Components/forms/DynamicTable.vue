@@ -20,6 +20,10 @@ const add = (): void => {
 const remove = (index: number): void => {
     rows.value = rows.value.filter((_, i) => i !== index);
 };
+// Each keystroke replaces the row, so the change always reaches the parent (rows may be a computed copy).
+const set = (index: number, key: keyof Row & string, value: string): void => {
+    rows.value = rows.value.map((row, i) => (i === index ? { ...row, [key]: value } : row));
+};
 </script>
 
 <template>
@@ -41,7 +45,8 @@ const remove = (index: number): void => {
                         <td v-for="column in columns" :key="column.key" class="px-2 py-1.5">
                             <textarea
                                 v-if="column.type === 'textarea'"
-                                v-model="row[column.key]"
+                                :value="row[column.key]"
+                                @input="set(index, column.key, ($event.target as HTMLTextAreaElement).value)"
                                 :disabled="disabled"
                                 rows="2"
                                 :aria-label="`${column.label} ${index + 1}`"
@@ -49,7 +54,8 @@ const remove = (index: number): void => {
                             />
                             <input
                                 v-else
-                                v-model="row[column.key]"
+                                :value="row[column.key]"
+                                @input="set(index, column.key, ($event.target as HTMLInputElement).value)"
                                 :type="column.type ?? 'text'"
                                 :disabled="disabled"
                                 :aria-label="`${column.label} ${index + 1}`"

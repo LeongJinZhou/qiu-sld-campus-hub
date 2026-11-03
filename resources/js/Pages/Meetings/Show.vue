@@ -36,6 +36,8 @@ const props = defineProps<{
         title: string;
         kind: string;
         kind_label: string;
+        audience: string | null;
+        pax: number | null;
         starts_at: string;
         ends_at: string;
         venue: string | null;
@@ -106,6 +108,7 @@ const readOnly = computed(() => !props.minutes.editable);
                         <Badge tone="info">{{ meeting.kind_label }}</Badge>
                         <span class="flex items-center gap-1"><Icon name="calendar" :size="16" />{{ dateTime(meeting.starts_at) }}</span>
                         <span v-if="meeting.venue" class="flex items-center gap-1"><Icon name="pin" :size="16" />{{ meeting.venue }}</span>
+                        <span v-if="meeting.audience" class="flex items-center gap-1"><Icon name="users" :size="16" />{{ meeting.audience }}<template v-if="meeting.pax"> · {{ meeting.pax }} pax</template></span>
                     </p>
                     <a v-if="meeting.meet_link" :href="meeting.meet_link" target="_blank" rel="noopener" class="justify-self-start"
                         ><Button><Icon name="camera" :size="16" /> Join Google Meet</Button></a
