@@ -4,6 +4,7 @@ namespace App\Http\Requests\Events;
 
 use App\Services\Events\ProposalForm;
 use App\Services\Events\ProposalRules;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -41,19 +42,22 @@ class ProposalRequest extends FormRequest
             'cca_committee' => ['required', 'numeric', 'min:0', "max:{$cca}"],
             'sdgs' => ['present', 'array'],
             'sdgs.*' => ['integer', Rule::in(array_keys(ProposalForm::SDGS))],
-            'collaboration' => ['nullable', 'string', 'max:500'],
+            // Partners: clubs picked from the list, or any other organisation typed in.
+            'collaboration' => ['nullable', 'array', 'max:20'],
+            'collaboration.*' => ['string', 'max:150'],
             'source_of_fund' => [$submitting ? 'required' : 'present', 'array'],
             'source_of_fund.*' => [Rule::in(array_keys(ProposalForm::FUND_SOURCES))],
             'introduction' => [$required, 'string', 'max:5000'],
             'objectives' => ['present', 'array', $submitting ? 'min:2' : 'min:0'],
-            'objectives.*' => [$required, 'string', 'max:500'],
+            'objectives.*' => ['nullable', 'string', 'max:500'],
             'eligibility' => [$required, 'string', 'max:500'],
-            // Workshops: at least one speaker / external person, with phone and designation (LinkedIn optional).
+            // Workshops: at least one speaker / external person, with photo, phone and designation (LinkedIn optional).
             'speakers' => [$speakersNeeded ? 'required' : 'nullable', 'array', $speakersNeeded ? 'min:1' : 'min:0', 'max:20'],
             'speakers.*.name' => [$required, 'string', 'max:150'],
             'speakers.*.phone' => [$required, 'string', 'max:30'],
             'speakers.*.designation' => [$required, 'string', 'max:150'],
             'speakers.*.linkedin' => ['nullable', 'string', 'max:255'],
+            'speakers.*.photo' => [$required, 'string', 'regex:'.ProposalForm::IMAGE_PATH],
             'activities' => ['present', 'array'],
             'activities.*.name' => [$required, 'string', 'max:150'],
             'activities.*.description' => [$required, 'string', 'max:1000'],
@@ -65,15 +69,17 @@ class ProposalRequest extends FormRequest
             'ict_required' => ['boolean'],
             'ict_requirements' => ['nullable', 'required_if_accepted:ict_required', 'string', 'max:2000'],
             'transport_required' => ['boolean'],
-            // One row per trip (different places or times): out, drop-off, back.
+            // One card per trip: departure, the places on the way (the last is the drop-off), and the return.
             'trips' => ['nullable', 'array', 'max:20'],
-            'trips.*.arrangement' => ['nullable', $submitting ? 'required_if_accepted:transport_required' : 'nullable', 'string', 'max:500'],
-            'trips.*.departure_time' => ['nullable', 'date_format:H:i'],
-            'trips.*.departure_pickup' => ['nullable', 'string', 'max:255'],
-            'trips.*.dropoff_time' => ['nullable', 'date_format:H:i'],
-            'trips.*.dropoff_point' => ['nullable', 'string', 'max:255'],
-            'trips.*.return_time' => ['nullable', 'date_format:H:i'],
-            'trips.*.return_pickup' => ['nullable', 'string', 'max:255'],
+            'trips.*.arrangement' => [$required, 'string', 'max:500'],
+            'trips.*.departure_at' => [$required, 'date'],
+            'trips.*.departure_pickup' => [$required, 'string', 'max:255'],
+            'trips.*.stops' => [$submitting ? 'required' : 'nullable', 'array', $submitting ? 'min:1' : 'min:0', 'max:15'],
+            'trips.*.stops.*.name' => [$required, 'string', 'max:150'],
+            'trips.*.stops.*.at' => [$required, 'date'],
+            'trips.*.stops.*.point' => [$required, 'string', 'max:255'],
+            'trips.*.return_at' => [$required, 'date'],
+            'trips.*.return_pickup' => [$required, 'string', 'max:255'],
             'budget' => ['required', 'array'],
             'budget.revenue' => ['present', 'array'],
             'budget.expenses' => ['present', 'array'],
@@ -88,6 +94,7 @@ class ProposalRequest extends FormRequest
             'extra_sections.*.rows' => ['nullable', 'array', 'max:30'],
             'extra_sections.*.rows.*' => ['array', 'max:8'],
             'extra_sections.*.rows.*.*' => ['nullable', 'string', 'max:500'],
+            'extra_sections.*.image' => ['nullable', 'string', 'regex:'.ProposalForm::IMAGE_PATH],
             // Exceptions SLD must approve: why it is submitted late, and why the budget does not break even.
             'late_reason' => ['nullable', 'string', 'max:1000'],
             'deficit_reason' => ['nullable', 'string', 'max:1000'],
@@ -101,6 +108,9 @@ class ProposalRequest extends FormRequest
     {
         return [
             'objectives.min' => 'Write at least 2 objectives.',
+            'speakers.*.photo.required' => 'Upload a photo of this speaker.',
+            'trips.*.stops.required' => 'Add at least one destination (the last one is the drop-off point).',
+            'trips.*.stops.min' => 'Add at least one destination (the last one is the drop-off point).',
             'cca_participant.max' => 'SLD allows at most :max CCA hours per event.',
             'cca_committee.max' => 'SLD allows at most :max CCA hours per event.',
             'budget.*.*.quantity.min' => 'Quantity must be at least 1.',
@@ -140,10 +150,15 @@ class ProposalRequest extends FormRequest
             if (! $this->routeIs('proposals.submit')) {
                 return;
             }
-            // Every added part must be written (or deleted): no empty heading, paragraph, bullet list or table cell.
+            $this->tripTimes($validator);
+            // Every added part must be written (or deleted): no empty heading, paragraph, bullet list, table cell or picture.
             foreach ((array) $this->input('extra_sections', []) as $i => $block) {
                 $kind = $block['kind'] ?? '';
-                if ($kind === 'table') {
+                if ($kind === 'image') {
+                    if (blank($block['image'] ?? null)) {
+                        $validator->errors()->add("extra_sections.{$i}.image", 'Upload the picture, or delete this part.');
+                    }
+                } elseif ($kind === 'table') {
                     $cells = collect((array) ($block['rows'] ?? []))->flatten();
                     if ($cells->isEmpty() || $cells->contains(fn ($c) => trim((string) $c) === '')) {
                         $validator->errors()->add("extra_sections.{$i}.rows", 'Fill every cell of this table, or delete the table (or its empty rows and columns).');
@@ -161,6 +176,38 @@ class ProposalRequest extends FormRequest
                     number_format($totals['revenue_sen'] / 100, 2), number_format($totals['expenses_sen'] / 100, 2)));
             }
         }];
+    }
+
+    /** Every trip time falls within the event, in order: departure, each destination, then the return. */
+    private function tripTimes(Validator $validator): void
+    {
+        try {
+            $start = CarbonImmutable::parse((string) $this->input('starts_at'));
+            $end = CarbonImmutable::parse((string) $this->input('ends_at'));
+        } catch (\Throwable) {
+            return;
+        }
+        $window = $start->format('j M g:i A').' – '.$end->format('j M g:i A');
+        foreach ((array) $this->input('trips', []) as $i => $trip) {
+            $times = [["trips.{$i}.departure_at", $trip['departure_at'] ?? null]];
+            foreach ((array) ($trip['stops'] ?? []) as $s => $stop) {
+                $times[] = ["trips.{$i}.stops.{$s}.at", $stop['at'] ?? null];
+            }
+            $times[] = ["trips.{$i}.return_at", $trip['return_at'] ?? null];
+            $previous = null;
+            foreach ($times as [$field, $value]) {
+                if (blank($value) || $validator->errors()->has($field)) {
+                    continue;
+                }
+                $at = CarbonImmutable::parse((string) $value);
+                if ($at->lt($start) || $at->gt($end)) {
+                    $validator->errors()->add($field, "Must be within the event ({$window}).");
+                } elseif ($previous && $at->lt($previous)) {
+                    $validator->errors()->add($field, 'Must be after the time before it on this trip.');
+                }
+                $previous = $at;
+            }
+        }
     }
 
     /** @return array<string, mixed> */

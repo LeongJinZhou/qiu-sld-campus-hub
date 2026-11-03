@@ -75,23 +75,32 @@ export interface ProposalSpeaker {
     phone: string;
     designation: string;
     linkedin: string;
+    /** Public-disk path of the uploaded photo ('' until uploaded). */
+    photo: string;
+}
+
+/** A place on the way; the last one is the drop-off point. Times are "YYYY-MM-DDTHH:mm" within the event. */
+export interface ProposalStop {
+    name: string;
+    at: string;
+    point: string;
 }
 
 export interface ProposalTrip {
     arrangement: string;
-    departure_time: string;
+    departure_at: string;
     departure_pickup: string;
-    dropoff_time: string;
-    dropoff_point: string;
-    return_time: string;
+    stops: ProposalStop[];
+    return_at: string;
     return_pickup: string;
 }
 
-/** A part the club adds after the conclusion: heading, sub-heading, paragraph, bullets (one per line) or a table. */
+/** A part the club adds after the conclusion: heading, sub-heading, paragraph, bullets (one per line), a table or a picture (text = caption). */
 export interface ProposalBlock {
-    kind: 'heading' | 'subheading' | 'paragraph' | 'bullets' | 'table';
+    kind: 'heading' | 'subheading' | 'paragraph' | 'bullets' | 'table' | 'image';
     text: string;
     rows: string[][];
+    image: string;
 }
 
 export interface ProposalData {
@@ -109,7 +118,7 @@ export interface ProposalData {
     cca_participant: number;
     cca_committee: number;
     sdgs: number[];
-    collaboration: string;
+    collaboration: string[];
     source_of_fund: string[];
     introduction: string;
     objectives: string[];
@@ -154,6 +163,7 @@ export interface PresentedDocument {
     agm_id: number | null;
     submitted_at: string | null;
     data: ProposalData;
+    image_base: string;
     locked: { to?: string; from?: string; submitted_on?: string | null };
     totals: { revenue_sen: number; expenses_sen: number; profit_sen: number; covers_expenses: boolean } | null;
     committee: { name: string; position: string; responsibility: string | null }[];

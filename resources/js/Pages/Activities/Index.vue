@@ -58,10 +58,11 @@ const past = computed(() => props.tickets.filter((t) => t.event.past));
 // Everything a committee member or advisor runs, one tap away.
 const tools = (slug: string): { label: string; icon: IconName; href: string }[] => [
     { label: 'New event', icon: 'plus', href: `/clubs/${slug}/events/create` },
+    { label: 'All events', icon: 'calendar', href: `/clubs/${slug}/events` },
     { label: 'Finance', icon: 'file', href: `/clubs/${slug}/finance` },
     { label: 'Members', icon: 'users', href: `/clubs/${slug}/members` },
     { label: 'Participants', icon: 'ticket', href: `/clubs/${slug}/participants` },
-    { label: 'Meetings', icon: 'calendar', href: `/clubs/${slug}/meetings` },
+    { label: 'Meetings', icon: 'message', href: `/clubs/${slug}/meetings` },
     { label: 'AGM', icon: 'award', href: `/clubs/${slug}/agm` },
     { label: 'Venues', icon: 'pin', href: `/clubs/${slug}/venues` },
 ];

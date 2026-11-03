@@ -9,14 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['club_id', 'session_id', 'kind', 'title', 'starts_at', 'ends_at', 'venue', 'meet_link', 'google_event_id', 'organiser_id'])]
+#[Fillable(['club_id', 'session_id', 'kind', 'audience', 'pax', 'title', 'starts_at', 'ends_at', 'venue', 'meet_link', 'google_event_id', 'organiser_id'])]
 class Meeting extends Model
 {
     public const KINDS = ['committee' => 'Committee meeting', 'activity' => 'Weekly activity'];
 
+    /** Who a weekly activity is for; a committee meeting is always for the committee and advisors. */
+    public const AUDIENCES = ['committee' => 'Committee & advisors', 'members' => 'All members'];
+
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime'];
+        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'pax' => 'integer'];
     }
 
     /** @return BelongsTo<Club, $this> */

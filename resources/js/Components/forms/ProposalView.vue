@@ -9,6 +9,8 @@ const d = computed(() => props.document.data);
 const opts = computed(() => props.document.options);
 const ticked = (selected: (string | number)[] | undefined, map: Record<string | number, string> | undefined) =>
     (selected ?? []).map((key) => map?.[key] ?? String(key)).join(', ') || '—';
+const img = (path: string): string => props.document.image_base.replace(/\/?$/, '/') + path;
+const at = (v: string): string => (v ? v.replace('T', ' ') : '-');
 const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.value.ends_at.replace('T', ' ')}`);
 </script>
 
@@ -72,7 +74,7 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                     </tr>
                     <tr>
                         <th>Collaboration</th>
-                        <td>{{ d.collaboration || '—' }}</td>
+                        <td>{{ (d.collaboration ?? []).join(', ') || '—' }}</td>
                     </tr>
                     <tr>
                         <th>Total Budget</th>
@@ -108,6 +110,7 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                 <table class="mt-1 w-full border border-line">
                     <tbody>
                         <tr v-for="(p, i) in d.speakers" :key="i" class="border-t border-line">
+                            <td class="w-20 px-3 py-2"><img v-if="p.photo" :src="img(p.photo)" :alt="p.name" class="size-14 rounded-control object-cover" /></td>
                             <td class="px-3 py-2 font-medium">{{ p.name }}</td>
                             <td class="px-3 py-2">{{ p.designation }}</td>
                             <td class="px-3 py-2">{{ p.phone }}</td>
@@ -149,8 +152,11 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                 <ol v-if="d.transport_required" class="mt-1 grid gap-1">
                     <li v-for="(t, i) in d.trips" :key="i" class="rounded-control border border-line px-3 py-2">
                         <strong>Trip {{ i + 1 }}<template v-if="t.arrangement">: {{ t.arrangement }}</template></strong>
-                        <p>Departure {{ t.departure_time || '-' }} from {{ t.departure_pickup || '-' }} · Drop-off {{ t.dropoff_time || '-' }} at {{ t.dropoff_point || '-' }}</p>
-                        <p>Return {{ t.return_time || '-' }} from {{ t.return_pickup || '-' }}</p>
+                        <p>Departure {{ at(t.departure_at) }} from {{ t.departure_pickup || '-' }}</p>
+                        <p v-for="(s, j) in t.stops" :key="j">
+                            {{ j === t.stops.length - 1 ? 'Drop-off' : `Stop ${j + 1}` }}: {{ s.name || '-' }} · {{ at(s.at) }}<template v-if="s.point"> · {{ s.point }}</template>
+                        </p>
+                        <p>Return {{ at(t.return_at) }} from {{ t.return_pickup || '-' }}</p>
                     </li>
                 </ol>
             </div>
@@ -185,6 +191,10 @@ const when = computed(() => `${d.value.starts_at.replace('T', ' ')} – ${d.valu
                 <ul v-else-if="b.kind === 'bullets'" class="list-disc pl-5">
                     <li v-for="(line, j) in b.text.split('\n').filter((l) => l.trim())" :key="j">{{ line }}</li>
                 </ul>
+                <figure v-else-if="b.kind === 'image' && b.image" class="grid justify-items-center gap-1">
+                    <img :src="img(b.image)" :alt="b.text || 'Picture'" class="max-h-80 max-w-full rounded-control object-contain" />
+                    <figcaption v-if="b.text" class="text-xs text-ink-muted italic">{{ b.text }}</figcaption>
+                </figure>
                 <table v-else-if="b.kind === 'table'" class="w-full border border-line">
                     <tbody>
                         <tr v-for="(row, r) in b.rows" :key="r" class="border-t border-line" :class="r === 0 ? 'bg-surface-muted font-medium' : ''">
