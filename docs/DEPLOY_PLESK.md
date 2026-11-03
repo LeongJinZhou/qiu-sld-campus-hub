@@ -11,6 +11,7 @@ Plesk → **Websites & Domains → your domain → PHP**:
 - PHP **8.3 or newer**, handler *FPM served by Apache* (or nginx).
 - Extensions: `pdo_mysql`, `mbstring`, `intl`, `gd`, `zip`, `bcmath`, `fileinfo`, `openssl`, `exif`, `ctype`, `xml`.
 - `memory_limit` 256M, `upload_max_filesize` and `post_max_size` 20M, `max_execution_time` 120.
+- Additional directives: `expose_php = Off` and `display_errors = Off` (hides the PHP version and errors).
 
 ## 2. Database
 
@@ -26,7 +27,7 @@ The schema is documented in [`DATABASE.md`](DATABASE.md).
 
 ## 3. Upload the files
 
-1. Plesk → **Files**: upload the ZIP into the domain's home folder, e.g. `/httpdocs/../sld` (one level **above**
+1. Plesk → **Files**: upload the ZIP into the domain's home folder (the folder that contains `httpdocs`), into a new folder `sld` (one level **above**
    the web root) and **Extract**.
 2. **Hosting Settings → Document root** = `sld/public`. Only `public/` may be web-reachable; `storage/`, `.env`
    and the source are outside it.
