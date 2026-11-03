@@ -43,7 +43,10 @@ const recRows = computed({
     set: (rows: { text: string }[]) => (form.recommendations = rows.map((r) => r.text)),
 });
 const signing = ref(false);
-const submit = (): void => form.post(`${url}/submit`, { preserveScroll: true, onFinish: () => (signing.value = false) });
+// useForm keeps the last transform: reset it so the signature (stripped for drafts) goes with the submission.
+const submit = (): void => {
+    form.transform((d) => d).post(`${url}/submit`, { preserveScroll: true, onSuccess: () => (signing.value = false) });
+};
 </script>
 
 <template>
