@@ -82,7 +82,10 @@ const speechRows = rows('speech');
 const filledObjectives = computed(() => form.objectives.filter((o) => o.trim()).length);
 const readOnly = computed(() => !props.document.editable);
 const signing = ref(false);
-const submit = (): void => form.post(`${url}/submit`, { preserveScroll: true, onFinish: () => (signing.value = false) });
+// useForm keeps the last transform: reset it so the signature (stripped for drafts) goes with the submission.
+const submit = (): void => {
+    form.transform((d) => d).post(`${url}/submit`, { preserveScroll: true, onSuccess: () => (signing.value = false) });
+};
 const tone = (a?: string): 'success' | 'neutral' | 'info' => (a === 'present' ? 'success' : a === 'advisor' ? 'info' : 'neutral');
 </script>
 
