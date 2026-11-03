@@ -74,7 +74,7 @@ it('lets alumni sign in only with the personal email they linked', function () {
 
 it('locks the hosted demo login behind a passcode before showing or using any account', function () {
     seedCamsys();
-    config(['sld.demo_login' => true, 'sld.demo_passcode_hash' => Hash::make('right-passcode-123')]);
+    config(['sld.demo_login' => true, 'sld.demo_passcode_hash' => Hash::make('right-passcode-123'), 'sld.superadmin_emails' => ['boss@qiu.edu.my']]);
     Route::middleware('web')->group(base_path('routes/web.php'));
     $this->withoutMiddleware(ThrottleRequests::class); // other sign-in tests share the login limiter
 
