@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\Membership;
 use App\Models\RoleAssignment;
+use App\Services\Clubs\ClubRequests;
 use App\Services\Events\Tickets;
 use App\Services\Time\SessionResolver;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ use Inertia\Response;
  */
 class ActivitiesController extends Controller
 {
-    public function __invoke(Request $request, SessionResolver $sessions, Tickets $tickets): Response
+    public function __invoke(Request $request, SessionResolver $sessions, Tickets $tickets, ClubRequests $requests): Response
     {
         $user = $request->user();
         $roles = RoleAssignment::query()->acting($sessions->current())->where('user_id', $user->id)->get()->keyBy('scope_id');
@@ -42,7 +43,7 @@ class ActivitiesController extends Controller
             'tickets' => $registrations->map(fn (EventRegistration $r) => $tickets->present($r))->values(),
             'helping' => $user->helpingEvents()->with('club')->where('ends_at', '>', now()->subDay())->orderBy('starts_at')->get()
                 ->map(fn (Event $e) => $this->eventCard($e)),
-            'clubs' => $clubs->map(function (Club $club) use ($roles, $memberships, $clubEvents) {
+            'clubs' => $clubs->map(function (Club $club) use ($roles, $memberships, $clubEvents, $requests, $sessions) {
                 $role = $roles[$club->id] ?? null;
                 $membership = $memberships[$club->id] ?? null;
 
@@ -51,6 +52,9 @@ class ActivitiesController extends Controller
                     'role' => $role ? ($role->role === ScopedRole::Advisor ? 'Advisor' : $role->position) : null,
                     'manages' => $role !== null,
                     'events' => $role ? ($clubEvents[$club->id] ?? collect())->map(fn (Event $e) => $this->eventCard($e))->values() : [],
+                    // Drafts, submitted (with approval progress), approved and rejected requests of the club.
+                    'requests' => $role ? $requests->board($club, $sessions->current()) : [],
+                    'can_delete' => $role?->role === ScopedRole::ClubCommittee,
                     'membership' => $membership ? [
                         'status' => $membership->status->value,
                         'expires_on' => $membership->expires_on?->format('j M Y'),

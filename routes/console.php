@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\Agm\Elections;
+use App\Services\Clubs\ClubRequests;
 use App\Services\ClubStatusService;
 use App\Services\Membership\CashHandovers;
 use App\Services\Membership\MembershipLifecycle;
@@ -20,6 +21,9 @@ Schedule::command('reminders:send')->hourly();
 // Membership: grace, reminders, termination, alumni; stale cash handovers expire after 7 days.
 Schedule::call(fn () => app(MembershipLifecycle::class)->run(CarbonImmutable::today()))->dailyAt('00:10')->name('membership-lifecycle');
 Schedule::call(fn () => app(CashHandovers::class)->expireStale())->hourly()->name('expire-cash-handovers');
+
+// Rejected requests leave the clubs' boards after 30 days.
+Schedule::call(fn () => app(ClubRequests::class)->prune())->dailyAt('00:30')->name('prune-rejected-requests');
 
 // Club status: Active / At-risk (2+ months without activity) / Inactive (3+ months).
 Schedule::call(fn () => app(ClubStatusService::class)->run(CarbonImmutable::today()))->dailyAt('01:00')->name('club-status');

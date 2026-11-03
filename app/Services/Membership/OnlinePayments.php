@@ -3,15 +3,20 @@
 namespace App\Services\Membership;
 
 use App\Enums\PaymentStatus;
+use App\Enums\ScopedRole;
 use App\Jobs\ReadReceipt;
 use App\Models\Membership;
 use App\Models\MembershipPayment;
+use App\Models\RoleAssignment;
+use App\Notifications\DocumentNotification;
 use App\Services\Ai\ReceiptReader;
 use App\Services\AuditLogger;
 use App\Services\Finance\OrderIds;
+use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 /** Online payment: student pays via the club's link, uploads the receipt, AI reads it, auto-confirm or review. */
@@ -24,6 +29,7 @@ class OnlinePayments
         private readonly AuditLogger $audit,
         private readonly ReceiptGuard $guard,
         private readonly OrderIds $ids,
+        private readonly SessionResolver $sessions,
     ) {}
 
     public function submit(Membership $membership, UploadedFile $receipt): MembershipPayment
@@ -94,6 +100,21 @@ class OnlinePayments
         if ($decision['status'] === PaymentStatus::Rejected) {
             $this->memberships->notifyRejected($payment->fresh());
         }
+        if ($decision['status'] === PaymentStatus::PendingReview) {
+            $this->notifyReviewers($payment->fresh());
+        }
+    }
+
+    /** A receipt the system could not confirm waits for a committee check: the club's Treasurer (else the whole committee) is told. */
+    private function notifyReviewers(MembershipPayment $payment): void
+    {
+        $committee = RoleAssignment::with('user')->actingFor($payment->club_id, $this->sessions->current())->where('role', ScopedRole::ClubCommittee)->get();
+        $treasurers = $committee->where('position', 'Treasurer');
+        Notification::send(($treasurers->isNotEmpty() ? $treasurers : $committee)->pluck('user')->filter()->unique('id'), new DocumentNotification(
+            'Payment waiting for your check · '.$payment->purpose(),
+            "{$payment->user->name} paid RM ".number_format($payment->amount_sen / 100, 2).' online; the receipt needs a committee check before it counts.',
+            route('payments.review', $payment->club),
+        ));
     }
 
     /** The order ID ends with the bank reference, unless that exact ID already exists (a re-sent receipt). */

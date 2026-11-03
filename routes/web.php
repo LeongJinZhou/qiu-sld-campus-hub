@@ -173,6 +173,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
     Route::get('/documents/{document}/download/{format}', [DocumentController::class, 'download'])->name('documents.download');
+    Route::delete('/documents/{document}/rejected', [DocumentController::class, 'destroyRejected'])->name('documents.destroy-rejected');
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
     Route::get('/approvals/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
     Route::post('/approvals/{approval}', [ApprovalController::class, 'decide'])->name('approvals.decide');
@@ -269,6 +270,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
         Route::get('performance', Admin\PerformanceController::class)->name('performance');
         Route::get('tracking', Admin\TrackingController::class)->name('tracking');
+        Route::get('proposals', [Admin\ProposalExportController::class, 'index'])->name('proposals.index');
+        Route::get('proposals/export.{format}', [Admin\ProposalExportController::class, 'list'])->middleware('throttle:exports')->name('proposals.list');
+        Route::get('proposals/{document}/package.zip', [Admin\ProposalExportController::class, 'package'])->middleware('throttle:exports')->name('proposals.package');
         Route::resource('clubs', Admin\ClubController::class)->except(['show', 'destroy']);
         Route::post('clubs/{club}/committee', [Admin\ClubCommitteeController::class, 'assign'])->name('clubs.committee.assign');
         Route::post('clubs/{club}/advisors', [Admin\ClubCommitteeController::class, 'addAdvisor'])->name('clubs.advisors.store');

@@ -70,6 +70,30 @@ export interface Option {
     label: string;
 }
 
+export interface ProposalSpeaker {
+    name: string;
+    phone: string;
+    designation: string;
+    linkedin: string;
+}
+
+export interface ProposalTrip {
+    arrangement: string;
+    departure_time: string;
+    departure_pickup: string;
+    dropoff_time: string;
+    dropoff_point: string;
+    return_time: string;
+    return_pickup: string;
+}
+
+/** A part the club adds after the conclusion: heading, sub-heading, paragraph, bullets (one per line) or a table. */
+export interface ProposalBlock {
+    kind: 'heading' | 'subheading' | 'paragraph' | 'bullets' | 'table';
+    text: string;
+    rows: string[][];
+}
+
 export interface ProposalData {
     name: string;
     summary: string;
@@ -94,14 +118,12 @@ export interface ProposalData {
     itinerary: { start: string; end: string; agenda: string }[];
     ict_required?: boolean;
     ict_requirements: string;
+    speakers: ProposalSpeaker[];
     transport_required: boolean;
-    transport_arrangement: string;
-    departure_time: string;
-    departure_pickup: string;
-    return_time: string;
-    return_pickup: string;
+    trips: ProposalTrip[];
     budget: { revenue: { description: string; price_sen: number; quantity: number }[]; expenses: { description: string; price_sen: number; quantity: number }[] };
     conclusion: string;
+    extra_sections: ProposalBlock[];
     late_reason?: string;
     deficit_reason?: string;
 }

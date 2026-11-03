@@ -54,8 +54,9 @@ class MembershipController extends Controller
                 'handover_id' => $latest->handover?->id,
                 'handover_status' => $latest->handover?->status->value,
             ] : null,
+            // A committee member paying their own fee in cash hands it to another committee member.
             'committee' => $club->roleAssignments()->where('session_id', $sessions->current()->id)->where('role', ScopedRole::ClubCommittee)
-                ->with('user')->get()->map(fn ($a) => ['id' => $a->user_id, 'name' => $a->user->name, 'position' => $a->position, 'photo_url' => $a->user->photoUrl()]),
+                ->where('user_id', '!=', $request->user()->id)->with('user')->get()->map(fn ($a) => ['id' => $a->user_id, 'name' => $a->user->name, 'position' => $a->position, 'photo_url' => $a->user->photoUrl()]),
         ]);
     }
 
