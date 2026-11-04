@@ -7,8 +7,8 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
             <Head title="Sign in" />
             <Toast />
             <div className="grid min-h-dvh lg:grid-cols-2">
-                <section className="relative hidden overflow-hidden bg-ink p-12 text-white lg:flex lg:flex-col lg:justify-between">
-                    <div className="absolute -left-24 -top-24 size-96 rounded-full bg-accent/40 blur-3xl" aria-hidden="true" />
+                <section className="relative hidden overflow-hidden bg-page p-12 text-white lg:flex lg:flex-col lg:justify-between">
+                    <div className="absolute -left-24 -top-24 size-96 rounded-full bg-primary/30 blur-3xl" aria-hidden="true" />
                     <div className="absolute -bottom-32 right-0 size-[28rem] rounded-full bg-primary-strong/30 blur-3xl" aria-hidden="true" />
                     <div className="absolute bottom-24 left-24 size-64 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
                     <img src="/brand/student-activity-white.png" alt="QIU Student Activity" className="relative h-14 w-auto self-start" />
@@ -20,7 +20,7 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
                             <br />
                             <span className="text-gradient-warm">One campus hub.</span>
                         </h2>
-                        <p className="max-w-md text-white/70">Follow clubs, join events, earn CCA hours and run your club's paperwork — all with your QIU account.</p>
+                        <p className="max-w-md text-white/70">Follow clubs, join events, earn CCA hours and run your club's paperwork, all with your QIU account.</p>
                     </div>
                     <p className="relative text-sm text-white/50">Student Life Division · Quest International University</p>
                 </section>

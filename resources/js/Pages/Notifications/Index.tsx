@@ -36,7 +36,7 @@ export default function Index({ actions, items, hasMore, limit, group, groups, t
     // Live: new notifications and finished actions appear without reloading.
     usePoll(15_000, { only: ['actions', 'items', 'groups', 'total', 'hasMore'] });
     const [removing, setRemoving] = useState<Set<string>>(new Set());
-    const [settings, setSettings] = useState(false);
+    const [settings, setSettings] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('settings') === '1');
     const [mutes, setMutes] = useState<string[]>([...muted]);
     // Phone notifications (used for "you left this half-way" reminders) need the person's permission once.
     const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('Notification' in window ? Notification.permission : 'unsupported');
@@ -166,7 +166,7 @@ export default function Index({ actions, items, hasMore, limit, group, groups, t
             </div>
             <Modal open={settings} onClose={() => setSettings(false)} title="Notification settings">
                 <div className="grid gap-4">
-                    <p className="text-sm text-ink-muted">Choose which club activity you hear about. Payments, approvals and reminders always come through.</p>
+                    <p className="text-sm text-ink-muted">Choose which club activity you hear about. Each choice applies in the app and by email to your QIU address. Approvals, payments and reminders are always sent, in the app and by email.</p>
                     <div className="grid gap-2">
                         {Object.entries(mutable).map(([key, label]) => (
                             <Checkbox key={key} checked={!mutes.includes(key)} label={label} onChange={(on) => toggle(key, on)} />

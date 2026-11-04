@@ -65,7 +65,14 @@ cd /var/www/vhosts/your-domain/sld && /opt/plesk/php/8.3/bin/php artisan schedul
 It sends reminders, runs the membership grace/termination and handover jobs and the nightly student-records sync,
 and (with `QUEUE_VIA_SCHEDULER=true`) processes queued jobs. Use the PHP path of the version you selected.
 
-## 6. Google sign-in
+## 6. Email (SMTP)
+
+Every notification is also emailed. Set `MAIL_*` in `.env` to an SMTP server: the bundled Haraka server
+(`deploy/haraka/`, see [EMAIL_SMTP.md](EMAIL_SMTP.md)) or Plesk's own mail server (**Mail → Create Email Address**,
+e.g. `noreply@your-domain`, then `MAIL_HOST=localhost`, `MAIL_PORT=587`, that address and its password). The
+scheduler task in step 5 sends the queued emails.
+
+## 7. Google sign-in
 
 Google Cloud Console → **APIs & Services → Credentials → OAuth client (Web)**:
 

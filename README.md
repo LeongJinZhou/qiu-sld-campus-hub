@@ -122,6 +122,7 @@ flowchart TB
 - All-member activities appear in members' and followers' feeds and calendars, and on the club profile; followers are notified. Committee meetings stay with the committee, advisors and SLD
 - Posts can be reported from the ⋯ menu with a reason; SLD and the Super Admin are notified, as they are when a club submits its membership fee
 - Exports never split a word, date or ID across lines (Excel, Word and PDF)
+- Every notification is also emailed by SMTP (Haraka server in `deploy/haraka/`, see [docs/EMAIL_SMTP.md](docs/EMAIL_SMTP.md)) in a branded, animated template with a button straight to the action; categories switched off in settings stop by email too
 - Membership grace, termination and alumni managed by the committee or SLD: remind, give more days, end with a reason, mark alumni, undo; members are notified
 - Venue booking (La Place, semester venues, big rooms) with SLD confirmation; daily club status (Active / At risk / Inactive)
 - AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance

@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Notifications\Concerns;
+
+use Illuminate\Notifications\Messages\MailMessage;
+
+/**
+ * Every notification also goes to the person's email (through the SMTP server in MAIL_*), in one branded template:
+ * the title, the message, a button straight to the action (sign an approval, pay, open the record) and a link to
+ * all notifications. The in-app copy is saved at once; the email is queued.
+ */
+trait SendsBrandedMail
+{
+    /** @return array<string, string> the in-app notice is written immediately; only the email waits for the queue */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
+    }
+
+    protected function brandedMail(object $notifiable, string $title, string $body, string $url, ?string $category = null): MailMessage
+    {
+        $action = $this->actionLabel($url);
+
+        return (new MailMessage)
+            ->subject($title)
+            ->view(['html' => 'emails.notification', 'text' => 'emails.notification-text'], [
+                'name' => trim(strtok((string) ($notifiable->name ?? ''), ' ') ?: 'there'),
+                'title' => $title,
+                'body' => $body,
+                'url' => $url,
+                'action' => $action,
+                'kind' => $this->kindLabel($url, $category),
+                'notificationsUrl' => url('/notifications'),
+                'settingsUrl' => url('/notifications?settings=1'),
+                'mutable' => $category !== null,
+            ]);
+    }
+
+    /** The button says what the link does. */
+    private function actionLabel(string $url): string
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+
+        return match (true) {
+            str_contains($path, '/approvals/') => 'Review and sign',
+            str_contains($path, '/withdrawals/') => 'Open the fund withdrawal',
+            str_contains($path, '/pay') => 'Pay now',
+            str_contains($path, '/indemnit') => 'Sign the form',
+            str_contains($path, '/meetings/') => 'Open the meeting',
+            str_contains($path, '/events/') => 'View the event',
+            str_contains($path, '/posts/') => 'View the post',
+            str_contains($path, '/admin/') => 'Open in SLD Admin',
+            str_contains($path, '/clubs/') => 'Open the club',
+            default => 'Open Campus Hub',
+        };
+    }
+
+    private function kindLabel(string $url, ?string $category): string
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+
+        return match (true) {
+            str_contains($path, '/approvals/') => 'Approval needed',
+            $category === 'club_posts' => 'From a club you follow',
+            in_array($category, ['likes', 'comments', 'saves', 'follows'], true) => 'Club activity',
+            default => 'Campus Hub update',
+        };
+    }
+}

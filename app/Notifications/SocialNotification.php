@@ -2,13 +2,19 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\SendsBrandedMail;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/** In-app only (no email): likes, comments, saves and follows on a club the person helps run. */
-class SocialNotification extends Notification
+/**
+ * Club activity: likes, comments, saves and follows on a club the person runs, and new posts, events and activities
+ * from clubs they follow. In the app and by email; a category switched off in Notifications → Settings stops both.
+ */
+class SocialNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsBrandedMail;
 
     public function __construct(
         public readonly string $title,
@@ -22,7 +28,16 @@ class SocialNotification extends Notification
     /** @return list<string> */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        if (method_exists($notifiable, 'hasMuted') && $notifiable->hasMuted($this->category)) {
+            return [];
+        }
+
+        return ['database', 'mail'];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return $this->brandedMail($notifiable, $this->title, $this->body, $this->url, $this->category);
     }
 
     /** @return array<string, mixed> */
