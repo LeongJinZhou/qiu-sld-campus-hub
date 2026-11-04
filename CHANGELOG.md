@@ -1,7 +1,7 @@
 # Changelog
 
 Every release is cut with `scripts/release.sh X.Y.Z` from an up-to-date `main`: it runs the tests and build, creates
-the annotated tag `vX.Y.Z`, the branch `release/vX.Y.Z` and a GitHub Release, and writes a private local backup
+the annotated tag `vX.Y.Z` and the branch `release/vX.Y.Z` (`GITHUB_RELEASE=1` adds a public Release page), and writes a private local backup
 (Git bundle, working-folder snapshot, Plesk package, manifest, checksums). GitHub rulesets freeze `v*` tags and
 `release/**` branches: they cannot be moved, merged into or deleted. Work continues on `main` through pull requests.
 
