@@ -22,8 +22,10 @@ git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && { echo "$TAG already ex
 [ -e "$DEST" ] && { echo "$DEST already exists."; exit 1; }
 NOTES="$(awk -v v="## $VERSION" 'index($0, v) == 1 {on = 1; next} /^## / && on {exit} on' CHANGELOG.md)"
 [ -n "$NOTES" ] || { echo "CHANGELOG.md has no '## $VERSION' section."; exit 1; }
-[ -z "$(find database/migrations -newer database/schema/install.sql -name '*.php')" ] \
-    || { echo "A migration is newer than database/schema/install.sql: regenerate it first (docs/DATABASE.md)."; exit 1; }
+for m in database/migrations/*.php; do
+    grep -q "$(basename "$m" .php)" database/schema/install.sql \
+        || { echo "install.sql lacks migration $(basename "$m"): regenerate it first (docs/DATABASE.md)."; exit 1; }
+done
 
 php artisan test --parallel --compact
 npm run build
