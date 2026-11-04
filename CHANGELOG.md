@@ -1,8 +1,11 @@
 # Changelog
 
-Releases are tagged `vX.Y.Z` on GitHub. `v1.0.0` (commit `f3d991d`) is the frozen Version 1 baseline.
+Every release is cut with `scripts/release.sh X.Y.Z` from an up-to-date `main`: it runs the tests and build, creates
+the annotated tag `vX.Y.Z`, the branch `release/vX.Y.Z` and a GitHub Release, and writes a private local backup
+(Git bundle, working-folder snapshot, Plesk package, manifest, checksums). GitHub rulesets freeze `v*` tags and
+`release/**` branches: they cannot be moved, merged into or deleted. Work continues on `main` through pull requests.
 
-## 1.0.1 (unreleased)
+## 1.0.1 (2026-11-04)
 
 ### Security
 - **Student directory (`GET /people/lookup`) requires current authority.** Previously any role assignment ever held,
@@ -24,3 +27,7 @@ Releases are tagged `vX.Y.Z` on GitHub. `v1.0.0` (commit `f3d991d`) is the froze
   `Dockerfile` now use `upload_max_filesize=55M` and `post_max_size=60M` (plus nginx `client_max_body_size 60m`).
   No app validation rule changed.
   - Rollback: revert the commit. On Plesk, put the previous PHP limits back if wanted (PHP 8.4 itself must stay).
+
+## 1.0.0 (2026-11-04)
+
+Version 1 baseline: commit `f3d991d`, tag `v1.0.0`, branches `release/v1` and `release/v1.0.0`.
