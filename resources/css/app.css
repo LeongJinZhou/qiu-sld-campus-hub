@@ -1,3 +1,5 @@
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -15,16 +17,19 @@
 }
 
 /*
- * Design tokens, shared with the QIU Industry Day app: QIU red as the one accent, neutral zinc greys, soft
- * shadows and generous radii. Semantic colours (success, warning, danger, info) are used only for status.
+ * Design tokens, the same as the QIU Industry Day web app (github.com/SooYM/QIU-Industry-Webapp,
+ * lib/theme/tokens.css): monochrome charcoal / white / graphite with QIU red as the one brand colour, Geist type.
+ * Semantic colours (success, warning, danger, info) are used only for status.
  */
 @theme {
-    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-sans: 'Geist Variable', 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
 
     --color-primary: #d12a32;
     --color-primary-strong: #b21f27;
     --color-primary-soft: #fbe9ea;
-    --color-accent: #e0702f;
+    --color-accent: #52525b; /* graphite secondary accent */
+    --color-page: #1b1b1e; /* charcoal (sign-in screen) */
     --color-gold: #f2b544;
 
     --color-ink: #17171a;
@@ -38,11 +43,11 @@
     --color-danger: #b3352f;
     --color-info: #0d6f83;
 
-    --radius-card: 1.25rem;
-    --radius-control: 0.75rem;
+    --radius-card: 0.875rem;
+    --radius-control: 0.625rem;
 
-    --shadow-card: 0 1px 2px rgb(20 20 25 / 0.04), 0 12px 32px rgb(20 20 25 / 0.06);
-    --shadow-pop: 0 24px 60px rgb(10 10 15 / 0.18);
+    --shadow-card: 0 1px 2px rgb(20 20 25 / 0.04), 0 8px 24px rgb(20 20 25 / 0.05);
+    --shadow-pop: 0 24px 60px rgb(10 10 15 / 0.28);
 }
 
 @utility text-gradient-warm {
@@ -259,6 +264,7 @@ code {
         --color-primary: #ef5a60;
         --color-primary-strong: #f4787d;
         --color-primary-soft: #3a1c1e;
+        --color-accent: #a1a1aa;
         --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
         --shadow-pop: 0 12px 40px rgb(0 0 0 / 0.6);
     }
@@ -277,6 +283,7 @@ code {
             --color-primary: #ef5a60;
             --color-primary-strong: #f4787d;
             --color-primary-soft: #3a1c1e;
+            --color-accent: #a1a1aa;
             --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
             --shadow-pop: 0 12px 40px rgb(0 0 0 / 0.6);
         }
@@ -301,4 +308,74 @@ code {
     :root[data-theme='system'] img[src*='student-activity-black'] {
         filter: invert(1) hue-rotate(180deg);
     }
+}
+
+/*
+ * Cards, as in the Industry Day app: a QIU-red glow ring and a soft light follow the pointer (useCardGlow), and
+ * cards that are links lift slightly. Inputs get the same red focus ring.
+ */
+@layer components {
+    .rounded-card:not(dialog) {
+        --mouse-x: 50%;
+        --mouse-y: 50%;
+        position: relative;
+        isolation: isolate;
+    }
+    .rounded-card::before,
+    .rounded-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.18s;
+    }
+    .rounded-card::before {
+        padding: 1px;
+        background: radial-gradient(13rem circle at var(--mouse-x) var(--mouse-y), color-mix(in srgb, var(--color-primary) 70%, white), color-mix(in srgb, var(--color-primary) 35%, transparent) 35%, transparent 68%);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        z-index: 2;
+    }
+    .rounded-card::after {
+        background: radial-gradient(12rem circle at var(--mouse-x) var(--mouse-y), color-mix(in srgb, var(--color-primary) 6%, transparent), transparent 66%);
+        z-index: -1;
+    }
+    .rounded-card:hover::before,
+    .rounded-card:hover::after {
+        opacity: 1;
+    }
+    :is(a, button).rounded-card {
+        transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    :is(a, button).rounded-card:hover {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-line));
+        box-shadow: 0 0.8rem 2rem color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+    :where(button, a, input, select, textarea, [role='button']):focus-visible {
+        outline: 3px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+        outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .rounded-card::before,
+        .rounded-card::after {
+            display: none;
+        }
+        :is(a, button).rounded-card:hover {
+            transform: none;
+        }
+    }
+}
+
+/* Small mono uppercase label above a heading ("eyebrow"), in QIU red. */
+@utility eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-primary);
 }

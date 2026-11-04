@@ -81,12 +81,14 @@ QUEUE_CONNECTION=database
 QUEUE_VIA_SCHEDULER=true
 FILESYSTEM_DISK=local
 
+# Every notification is emailed through SMTP: the Haraka server (docs/EMAIL_SMTP.md) or Plesk's own mail server.
 MAIL_MAILER=smtp
 MAIL_HOST=
 MAIL_PORT=587
 MAIL_USERNAME=
 MAIL_PASSWORD=
-MAIL_FROM_ADDRESS=sld@qiu.edu.my
+MAIL_VERIFY_PEER=true
+MAIL_FROM_ADDRESS=noreply@qiu.edu.my
 MAIL_FROM_NAME="${APP_NAME}"
 
 # Optional

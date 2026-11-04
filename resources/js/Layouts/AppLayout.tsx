@@ -1,4 +1,5 @@
 import CommitteeFeePopup from '@/Components/payments/CommitteeFeePopup';
+import Brand from '@/Components/brand/Brand';
 import Avatar from '@/Components/ui/Avatar';
 import Celebration from '@/Components/ui/Celebration';
 import GuidedTour from '@/Components/ui/GuidedTour';
@@ -6,6 +7,7 @@ import Icon, { type IconName } from '@/Components/ui/Icon';
 import Toast from '@/Components/ui/Toast';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, type ReactNode } from 'react';
+import { useCardGlow } from '@/hooks/useCardGlow';
 import { navMatches } from '@/lib/nav';
 
 interface NavItem {
@@ -37,6 +39,7 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
     const path = page.url.split(/[?#]/)[0] ?? '';
     const isActive = (item: NavItem): boolean => navMatches(path, item.match);
 
+    useCardGlow();
     // Live badge: refresh the unread count every 20 s while the app is on screen.
     useEffect(() => {
         const timer = window.setInterval(() => {
@@ -45,75 +48,74 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
         return () => window.clearInterval(timer);
     }, []);
 
+    const topItems = items.filter((i) => !['Notifications', 'Profile'].includes(i.label));
+    const notifications = items.find((i) => i.label === 'Notifications');
+
     return (
-        <div className="min-h-dvh bg-surface-muted md:grid md:grid-cols-[4.5rem_minmax(0,1fr)] lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <div className="min-h-dvh bg-surface-muted">
             <Toast />
             <Celebration text={flash.celebrate} />
             <CommitteeFeePopup />
             <GuidedTour />
 
-            {/* Desktop / tablet sidebar */}
-            <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface px-3 py-6 md:flex">
-                <Link href="/feed" className="mb-8 flex items-center gap-3 px-2">
-                    {/* Narrow rail: square icon. Full sidebar: the wide logo. */}
-                    <img src="/icons/icon-192.png" alt="QIU Student Activity" className="size-9 rounded-lg lg:hidden" />
-                    <img src="/brand/student-activity-black.png" alt="QIU Student Activity" className="hidden h-8 w-auto shrink-0 lg:block" />
-                    <span className="hidden whitespace-nowrap text-base font-bold lg:inline">
-                        <span className="text-gradient-warm">Campus</span> <span className="text-gradient-cool">Hub</span>
-                    </span>
+            {/* Desktop / tablet top bar, as in the QIU Industry Day app: brand, sections with a red underline, actions. */}
+            <header className="sticky top-0 z-30 hidden h-[4.5rem] items-center gap-6 border-b border-line bg-surface/95 px-[clamp(1.25rem,4vw,4rem)] backdrop-blur-md md:flex lg:gap-10">
+                <Link href="/feed" aria-label="Campus Hub home">
+                    <Brand tag="SLD" />
                 </Link>
-                <nav className="grid gap-1" aria-label="Primary">
-                    {items.map((item) => (
+                <nav className="flex h-full items-center gap-5 lg:gap-7" aria-label="Primary">
+                    {topItems.map((item) => (
                         <Link
                             key={item.label}
                             href={item.href}
                             data-tour={`nav-${item.label.toLowerCase()}`}
-                            className={`group relative flex items-center gap-4 rounded-control px-3 py-2.5 text-[15px] transition hover:bg-surface-muted ${isActive(item) ? 'font-semibold text-ink' : 'text-ink/80'}`}
                             aria-current={isActive(item) ? 'page' : undefined}
+                            aria-label={item.label}
+                            className={`relative flex h-full items-center gap-2 text-[0.83rem] font-bold transition ${isActive(item) ? 'text-primary after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-t after:bg-primary' : 'text-ink-muted hover:text-ink'}`}
                         >
-                            <span className="relative">
-                                <Icon name={item.icon} strokeWidth={isActive(item) ? 2.4 : 1.8} className="transition group-hover:scale-105" />
-                                {!!item.badge && (
-                                    <span className="absolute -right-1.5 -top-1.5 grid min-w-4 place-items-center rounded-full bg-primary-strong px-1 text-[10px] font-bold text-white">
-                                        {item.badge > 9 ? '9+' : item.badge}
-                                    </span>
-                                )}
-                            </span>
-                            <span className="hidden lg:inline">{item.label}</span>
+                            <Icon name={item.icon} size={18} strokeWidth={isActive(item) ? 2.4 : 2} className="xl:hidden" />
+                            <span className="hidden xl:inline">{item.label}</span>
                         </Link>
                     ))}
                 </nav>
-                <div className="mt-auto grid gap-1">
+                <div className="ml-auto flex items-center gap-2">
+                    {notifications && (
+                        <Link
+                            href={notifications.href}
+                            data-tour="nav-notifications"
+                            aria-label="Notifications"
+                            className={`relative grid size-11 place-items-center rounded-control border transition hover:border-primary/40 hover:bg-primary-soft ${isActive(notifications) ? 'border-primary/40 bg-primary-soft text-primary' : 'border-line bg-surface'}`}
+                        >
+                            <Icon name="bell" size={18} />
+                            {!!notifications.badge && (
+                                <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-white ring-2 ring-surface">
+                                    {notifications.badge > 9 ? '9+' : notifications.badge}
+                                </span>
+                            )}
+                        </Link>
+                    )}
                     {nav?.isAdmin && (
-                        <Link href="/admin" className="flex items-center gap-4 rounded-control px-3 py-2.5 text-[15px] text-ink/80 hover:bg-surface-muted">
-                            <Icon name="shield" />
-                            <span className="hidden lg:inline">SLD Admin</span>
+                        <Link href="/admin" className="inline-flex h-11 items-center gap-1.5 rounded-control border border-line bg-surface px-3.5 text-[0.78rem] font-bold transition hover:border-primary/40 hover:bg-primary-soft">
+                            <Icon name="shield" size={16} /> <span className="hidden lg:inline">SLD Admin</span>
                         </Link>
                     )}
-                    <button type="button" className="flex items-center gap-4 rounded-control px-3 py-2.5 text-left text-[15px] text-ink/80 hover:bg-surface-muted" onClick={() => router.post('/logout')}>
-                        <Icon name="logout" />
-                        <span className="hidden lg:inline">Sign out</span>
-                    </button>
                     {user && (
-                        <Link href="/me" className="mt-2 flex items-center gap-3 rounded-control px-2 py-2 hover:bg-surface-muted">
-                            <Avatar src={user.avatar_url} name={user.name} size="sm" />
-                            <span className="hidden min-w-0 lg:grid">
-                                <span className="truncate text-sm font-semibold">{user.name}</span>
-                                <span className="truncate text-xs text-ink-muted">{user.email}</span>
-                            </span>
+                        <Link href="/me" data-tour="nav-profile" aria-label="Profile" className={`flex h-11 items-center gap-2 rounded-control border px-1.5 transition hover:border-primary/40 lg:pr-3 ${isActive({ label: 'Profile', icon: 'user', href: '/me', match: '/me' }) ? 'border-primary/40 bg-primary-soft' : 'border-line bg-surface'}`}>
+                            <Avatar src={user.avatar_url} name={user.name} size="xs" />
+                            <span className="hidden max-w-32 truncate text-[0.78rem] font-bold lg:inline">{user.name.split(' ')[0]}</span>
                         </Link>
                     )}
+                    <button type="button" aria-label="Sign out" title="Sign out" className="grid size-11 place-items-center rounded-control bg-ink text-white transition hover:bg-ink/85" onClick={() => router.post('/logout')}>
+                        <Icon name="logout" size={18} />
+                    </button>
                 </div>
-            </aside>
+            </header>
 
             <div className="min-w-0 pb-20 md:pb-0">
                 {/* Mobile top bar */}
                 <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface/90 px-4 backdrop-blur md:hidden">
-                    <Link href="/feed" className="flex items-center gap-2">
-                        <img src="/brand/student-activity-black.png" alt="QIU Student Activity" className="h-8 w-auto" />
-                        <span className="whitespace-nowrap font-bold">
-                            <span className="text-gradient-warm">Campus</span> <span className="text-gradient-cool">Hub</span>
-                        </span>
+                    <Link href="/feed" aria-label="Campus Hub home">
+                        <Brand />
                     </Link>
                     <div className="flex items-center gap-4">
                         <Link href="/assistant" aria-label="Assistant">
@@ -132,7 +134,7 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
                     </div>
                 </header>
 
-                <main className={`mx-auto w-full min-w-0 px-4 py-6 md:px-8 ${wide ? 'max-w-6xl' : 'max-w-4xl'}`}>{children}</main>
+                <main className={`mx-auto w-full min-w-0 px-4 py-6 md:px-8 md:py-8 ${wide ? 'max-w-6xl' : 'max-w-4xl'}`}>{children}</main>
             </div>
 
             {/* Mobile bottom tab bar */}
@@ -147,7 +149,7 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
                                 aria-label={item.label}
                             >
                                 {item.icon === 'user' && user ? (
-                                    <Avatar src={user.avatar_url} name={user.name} size="xs" className={isActive(item) ? 'rounded-full ring-2 ring-ink' : ''} />
+                                    <Avatar src={user.avatar_url} name={user.name} size="xs" className={isActive(item) ? 'rounded-full ring-2 ring-primary' : ''} />
                                 ) : (
                                     <Icon name={item.icon} size={26} strokeWidth={isActive(item) ? 2.4 : 1.8} />
                                 )}

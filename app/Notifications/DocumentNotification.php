@@ -2,15 +2,16 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\SendsBrandedMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-/** In-app + email notice about a document: approval needed, returned, approved or rejected. */
+/** In-app + email notice: approvals needed, returned, approved or rejected, payments, reminders and SLD requests. These cannot be switched off. */
 class DocumentNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsBrandedMail;
 
     public function __construct(
         public readonly string $title,
@@ -26,7 +27,7 @@ class DocumentNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->subject($this->title)->line($this->body)->action('Open', $this->url);
+        return $this->brandedMail($notifiable, $this->title, $this->body, $this->url);
     }
 
     /** @return array<string, string> */
