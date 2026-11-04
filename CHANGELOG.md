@@ -14,3 +14,13 @@ Releases are tagged `vX.Y.Z` on GitHub. `v1.0.0` (commit `f3d991d`) is the froze
     AGM candidates, SLD club edit.
   - Rollback: revert the commit, or `git checkout v1.0.0 -- app/Http/Controllers/PeopleLookupController.php`,
     then `php artisan optimize:clear`. Nothing else to restore.
+
+### Deployment
+- **PHP 8.4.1+ (64-bit) is required everywhere.** The bundled Symfony 8.1 packages refuse to run on PHP 8.3, but the
+  Plesk guide allowed it. `composer.json` now states `^8.4.1`. `docs/DEPLOY_PLESK.md` now sets PHP 8.4 for the
+  website handler, SSH commands and the scheduled task, lists every required extension, says `proc_open` must stay
+  enabled, warns never to run `key:generate` on updates, and adds checks after deploying for each interpreter.
+- **Upload limits match the app.** Event documents (video) may be 50 MB, but PHP allowed only 20 MB. The guide and
+  `Dockerfile` now use `upload_max_filesize=55M` and `post_max_size=60M` (plus nginx `client_max_body_size 60m`).
+  No app validation rule changed.
+  - Rollback: revert the commit. On Plesk, put the previous PHP limits back if wanted (PHP 8.4 itself must stay).

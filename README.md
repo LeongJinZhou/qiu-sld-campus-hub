@@ -12,7 +12,7 @@ web form, routes it through digital approval chains, and prints it back in the e
 [**Live demo →**](https://qiu-sld-campus-hub.onrender.com)
 
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.4.1+-777BB4?logo=php&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
@@ -154,7 +154,7 @@ flowchart TB
 
 | Layer | Choice |
 | --- | --- |
-| Backend | Laravel 13, PHP 8.3+ |
+| Backend | Laravel 13, PHP 8.4.1+ (64-bit) |
 | Frontend | React 19 (strict TypeScript) + Inertia.js, Tailwind CSS 4, Vite |
 | Database | MariaDB / MySQL (production), SQLite (local) |
 | Auth | Google OAuth (Laravel Socialite), spatie/laravel-permission |
@@ -171,7 +171,7 @@ Rewriting the backend in Python would change nothing for users and would put the
 
 ## Getting started
 
-Requirements: PHP 8.3+, Composer, Node 20+, LibreOffice (PDFs), Python 3 with python-pptx (Annual Activities Report: `python3 -m venv tools/pptx/.venv && tools/pptx/.venv/bin/pip install python-pptx`).
+Requirements: PHP 8.4.1+ (64-bit), Composer, Node 20+, LibreOffice (PDFs), Python 3 with python-pptx (Annual Activities Report: `python3 -m venv tools/pptx/.venv && tools/pptx/.venv/bin/pip install python-pptx`).
 
 ```bash
 composer install && npm install
