@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Cuts and backs up a release from the current main. Usage: scripts/release.sh 1.0.1 [backup-root]
 #   1. Checks: on main, in sync with origin, tag is new, CHANGELOG has "## X.Y.Z", tests and build pass.
-#   2. GitHub: annotated tag vX.Y.Z + branch release/vX.Y.Z (both frozen by repository rulesets) + a GitHub Release.
+#   2. GitHub: annotated tag vX.Y.Z + branch release/vX.Y.Z (both frozen by repository rulesets);
+#      GITHUB_RELEASE=1 also publishes a public GitHub Release page.
 #   3. Local backup in <backup-root>/vX.Y.Z: full Git bundle, working-folder snapshot (incl. .env and local data,
 #      so keep it private), Plesk package, release manifest, restore notes and checksums.
 # Never touches production, never regenerates APP_KEY, never deploys.
@@ -31,7 +32,7 @@ COMMIT="$(git rev-parse --short HEAD)"
 git tag -a "$TAG" -m "QIU SLD Campus Hub $TAG"
 git branch "$BRANCH" HEAD
 git push -q origin "$TAG" "$BRANCH"
-gh release create "$TAG" --title "QIU SLD Campus Hub $TAG" --notes "$NOTES" --verify-tag
+[ "${GITHUB_RELEASE:-0}" = 1 ] && gh release create "$TAG" --title "QIU SLD Campus Hub $TAG" --notes "$NOTES" --verify-tag
 
 mkdir -p "$DEST"
 git bundle create -q "$DEST/qiu-campus-hub-$TAG-full-history.bundle" --all
@@ -60,7 +61,7 @@ cat > "$DEST/README-RESTORE.txt" <<TXT
 QIU SLD CAMPUS HUB $TAG BACKUP  (commit $COMMIT)
 Keep this folder PRIVATE: the working-folder snapshot contains .env (APP_KEY, mail password).
 
-GitHub (frozen, cannot be moved or deleted): tag $TAG, branch $BRANCH, GitHub Release $TAG.
+GitHub (frozen, cannot be moved or deleted): tag $TAG, branch $BRANCH.
   git fetch --tags && git checkout -b back-to-$TAG $TAG
 Offline:
   git clone qiu-campus-hub-$TAG-full-history.bundle hub && cd hub && git checkout $TAG
