@@ -30,7 +30,9 @@ Campus Hub (Laravel) --SMTP 127.0.0.1:2525, login--> Haraka --STARTTLS + login--
 
 ## Render
 
-Add two environment variables to the web service (**Environment** tab), then redeploy:
+Render's **free** plan blocks outgoing email ports (25, 465 and 587), so neither Haraka nor Gmail can be reached from
+the free demo; it keeps `MAIL_MAILER=log` (emails are written to the log). On a paid Render instance, add two
+environment variables to the web service (**Environment** tab), set `MAIL_MAILER=failover`, then redeploy:
 
 | Key | Value |
 | --- | --- |
