@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ScopeType;
 use App\Enums\StudentStatus;
+use App\Models\Event;
 use App\Models\Student;
+use App\Services\Time\SessionResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
  * Type-ahead for committee forms: a name, QIU email or student ID gives up to 8 active students with their
- * name, email and student ID, so nobody retypes them. Only people who run something (any committee, advisor
- * or event role) and SLD may look people up.
+ * name, email and student ID, so nobody retypes them. Only current authority may look people up: SLD, the acting
+ * club committee or advisor (handover training excluded), or an event committee for an event in the current session.
  */
 class PeopleLookupController extends Controller
 {
@@ -20,7 +23,13 @@ class PeopleLookupController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_unless($user->isSldAdmin() || $user->roleAssignments()->exists(), 403);
+        $session = app(SessionResolver::class)->current();
+        $hasActiveRole = $user->isSldAdmin() || $user->roleAssignments()->acting($session)->exists()
+            || $user->roleAssignments()->where('scope_type', ScopeType::Event)
+                ->whereIn('scope_id', Event::query()->where('session_id', $session->id)->select('id'))
+                ->where(fn (Builder $q) => $q->whereNull('starts_on')->orWhereDate('starts_on', '<=', today()))
+                ->where(fn (Builder $q) => $q->whereNull('ends_on')->orWhereDate('ends_on', '>=', today()))->exists();
+        abort_unless($hasActiveRole, 403);
         $q = trim((string) $request->validate(['q' => ['required', 'string', 'min:1', 'max:100']])['q']);
         $words = array_slice(preg_split('/\s+/', $q) ?: [], 0, 4);
 
