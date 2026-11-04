@@ -1,4 +1,0 @@
-# Only authenticated senders (the app) may send; Haraka then delivers outbound.
-tls
-auth/flat_file
-dkim

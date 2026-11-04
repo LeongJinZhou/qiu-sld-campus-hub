@@ -81,14 +81,18 @@ QUEUE_CONNECTION=database
 QUEUE_VIA_SCHEDULER=true
 FILESYSTEM_DISK=local
 
-# Every notification is emailed through SMTP: the Haraka server (docs/EMAIL_SMTP.md) or Plesk's own mail server.
-MAIL_MAILER=smtp
-MAIL_HOST=
-MAIL_PORT=587
-MAIL_USERNAME=
+# Every notification is emailed. Haraka (if running, docs/EMAIL_SMTP.md) relays through Gmail; if Haraka is not
+# reachable the app sends through Gmail directly. Put the Google app password below (never commit it anywhere).
+MAIL_MAILER=failover
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_SCHEME=smtp
+MAIL_USERNAME=campushub
 MAIL_PASSWORD=
-MAIL_VERIFY_PEER=true
-MAIL_FROM_ADDRESS=noreply@qiu.edu.my
+MAIL_VERIFY_PEER=false
+GMAIL_USERNAME=qiuairesearch@gmail.com
+GMAIL_APP_PASSWORD=
+MAIL_FROM_ADDRESS=qiuairesearch@gmail.com
 MAIL_FROM_NAME="${APP_NAME}"
 
 # Optional
