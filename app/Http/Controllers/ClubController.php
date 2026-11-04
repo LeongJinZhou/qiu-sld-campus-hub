@@ -12,6 +12,7 @@ use App\Models\Document;
 use App\Models\Event;
 use App\Models\Highlight;
 use App\Models\HighlightItem;
+use App\Models\Meeting;
 use App\Models\Membership;
 use App\Models\MembershipDrive;
 use App\Models\Post;
@@ -19,6 +20,7 @@ use App\Models\SldRequest;
 use App\Models\Story;
 use App\Services\Agm\AgmPeriods;
 use App\Services\Documents\DocumentPresenter;
+use App\Services\Meetings\MeetingVisibility;
 use App\Services\Membership\MembershipService;
 use App\Services\QrCodes;
 use App\Services\Roles\CommitteeBoard;
@@ -81,6 +83,9 @@ class ClubController extends Controller
                 ->map(fn (Membership $m) => ['name' => $m->user->name, 'photo_url' => $m->user->photoUrl(), 'profile_url' => route('profile.public', $m->user->qr_token)]),
             'upcoming' => $club->events()->where('status', DocumentStatus::Approved)->where('ends_at', '>', now())->orderBy('starts_at')->limit(3)->get()
                 ->map(fn (Event $e) => ['slug' => $e->slug, 'name' => $e->name, 'starts_at' => $e->starts_at->toIso8601String(), 'venue' => $e->venue, 'poster_url' => $e->posterUrl(), 'fee_sen' => $e->fee_sen, 'registration_open' => $e->registration_open, 'members_only' => $e->members_only]),
+            // All-member activities are public on the profile; committee meetings only for the committee and SLD.
+            'meetings' => app(MeetingVisibility::class)->forProfile($club, $user)->with('club')->where('ends_at', '>=', now())->orderBy('starts_at')->limit(4)->get()
+                ->map(fn (Meeting $m) => app(MeetingVisibility::class)->card($m, $user)),
             'tab' => QueryInput::text($request, 'tab', 20, 'committee'),
             'posts' => Inertia::defer(fn () => $club->posts()->visible()->with('media', 'event')->latest('published_at')->limit(30)->get()
                 ->map(fn (Post $p) => ['id' => $p->id, 'url' => route('posts.show', $p), 'image' => $p->media->first()?->url() ?? $p->event?->posterUrl(), 'caption' => $p->caption, 'count' => $p->media->count()])),

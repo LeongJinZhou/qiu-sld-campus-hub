@@ -38,7 +38,7 @@ export default function ProfileView({ profile, extraTabs = [], coverActions, ava
 
     return (
         <article className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-            <div className="relative aspect-[3/1] max-h-56 w-full bg-gradient-to-r from-brand-yellow via-brand-orange to-brand-magenta">
+            <div className="relative aspect-[3/1] max-h-56 w-full bg-gradient-to-r from-gold via-accent to-primary-strong">
                 {profile.cover_url ? (
                     <img src={profile.cover_url} alt="" className="absolute inset-0 size-full object-cover" />
                 ) : (
@@ -120,7 +120,7 @@ export default function ProfileView({ profile, extraTabs = [], coverActions, ava
                                                 <strong className="truncate">{c.name}</strong>
                                                 <span className="text-xs text-ink-muted">{c.category}</span>
                                                 {c.current_position ? (
-                                                    <span className="text-xs font-semibold text-brand-blue">{c.current_position}</span>
+                                                    <span className="text-xs font-semibold text-primary">{c.current_position}</span>
                                                 ) : (
                                                     c.membership && <span className="text-xs font-medium text-success">{c.membership}</span>
                                                 )}
@@ -136,13 +136,13 @@ export default function ProfileView({ profile, extraTabs = [], coverActions, ava
                             <ol className="relative grid gap-5 border-l-2 border-line pl-6">
                                 {profile.positions?.map((p, i) => (
                                     <li key={i} className="relative">
-                                        <span className={`absolute -left-[33px] top-1 grid size-4 place-items-center rounded-full ring-4 ring-surface ${p.kind === 'club' ? 'bg-brand-orange' : 'bg-brand-cyan'}`} />
+                                        <span className={`absolute -left-[33px] top-1 grid size-4 place-items-center rounded-full ring-4 ring-surface ${p.kind === 'club' ? 'bg-accent' : 'bg-primary'}`} />
                                         <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
                                             {p.session} · {p.kind === 'club' ? 'Club' : 'Event committee'}
                                         </p>
                                         <p className="font-semibold">{p.position}</p>
                                         {p.url && (
-                                            <Link href={p.url} className="text-sm text-brand-blue">
+                                            <Link href={p.url} className="text-sm text-primary">
                                                 {p.organisation}
                                             </Link>
                                         )}
@@ -160,7 +160,7 @@ export default function ProfileView({ profile, extraTabs = [], coverActions, ava
                                             {e.poster_url ? (
                                                 <img src={e.poster_url} alt="" className="aspect-square w-full object-cover transition group-hover:scale-105" />
                                             ) : (
-                                                <div className="grid aspect-square place-items-center bg-gradient-to-br from-brand-cyan to-brand-blue p-3 text-center text-sm font-bold text-white">{e.name}</div>
+                                                <div className="grid aspect-square place-items-center bg-gradient-to-br from-primary to-primary p-3 text-center text-sm font-bold text-white">{e.name}</div>
                                             )}
                                             <div className="grid gap-0.5 p-2 text-xs">
                                                 <strong className="truncate text-sm">{e.name}</strong>
@@ -175,8 +175,8 @@ export default function ProfileView({ profile, extraTabs = [], coverActions, ava
                         </>
                     ) : tab === 'cca' ? (
                         <>
-                            <div className="mb-4 flex items-center gap-4 rounded-card bg-gradient-to-r from-brand-cyan/15 to-brand-magenta/15 p-4">
-                                <Icon name="award" size={36} className="text-brand-magenta" />
+                            <div className="mb-4 flex items-center gap-4 rounded-card bg-gradient-to-r from-primary/15 to-primary-strong/15 p-4">
+                                <Icon name="award" size={36} className="text-primary-strong" />
                                 <div>
                                     <p className="text-3xl font-bold tabular-nums">{profile.cca?.total ?? 0}</p>
                                     <p className="text-sm text-ink-muted">CCA hours earned (1 event hour = 1 CCA)</p>

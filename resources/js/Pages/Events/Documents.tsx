@@ -36,7 +36,7 @@ export default function Documents({ event, evidence, items }: { event: { slug: s
                             </div>
                             <div className="flex items-center gap-3">
                                 {item.file_url && (
-                                    <a href={item.file_url} className="text-xs text-brand-blue">
+                                    <a href={item.file_url} className="text-xs text-primary">
                                         {item.file_name}
                                     </a>
                                 )}
@@ -50,7 +50,7 @@ export default function Documents({ event, evidence, items }: { event: { slug: s
                     ))}
                 </ul>
                 <EvidencePhotos evidence={evidence} canEdit title="Event photos" />
-                <a href={`/events/${event.slug}/photos.zip`} className="justify-self-start text-sm font-medium text-brand-blue">
+                <a href={`/events/${event.slug}/photos.zip`} className="justify-self-start text-sm font-medium text-primary">
                     Download all photos (ZIP)
                 </a>
             </div>

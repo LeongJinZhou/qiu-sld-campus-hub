@@ -131,7 +131,7 @@ export default function LiveQrCapture({ expectToken, personName, onCapture }: Li
                         className={`relative aspect-square w-[60%] max-w-[60%] rounded-2xl shadow-[0_0_0_9999px_rgb(0_0_0/0.35)] transition-colors duration-300 sm:h-[60%] sm:w-auto ${outline}`}
                         style={{ outlineStyle: 'solid', outlineOffset: 0 }}
                     >
-                        {state === 'looking' && <span className="absolute inset-x-3 top-1/2 h-0.5 -translate-y-1/2 animate-pulse rounded bg-brand-cyan/80" />}
+                        {state === 'looking' && <span className="absolute inset-x-3 top-1/2 h-0.5 -translate-y-1/2 animate-pulse rounded bg-primary/80" />}
                     </div>
                 </div>
                 <span className={`pointer-events-none absolute inset-x-3 bottom-3 rounded-control px-3 py-2 text-center text-sm font-medium text-white backdrop-blur ${bar}`}>{messages[state]}</span>

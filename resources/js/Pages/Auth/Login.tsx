@@ -8,9 +8,9 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
             <Toast />
             <div className="grid min-h-dvh lg:grid-cols-2">
                 <section className="relative hidden overflow-hidden bg-ink p-12 text-white lg:flex lg:flex-col lg:justify-between">
-                    <div className="absolute -left-24 -top-24 size-96 rounded-full bg-brand-orange/40 blur-3xl" aria-hidden="true" />
-                    <div className="absolute -bottom-32 right-0 size-[28rem] rounded-full bg-brand-magenta/30 blur-3xl" aria-hidden="true" />
-                    <div className="absolute bottom-24 left-24 size-64 rounded-full bg-brand-cyan/25 blur-3xl" aria-hidden="true" />
+                    <div className="absolute -left-24 -top-24 size-96 rounded-full bg-accent/40 blur-3xl" aria-hidden="true" />
+                    <div className="absolute -bottom-32 right-0 size-[28rem] rounded-full bg-primary-strong/30 blur-3xl" aria-hidden="true" />
+                    <div className="absolute bottom-24 left-24 size-64 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
                     <img src="/brand/student-activity-white.png" alt="QIU Student Activity" className="relative h-14 w-auto self-start" />
                     <div className="relative grid gap-4">
                         <h2 className="text-5xl font-bold leading-tight">
@@ -26,7 +26,7 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
                 </section>
 
                 <section className="relative grid place-items-center overflow-hidden px-6 py-12">
-                    <div className="absolute -right-24 -top-24 size-72 rounded-full bg-brand-yellow/40 blur-3xl lg:hidden" aria-hidden="true" />
+                    <div className="absolute -right-24 -top-24 size-72 rounded-full bg-gold/40 blur-3xl lg:hidden" aria-hidden="true" />
                     <div className="relative grid w-full max-w-sm gap-8 text-center">
                         <img src="/brand/student-activity-black.png" alt="QIU Student Activity" className="mx-auto h-16 w-auto" />
                         <div className="grid gap-2">
@@ -50,7 +50,7 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
                             Graduated? Sign in with the personal email you linked
                         </a>
                         {devLogin && (
-                            <Link href="/dev/login-as" className="text-sm font-medium text-brand-blue">
+                            <Link href="/dev/login-as" className="text-sm font-medium text-primary">
                                 Demo login (testing only)
                             </Link>
                         )}

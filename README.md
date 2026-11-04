@@ -117,6 +117,11 @@ flowchart TB
 - Meetings with Google Meet, minutes (13) with AI drafting, weekly CCA. Committee meetings invite the committee and advisors only; weekly activities invite the committee or all members, with expected pax and location, and everyone invited is notified
 - Meeting check-in / check-out by rotating QR (like events): only the meeting's audience can check in (committee + advisors, or all members), with times kept per person
 - Meetings report for each club and for SLD (every club), with attendance rate and minutes status, exported to Excel/PDF
+- Each meeting has an Attendance tab (QR, checklist, Excel/PDF export) and a Minutes tab; the minutes go up the approval chain together with the attendance checklist, and everything downloads as one ZIP (SLD can do this for every club)
+- Committees can upload their own check-in and check-out QR images (for events and meetings) and show them full screen
+- All-member activities appear in members' and followers' feeds and calendars, and on the club profile; followers are notified. Committee meetings stay with the committee, advisors and SLD
+- Posts can be reported from the ⋯ menu with a reason; SLD and the Super Admin are notified, as they are when a club submits its membership fee
+- Exports never split a word, date or ID across lines (Excel, Word and PDF)
 - Membership grace, termination and alumni managed by the committee or SLD: remind, give more days, end with a reason, mark alumni, undo; members are notified
 - Venue booking (La Place, semester venues, big rooms) with SLD confirmation; daily club status (Active / At risk / Inactive)
 - AGM periods set by SLD, AGM scheduling with Meet link and rotating-QR attendance, AGM Report (01) with AI-drafted objectives/speech/agenda and computed attendance
@@ -132,7 +137,7 @@ flowchart TB
 - SLD Proposals & exports: every proposal as PDF or Word, the list as Excel/PDF, and one ZIP per event with all its documents and finance lines
 - My Activities: each club's requests by stage (Draft, Submitted with approval progress, Approved, Rejected); rejected requests clear after 30 days or by hand. Approvers, Treasurers (receipts to check) and the committee (proposal submitted) are notified
 - SLD submissions tracker: weekly reports missing by month, incomplete event completion packages, AGM state, overdue transfers. Finance has monthly and yearly income/expense charts for one club or all clubs
-- One calendar: approved events plus my meetings, weekly activities, weekly-report due dates and AGMs, with a whole-year view
+- One calendar: approved events plus my clubs' meetings, weekly activities, weekly-report due dates and AGMs, with a whole-year view
 - New-club registration: the proposed President applies and signs → the advisor signs → SLD approves. The club, its committee and its advisor only exist after approval
 - Role-aware assistant: answers only from records the person may open, links to them, and keeps a private history the person can delete
 - Report and long forms save drafts automatically (on the server for reports, on the device for new requests); every submission ends with one sign-and-confirm step

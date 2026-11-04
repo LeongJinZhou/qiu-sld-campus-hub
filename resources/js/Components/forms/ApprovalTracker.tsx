@@ -4,10 +4,10 @@ import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { useEffect, useState } from 'react';
 
 const tones: Record<string, string> = {
-    success: 'from-success/15 to-brand-cyan/10 text-success',
-    warning: 'from-warning/15 to-brand-yellow/10 text-warning',
-    danger: 'from-danger/15 to-brand-magenta/10 text-danger',
-    active: 'from-brand-magenta/10 to-brand-cyan/10 text-ink',
+    success: 'from-success/15 to-primary/10 text-success',
+    warning: 'from-warning/15 to-gold/10 text-warning',
+    danger: 'from-danger/15 to-primary-strong/10 text-danger',
+    active: 'from-primary-strong/10 to-primary/10 text-ink',
     neutral: 'from-surface-muted to-surface-muted text-ink-muted',
 };
 type StepState = 'done' | 'current' | 'returned' | 'rejected' | 'todo';
@@ -40,7 +40,7 @@ export default function ApprovalTracker({ progress, steps = [], compact = false 
     }, [percent]);
     const bar = cx(
         'h-full rounded-full transition-[width] duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
-        progress.status === 'approved' ? 'bg-success' : progress.status === 'returned' ? 'bg-warning' : progress.status === 'rejected' ? 'bg-danger' : 'bg-gradient-to-r from-brand-orange via-brand-magenta to-brand-cyan',
+        progress.status === 'approved' ? 'bg-success' : progress.status === 'returned' ? 'bg-warning' : progress.status === 'rejected' ? 'bg-danger' : 'bg-gradient-to-r from-accent via-primary-strong to-primary',
         progress.status === 'in_review' && 'animate-tracker-flow',
     );
 
@@ -113,7 +113,7 @@ export default function ApprovalTracker({ progress, steps = [], compact = false 
                                     className={cx(
                                         'relative z-10 grid size-8 place-items-center rounded-full text-xs font-bold',
                                         s === 'done' && 'animate-tracker-pop bg-success text-white',
-                                        s === 'current' && 'animate-tracker-pulse bg-brand-magenta text-white',
+                                        s === 'current' && 'animate-tracker-pulse bg-primary-strong text-white',
                                         s === 'returned' && 'bg-warning text-white',
                                         s === 'rejected' && 'bg-danger text-white',
                                         s === 'todo' && 'border-2 border-line bg-surface text-ink-muted',
@@ -135,9 +135,9 @@ export default function ApprovalTracker({ progress, steps = [], compact = false 
                 <ol className="grid gap-2">
                     {steps.map((step) => {
                         const s = stateOf(step);
-                        const tone = s === 'done' ? 'text-success' : step.is_current ? 'text-brand-magenta' : s === 'returned' ? 'text-warning' : s === 'rejected' ? 'text-danger' : 'text-ink-muted';
+                        const tone = s === 'done' ? 'text-success' : step.is_current ? 'text-primary-strong' : s === 'returned' ? 'text-warning' : s === 'rejected' ? 'text-danger' : 'text-ink-muted';
                         return (
-                            <li key={step.id} className={`grid gap-1 rounded-control border p-3 text-sm transition ${step.is_current ? 'border-brand-magenta/40 bg-brand-magenta/5' : 'border-line'}`}>
+                            <li key={step.id} className={`grid gap-1 rounded-control border p-3 text-sm transition ${step.is_current ? 'border-primary-strong/40 bg-primary-strong/5' : 'border-line'}`}>
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <strong>
                                         {step.step_no}. {step.role}
@@ -159,7 +159,7 @@ export default function ApprovalTracker({ progress, steps = [], compact = false 
                                 )}
                                 {step.comment && <p className="rounded-control bg-surface-muted px-3 py-2">“{step.comment}”</p>}
                                 {step.verification_code && (
-                                    <a href={`/verify/${step.verification_code}`} className="text-xs text-brand-blue">
+                                    <a href={`/verify/${step.verification_code}`} className="text-xs text-primary">
                                         Verify signature {step.verification_code}
                                     </a>
                                 )}

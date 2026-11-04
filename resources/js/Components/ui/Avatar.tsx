@@ -29,7 +29,7 @@ export default function Avatar({ src = null, name, size = 'md', ring = false, cl
                 {src && !broken ? (
                     <img src={src} alt={name} className="size-full object-cover" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
                 ) : (
-                    <span className="grid size-full place-items-center bg-gradient-to-br from-brand-orange to-brand-magenta font-semibold text-white" aria-hidden="true">
+                    <span className="grid size-full place-items-center bg-gradient-to-br from-accent to-primary-strong font-semibold text-white" aria-hidden="true">
                         {letters}
                     </span>
                 )}

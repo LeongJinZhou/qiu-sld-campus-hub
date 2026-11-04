@@ -1,5 +1,6 @@
 import CreatePost from '@/Components/feed/CreatePost';
 import PostCard from '@/Components/feed/PostCard';
+import MeetingCard, { type MeetingCardData } from '@/Components/meetings/MeetingCard';
 import StoryBar from '@/Components/feed/StoryBar';
 import Button from '@/Components/ui/Button';
 import EmptyState from '@/Components/ui/EmptyState';
@@ -19,12 +20,13 @@ interface FeedProps {
     stories: StoryGroup[];
     posts: { data: PostCardData[] };
     archive: ArchiveGroup[];
+    meetings: MeetingCardData[];
     group?: { key: string; posts: PostCardData[] };
     publishable: { slug: string; name: string }[];
     openCreate: boolean;
 }
 
-export default function Index({ stories, posts, archive, group, publishable, openCreate }: FeedProps) {
+export default function Index({ stories, posts, archive, meetings, group, publishable, openCreate }: FeedProps) {
     const [creating, setCreating] = useState(openCreate && publishable.length > 0);
     // Posts older than 7 days stay folded until opened; one group open at a time.
     const [open, setOpen] = useState<string | null>(null);
@@ -57,11 +59,26 @@ export default function Index({ stories, posts, archive, group, publishable, ope
                         className="reveal flex items-center gap-3 rounded-card border border-line bg-surface p-4 text-left text-sm text-ink-muted shadow-card transition hover:-translate-y-0.5 hover:shadow-pop"
                         onClick={() => setCreating(true)}
                     >
-                        <span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-brand-orange to-brand-magenta text-white">
+                        <span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-accent to-primary-strong text-white">
                             <Icon name="plus" size={20} />
                         </span>
                         Share a post, recap or story with your club…
                     </button>
+                )}
+                {meetings.length > 0 && (
+                    <section className="reveal grid gap-3" aria-labelledby="feed-meetings">
+                        <div className="flex items-baseline justify-between">
+                            <h2 id="feed-meetings" className="text-sm font-semibold">
+                                Coming up in your clubs
+                            </h2>
+                            <Link href="/calendar" className="text-xs font-medium text-primary">
+                                Open calendar
+                            </Link>
+                        </div>
+                        {meetings.map((m) => (
+                            <MeetingCard key={m.id} meeting={m} />
+                        ))}
+                    </section>
                 )}
                 {posts.data.length === 0 && archive.length === 0 ? (
                     <EmptyState title="No posts yet" description="Follow clubs to see their events and recaps here.">
@@ -107,7 +124,7 @@ export default function Index({ stories, posts, archive, group, publishable, ope
                                         </span>
                                     </span>
                                     {loading === g.key ? (
-                                        <span className="size-4 animate-spin rounded-full border-2 border-brand-cyan border-t-transparent" />
+                                        <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                                     ) : (
                                         <Icon name="chevron-down" size={18} className={`text-ink-muted transition-transform duration-300 ${open === g.key ? 'rotate-180' : ''}`} />
                                     )}
@@ -120,7 +137,7 @@ export default function Index({ stories, posts, archive, group, publishable, ope
                                                     {p.media[0] ? (
                                                         <img src={p.media[0]} alt="" className="size-12 shrink-0 rounded-lg object-cover" loading="lazy" />
                                                     ) : (
-                                                        <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-yellow to-brand-magenta text-white">
+                                                        <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-gold to-primary-strong text-white">
                                                             <Icon name="calendar" size={18} />
                                                         </span>
                                                     )}

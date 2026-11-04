@@ -31,7 +31,7 @@ export default function Select<T extends SelectValue>({ label, options, value, o
                 required={required}
                 disabled={disabled}
                 aria-invalid={!!error}
-                className="h-10 rounded-control border border-line bg-surface px-3 text-sm outline-none focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/30 disabled:bg-surface-muted"
+                className="h-10 rounded-control border border-line bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:bg-surface-muted"
             >
                 {(placeholder || index === -1) && (
                     <option value="" disabled>

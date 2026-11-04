@@ -46,7 +46,7 @@ export default function ClubEvents({ club, ongoing, upcoming, past, years, year 
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="text-xl font-bold">Events · {club.name}</h1>
-                        <Link href="/activities" className="text-sm text-brand-blue">
+                        <Link href="/activities" className="text-sm text-primary">
                             Back to Activities
                         </Link>
                     </div>

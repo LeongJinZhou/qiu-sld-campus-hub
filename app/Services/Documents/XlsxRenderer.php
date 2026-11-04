@@ -9,6 +9,7 @@ use App\Models\Document;
 use App\Models\Signature;
 use Closure;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
@@ -24,6 +25,9 @@ class XlsxRenderer
         ini_set('memory_limit', '512M');
         $book = IOFactory::load(resource_path("templates/original/{$template}"));
         $fill($book);
+        foreach ($book->getAllSheets() as $sheet) {
+            self::keepWordsWhole($sheet);
+        }
 
         if (! is_dir(dirname($outputPath))) {
             mkdir(dirname($outputPath), 0775, true);
@@ -32,6 +36,50 @@ class XlsxRenderer
         $book->disconnectWorksheets();
 
         return $outputPath;
+    }
+
+    /**
+     * No value is ever split mid-word in the printed copy. Text too long for its cell is shrunk to fit when it is one
+     * word (an email, ID, date or reference), or when it would otherwise be cut off by the next cell. Text with spaces in
+     * a wrapping cell still wraps, but only between words.
+     */
+    public static function keepWordsWhole(Worksheet $sheet): void
+    {
+        $default = $sheet->getDefaultColumnDimension()->getWidth();
+        $default = $default > 0 ? $default : 8.43;
+        $merged = [];
+        foreach ($sheet->getMergeCells() as $range) {
+            [$start] = explode(':', $range);
+            $merged[$start] = $range;
+        }
+        foreach ($sheet->getCellCollection()->getCoordinates() as $coordinate) {
+            $cell = $sheet->getCell($coordinate);
+            $value = $cell->getValue();
+            if (! is_string($value) || $value === '' || str_starts_with($value, '=')) {
+                continue;
+            }
+            $width = 0.0;
+            [$from, $to] = Coordinate::rangeBoundaries($merged[$coordinate] ?? "{$coordinate}:{$coordinate}");
+            for ($c = $from[0]; $c <= $to[0]; $c++) {
+                $w = $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($c))->getWidth();
+                $width += $w > 0 ? $w : $default;
+            }
+            $style = $sheet->getStyle($coordinate);
+            $size = (float) ($style->getFont()->getSize() ?: 11);
+            $need = fn (string $text): float => mb_strlen($text) * $size / 11 * 1.05 + 1;
+            $lines = preg_split('/\R/', $value) ?: [$value];
+            $longestWord = max(array_map(fn (string $w) => $need($w), preg_split('/\s+/', $value) ?: [$value]));
+            $longestLine = max(array_map($need, $lines));
+            if ($longestLine <= $width) {
+                continue;
+            }
+            $alignment = $style->getAlignment();
+            $rightCell = Coordinate::stringFromColumnIndex($to[0] + 1).$from[1];
+            $clipped = ! $alignment->getWrapText() && $sheet->cellExists($rightCell) && trim((string) $sheet->getCell($rightCell)->getValue()) !== '';
+            if (($alignment->getWrapText() && $longestWord > $width) || $clipped) {
+                $alignment->setWrapText(false)->setShrinkToFit(true);
+            }
+        }
     }
 
     /**

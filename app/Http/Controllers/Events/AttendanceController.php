@@ -17,9 +17,11 @@ use App\Services\Documents\AttendanceListExport;
 use App\Services\Documents\DocumentPresenter;
 use App\Services\Events\AttendanceQr;
 use App\Services\Events\AttendanceService;
+use App\Services\Events\CustomAttendanceQr;
 use App\Services\Events\EventRegistrations;
 use App\Services\Events\Tickets;
 use App\Services\QrCodes;
+use App\Support\DownloadName;
 use App\Support\QueryInput;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -39,7 +41,7 @@ class AttendanceController extends Controller
      * student ID) to see who has paid and clock people in and out; the screen QR rotates at the event's own pace.
      * Only organisers see the sign-off, the export, the QR timing and the helpers list.
      */
-    public function index(Request $request, Event $event, QrCodes $codes, DocumentPresenter $presenter, Tickets $tickets): Response
+    public function index(Request $request, Event $event, QrCodes $codes, DocumentPresenter $presenter, Tickets $tickets, CustomAttendanceQr $custom): Response
     {
         Gate::authorize('checkIn', $event);
         $action = $request->query('action') === 'out' ? 'out' : 'in';
@@ -66,6 +68,7 @@ class AttendanceController extends Controller
                 'seconds' => $this->qr->seconds($event),
                 'seconds_left' => $this->qr->secondsLeft($event),
             ] : null,
+            'customQr' => $manage ? $custom->urls($event) : null,
             'find' => $find,
             'results' => $find === '' ? [] : $tickets->find($event, $find)
                 ->map(fn (array $hit) => $this->person($hit['user'], $hit['registration'], $attendance->get($hit['user']->id), $tickets))->values(),
@@ -189,7 +192,7 @@ class AttendanceController extends Controller
             return to_route('events.show', $event)->with('error', $e->getMessage());
         }
 
-        return to_route('events.show', $event)->with('success', $action === 'in' ? 'Clocked in. Enjoy!' : 'Clocked out. CCA recorded.');
+        return to_route('events.show', $event)->with('success', $action === 'in' ? 'Checked in. Your attendance is recorded.' : 'Checked out. Your CCA hours are recorded.');
     }
 
     /** Committee scanned a student's personal profile QR (to register, clock in or out), or typed a student ID. */
@@ -230,11 +233,25 @@ class AttendanceController extends Controller
         }.'.');
     }
 
+    /** The committee uploads (or removes) its own check-in and check-out QR images. */
+    public function customQr(Request $request, Event $event, CustomAttendanceQr $custom): RedirectResponse
+    {
+        Gate::authorize('organises', $event);
+        $data = $request->validate([
+            'in' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'out' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'remove_in' => ['boolean'], 'remove_out' => ['boolean'],
+        ]);
+        $custom->update($event, [...$data, 'in' => $request->file('in'), 'out' => $request->file('out')]);
+
+        return back()->with('success', 'Attendance QR codes updated.');
+    }
+
     public function export(Event $event, AttendanceListExport $export): BinaryFileResponse
     {
         Gate::authorize('organises', $event);
 
-        return response()->download($export->render($event), "Attendance - {$event->name}.xlsx")->deleteFileAfterSend();
+        return response()->download($export->render($event), DownloadName::safe("Attendance - {$event->name}.xlsx"))->deleteFileAfterSend();
     }
 
     /** Accepts a full /p/{token} URL or the bare token. */

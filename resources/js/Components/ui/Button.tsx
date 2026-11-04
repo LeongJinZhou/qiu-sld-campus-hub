@@ -2,7 +2,8 @@ import { cx } from '@/lib/cx';
 import type { ButtonHTMLAttributes } from 'react';
 
 const variants = {
-    primary: 'bg-ink text-white hover:bg-ink/90',
+    primary: 'bg-primary text-white shadow-sm hover:bg-primary-strong',
+    dark: 'bg-ink text-white hover:bg-ink/90',
     secondary: 'bg-surface text-ink border border-line hover:bg-surface-muted',
     ghost: 'text-ink hover:bg-surface-muted',
     danger: 'bg-danger text-white hover:bg-danger/90',
@@ -24,7 +25,7 @@ export default function Button({ variant = 'primary', size = 'md', type = 'butto
             aria-busy={loading}
             className={cx(
                 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition active:scale-[0.97] enabled:hover:-translate-y-px',
-                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cyan',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
                 'disabled:cursor-not-allowed disabled:opacity-50',
                 variants[variant],
                 sizes[size],

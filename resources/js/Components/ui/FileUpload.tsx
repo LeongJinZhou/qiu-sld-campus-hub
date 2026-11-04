@@ -19,7 +19,7 @@ export default function FileUpload({ label, accept, multiple = false, error, fil
         <div className="grid gap-2">
             {label && <span className="text-sm font-medium">{label}</span>}
             <label
-                className={`grid cursor-pointer place-items-center rounded-card border-2 border-dashed px-4 py-8 text-center text-sm transition ${dragging ? 'border-brand-cyan bg-brand-cyan/5' : 'border-line hover:bg-surface-muted'}`}
+                className={`grid cursor-pointer place-items-center rounded-card border-2 border-dashed px-4 py-8 text-center text-sm transition ${dragging ? 'border-primary bg-primary/5' : 'border-line hover:bg-surface-muted'}`}
                 onDragOver={(e) => {
                     e.preventDefault();
                     setDragging(true);

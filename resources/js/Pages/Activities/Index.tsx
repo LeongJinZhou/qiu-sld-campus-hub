@@ -104,7 +104,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                     {!upcoming.length && (
                         <div className="rounded-card border border-dashed border-line p-5 text-center text-sm text-ink-muted">
                             No upcoming events.{' '}
-                            <Link href="/search?type=events" className="font-medium text-brand-blue">
+                            <Link href="/search?type=events" className="font-medium text-primary">
                                 Find one to join
                             </Link>
                         </div>
@@ -143,7 +143,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                             {helping.map((e) => (
                                 <li key={e.slug}>
                                     <Link href={`/events/${e.slug}/attendance`} className="flex items-center gap-3 rounded-card border border-line bg-surface p-3 shadow-card transition hover:shadow-pop">
-                                        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-cyan to-brand-blue text-white">
+                                        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary text-white">
                                             <Icon name="scan" size={20} />
                                         </span>
                                         <span className="grid min-w-0 flex-1 text-sm">
@@ -153,9 +153,9 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                                             </span>
                                         </span>
                                         {e.live && <Badge tone="danger">Live</Badge>}
-                                        <span className="text-xs font-semibold text-brand-blue">Scan →</span>
+                                        <span className="text-xs font-semibold text-primary">Scan →</span>
                                     </Link>
-                                    <Link href={`/events/${e.slug}/purchases`} className="mt-1 flex items-center gap-1.5 px-3 text-xs font-medium text-brand-blue">
+                                    <Link href={`/events/${e.slug}/purchases`} className="mt-1 flex items-center gap-1.5 px-3 text-xs font-medium text-primary">
                                         <Icon name="receipt" size={14} /> Bought something? Claim a purchase
                                     </Link>
                                 </li>
@@ -172,7 +172,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                             const items = inColumn(c, current);
                             return (
                                 <article key={c.slug} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                                    <Link href={`/clubs/${c.slug}`} className="flex items-center gap-3 bg-gradient-to-r from-brand-cyan/10 via-brand-blue/5 to-brand-magenta/10 p-4">
+                                    <Link href={`/clubs/${c.slug}`} className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-primary-strong/10 p-4">
                                         <Avatar src={c.logo_url} name={c.name} size="md" ring />
                                         <span className="min-w-0 flex-1">
                                             <span className="block truncate text-base font-semibold">{c.name}</span>

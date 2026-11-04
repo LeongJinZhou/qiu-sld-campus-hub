@@ -22,7 +22,7 @@ export default function CommitteeFeePopup() {
         <Modal open={open} onClose={() => setOpen(false)}>
             <div className="grid gap-4">
                 <div className="grid justify-items-center gap-2 text-center">
-                    <span className="grid size-14 animate-float-soft place-items-center rounded-full bg-gradient-to-br from-brand-yellow to-brand-orange text-white shadow-pop">
+                    <span className="grid size-14 animate-float-soft place-items-center rounded-full bg-gradient-to-br from-gold to-accent text-white shadow-pop">
                         <Icon name="award" size={26} />
                     </span>
                     <h2 className="text-lg font-bold">Committee members pay the club fee too</h2>

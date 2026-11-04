@@ -193,7 +193,7 @@ export default function Election({ agm, manages, election, highlight }: Election
                     )
                 ) : (
                     <>
-                        <section className="grid gap-2 rounded-card bg-gradient-to-r from-brand-yellow/25 to-brand-orange/15 p-5 text-sm sm:grid-cols-3">
+                        <section className="grid gap-2 rounded-card bg-gradient-to-r from-gold/25 to-accent/15 p-5 text-sm sm:grid-cols-3">
                             <p className="text-lg font-bold sm:col-span-3">{PHASE_LABEL[election.phase]}</p>
                             <p>
                                 Nominations: {dateTime(election.nominations[0])} → {dateTime(election.nominations[1])}
@@ -247,7 +247,7 @@ export default function Election({ agm, manages, election, highlight }: Election
                             >
                                 <ul className="grid gap-3 sm:grid-cols-2">
                                     {p.candidates.map((c) => (
-                                        <li key={c.id} className={`grid gap-2 rounded-card border p-4 transition ${p.winner_id === c.id ? 'border-success bg-success/5' : 'border-line'} ${highlight === c.id ? 'ring-4 ring-brand-magenta/30' : ''}`}>
+                                        <li key={c.id} className={`grid gap-2 rounded-card border p-4 transition ${p.winner_id === c.id ? 'border-success bg-success/5' : 'border-line'} ${highlight === c.id ? 'ring-4 ring-primary-strong/30' : ''}`}>
                                             <div className="flex items-center gap-3">
                                                 <Avatar src={c.photo_url} name={c.name} size="md" />
                                                 <div className="min-w-0 flex-1">
@@ -274,7 +274,7 @@ export default function Election({ agm, manages, election, highlight }: Election
                                                 )
                                             )}
                                             {c.qr_svg && (
-                                                <button type="button" className="justify-self-start text-xs font-medium text-brand-blue" onClick={() => setSharing(c)}>
+                                                <button type="button" className="justify-self-start text-xs font-medium text-primary" onClick={() => setSharing(c)}>
                                                     Share QR to promote
                                                 </button>
                                             )}
@@ -318,7 +318,7 @@ export default function Election({ agm, manages, election, highlight }: Election
                     )}
                     <button
                         type="button"
-                        className="justify-self-start text-xs text-brand-blue"
+                        className="justify-self-start text-xs text-primary"
                         onClick={() => {
                             setTyped(!typed);
                             pick.setData('student_number', '');

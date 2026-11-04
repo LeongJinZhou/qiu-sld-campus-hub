@@ -18,7 +18,7 @@ Plesk → **Websites & Domains → your domain → PHP**:
 Plesk → **Databases → Add Database**: name e.g. `sld_portal`, a new user with full rights on it, collation
 `utf8mb4_unicode_ci`. Then fill it in one of two ways:
 
-- **phpMyAdmin** (no SSH): open the database → **Import** → `database/schema/install.sql` from the ZIP.
+- **phpMyAdmin** (no SSH): open the **empty** database → **Import** → `database/schema/install.sql` from the ZIP. The file has no `DROP` statements, so it can never wipe an existing database; if tables already exist the import simply stops.
   It creates every table and the clean starting data (roles, lookups, Super Admin `ai@qiu.edu.my`,
   SLD Officer `yeeshiu.chong@qiu.edu.my`). No demo data.
 - **SSH / Laravel Toolkit**: skip the import and run the commands in step 4 (`migrate` and the seeder).

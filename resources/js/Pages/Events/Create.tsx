@@ -26,7 +26,7 @@ export default function Create({ club, earliest, leadDays }: { club: { slug: str
                         required
                         error={form.errors.expected_participants}
                     />
-                    <p className="rounded-control bg-brand-cyan/10 px-3 py-2 text-sm">
+                    <p className="rounded-control bg-primary/10 px-3 py-2 text-sm">
                         Submit proposals at least {leadDays} days before the event. Earliest event date if you submit today: <strong>{date(earliest)}</strong>. An earlier date is possible with a reason that SLD
                         approves.
                     </p>

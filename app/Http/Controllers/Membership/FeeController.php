@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Models\ClubFee;
 use App\Models\MembershipDrive;
+use App\Models\User;
+use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
 use App\Services\Time\SessionResolver;
 use App\Services\Uploads\ImageUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,6 +53,11 @@ class FeeController extends Controller
             'approved_at' => null,
         ]);
         $this->audit->log('fee.set', $club, ['amount_sen' => $fee->amount_sen]);
+        Notification::send(User::role(['admin', 'superadmin'])->get(), new DocumentNotification(
+            "Membership fee to approve: {$club->name}",
+            'RM '.number_format($fee->amount_sen / 100, 2)." per member for this session, set by {$request->user()->name}.",
+            route('admin.fees.index'),
+        ));
 
         return back()->with('success', 'Fee submitted to SLD for approval.');
     }
@@ -72,7 +80,7 @@ class FeeController extends Controller
         $fee->update(['approved_by' => $request->user()->id, 'approved_at' => now()]);
         $this->audit->log('fee.approved', $fee, ['amount_sen' => $fee->amount_sen]);
 
-        return back()->with('success', 'Fee approved — students can join now.');
+        return back()->with('success', 'Fee approved. Students can now join the club.');
     }
 
     public function drive(Request $request): RedirectResponse

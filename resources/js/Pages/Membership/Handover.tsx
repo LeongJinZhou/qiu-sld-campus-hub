@@ -139,7 +139,7 @@ export default function Handover({ side, handover: h, qrSvg, expectToken }: Hand
                     </Button>
                 ) : (
                     <p className="flex items-center justify-center gap-2 text-sm text-ink-muted">
-                        <span className="size-2 animate-ping rounded-full bg-brand-magenta" /> Waiting for {other.name} to tap ready…
+                        <span className="size-2 animate-ping rounded-full bg-primary-strong" /> Waiting for {other.name} to tap ready…
                     </p>
                 )}
             </>
@@ -242,7 +242,7 @@ export default function Handover({ side, handover: h, qrSvg, expectToken }: Hand
                     )}
                 </dl>
                 {h.photo_url && (
-                    <a href={h.photo_url} target="_blank" rel="noopener" className="text-center text-sm font-medium text-brand-blue">
+                    <a href={h.photo_url} target="_blank" rel="noopener" className="text-center text-sm font-medium text-primary">
                         View the payment photo
                     </a>
                 )}

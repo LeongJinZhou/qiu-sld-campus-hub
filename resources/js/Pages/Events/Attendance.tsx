@@ -1,3 +1,4 @@
+import CustomQrPanel, { type CustomQr } from '@/Components/attendance/CustomQrPanel';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
 import Avatar from '@/Components/ui/Avatar';
 import Badge, { type BadgeTone } from '@/Components/ui/Badge';
@@ -33,6 +34,7 @@ interface AttendanceProps {
     event: { slug: string; name: string; is_outdoor: boolean; attendance_open: boolean; fee_sen: number; starts_at: string; club_slug: string };
     action: 'in' | 'out';
     qr: { svg: string; seconds: number; seconds_left: number } | null;
+    customQr: CustomQr | null;
     find: string;
     results: Person[];
     people: Person[];
@@ -56,7 +58,7 @@ const PRESETS = [10, 15, 30, 60, 120, 300];
 const toggle = (on: boolean): string => `rounded-control px-2 py-2 ${on ? 'bg-surface font-semibold shadow-card' : ''}`;
 
 /** The event door desk: scan tickets or profile QRs, show the rotating QR, find anyone, helpers and the 03 list sign-off. */
-export default function Attendance({ event, action, qr, find, results, people, counts, helpers, signOff, can, limits }: AttendanceProps) {
+export default function Attendance({ event, action, qr, customQr, find, results, people, counts, helpers, signOff, can, limits }: AttendanceProps) {
     const url = `/events/${event.slug}/attendance`;
     const stats = [
         { l: 'Registered', v: counts.registered, warn: false },
@@ -176,7 +178,7 @@ export default function Attendance({ event, action, qr, find, results, people, c
                 <header className="grid gap-3">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
-                            <Link href={`/events/${event.slug}`} className="text-sm text-brand-blue">
+                            <Link href={`/events/${event.slug}`} className="text-sm text-primary">
                                 ← {event.name}
                             </Link>
                             <h1 className="text-xl font-bold">Door &amp; attendance</h1>
@@ -288,7 +290,7 @@ export default function Attendance({ event, action, qr, find, results, people, c
                         <Card
                             title="Participants scan this"
                             actions={
-                                <button type="button" className="text-sm font-medium text-brand-blue" onClick={fullscreen}>
+                                <button type="button" className="text-sm font-medium text-primary" onClick={fullscreen}>
                                     Full screen
                                 </button>
                             }
@@ -302,7 +304,7 @@ export default function Attendance({ event, action, qr, find, results, people, c
                                     <div className="size-64 rounded-card bg-white p-3 sm:size-72 [&>svg]:size-full" role="img" aria-label={`QR to clock ${action}`} dangerouslySetInnerHTML={{ __html: qr.svg }} />
                                     <div className="grid w-64 gap-1 sm:w-72">
                                         <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                                            <div className="h-full rounded-full bg-gradient-to-r from-brand-cyan to-brand-magenta transition-[width] duration-1000 ease-linear" style={{ width: `${(left / qr.seconds) * 100}%` }} />
+                                            <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-strong transition-[width] duration-1000 ease-linear" style={{ width: `${(left / qr.seconds) * 100}%` }} />
                                         </div>
                                         <p className="text-center text-xs text-ink-muted">New code in {left} s · a shared photo stops working</p>
                                     </div>
@@ -335,7 +337,7 @@ export default function Attendance({ event, action, qr, find, results, people, c
                                                 className="w-16 rounded-full border border-line px-2 py-1 text-xs"
                                                 aria-label="Seconds"
                                             />
-                                            <button type="submit" className="text-xs font-medium text-brand-blue">
+                                            <button type="submit" className="text-xs font-medium text-primary">
                                                 Set
                                             </button>
                                         </form>
@@ -345,6 +347,7 @@ export default function Attendance({ event, action, qr, find, results, people, c
                             )}
                         </Card>
                     )}
+                    {customQr && <CustomQrPanel qr={customQr} uploadUrl={`/events/${event.slug}/custom-qr`} title={event.name} />}
                 </div>
                 {find && (
                     <section className="grid gap-3">

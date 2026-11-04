@@ -74,7 +74,7 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
                             <span className="relative">
                                 <Icon name={item.icon} strokeWidth={isActive(item) ? 2.4 : 1.8} className="transition group-hover:scale-105" />
                                 {!!item.badge && (
-                                    <span className="absolute -right-1.5 -top-1.5 grid min-w-4 place-items-center rounded-full bg-brand-magenta px-1 text-[10px] font-bold text-white">
+                                    <span className="absolute -right-1.5 -top-1.5 grid min-w-4 place-items-center rounded-full bg-primary-strong px-1 text-[10px] font-bold text-white">
                                         {item.badge > 9 ? '9+' : item.badge}
                                     </span>
                                 )}
@@ -151,7 +151,7 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
                                 ) : (
                                     <Icon name={item.icon} size={26} strokeWidth={isActive(item) ? 2.4 : 1.8} />
                                 )}
-                                {!!item.badge && <span className="absolute right-2.5 top-2.5 size-2.5 rounded-full bg-brand-magenta ring-2 ring-surface" />}
+                                {!!item.badge && <span className="absolute right-2.5 top-2.5 size-2.5 rounded-full bg-primary-strong ring-2 ring-surface" />}
                             </Link>
                         </li>
                     ))}

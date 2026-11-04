@@ -5,7 +5,7 @@ export default function QrCode({ svg, label, downloadName }: { svg: string; labe
             <div className="size-48 rounded-card bg-white p-3 [&>svg]:size-full" role="img" aria-label={label ?? 'QR code'} dangerouslySetInnerHTML={{ __html: svg }} />
             {label && <figcaption className="text-sm text-ink-muted">{label}</figcaption>}
             {downloadName && (
-                <a href={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`} download={`${downloadName}.svg`} className="text-sm font-medium text-brand-blue">
+                <a href={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`} download={`${downloadName}.svg`} className="text-sm font-medium text-primary">
                     Download QR
                 </a>
             )}

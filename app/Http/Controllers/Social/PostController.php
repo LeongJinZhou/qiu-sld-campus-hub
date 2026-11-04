@@ -8,6 +8,7 @@ use App\Models\Club;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
+use App\Notifications\DocumentNotification;
 use App\Services\AuditLogger;
 use App\Services\Social\PostingRules;
 use App\Services\Social\PostPresenter;
@@ -16,6 +17,7 @@ use App\Services\Uploads\ImageUpload;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -107,8 +109,14 @@ class PostController extends Controller
             'comment_id' => ['nullable', 'integer', Rule::exists('comments', 'id')->where('post_id', $post->id)],
         ]);
         $post->reports()->create([...$data, 'user_id' => $request->user()->id]);
+        $where = $post->club ? " on a {$post->club->name} post" : '';
+        Notification::send(User::role(['admin', 'superadmin'])->get(), new DocumentNotification(
+            "Post reported{$where}",
+            "{$request->user()->name}: {$data['reason']}",
+            route('admin.moderation.index'),
+        ));
 
-        return back()->with('success', 'Thanks — SLD will review it.');
+        return back()->with('success', 'Thank you. SLD has been notified and will review it.');
     }
 
     /** One rule for every action on a post: hidden by SLD or not yet published means not found, for everyone. */

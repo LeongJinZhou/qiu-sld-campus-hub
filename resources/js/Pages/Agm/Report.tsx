@@ -94,7 +94,7 @@ export default function Report({ agm, document, data: initial, record, minObject
             <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
                 <div className="grid content-start gap-6">
                     <header className="grid gap-1">
-                        <Link href={`/clubs/${agm.club.slug}/agm`} className="text-sm text-brand-blue">
+                        <Link href={`/clubs/${agm.club.slug}/agm`} className="text-sm text-primary">
                             {agm.club.name} · AGM
                         </Link>
                         <h1 className="text-2xl font-bold">Annual General Meeting Report</h1>

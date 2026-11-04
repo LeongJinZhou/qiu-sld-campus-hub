@@ -85,7 +85,7 @@ export default function DynamicTable<Row extends Record<string, string>>({ colum
                 </table>
             </div>
             {!disabled && (
-                <button type="button" className="justify-self-start text-sm font-medium text-brand-blue" onClick={() => onChange([...rows, { ...blank }])}>
+                <button type="button" className="justify-self-start text-sm font-medium text-primary" onClick={() => onChange([...rows, { ...blank }])}>
                     ＋ {addLabel ?? 'Add row'}
                 </button>
             )}

@@ -53,11 +53,11 @@ export default function SettingsPanel() {
                 </div>
                 <div className="grid gap-1 border-t border-line pt-3">
                     <button type="button" className={row} onClick={() => replay('student')}>
-                        <Icon name="sparkles" size={18} className="text-brand-magenta" /> Show me around again
+                        <Icon name="sparkles" size={18} className="text-primary-strong" /> Show me around again
                     </button>
                     {user?.committee_club && (
                         <button type="button" className={row} onClick={() => replay('committee')}>
-                            <Icon name="users" size={18} className="text-brand-blue" /> Committee guide · {user.committee_club.name}
+                            <Icon name="users" size={18} className="text-primary" /> Committee guide · {user.committee_club.name}
                         </button>
                     )}
                     <Link href="/notifications" className={row}>

@@ -69,7 +69,7 @@ export default function PostMortem({ event, header, areas, document }: PostMorte
             <Head title={`Post mortem · ${event.name}`} />
             <div className="grid gap-6">
                 <header>
-                    <Link href={`/events/${event.slug}`} className="text-sm text-brand-blue">
+                    <Link href={`/events/${event.slug}`} className="text-sm text-primary">
                         {event.name}
                     </Link>
                     <h1 className="text-xl font-bold">Event Post Mortem</h1>

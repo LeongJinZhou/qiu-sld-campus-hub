@@ -23,7 +23,7 @@
     animation: tk-zoom 18s ease-in-out infinite alternate;
 }
 .tk-qr-frame {
-    background: linear-gradient(white, white) padding-box, conic-gradient(from var(--angle, 0deg), #fdda1a, #1cbdfd, #e01ceb, #fd8f1a, #fdda1a) border-box;
+    background: linear-gradient(white, white) padding-box, conic-gradient(from var(--angle, 0deg), #d12a32, #f2b544, #e0702f, #b21f27, #d12a32) border-box;
     border: 3px solid transparent;
     animation: tk-spin-border 4s linear infinite;
 }

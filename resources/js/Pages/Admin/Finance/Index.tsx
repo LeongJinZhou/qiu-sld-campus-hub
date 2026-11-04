@@ -82,7 +82,7 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
         <PortalLayout title="Club finance">
             <Head title="Club finance" />
             <section className="grid gap-3">
-                <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 shadow-card focus-within:border-brand-cyan focus-within:ring-2 focus-within:ring-brand-cyan/30">
+                <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 shadow-card focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30">
                     <Icon name="search" size={20} className="text-ink-muted" />
                     <input
                         value={q}
@@ -92,7 +92,7 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
                         placeholder="Find a transaction: any part of the ID, e.g. 2026-11-01 14:30 jinzhou"
                         aria-label="Find a transaction"
                     />
-                    {searching && <span className="size-4 animate-spin rounded-full border-2 border-brand-cyan border-t-transparent" aria-hidden="true" />}
+                    {searching && <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden="true" />}
                 </div>
                 <p className="text-xs text-ink-muted">
                     IDs read <span className="font-mono">CLUB_EVENT or MEMBERSHIPDRIVE / NORMALREGISTER_STUDENTID_NAME_YYYYMMDD_HHMM_TRANSACTION</span>. Type any parts in any order: club, event, student ID, name, date
@@ -113,7 +113,7 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
                                                 {parts(t.order_id).map((part, i) => (
                                                     <Fragment key={i}>
                                                         {i > 0 && <span className="text-ink-muted">_</span>}
-                                                        {part.hit ? <mark className="rounded bg-brand-cyan/20 px-0.5 text-ink">{part.text}</mark> : <span>{part.text}</span>}
+                                                        {part.hit ? <mark className="rounded bg-primary/20 px-0.5 text-ink">{part.text}</mark> : <span>{part.text}</span>}
                                                     </Fragment>
                                                 ))}
                                             </p>
@@ -134,11 +134,11 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
                                         {t.method && <Badge tone="neutral">{t.method}</Badge>}
                                         <Badge tone={tone(t.status)}>{t.status.replace('_', ' ')}</Badge>
                                         {t.receipt_url && (
-                                            <a href={t.receipt_url} target="_blank" rel="noopener" className="text-sm font-medium text-brand-blue">
+                                            <a href={t.receipt_url} target="_blank" rel="noopener" className="text-sm font-medium text-primary">
                                                 Receipt
                                             </a>
                                         )}
-                                        <Link href={`/clubs/${t.club_slug}/finance`} className="text-sm font-medium text-brand-blue">
+                                        <Link href={`/clubs/${t.club_slug}/finance`} className="text-sm font-medium text-primary">
                                             Ledger
                                         </Link>
                                     </div>

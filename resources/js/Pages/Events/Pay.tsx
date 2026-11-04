@@ -26,7 +26,7 @@ export default function Pay({ event, registration, qrCodes, payment, committee }
             <Head title={`Pay · ${event.name}`} />
             <div className="mx-auto grid max-w-xl gap-5">
                 <header className="grid gap-1">
-                    <Link href={`/events/${event.slug}`} className="text-sm text-brand-blue">
+                    <Link href={`/events/${event.slug}`} className="text-sm text-primary">
                         ← {event.name}
                     </Link>
                     <h1 className="text-xl font-bold">Event registration</h1>

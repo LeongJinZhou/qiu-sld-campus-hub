@@ -169,7 +169,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
             <div className="grid gap-6">
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <Link href={`/events/${event.slug}`} className="text-sm text-brand-blue">
+                        <Link href={`/events/${event.slug}`} className="text-sm text-primary">
                             ← {event.name}
                         </Link>
                         <h1 className="text-2xl font-bold">Purchases &amp; claims</h1>
@@ -208,7 +208,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
                                     </span>
                                 </div>
                                 <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
-                                    <div className={`h-full rounded-full transition-[width] duration-700 ease-out ${l.spent_sen > l.budget_sen ? 'bg-danger' : 'bg-gradient-to-r from-brand-cyan to-brand-blue'}`} style={{ width: barWidth(l) }} />
+                                    <div className={`h-full rounded-full transition-[width] duration-700 ease-out ${l.spent_sen > l.budget_sen ? 'bg-danger' : 'bg-gradient-to-r from-primary to-primary'}`} style={{ width: barWidth(l) }} />
                                 </div>
                             </div>
                         ))}
@@ -261,7 +261,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
                                                         </button>
                                                     </div>
                                                 ))}
-                                                <button type="button" className="justify-self-start text-sm font-medium text-brand-blue" onClick={() => setDraft(p.id, { items: [...d.items, { name: '', quantity: '1', price_rm: '0.00' }] })}>
+                                                <button type="button" className="justify-self-start text-sm font-medium text-primary" onClick={() => setDraft(p.id, { items: [...d.items, { name: '', quantity: '1', price_rm: '0.00' }] })}>
                                                     ＋ Add item
                                                 </button>
                                             </div>
@@ -311,7 +311,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
                                             </div>
                                             {p.review_note && <p className="rounded-control bg-warning/10 p-2 text-sm text-warning">{p.review_note}</p>}
                                             {p.payout_url && (
-                                                <a href={p.payout_url} target="_blank" rel="noopener" className="text-sm font-medium text-brand-blue">
+                                                <a href={p.payout_url} target="_blank" rel="noopener" className="text-sm font-medium text-primary">
                                                     {p.settle_method === 'cash' ? 'Cash photo' : 'Transfer receipt'}
                                                     {p.payout_payee && ` (to ${p.payout_payee})`}
                                                 </a>
@@ -391,7 +391,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
                                 <p className="text-sm">
                                     Transfer {rm(paying.total_sen)} to <strong>{paying.buyer.name}</strong>, then upload the transfer receipt. The name on it must be {paying.buyer.name}.
                                 </p>
-                                <label className="grid cursor-pointer justify-items-center gap-2 rounded-card border-2 border-dashed border-line p-6 text-sm text-ink-muted transition hover:border-brand-cyan">
+                                <label className="grid cursor-pointer justify-items-center gap-2 rounded-card border-2 border-dashed border-line p-6 text-sm text-ink-muted transition hover:border-primary">
                                     <Icon name="receipt" size={28} />
                                     {payForm.processing ? 'Uploading…' : 'Choose the transfer receipt'}
                                     <input type="file" accept="image/*,application/pdf" className="sr-only" onChange={onTransfer} />

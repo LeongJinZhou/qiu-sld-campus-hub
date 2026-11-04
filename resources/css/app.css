@@ -2,7 +2,7 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
-@source '../js/**/*.vue';
+@source '../js/**/*.tsx';
 
 /*
  * Grid items default to min-width: auto, so one wide child (a table, the approval steps, a row of chips) widens
@@ -14,53 +14,56 @@
     }
 }
 
-/* Design tokens: QIU Student Activity palette + neutral UI scale. */
+/*
+ * Design tokens, shared with the QIU Industry Day app: QIU red as the one accent, neutral zinc greys, soft
+ * shadows and generous radii. Semantic colours (success, warning, danger, info) are used only for status.
+ */
 @theme {
-    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
 
-    --color-brand-yellow: #fdda1a;
-    --color-brand-cyan: #1cbdfd;
-    --color-brand-magenta: #e01ceb;
-    --color-brand-orange: #fd8f1a;
-    --color-brand-coral: #ff5e62;
-    --color-brand-blue: #1f6fff;
+    --color-primary: #d12a32;
+    --color-primary-strong: #b21f27;
+    --color-primary-soft: #fbe9ea;
+    --color-accent: #e0702f;
+    --color-gold: #f2b544;
 
-    --color-ink: #1a1a1f;
-    --color-ink-muted: #6b6b76;
-    --color-line: #e4e4ea;
+    --color-ink: #17171a;
+    --color-ink-muted: #6b6b72;
+    --color-line: #e4e4e7;
     --color-surface: #ffffff;
-    --color-surface-muted: #f6f6f9;
+    --color-surface-muted: #f4f4f5;
 
-    --color-success: #16a34a;
-    --color-warning: #d97706;
-    --color-danger: #dc2626;
+    --color-success: #137b64;
+    --color-warning: #8a5a12;
+    --color-danger: #b3352f;
+    --color-info: #0d6f83;
 
-    --radius-card: 1rem;
+    --radius-card: 1.25rem;
     --radius-control: 0.75rem;
 
-    --shadow-card: 0 1px 2px rgb(16 16 24 / 0.04), 0 4px 16px rgb(16 16 24 / 0.06);
-    --shadow-pop: 0 12px 40px rgb(16 16 24 / 0.18);
+    --shadow-card: 0 1px 2px rgb(20 20 25 / 0.04), 0 12px 32px rgb(20 20 25 / 0.06);
+    --shadow-pop: 0 24px 60px rgb(10 10 15 / 0.18);
 }
 
 @utility text-gradient-warm {
-    background-image: linear-gradient(90deg, var(--color-brand-orange), var(--color-brand-coral));
+    background-image: linear-gradient(90deg, var(--color-accent), var(--color-accent));
     background-clip: text;
     color: transparent;
 }
 
 @utility text-gradient-cool {
-    background-image: linear-gradient(90deg, var(--color-brand-cyan), var(--color-brand-blue));
+    background-image: linear-gradient(90deg, var(--color-primary), var(--color-primary));
     background-clip: text;
     color: transparent;
 }
 
 @utility ring-story {
     background-image: conic-gradient(
-        var(--color-brand-yellow),
-        var(--color-brand-orange),
-        var(--color-brand-magenta),
-        var(--color-brand-cyan),
-        var(--color-brand-yellow)
+        var(--color-gold),
+        var(--color-accent),
+        var(--color-primary-strong),
+        var(--color-primary),
+        var(--color-gold)
     );
 }
 
@@ -244,30 +247,36 @@ code {
 @layer base {
     :root[data-theme='dark'] {
         color-scheme: dark;
-        --color-ink: #ececf1;
-        --color-ink-muted: #a3a3b0;
-        --color-line: #2e2e38;
-        --color-surface: #18181d;
-        --color-surface-muted: #0f0f13;
-        --color-success: #22c55e;
-        --color-warning: #f59e0b;
-        --color-danger: #f87171;
-        --color-brand-blue: #4c8dff;
+        --color-ink: #f4f4f5;
+        --color-ink-muted: #a1a1aa;
+        --color-line: #2a2a30;
+        --color-surface: #18181b;
+        --color-surface-muted: #111114;
+        --color-success: #5fd0af;
+        --color-warning: #e6b968;
+        --color-danger: #f28b86;
+        --color-info: #6fd0e0;
+        --color-primary: #ef5a60;
+        --color-primary-strong: #f4787d;
+        --color-primary-soft: #3a1c1e;
         --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
         --shadow-pop: 0 12px 40px rgb(0 0 0 / 0.6);
     }
     @media (prefers-color-scheme: dark) {
         :root[data-theme='system'] {
             color-scheme: dark;
-            --color-ink: #ececf1;
-            --color-ink-muted: #a3a3b0;
-            --color-line: #2e2e38;
-            --color-surface: #18181d;
-            --color-surface-muted: #0f0f13;
-            --color-success: #22c55e;
-            --color-warning: #f59e0b;
-            --color-danger: #f87171;
-            --color-brand-blue: #4c8dff;
+            --color-ink: #f4f4f5;
+            --color-ink-muted: #a1a1aa;
+            --color-line: #2a2a30;
+            --color-surface: #18181b;
+            --color-surface-muted: #111114;
+            --color-success: #5fd0af;
+            --color-warning: #e6b968;
+            --color-danger: #f28b86;
+            --color-info: #6fd0e0;
+            --color-primary: #ef5a60;
+            --color-primary-strong: #f4787d;
+            --color-primary-soft: #3a1c1e;
             --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
             --shadow-pop: 0 12px 40px rgb(0 0 0 / 0.6);
         }

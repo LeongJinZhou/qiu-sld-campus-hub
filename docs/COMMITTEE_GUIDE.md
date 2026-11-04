@@ -1,4 +1,4 @@
-# Campus Hub — Committee Guide
+# Campus Hub: Committee Guide
 
 For club Presidents, Vice Presidents, Secretaries, Treasurers, committee members and advisors.
 
@@ -6,7 +6,7 @@ You never type what the university already knows. Your name, student ID, program
 
 ## Your club page
 
-Open **Activities** (ticket icon in the bottom bar) for your event tickets, the clubs you run with their tools and current events (tap **Door** for an event's check-in desk), events you help at, and the clubs you've joined. **Search** finds clubs, events and people. **Every committee member** can use all club management and finance; whatever you prepare and sign carries **your own name and position**. Requests from SLD appear at the top of the club page — reply there within 7 working days.
+Open **Activities** (ticket icon in the bottom bar) for your event tickets, the clubs you run with their tools and current events (tap **Door** for an event's check-in desk), events you help at, and the clubs you've joined. **Search** finds clubs, events and people. **Every committee member** can use all club management and finance; whatever you prepare and sign carries **your own name and position**. Requests from SLD appear at the top of the club page. Reply there within 7 working days.
 
 The club page shows the advisor, the four executive offices, the rest of the committee, upcoming events and a wall of members (students who hide their clubs on their profile are left out).
 
@@ -22,34 +22,43 @@ The club page shows the advisor, the four executive offices, the rest of the com
    - **Paid event?** In **Event payment** on the event page set the fee, the account name and payment link (a QR of the link is generated for you), and optionally upload up to **2** of your own payment QR codes. Students who register get a reserved place and pay online (receipt checked like membership) or in cash with the QR handover. Their place is confirmed once paid; unpaid participants cannot clock in.
 4. **Poster.** Tick every item on the checklist (logos, title, date, time, venue, registration, CCA, contact) and upload it. Use real QIU photos only.
 5. **Outdoor / off-campus?** Everyone attending must sign the indemnity form; signing closes 3 days before the event. People who haven't signed get a reminder, and cannot clock in.
-6. **On the day — Door & attendance.** Everyone confirmed gets a **ticket** with a QR and their ticket/transaction ID (in Activities). At the door choose **Scan people**, **Show QR** or **Both**, and **Clock in** or **Clock out**:
+6. **On the day: door and attendance.** Everyone confirmed gets a **ticket** with a QR and their ticket/transaction ID (in Activities). At the door choose **Scan people**, **Show QR** or **Both**, and **Clock in** or **Clock out**:
    - *Scan people:* scan a ticket or personal QR (or type a name, ticket ID or student ID). The card shows **Paid / NOT PAID**, check-in times and buttons to clock in or out. Set the scan to *Check only* to just verify.
    - *Show QR:* participants scan the screen. Pick how often it changes (10 s – 10 min); a photo of an old code stops working.
-   - **People** lists everyone with filters (paid, not paid, in, not in) — use it after the event to chase who hasn't paid.
+   - **People** lists everyone with filters (paid, not paid, in, not in). Use it after the event to follow up anyone who has not paid.
    - **Student helpers:** add students by student ID; they can scan and clock people in/out for that event only.
+   - **Your own QR codes (optional):** under **Your own QR codes**, upload a check-in image and a check-out image (for example, a Google Form QR). Tap either one to show it full screen for participants to scan.
 7. **Afterwards.** Within **1 week**: finance record and receipts. Within **2 weeks**: post mortem, attendance list, survey, reel. The post mortem header (participants, committee) fills itself; AI can suggest improvements. Reminders are automatic.
 
 ## Money (Treasurer)
 
-- **Fee.** Set the membership fee, account name, payment link and up to 2 payment QR codes in **Membership fee & payment** on the Finance page; SLD approves it.
+- **Fee.** Set the membership fee, account name, payment link and up to 2 payment QR codes in the **Membership fee** tab of the Finance page. SLD is notified and approves it.
 - **Order IDs.** Every payment and ledger line gets a traceable ID such as `GPS-CLUB_BEACH-CLEANUP_0001` or `GPS-CLUB_MEMBERSHIP_0001`. Search the ledger by it; it is printed on receipts and exports.
 - **Online payments.** Students upload a receipt. AI reads the amount, date, reference and payee and confirms it automatically when everything matches. Anything unclear lands in **Payment review** with the AI reading beside the image.
 - **Cash.** The student picks you and you accept. Meet, both tap **Ready**, and the student's phone shows their **personal QR** (the same as on their profile). Point your camera at it with the cash in the same picture: it **captures by itself** once it sees that student's QR (someone else's QR is refused). The photo is checked for cash (by AI when enabled, otherwise you confirm), you can **Retake**, then both tap **Transaction done**. Membership starts at once; the club's finance records it as *Membership · Cash · received by you*, with the photo attached.
 - **Finance sorts itself.** Every transaction is filed automatically: membership fees under *Membership* (with the method and who received the cash), approved fund withdrawals under their *event*, and anything you add under the event you pick. Nobody needs to re-sort the ledger.
-- **Finance page = the year's report.** Pick the session to see brought forward, income, expenses and closing balance, a breakdown *by type* and *by event*, and every transaction with its evidence (receipt, online payment receipt, cash photo or 07 form). Filter by type, event, payment method, dates or text, sort it, and export the official 02 Finance Record exactly as filtered — this is the AGM Financial Report.
+- **The Finance page is the year's report.** The top shows the club's total money (fund held by QIU and advances not yet spent) and the session's income and expenses. The tabs hold the overview, every transaction, adding a transaction, the membership fee, fund withdrawals and payees. Pick the session to see brought forward, income, expenses and closing balance, a breakdown *by type* and *by event*, and every transaction with its evidence (receipt, online payment receipt, cash photo or 07 form). Filter by type, event, payment method, dates or text, sort it, and export the official 02 Finance Record exactly as filtered. This is the AGM Financial Report.
 - **Who paid.** From **By event** tap **Who paid →** for any event (or **Who paid · money tally** on the event page): everyone registered, paid or still pending, method, who received the cash, and a check that payments, the ledger and *paid places × fee* agree. **Membership fees →** gives the same for membership, split by membership drive. Both export to Excel and PDF.
 - **Ledger rules.** SLD enters the opening balance first. Every expense needs the original receipt (not a bank screenshot); a receipt can also be attached to a transaction afterwards.
 - **Fund withdrawal (07).** Items come from the approved budget. For events, request right after approval; for weekly activities, at least 2 weeks ahead. Chain: preparer (any committee member) → President → Advisor → Assistant Registrar → Bursar → COO.
 
 ## Meetings and minutes (Secretary)
 
-Create a meeting (in person, or online with a Google Meet link from your own QIU calendar — connect it once). After the meeting, jot notes; AI can turn them into the 13 Minutes, which you then edit, sign and submit (President → Advisor → SLD). For a weekly activity, take attendance too — CCA is awarded when the minutes are approved.
+1. **Create the meeting** under **Meetings**: a *committee meeting* (committee and advisors only) or a *weekly activity* for the committee or for all members. Hold it in person, or online with a Google Meet link from your own QIU calendar (connect it once).
+2. **Who sees it.** Everyone invited is notified. All-member activities also appear in members' and followers' feeds and calendars, and on the club page. Committee meetings are visible only to the committee, advisors and SLD.
+3. **Attendance tab.** From 30 minutes before the start, the rotating **check-in** and **check-out** QR codes appear. Only the people the meeting is for can check in. You can also tick people present by hand, upload your own QR images, and download the **attendance checklist** in Excel or PDF.
+4. **Minutes tab.** Write notes; AI can turn them into the 13 Minutes, which you then edit, sign and submit. The minutes go to the President, then the Advisor, then SLD, together with the attendance checklist.
+5. **Downloads.** **Download all (ZIP)** gives the minutes (Word and PDF) and the attendance checklist (Excel and PDF) in one file. **Meetings → Report** lists every meeting of the session with attendance rates.
+
+For a weekly activity, attendance is required before submitting. CCA hours are awarded to everyone present once the minutes are approved.
 
 ## Members
 
 **Event participants** (club page or Activities) lists everyone who registered for or attended your events in a session, marked *Member* or *Not a member*, with how many events each attended, when, and their CCA hours. Tap a person for their event-by-event history. Use *Not members* to find regulars worth inviting to join. Exports to Excel and PDF.
 
 **Members** has search, filters, multi-level sort, saved views and Excel/PDF export (including the 10 Full Member List). Memberships last 365 days, then 7 days of grace with reminders. There is no refund and no leave button.
+
+**Grace, termination and alumni.** The Treasurer, President, advisor or SLD can open a member's row and choose: send a renewal reminder, extend the grace period, end the membership, mark the member as alumni (graduated: stays in the club with no fee or reminders), or restore an ended membership. The member is notified each time.
 
 ## Venues
 
@@ -65,6 +74,10 @@ When SLD opens the AGM period, your club page shows a countdown.
 4. **AGM Report (01).** AI drafts objectives, the opening speech and the agenda from your session; you need at least 2 objectives. Attendance, the current committee, the election and appointments fill themselves. Secretary signs → President → Advisor → SLD.
 5. **Annual Activities Report (12).** AI writes each event's details (edit them), pick a theme, generate PPTX and PDF. Photos come from each event's gallery album.
 6. **Submit the package**: AGM Report, Financial Report, Full Member List and Annual Activities Report together.
+
+## Reporting a post
+
+Any post can be reported from its **⋯** menu. Choose what is wrong and add details if you like. Reports are private and go straight to SLD.
 
 ## Your profile
 

@@ -14,6 +14,7 @@ use App\Services\Documents\PdfConverter;
 use App\Services\Membership\CommitteeFees;
 use App\Services\Membership\MembersQuery;
 use App\Services\Time\SessionResolver;
+use App\Support\DownloadName;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -59,7 +60,7 @@ class MembersController extends Controller
             $file = $converted;
         }
 
-        return response()->download($file, "{$club->name} - Full Member List.{$format}")->deleteFileAfterSend();
+        return response()->download($file, DownloadName::safe("{$club->name} - Full Member List.{$format}"))->deleteFileAfterSend();
     }
 
     /** Reminds members whose payment is still outstanding. */

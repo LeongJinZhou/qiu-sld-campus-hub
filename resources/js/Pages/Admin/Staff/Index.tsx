@@ -76,7 +76,7 @@ export default function Index({ staff, approverRoles }: { staff: StaffRow[]; app
                             </>
                         ),
                         staff_number: (row) => (
-                            <button type="button" className="text-left hover:text-brand-blue" title="Set employee ID" onClick={() => editStaffNumber(row)}>
+                            <button type="button" className="text-left hover:text-primary" title="Set employee ID" onClick={() => editStaffNumber(row)}>
                                 {row.staff_number || 'Set'}
                             </button>
                         ),

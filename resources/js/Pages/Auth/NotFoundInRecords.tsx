@@ -15,7 +15,7 @@ export default function NotFoundInRecords() {
                     We couldn't match this Google account to a current QIU student or staff record. Sign in with your <strong>@qiu.edu.my</strong> account, or contact the Student Life Division (SLD) if you think this
                     is a mistake.
                 </p>
-                <Link href="/" className="text-sm font-medium text-brand-blue">
+                <Link href="/" className="text-sm font-medium text-primary">
                     Try another account
                 </Link>
             </Card>

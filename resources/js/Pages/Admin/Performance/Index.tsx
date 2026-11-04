@@ -45,7 +45,7 @@ interface PerformanceProps {
 }
 const LABELS: Record<string, string> = { events: 'Events run', attendance: 'Attendance', members: 'Active members', engagement: 'Likes & comments', on_time: 'Documents on time' };
 // One hue for every bar (a single measure per chart); "registered" is an outline of the same hue, not a second colour.
-const VIZ = { '--series': '#2a78d6' } as CSSProperties;
+const VIZ = { '--series': 'var(--color-primary)' } as CSSProperties;
 
 /** Club performance, drilled: all categories → one category's clubs → one club by month → one month's events. */
 export default function Index({ session, sessions, weights, clubs, categories, club }: PerformanceProps) {
@@ -69,7 +69,7 @@ export default function Index({ session, sessions, weights, clubs, categories, c
     const maxEvents = Math.max(1, ...(club?.months.map((m) => m.events) ?? [1]));
     const monthEvents = (club?.events ?? []).filter((e) => !month || e.month === month);
     const monthLabel = club?.months.find((m) => m.key === month)?.label;
-    const crumb = (active: boolean): string => `font-medium ${active ? 'text-ink' : 'text-brand-blue hover:underline'}`;
+    const crumb = (active: boolean): string => `font-medium ${active ? 'text-ink' : 'text-primary hover:underline'}`;
     const panel = 'grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5';
 
     return (

@@ -174,7 +174,7 @@ export default function Edit({ club, categories, session = '', isCurrentSession,
                             </ul>
                             <form
                                 ref={assignBox}
-                                className={`mt-5 grid gap-3 rounded-control bg-surface-muted p-4 sm:grid-cols-[1.4fr_1fr_auto] sm:items-end ${assign.data.position ? 'ring-2 ring-brand-blue' : ''}`}
+                                className={`mt-5 grid gap-3 rounded-control bg-surface-muted p-4 sm:grid-cols-[1.4fr_1fr_auto] sm:items-end ${assign.data.position ? 'ring-2 ring-primary' : ''}`}
                                 onSubmit={submitAssign}
                             >
                                 {assign.data.position && <p className="text-sm font-medium sm:col-span-3">Assign someone as {assign.data.position}</p>}

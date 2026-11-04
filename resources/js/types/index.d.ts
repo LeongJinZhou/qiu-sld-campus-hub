@@ -160,6 +160,12 @@ export interface PresentedDocument {
     version: number | null;
     club: { slug: string; name: string };
     event: { slug: string; name: string } | null;
+    meeting: {
+        id: number;
+        title: string;
+        starts_at: string;
+        attendance: { user_id: number; name: string; id_number: string; role: string; present: boolean; in: string | null; out: string | null; method: string }[];
+    } | null;
     agm_id: number | null;
     submitted_at: string | null;
     data: ProposalData;

@@ -27,8 +27,8 @@ class EventRegistrationController extends Controller
         }
 
         return $event->is_outdoor
-            ? to_route('events.indemnity', $event)->with('success', 'Registered! One more step: sign the indemnity form for this outdoor event.')
-            : back()->with('success', 'Registered. See you there!');
+            ? to_route('events.indemnity', $event)->with('success', 'You are registered. Please sign the indemnity form for this outdoor event to receive your ticket.')
+            : back()->with('success', 'You are registered for this event.');
     }
 
     /** Committee or SLD choose who may register: anyone at QIU, or club members only. */

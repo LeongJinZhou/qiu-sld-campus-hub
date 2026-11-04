@@ -5,6 +5,7 @@ namespace App\Services\Meetings;
 use App\Models\AcademicSession;
 use App\Models\Club;
 use App\Models\Meeting;
+use App\Services\Documents\DocumentExporter;
 use App\Support\QueryInput;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class MeetingReport
     /** @param array{kind: string, month: string, club: string} $filters */
     public function query(AcademicSession $session, array $filters, ?Club $club = null): Builder
     {
-        return Meeting::query()->with(['club', 'minutes'])->withCount([
+        return Meeting::query()->with(['club', 'minutes.latestVersion'])->withCount([
             'attendees as present_count' => fn (Builder $b) => $b->where('meeting_attendance.present', true),
             'attendees as out_count' => fn (Builder $b) => $b->whereNotNull('meeting_attendance.checked_out_at'),
             'attendees as recorded_count',
@@ -70,6 +71,8 @@ class MeetingReport
             'checked_out' => (int) $m->out_count,
             'rate' => $invited > 0 ? (int) round($m->present_count / $invited * 100) : 0,
             'minutes' => $m->minutes ? Str::headline($m->minutes->status->value) : 'None',
+            'minutes_id' => $m->minutes?->id,
+            'minutes_files' => $m->minutes ? app(DocumentExporter::class)->formats($m->minutes) : [],
             'upcoming' => $m->starts_at->isFuture(),
         ];
     }

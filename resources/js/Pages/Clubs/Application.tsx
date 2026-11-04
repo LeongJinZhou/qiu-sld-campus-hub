@@ -88,7 +88,7 @@ export default function Application({ application, can, categories, advisors, po
                     </ul>
                 </section>
                 {can.sign && (
-                    <section className="grid gap-3 rounded-card border-2 border-brand-cyan/40 bg-brand-cyan/5 p-4">
+                    <section className="grid gap-3 rounded-card border-2 border-primary/40 bg-primary/5 p-4">
                         <h2 className="font-semibold">Your signature as advisor</h2>
                         <SignaturePad value={sign.data.signature} onChange={(png, strokes) => sign.setData({ signature: png, signature_strokes: strokes })} label="Sign to support this club" />
                         <div className="flex flex-wrap gap-2">
@@ -102,7 +102,7 @@ export default function Application({ application, can, categories, advisors, po
                     </section>
                 )}
                 {can.decide && (
-                    <section className="flex flex-wrap gap-2 rounded-card border-2 border-brand-cyan/40 bg-brand-cyan/5 p-4">
+                    <section className="flex flex-wrap gap-2 rounded-card border-2 border-primary/40 bg-primary/5 p-4">
                         <Button onClick={() => decide(true)}>Approve &amp; open the club</Button>
                         <Button variant="secondary" onClick={back}>
                             Return for changes

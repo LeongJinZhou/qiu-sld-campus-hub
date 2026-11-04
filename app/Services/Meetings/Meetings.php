@@ -13,6 +13,7 @@ use App\Models\Meeting;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
+use App\Notifications\SocialNotification;
 use App\Services\Google\CalendarMeetService;
 use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
@@ -64,6 +65,16 @@ class Meetings
                 $start->format('D j M, g:i A').($data['venue'] ? " · {$data['venue']}" : '').($meet ? ' · Google Meet' : '').($activity && ! empty($data['pax']) ? " · {$data['pax']} pax" : ''),
                 route('meetings.show', $meeting),
             ));
+
+            // Followers who are not members hear about activities open to all members (committee meetings stay private).
+            if ($activity && $audience === 'members') {
+                $title = "{$club->name} weekly activity: {$data['title']}";
+                $when = $start->format('D j M, g:i A').($data['venue'] ? " · {$data['venue']}" : '');
+                $club->followers()->whereNotIn('users.id', $invitees->pluck('id'))->chunkById(200, function ($followers) use ($title, $when, $club, $meeting): void {
+                    Notification::send($followers->reject(fn (User $u) => $u->hasMuted('club_posts')),
+                        new SocialNotification($title, $when, route('clubs.show', $club), 'club_posts', "club_posts:meeting:{$meeting->id}"));
+                }, 'users.id', 'id');
+            }
 
             return $meeting;
         });
@@ -128,7 +139,7 @@ class Meetings
         }
         $meeting->attendees()->updateExistingPivot($user->id, ['checked_out_at' => $now]);
 
-        return "Checked out of {$meeting->title}. Thanks for coming!";
+        return "Checked out of {$meeting->title}. Your attendance is recorded.";
     }
 
     /** Weekly activity CCA: once its minutes are approved, every present attendee earns the activity's hours. */

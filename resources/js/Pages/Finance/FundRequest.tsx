@@ -116,7 +116,7 @@ export default function FundRequest({ club, events, selectedEvent, earliestWeekl
                                 type="button"
                                 role="radio"
                                 aria-checked={data.scope === o.k}
-                                className={`grid gap-1 rounded-card border p-3 text-left text-sm transition ${data.scope === o.k ? 'border-brand-cyan bg-brand-cyan/10 ring-2 ring-brand-cyan/30' : 'border-line hover:bg-surface-muted'}`}
+                                className={`grid gap-1 rounded-card border p-3 text-left text-sm transition ${data.scope === o.k ? 'border-primary bg-primary/10 ring-2 ring-primary/30' : 'border-line hover:bg-surface-muted'}`}
                                 onClick={() => chooseScope(o.k)}
                             >
                                 <strong>{o.l}</strong>
@@ -160,7 +160,7 @@ export default function FundRequest({ club, events, selectedEvent, earliestWeekl
                         </div>
                     ))}
                     {data.scope === 'club' && (
-                        <button type="button" className="justify-self-start text-sm font-medium text-brand-blue" onClick={() => setData('items', [...data.items, { description: '', unit_sen: 0, quantity: 1, method: 'self' }])}>
+                        <button type="button" className="justify-self-start text-sm font-medium text-primary" onClick={() => setData('items', [...data.items, { description: '', unit_sen: 0, quantity: 1, method: 'self' }])}>
                             ＋ Add item
                         </button>
                     )}

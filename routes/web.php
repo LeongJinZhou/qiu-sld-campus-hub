@@ -9,6 +9,7 @@ use App\Http\Controllers\Agm\ElectionController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\AssistantController;
+use App\Http\Controllers\AttendanceQrImageController;
 use App\Http\Controllers\Auth\DevLoginController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LogoutController;
@@ -138,6 +139,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/attendance', [AttendanceController::class, 'index'])->name('events.attendance');
     Route::post('/events/{event}/attendance', [AttendanceController::class, 'record'])->middleware('throttle:door')->name('events.attendance.record');
     Route::get('/events/{event}/attendance/export', [AttendanceController::class, 'export'])->name('events.attendance.export');
+    Route::post('/events/{event}/custom-qr', [AttendanceController::class, 'customQr'])->middleware('throttle:uploads')->name('events.custom-qr');
     Route::post('/events/{event}/attendance/submit', [AttendanceController::class, 'submit'])->name('events.attendance.submit');
     Route::put('/events/{event}/attendance/settings', [AttendanceController::class, 'settings'])->name('events.attendance.settings');
     Route::post('/events/{event}/helpers', [AttendanceController::class, 'addHelper'])->name('events.helpers.store');
@@ -229,6 +231,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/clubs/{club}/meetings/report/export.{format}', [MeetingReportController::class, 'clubExport'])->middleware('throttle:exports')->name('meetings.report.export');
     Route::get('/meetings/{meeting}', [MeetingController::class, 'show'])->name('meetings.show');
     Route::get('/meetings/{meeting}/attend', [MeetingController::class, 'attend'])->middleware('throttle:attend')->name('meetings.attend');
+    Route::post('/meetings/{meeting}/custom-qr', [MeetingController::class, 'customQr'])->middleware('throttle:uploads')->name('meetings.custom-qr');
+    Route::get('/meetings/{meeting}/attendance/export.{format}', [MeetingController::class, 'attendanceExport'])->middleware('throttle:exports')->name('meetings.attendance.export');
+    Route::get('/meetings/{meeting}/package.zip', [MeetingController::class, 'package'])->middleware('throttle:exports')->name('meetings.package');
+    Route::get('/attendance-qr/{kind}/{id}/{action}', AttendanceQrImageController::class)->middleware('signed')->whereIn('kind', ['events', 'meetings'])->whereIn('action', ['in', 'out'])->whereNumber('id')->name('attendance-qr.image');
     Route::post('/meetings/{meeting}/attendance', [MeetingController::class, 'attendance'])->name('meetings.attendance');
     Route::put('/meetings/{meeting}/minutes', [MeetingController::class, 'save'])->name('meetings.minutes.save');
     Route::post('/meetings/{meeting}/minutes/draft', [MeetingController::class, 'draft'])->middleware('throttle:ai')->name('meetings.minutes.draft');

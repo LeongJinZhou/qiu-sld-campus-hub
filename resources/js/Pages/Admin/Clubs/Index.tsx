@@ -41,7 +41,7 @@ export default function Index({ session, clubs, applications = [] }: { session: 
                                 <span>
                                     <strong>{a.name}</strong> · {a.applicant}
                                 </span>
-                                <span className={a.ready ? 'font-semibold text-brand-blue' : 'text-ink-muted'}>{a.ready ? 'Ready for your decision' : a.status}</span>
+                                <span className={a.ready ? 'font-semibold text-primary' : 'text-ink-muted'}>{a.ready ? 'Ready for your decision' : a.status}</span>
                             </Link>
                         ))}
                     </section>
@@ -56,7 +56,7 @@ export default function Index({ session, clubs, applications = [] }: { session: 
                                 <Link href={`/admin/clubs/${row.slug}/edit`} className="font-medium hover:underline">
                                     {row.name}
                                 </Link>
-                                <Link href={`/admin/clubs/${row.slug}/members`} className="ml-2 text-xs text-brand-blue hover:underline">
+                                <Link href={`/admin/clubs/${row.slug}/members`} className="ml-2 text-xs text-primary hover:underline">
                                     Members
                                 </Link>
                             </>

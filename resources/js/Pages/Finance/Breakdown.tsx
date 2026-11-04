@@ -61,7 +61,7 @@ export default function Breakdown({ club, breakdown, url, session, sessions }: B
             <div className="grid gap-6">
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div className="min-w-0">
-                        <Link href={`/clubs/${club.slug}/finance`} className="text-sm text-brand-blue">
+                        <Link href={`/clubs/${club.slug}/finance`} className="text-sm text-primary">
                             ← Finance · {club.name}
                         </Link>
                         <h1 className="text-xl font-bold">{breakdown.title}</h1>
