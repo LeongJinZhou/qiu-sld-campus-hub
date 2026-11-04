@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 #[Fillable(['club_id', 'session_id', 'kind', 'audience', 'pax', 'title', 'starts_at', 'ends_at', 'venue', 'meet_link', 'google_event_id', 'organiser_id'])]
-#[Hidden(['attendance_secret', 'google_event_id'])]
+#[Hidden(['attendance_secret', 'google_event_id', 'checkin_qr_path', 'checkout_qr_path'])]
 class Meeting extends Model
 {
     /** Check-in opens this long before the start; check-out stays open this long after the end. */

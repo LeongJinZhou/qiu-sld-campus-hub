@@ -50,7 +50,7 @@ export default function PayPanel({ amountSen, accountName, paymentUrl, qrCodes, 
                 <div className="grid gap-2 rounded-control bg-surface-muted p-4 text-sm">
                     {payment.status === 'reading' ? (
                         <p className="flex items-center gap-2 font-medium">
-                            <span className="size-3 animate-ping rounded-full bg-brand-magenta" /> Checking your receipt…
+                            <span className="size-3 animate-ping rounded-full bg-primary-strong" /> Checking your receipt…
                         </p>
                     ) : payment.status === 'pending_review' ? (
                         <>
@@ -65,7 +65,7 @@ export default function PayPanel({ amountSen, accountName, paymentUrl, qrCodes, 
                         payment.handover_id && (
                             <>
                                 <p className="flex items-center gap-2 font-medium">
-                                    <span className="size-2 animate-ping rounded-full bg-brand-magenta" /> Your cash payment is in progress
+                                    <span className="size-2 animate-ping rounded-full bg-primary-strong" /> Your cash payment is in progress
                                 </p>
                                 <p className="text-ink-muted">Open it to follow each step with the committee member.</p>
                                 <Link href={`/handovers/${payment.handover_id}`}>
@@ -117,7 +117,7 @@ export default function PayPanel({ amountSen, accountName, paymentUrl, qrCodes, 
                                 <>
                                     {' '}
                                     using the{' '}
-                                    <a href={paymentUrl} target="_blank" rel="noopener" className="font-medium text-brand-blue">
+                                    <a href={paymentUrl} target="_blank" rel="noopener" className="font-medium text-primary">
                                         payment link ↗
                                     </a>
                                 </>

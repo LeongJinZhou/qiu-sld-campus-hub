@@ -9,6 +9,7 @@ import Icon from '@/Components/ui/Icon';
 import Input from '@/Components/ui/Input';
 import Modal from '@/Components/ui/Modal';
 import Select from '@/Components/ui/Select';
+import Tabs from '@/Components/ui/Tabs';
 import AppLayout from '@/Layouts/AppLayout';
 import { copy } from '@/lib/clone';
 import { date, rm } from '@/lib/format';
@@ -83,7 +84,7 @@ const SORTS = [
     { value: 'amount_asc', label: 'Smallest first' },
 ];
 const stat = 'rounded-card border border-line bg-surface p-4 shadow-card';
-const evidence = 'inline-flex items-center gap-1 font-medium text-brand-blue';
+const evidence = 'inline-flex items-center gap-1 font-medium text-primary';
 
 /** A club's finance: money position, the session at a glance, filterable ledger with evidence, and the forms around it. */
 export default function Ledger(props: LedgerProps) {
@@ -158,280 +159,321 @@ export default function Ledger(props: LedgerProps) {
     };
     const field = <K extends keyof typeof payee.data>(key: K) => ({ value: payee.data[key], onChange: (v: string) => payee.setData(key, v as never), error: payee.errors[key] });
 
+    const tabs = [
+        { key: 'overview', label: 'Overview' },
+        { key: 'transactions', label: `Transactions · ${report.rows.length}` },
+        ...(can.edit && ready ? [{ key: 'add', label: 'Add transaction' }] : []),
+        ...(can.edit ? [{ key: 'fee', label: 'Membership fee' }] : []),
+        { key: 'withdrawals', label: `Fund withdrawals · ${requests.length}` },
+        ...(can.sld ? [{ key: 'opening', label: 'Opening balance' }] : []),
+    ];
+    const [tab, setTab] = useState<string>(() => {
+        const wanted = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('tab');
+        return wanted && tabs.some((t) => t.key === wanted) ? wanted : ready ? 'overview' : can.sld ? 'opening' : 'overview';
+    });
+    const switchTab = (key: string): void => {
+        setTab(key);
+        const q = new URLSearchParams(window.location.search);
+        q.set('tab', key);
+        window.history.replaceState(window.history.state, '', `${window.location.pathname}?${q}`);
+    };
+    const spentShare = report.totals.income_sen + report.totals.expense_sen > 0 ? Math.round((report.totals.expense_sen / (report.totals.income_sen + report.totals.expense_sen)) * 100) : 0;
+
     return (
         <AppLayout wide>
             <Head title={`Finance · ${club.name}`} />
             <div className="grid gap-6">
-                <header className="flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                        <h1 className="text-xl font-bold">Finance · {club.name}</h1>
-                        <Link href={`/clubs/${club.slug}`} className="text-sm text-brand-blue">
-                            Back to club
+                <header className="flex flex-wrap items-end justify-between gap-4">
+                    <div className="grid gap-1">
+                        <Link href={`/clubs/${club.slug}`} className="text-sm font-medium text-primary">
+                            ← {club.name}
+                        </Link>
+                        <h1 className="text-2xl font-bold tracking-tight">Club finance</h1>
+                        <p className="text-sm text-ink-muted">Every ringgit in and out of {club.name}, with receipts, approvals and exports for the AGM.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {can.edit && (
+                            <Link href={`/clubs/${club.slug}/payments/review`}>
+                                <Button variant="secondary">
+                                    <Icon name="check" size={16} /> Review payments
+                                </Button>
+                            </Link>
+                        )}
+                        <Link href={`/clubs/${club.slug}/fund-requests/create`}>
+                            <Button>
+                                <Icon name="plus" size={16} /> Request a fund withdrawal
+                            </Button>
                         </Link>
                     </div>
-                    <div className="sm:text-right">
-                        <p className="text-xs uppercase tracking-wide text-ink-muted">Total club money</p>
-                        <p className={`text-3xl font-bold tabular-nums ${position.total_sen < 0 ? 'text-danger' : ''}`}>{rm(position.total_sen)}</p>
-                    </div>
                 </header>
+
                 {/* Where the money is: the fund held by QIU, and advances (fund withdrawals) not yet spent. */}
-                <section className="grid gap-3 sm:grid-cols-3">
-                    <div className={stat}>
-                        <p className="text-xs text-ink-muted">Fund balance (held by QIU)</p>
-                        <p className="text-xl font-bold tabular-nums">{rm(position.fund_sen)}</p>
-                    </div>
-                    <div className={stat}>
-                        <p className="text-xs text-ink-muted">Advances not yet spent</p>
-                        <p className={`text-xl font-bold tabular-nums ${position.advances_sen ? 'text-warning' : ''}`}>{rm(position.advances_sen)}</p>
+                <section className="grid gap-4 lg:grid-cols-[1.1fr_2fr]">
+                    <div className="grid content-between gap-4 rounded-card bg-gradient-to-br from-primary to-primary-strong p-6 text-white shadow-card">
+                        <div>
+                            <p className="text-sm font-medium text-white/80">Total club money</p>
+                            <p className="mt-1 text-4xl font-bold tracking-tight tabular-nums">{rm(position.total_sen)}</p>
+                        </div>
+                        <dl className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="rounded-control bg-white/10 p-3">
+                                <dt className="text-xs text-white/75">Fund held by QIU</dt>
+                                <dd className="font-semibold tabular-nums">{rm(position.fund_sen)}</dd>
+                            </div>
+                            <div className="rounded-control bg-white/10 p-3">
+                                <dt className="text-xs text-white/75">Advances not yet spent</dt>
+                                <dd className="font-semibold tabular-nums">{rm(position.advances_sen)}</dd>
+                            </div>
+                        </dl>
                         {position.by_event.some((a) => a.outstanding_sen) && (
-                            <ul className="mt-1 grid gap-0.5 text-xs text-ink-muted">
+                            <ul className="grid gap-0.5 text-xs text-white/80">
                                 {position.by_event
                                     .filter((x) => x.outstanding_sen)
                                     .map((a) => (
                                         <li key={a.event_id ?? 0}>
-                                            {a.event ?? 'Club'}: {rm(a.outstanding_sen)} of {rm(a.advanced_sen)}
+                                            {a.event ?? 'Club'}: {rm(a.outstanding_sen)} of {rm(a.advanced_sen)} still to spend or return
                                         </li>
                                     ))}
                             </ul>
                         )}
                     </div>
-                    <div className={stat}>
-                        <p className="text-xs text-ink-muted">Total club money</p>
-                        <p className="text-xl font-bold tabular-nums">{rm(position.total_sen)}</p>
-                        <p className="text-xs text-ink-muted">Fund + advances. Advances are not expenses; their purchases are.</p>
+                    <div className="grid gap-4 rounded-card border border-line bg-surface p-5 shadow-card">
+                        <div className="flex flex-wrap items-end justify-between gap-3">
+                            <div>
+                                <h2 className="font-semibold">Session {report.session}</h2>
+                                <p className="text-xs text-ink-muted">1 July to 30 June, the committee year used for the AGM.</p>
+                            </div>
+                            <div className="w-40">
+                                <Select value={f.session ?? ''} onChange={(v) => apply({ session: v })} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />
+                            </div>
+                        </div>
+                        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            {[
+                                { label: 'Brought forward', value: report.brought_forward_sen, tone: '' },
+                                { label: 'Income', value: report.totals.income_sen, tone: 'text-success' },
+                                { label: 'Expenses', value: report.totals.expense_sen, tone: 'text-danger' },
+                                { label: 'Closing balance', value: report.closing_sen, tone: report.closing_sen < 0 ? 'text-danger' : '' },
+                            ].map((k) => (
+                                <div key={k.label} className="rounded-control bg-surface-muted p-3">
+                                    <dt className="text-xs text-ink-muted">{k.label}</dt>
+                                    <dd className={`text-lg font-bold tabular-nums ${k.tone}`}>{rm(k.value)}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                        <div className="grid gap-1.5">
+                            <div className="flex justify-between text-xs text-ink-muted">
+                                <span>Income</span>
+                                <span>Expenses ({spentShare}% of money moved)</span>
+                            </div>
+                            <div className="flex h-2.5 overflow-hidden rounded-full bg-surface-muted" role="img" aria-label={`Income ${rm(report.totals.income_sen)}, expenses ${rm(report.totals.expense_sen)}`}>
+                                <div className="bg-success" style={{ width: `${100 - spentShare}%` }} />
+                                <div className="bg-danger" style={{ width: `${spentShare}%` }} />
+                            </div>
+                        </div>
                     </div>
                 </section>
-                {can.sld && (
-                    <Card title="Opening balance (SLD only)">
-                        <form
-                            className="grid gap-3 sm:grid-cols-[10rem_12rem_1fr_auto] sm:items-end"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                openingForm.post(`/clubs/${club.slug}/finance/opening`, { preserveScroll: true });
-                            }}
-                        >
-                            <Input value={openingForm.data.amount_rm} onChange={(v) => openingForm.setData('amount_rm', v)} type="number" label="Amount (RM)" error={openingForm.errors.amount_rm} />
-                            <Input value={openingForm.data.as_of} onChange={(v) => openingForm.setData('as_of', v)} type="date" label="As of" error={openingForm.errors.as_of} />
-                            <Input value={openingForm.data.note} onChange={(v) => openingForm.setData('note', v)} label="Note" />
-                            <Button type="submit" loading={openingForm.processing}>
-                                {opening ? 'Update' : 'Open ledger'}
-                            </Button>
-                        </form>
-                        <p className="mt-2 text-xs text-ink-muted">Every change is recorded in the audit log.</p>
-                    </Card>
-                )}
-                {!ready ? (
-                    <EmptyState title="Finance not opened yet" description="SLD must enter this club's opening balance before the ledger can be used." />
-                ) : (
-                    <>
-                        <section className="grid gap-3">
-                            <div className="flex flex-wrap items-end justify-between gap-3">
-                                <div className="flex items-end gap-2">
-                                    <Select value={f.session ?? ''} onChange={(v) => apply({ session: v })} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <Button variant="secondary" onClick={() => openExport()}>
-                                        <Icon name="grid" size={16} /> Export workbook
-                                    </Button>
-                                    <a href={exportUrl('xlsx')}>
-                                        <Button variant="secondary">
-                                            <Icon name="file" size={16} /> 02 Finance Record (AGM)
-                                        </Button>
-                                    </a>
-                                    <a href={exportUrl('pdf')}>
-                                        <Button variant="secondary">PDF</Button>
-                                    </a>
-                                    {can.edit && (
-                                        <Link href={`/clubs/${club.slug}/payments/review`}>
-                                            <Button variant="secondary">
-                                                <Icon name="check" size={16} /> Payment review
-                                            </Button>
-                                        </Link>
-                                    )}
-                                    <Link href={`/clubs/${club.slug}/fund-requests/create`}>
-                                        <Button>＋ Fund withdrawal (07)</Button>
-                                    </Link>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                                <div className={stat}>
-                                    <p className="text-xs text-ink-muted">Brought forward (1 Jul)</p>
-                                    <p className="text-xl font-bold tabular-nums">{rm(report.brought_forward_sen)}</p>
-                                </div>
-                                <div className={stat}>
-                                    <p className="text-xs text-ink-muted">Income {report.session}</p>
-                                    <p className="text-xl font-bold tabular-nums text-success">{rm(report.totals.income_sen)}</p>
-                                </div>
-                                <div className={stat}>
-                                    <p className="text-xs text-ink-muted">Expenses {report.session}</p>
-                                    <p className="text-xl font-bold tabular-nums text-danger">{rm(report.totals.expense_sen)}</p>
-                                </div>
-                                <div className={stat}>
-                                    <p className="text-xs text-ink-muted">Closing balance</p>
-                                    <p className={`text-xl font-bold tabular-nums ${report.closing_sen < 0 ? 'text-danger' : ''}`}>{rm(report.closing_sen)}</p>
-                                </div>
-                            </div>
-                            <div className="grid gap-3 lg:grid-cols-2">
-                                <Card title="By type">
-                                    <ul className="grid gap-1 text-sm">
-                                        {report.by_category.map((c) => (
-                                            <li key={c.key}>
-                                                <button
-                                                    type="button"
-                                                    className={`grid w-full grid-cols-[1fr_auto_auto] items-center gap-3 rounded-control px-2 py-2 text-left hover:bg-surface-muted ${f.category === c.key ? 'bg-surface-muted' : ''}`}
-                                                    onClick={() => apply({ category: f.category === c.key ? '' : c.key, event_id: '' })}
-                                                >
-                                                    <span className="flex items-center gap-2">
-                                                        <Badge tone={TONE[c.key] ?? 'neutral'}>{c.label}</Badge>
-                                                        <span className="text-xs text-ink-muted">
-                                                            {c.count} {c.count === 1 ? 'item' : 'items'}
-                                                        </span>
-                                                    </span>
-                                                    <span className="text-right tabular-nums text-success">{c.income_sen ? rm(c.income_sen) : ''}</span>
-                                                    <span className="w-24 text-right tabular-nums text-danger">{c.expense_sen ? `− ${rm(c.expense_sen)}` : ''}</span>
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </Card>
-                                <Card
-                                    title="By event"
-                                    actions={
-                                        <Link href={`/clubs/${club.slug}/finance/membership?session=${encodeURIComponent(report.session)}`} className="text-sm font-medium text-brand-blue">
-                                            Membership fees →
-                                        </Link>
-                                    }
-                                >
-                                    {report.by_event.length ? (
+
+                <Tabs tabs={tabs} active={tab} onChange={switchTab}>
+                    {tab === 'overview' &&
+                        (!ready ? (
+                            <EmptyState title="Finance not opened yet" description="SLD must enter this club's opening balance before the ledger can be used." />
+                        ) : (
+                            <div className="grid gap-4">
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                    <Card title="By type">
                                         <ul className="grid gap-1 text-sm">
-                                            {report.by_event.map((e) => (
-                                                <li key={e.event_id} className="grid grid-cols-[1fr_auto] items-center gap-1">
+                                            {report.by_category.map((c) => (
+                                                <li key={c.key}>
                                                     <button
                                                         type="button"
-                                                        className={`grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-control px-2 py-2 text-left hover:bg-surface-muted ${Number(f.event_id) === e.event_id ? 'bg-surface-muted' : ''}`}
-                                                        onClick={() => apply({ event_id: Number(f.event_id) === e.event_id ? '' : e.event_id, category: '' })}
+                                                        className={`grid w-full grid-cols-[1fr_auto_auto] items-center gap-3 rounded-control px-2 py-2 text-left hover:bg-surface-muted ${f.category === c.key ? 'bg-surface-muted' : ''}`}
+                                                        onClick={() => apply({ category: f.category === c.key ? '' : c.key, event_id: '' })}
                                                     >
-                                                        <span className="min-w-0">
-                                                            <span className="block truncate font-medium">{e.event}</span>
+                                                        <span className="flex items-center gap-2">
+                                                            <Badge tone={TONE[c.key] ?? 'neutral'}>{c.label}</Badge>
                                                             <span className="text-xs text-ink-muted">
-                                                                {e.count} {e.count === 1 ? 'item' : 'items'} · in {rm(e.income_sen)} · out {rm(e.expense_sen)}
+                                                                {c.count} {c.count === 1 ? 'item' : 'items'}
                                                             </span>
                                                         </span>
-                                                        <span className={`text-right font-semibold tabular-nums ${net(e) < 0 ? 'text-danger' : 'text-success'}`}>{rm(net(e))}</span>
+                                                        <span className="text-right tabular-nums text-success">{c.income_sen ? rm(c.income_sen) : ''}</span>
+                                                        <span className="w-24 text-right tabular-nums text-danger">{c.expense_sen ? `− ${rm(c.expense_sen)}` : ''}</span>
                                                     </button>
-                                                    <Link href={`/clubs/${club.slug}/finance/events/${e.slug}`} className="rounded-control px-2 py-2 text-xs font-medium text-brand-blue hover:bg-surface-muted" aria-label={`Who paid for ${e.event}`}>
-                                                        Who paid →
-                                                    </Link>
                                                 </li>
                                             ))}
                                         </ul>
-                                    ) : (
-                                        <p className="text-sm text-ink-muted">No event transactions this session yet. Fund withdrawals and event expenses appear here automatically.</p>
-                                    )}
-                                </Card>
-                            </div>
-                        </section>
-                        <section className="grid gap-3">
-                            <div className="grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
-                                <div className="sm:col-span-2">
-                                    <Input value={f.search ?? ''} onChange={(v) => setF({ ...f, search: v })} label="Search" placeholder="Description, event, name or order ID" />
-                                </div>
-                                <Select value={f.category ?? ''} onChange={(v) => apply({ category: v })} label="Type" options={options(categories)} />
-                                <Select value={f.event_id ?? ''} onChange={(v) => apply({ event_id: v })} label="Event" options={[{ value: '', label: 'All' }, ...clubEvents]} />
-                                <Select value={f.method ?? ''} onChange={(v) => apply({ method: v })} label="Paid by" options={options(methods)} />
-                                <Input value={f.from ?? ''} onChange={(v) => apply({ from: v })} type="date" label="From" />
-                                <Input value={f.to ?? ''} onChange={(v) => apply({ to: v })} type="date" label="To" />
-                                <Select value={f.sort ?? 'date_asc'} onChange={(v) => apply({ sort: v })} label="Sort" options={SORTS} />
-                            </div>
-                            <p className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-                                {report.rows.length} {report.rows.length === 1 ? 'transaction' : 'transactions'}
-                                {report.filtered && (
-                                    <>
-                                        {' match · '}
-                                        <button type="button" className="font-medium text-brand-blue" onClick={clear}>
-                                            Clear filters
-                                        </button>
-                                    </>
-                                )}{' '}
-                                · the Excel/PDF export prints exactly this view.
-                            </p>
-                            <div className="overflow-x-auto rounded-card border border-line bg-surface shadow-card">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-ink-muted">
-                                        <tr>
-                                            <th className="px-3 py-3 font-medium">Date</th>
-                                            <th className="px-3 py-3 font-medium">Description</th>
-                                            <th className="px-3 py-3 font-medium">For</th>
-                                            <th className="px-3 py-3 font-medium">Paid by · received by</th>
-                                            <th className="px-3 py-3 text-right font-medium">Income</th>
-                                            <th className="px-3 py-3 text-right font-medium">Expense</th>
-                                            {showBalance && <th className="px-3 py-3 text-right font-medium">Balance</th>}
-                                            <th className="px-3 py-3 font-medium">Evidence</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {report.rows.map((r) => (
-                                            <tr key={r.id} className="border-t border-line align-top">
-                                                <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">{date(r.date)}</td>
-                                                <td className="min-w-44 px-3 py-2.5">
-                                                    {r.description}
-                                                    {r.order_id && <span className="mt-0.5 block font-mono text-xs text-ink-muted">{r.order_id}</span>}
-                                                </td>
-                                                <td className="px-3 py-2.5">
-                                                    <Badge tone={TONE[r.category] ?? 'neutral'}>{categories[r.category] ?? r.category}</Badge>
-                                                    {r.event && <span className="mt-1 block text-xs text-ink-muted">{r.event}</span>}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-2.5 text-xs">
-                                                    {r.method ? (methods[r.method] ?? r.method) : '—'}
-                                                    {r.handled_by && <span className="block text-ink-muted">{r.handled_by}</span>}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-success">{r.income_sen ? rm(r.income_sen) : ''}</td>
-                                                <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-danger">{r.expense_sen ? rm(r.expense_sen) : ''}</td>
-                                                {showBalance && <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">{rm(r.balance_sen)}</td>}
-                                                <td className="whitespace-nowrap px-3 py-2.5 text-xs">
-                                                    <div className="grid gap-1">
-                                                        {r.photo_url && (
-                                                            <a href={r.photo_url} target="_blank" rel="noopener" className={evidence} title="Photo taken at the cash handover">
-                                                                <Icon name="camera" size={14} /> Photo
-                                                            </a>
-                                                        )}
-                                                        {r.payment_receipt_url && (
-                                                            <a href={r.payment_receipt_url} target="_blank" rel="noopener" className={evidence} title="The student's online payment receipt">
-                                                                <Icon name="file" size={14} /> Receipt
-                                                            </a>
-                                                        )}
-                                                        {r.receipt_url && (
-                                                            <a href={r.receipt_url} target="_blank" rel="noopener" className={evidence}>
-                                                                <Icon name="file" size={14} /> Receipt
-                                                            </a>
-                                                        )}
-                                                        {r.document_url && (
-                                                            <Link href={r.document_url} className={evidence}>
-                                                                <Icon name="check" size={14} /> 07 form
-                                                            </Link>
-                                                        )}
-                                                        {can.edit && !r.receipt_url && !!r.expense_sen && (
-                                                            <button type="button" className="text-left font-medium text-warning" onClick={() => setAttaching(r.id)}>
-                                                                ＋ Receipt
-                                                            </button>
-                                                        )}
-                                                        {!r.photo_url && !r.payment_receipt_url && !r.receipt_url && !r.document_url && !(can.edit && r.expense_sen) && <span className="text-ink-muted">—</span>}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {!report.rows.length && (
-                                            <tr>
-                                                <td colSpan={8} className="px-3 py-8 text-center text-ink-muted">
-                                                    No transactions match.
-                                                </td>
-                                            </tr>
+                                    </Card>
+                                    <Card
+                                        title="By event"
+                                        actions={
+                                            <Link href={`/clubs/${club.slug}/finance/membership?session=${encodeURIComponent(report.session)}`} className="text-sm font-medium text-primary">
+                                                Membership fees →
+                                            </Link>
+                                        }
+                                    >
+                                        {report.by_event.length ? (
+                                            <ul className="grid gap-1 text-sm">
+                                                {report.by_event.map((e) => (
+                                                    <li key={e.event_id} className="grid grid-cols-[1fr_auto] items-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            className={`grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-control px-2 py-2 text-left hover:bg-surface-muted ${Number(f.event_id) === e.event_id ? 'bg-surface-muted' : ''}`}
+                                                            onClick={() => apply({ event_id: Number(f.event_id) === e.event_id ? '' : e.event_id, category: '' })}
+                                                        >
+                                                            <span className="min-w-0">
+                                                                <span className="block truncate font-medium">{e.event}</span>
+                                                                <span className="text-xs text-ink-muted">
+                                                                    {e.count} {e.count === 1 ? 'item' : 'items'} · in {rm(e.income_sen)} · out {rm(e.expense_sen)}
+                                                                </span>
+                                                            </span>
+                                                            <span className={`text-right font-semibold tabular-nums ${net(e) < 0 ? 'text-danger' : 'text-success'}`}>{rm(net(e))}</span>
+                                                        </button>
+                                                        <Link href={`/clubs/${club.slug}/finance/events/${e.slug}`} className="rounded-control px-2 py-2 text-xs font-medium text-primary hover:bg-surface-muted" aria-label={`Who paid for ${e.event}`}>
+                                                            Who paid →
+                                                        </Link>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-sm text-ink-muted">No event transactions this session yet. Fund withdrawals and event expenses appear here automatically.</p>
                                         )}
-                                    </tbody>
-                                </table>
+                                    </Card>
+                                </div>
+                                <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface p-4 shadow-card">
+                                    <div>
+                                        <p className="font-semibold">Exports</p>
+                                        <p className="text-xs text-ink-muted">The official 02 Finance Record for the AGM, or a workbook with one sheet per event.</p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <a href={exportUrl('xlsx')}>
+                                            <Button variant="secondary">
+                                                <Icon name="file" size={16} /> 02 Finance Record (Excel)
+                                            </Button>
+                                        </a>
+                                        <a href={exportUrl('pdf')}>
+                                            <Button variant="secondary">
+                                                <Icon name="download" size={16} /> PDF
+                                            </Button>
+                                        </a>
+                                        <Button variant="secondary" onClick={() => openExport()}>
+                                            <Icon name="grid" size={16} /> Workbook
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
-                        </section>
-                        {can.edit && (
+                        ))}
+                    {tab === 'transactions' &&
+                        (!ready ? (
+                            <EmptyState title="Finance not opened yet" description="SLD must enter this club's opening balance before the ledger can be used." />
+                        ) : (
+                            <section className="grid gap-3">
+                                <div className="grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="sm:col-span-2">
+                                        <Input value={f.search ?? ''} onChange={(v) => setF({ ...f, search: v })} label="Search" placeholder="Description, event, name or order ID" />
+                                    </div>
+                                    <Select value={f.category ?? ''} onChange={(v) => apply({ category: v })} label="Type" options={options(categories)} />
+                                    <Select value={f.event_id ?? ''} onChange={(v) => apply({ event_id: v })} label="Event" options={[{ value: '', label: 'All' }, ...clubEvents]} />
+                                    <Select value={f.method ?? ''} onChange={(v) => apply({ method: v })} label="Paid by" options={options(methods)} />
+                                    <Input value={f.from ?? ''} onChange={(v) => apply({ from: v })} type="date" label="From" />
+                                    <Input value={f.to ?? ''} onChange={(v) => apply({ to: v })} type="date" label="To" />
+                                    <Select value={f.sort ?? 'date_asc'} onChange={(v) => apply({ sort: v })} label="Sort" options={SORTS} />
+                                </div>
+                                <p className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+                                    {report.rows.length} {report.rows.length === 1 ? 'transaction' : 'transactions'}
+                                    {report.filtered && (
+                                        <>
+                                            {' match · '}
+                                            <button type="button" className="font-medium text-primary" onClick={clear}>
+                                                Clear filters
+                                            </button>
+                                        </>
+                                    )}{' '}
+                                    · the Excel and PDF exports print exactly this view.
+                                </p>
+                                <div className="overflow-x-auto rounded-card border border-line bg-surface shadow-card">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-ink-muted">
+                                            <tr>
+                                                <th className="px-3 py-3 font-medium">Date</th>
+                                                <th className="px-3 py-3 font-medium">Description</th>
+                                                <th className="hidden px-3 py-3 font-medium 2xl:table-cell">For</th>
+                                                <th className="px-3 py-3 font-medium">Paid by · received by</th>
+                                                <th className="px-3 py-3 text-right font-medium">Income</th>
+                                                <th className="px-3 py-3 text-right font-medium">Expense</th>
+                                                {showBalance && <th className="px-3 py-3 text-right font-medium">Balance</th>}
+                                                <th className="px-3 py-3 font-medium">Evidence</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {report.rows.map((r) => (
+                                                <tr key={r.id} className="border-t border-line align-top">
+                                                    <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">{date(r.date)}</td>
+                                                    <td className="min-w-48 px-3 py-2.5">
+                                                        {r.description}
+                                                        {r.order_id && (
+                                                            <span className="mt-0.5 block max-w-[16rem] truncate font-mono text-[0.7rem] text-ink-muted" title={r.order_id}>
+                                                                {r.order_id}
+                                                            </span>
+                                                        )}
+                                                        <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted 2xl:hidden">
+                                                            <Badge tone={TONE[r.category] ?? 'neutral'}>{categories[r.category] ?? r.category}</Badge>
+                                                            {r.event}
+                                                        </span>
+                                                    </td>
+                                                    <td className="hidden px-3 py-2.5 2xl:table-cell">
+                                                        <Badge tone={TONE[r.category] ?? 'neutral'}>{categories[r.category] ?? r.category}</Badge>
+                                                        {r.event && <span className="mt-1 block text-xs text-ink-muted">{r.event}</span>}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-2.5 text-xs">
+                                                        {r.method ? (methods[r.method] ?? r.method) : '—'}
+                                                        {r.handled_by && <span className="block text-ink-muted">{r.handled_by}</span>}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-success">{r.income_sen ? rm(r.income_sen) : ''}</td>
+                                                    <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-danger">{r.expense_sen ? rm(r.expense_sen) : ''}</td>
+                                                    {showBalance && <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">{rm(r.balance_sen)}</td>}
+                                                    <td className="whitespace-nowrap px-3 py-2.5 text-xs">
+                                                        <div className="grid gap-1">
+                                                            {r.photo_url && (
+                                                                <a href={r.photo_url} target="_blank" rel="noopener" className={evidence} title="Photo taken at the cash handover">
+                                                                    <Icon name="camera" size={14} /> Photo
+                                                                </a>
+                                                            )}
+                                                            {r.payment_receipt_url && (
+                                                                <a href={r.payment_receipt_url} target="_blank" rel="noopener" className={evidence} title="The student's online payment receipt">
+                                                                    <Icon name="file" size={14} /> Receipt
+                                                                </a>
+                                                            )}
+                                                            {r.receipt_url && (
+                                                                <a href={r.receipt_url} target="_blank" rel="noopener" className={evidence}>
+                                                                    <Icon name="file" size={14} /> Receipt
+                                                                </a>
+                                                            )}
+                                                            {r.document_url && (
+                                                                <Link href={r.document_url} className={evidence}>
+                                                                    <Icon name="check" size={14} /> 07 form
+                                                                </Link>
+                                                            )}
+                                                            {can.edit && !r.receipt_url && !!r.expense_sen && (
+                                                                <button type="button" className="text-left font-medium text-warning" onClick={() => setAttaching(r.id)}>
+                                                                    ＋ Receipt
+                                                                </button>
+                                                            )}
+                                                            {!r.photo_url && !r.payment_receipt_url && !r.receipt_url && !r.document_url && !(can.edit && r.expense_sen) && <span className="text-ink-muted">—</span>}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {!report.rows.length && (
+                                                <tr>
+                                                    <td colSpan={8} className="px-3 py-8 text-center text-ink-muted">
+                                                        No transactions match.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        ))}
+                    {tab === 'add' && can.edit && ready && (
                             <Card title="Add a transaction">
                                 <p className="mb-3 text-sm text-ink-muted">Membership fees and approved fund withdrawals are recorded automatically. Add anything else here, under the event it belongs to.</p>
                                 <form className="grid gap-3" onSubmit={addEntry}>
@@ -467,10 +509,8 @@ export default function Ledger(props: LedgerProps) {
                                     </div>
                                 </form>
                             </Card>
-                        )}
-                    </>
-                )}
-                {can.edit && (
+                    )}
+                    {tab === 'fee' && can.edit && (
                     <Card title="Membership fee & payment">
                         <p className="mb-3 text-sm text-ink-muted">
                             {!fee ? (
@@ -513,8 +553,9 @@ export default function Ledger(props: LedgerProps) {
                             </div>
                         </form>
                     </Card>
-                )}
-                <div className="grid gap-6 lg:grid-cols-2">
+                    )}
+                    {tab === 'withdrawals' && (
+                    <div className="grid gap-6 lg:grid-cols-2">
                     <Card title="Fund withdrawals (07)">
                         {!requests.length && <EmptyState title="No withdrawal requests yet" />}
                         <ul className="grid gap-3">
@@ -577,7 +618,28 @@ export default function Ledger(props: LedgerProps) {
                         )}
                         <p className="mt-2 text-xs text-ink-muted">Bank details are encrypted and only printed on the official form.</p>
                     </Card>
-                </div>
+                    </div>
+                    )}
+                    {tab === 'opening' && can.sld && (
+                    <Card title="Opening balance">
+                        <form
+                            className="grid gap-3 sm:grid-cols-[10rem_12rem_1fr_auto] sm:items-end"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                openingForm.post(`/clubs/${club.slug}/finance/opening`, { preserveScroll: true });
+                            }}
+                        >
+                            <Input value={openingForm.data.amount_rm} onChange={(v) => openingForm.setData('amount_rm', v)} type="number" label="Amount (RM)" error={openingForm.errors.amount_rm} />
+                            <Input value={openingForm.data.as_of} onChange={(v) => openingForm.setData('as_of', v)} type="date" label="As of" error={openingForm.errors.as_of} />
+                            <Input value={openingForm.data.note} onChange={(v) => openingForm.setData('note', v)} label="Note" />
+                            <Button type="submit" loading={openingForm.processing}>
+                                {opening ? 'Update' : 'Open ledger'}
+                            </Button>
+                        </form>
+                        <p className="mt-2 text-xs text-ink-muted">Only SLD can set this. Every change is recorded in the audit log.</p>
+                    </Card>
+                    )}
+                </Tabs>
             </div>
             <Modal open={exporting} onClose={() => setExporting(false)} title="Export finance workbook">
                 <div className="grid gap-4 text-sm">
@@ -593,7 +655,7 @@ export default function Ledger(props: LedgerProps) {
                                 type="button"
                                 role="radio"
                                 aria-checked={period === p.key}
-                                className={`grid gap-0.5 rounded-control border p-3 text-left transition ${period === p.key ? 'border-brand-cyan bg-brand-cyan/10 ring-2 ring-brand-cyan/30' : 'border-line hover:bg-surface-muted'}`}
+                                className={`grid gap-0.5 rounded-control border p-3 text-left transition ${period === p.key ? 'border-primary bg-primary/10 ring-2 ring-primary/30' : 'border-line hover:bg-surface-muted'}`}
                                 onClick={() => openExport(p.key)}
                             >
                                 <span className="font-semibold">{p.label}</span>
@@ -607,17 +669,17 @@ export default function Ledger(props: LedgerProps) {
                         </p>
                         {bookChoices.map((c, i) => (
                             <label key={c.key} className={`flex items-center gap-3 rounded-control border border-line px-3 py-2 ${c.count ? '' : 'opacity-50'}`}>
-                                <input type="checkbox" className="size-4 accent-brand-cyan" checked={picked.includes(c.key)} onChange={(e) => togglePick(c.key, e.target.checked)} />
+                                <input type="checkbox" className="size-4 accent-primary" checked={picked.includes(c.key)} onChange={(e) => togglePick(c.key, e.target.checked)} />
                                 <span className="w-14 text-xs text-ink-muted">Sheet {i + 1}</span>
                                 <span className="flex-1">{c.key.startsWith('event:') ? `Event · ${c.title}` : c.title}</span>
                                 <span className="text-xs text-ink-muted">{c.count}</span>
                             </label>
                         ))}
                         <div className="flex gap-3 text-xs">
-                            <button type="button" className="text-brand-blue" onClick={() => setPicked(bookChoices.map((c) => c.key))}>
+                            <button type="button" className="text-primary" onClick={() => setPicked(bookChoices.map((c) => c.key))}>
                                 All
                             </button>
-                            <button type="button" className="text-brand-blue" onClick={() => setPicked([])}>
+                            <button type="button" className="text-primary" onClick={() => setPicked([])}>
                                 None (Overview only)
                             </button>
                         </div>

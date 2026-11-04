@@ -68,7 +68,7 @@ export default function Participants({ club, session, sessions, events, rows: al
             <div className="grid gap-5">
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <Link href={`/clubs/${club.slug}`} className="text-sm text-brand-blue">
+                        <Link href={`/clubs/${club.slug}`} className="text-sm text-primary">
                             ← {club.name}
                         </Link>
                         <h1 className="text-xl font-bold">Event participants</h1>
@@ -88,9 +88,9 @@ export default function Participants({ club, session, sessions, events, rows: al
                 </header>
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     {tiles.map((t) => (
-                        <div key={t.label} className={`rounded-card p-4 shadow-card ${t.accent ? 'border-2 border-brand-orange/40 bg-brand-orange/5' : 'border border-line bg-surface'}`}>
+                        <div key={t.label} className={`rounded-card p-4 shadow-card ${t.accent ? 'border-2 border-accent/40 bg-accent/5' : 'border border-line bg-surface'}`}>
                             <p className="text-xs text-ink-muted">{t.label}</p>
-                            <p className={`text-xl font-bold ${t.accent ? 'text-brand-orange' : ''}`}>{t.value}</p>
+                            <p className={`text-xl font-bold ${t.accent ? 'text-accent' : ''}`}>{t.value}</p>
                         </div>
                     ))}
                 </div>
@@ -165,7 +165,7 @@ export default function Participants({ club, session, sessions, events, rows: al
                                                 </li>
                                             ))}
                                         </ol>
-                                        <a href={r.profile_url} className="justify-self-start text-xs font-medium text-brand-blue">
+                                        <a href={r.profile_url} className="justify-self-start text-xs font-medium text-primary">
                                             View profile →
                                         </a>
                                     </div>

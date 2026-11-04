@@ -23,7 +23,7 @@ export default function Show({ ticket, qrSvg, mine }: { ticket: Ticket; qrSvg: s
         <AppLayout>
             <Head title={`Ticket · ${ticket.event.name}`} />
             <div className="grid gap-5 pb-6">
-                <Link href="/activities" className="flex items-center gap-1 text-sm text-brand-blue">
+                <Link href="/activities" className="flex items-center gap-1 text-sm text-primary">
                     <Icon name="ticket" size={16} /> All my activities
                 </Link>
                 {mine && ticket.event.needs_indemnity && ['paid', 'free'].includes(ticket.status) && (

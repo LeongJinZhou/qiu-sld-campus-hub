@@ -67,13 +67,13 @@ export default function Index({ messages }: { messages: Message[] }) {
                     )}
                     {messages.map((m) => (
                         <li key={m.id} className={`group flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`relative grid max-w-[85%] gap-2 rounded-card px-4 py-3 text-sm ${m.role === 'user' ? 'bg-brand-blue text-white' : 'border border-line bg-surface shadow-card'}`}>
+                            <div className={`relative grid max-w-[85%] gap-2 rounded-card px-4 py-3 text-sm ${m.role === 'user' ? 'bg-primary text-white' : 'border border-line bg-surface shadow-card'}`}>
                                 <p className="whitespace-pre-line">{m.content}</p>
                                 {m.links.length > 0 && (
                                     <ul className="grid gap-1">
                                         {m.links.map((l) => (
                                             <li key={l.url}>
-                                                <Link href={l.url} className="inline-flex items-center gap-1 font-medium text-brand-blue hover:underline">
+                                                <Link href={l.url} className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
                                                     <span className="rounded bg-surface-muted px-1.5 text-[11px] uppercase text-ink-muted">{l.kind}</span> {l.title}
                                                 </Link>
                                             </li>

@@ -7,8 +7,11 @@ use App\Models\Club;
 use App\Services\Finance\Ledger;
 use App\Services\Time\SessionResolver;
 use Carbon\CarbonImmutable;
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 
 /** 02 Finance Record: Date, Description, Income, Expenses, running Balance; Prepared by Treasurer, Reviewed by Advisor. */
 class FinanceRecordExport
@@ -47,7 +50,20 @@ class FinanceRecordExport
                 $r = $first + $i;
                 $sheet->setCellValue("A{$r}", ExcelDate::PHPToExcel(CarbonImmutable::parse($row['date'])));
                 $sheet->getStyle("A{$r}")->getNumberFormat()->setFormatCode('dd/mm/yyyy');
-                $sheet->setCellValue("B{$r}", $row['description']);
+                // The reference goes on its own smaller line under the description, so neither is cut off or split.
+                [$text, $reference] = preg_match('/^(.*) \[([^\]]+)\]$/s', (string) $row['description'], $m) ? [$m[1], $m[2]] : [(string) $row['description'], null];
+                if ($reference) {
+                    $rich = new RichText;
+                    $rich->createText($text);
+                    $rich->createTextRun("\n{$reference}")->getFont()?->setSize(7)->setColor(new Color('FF6B6B72'));
+                    $sheet->setCellValue("B{$r}", $rich);
+                } else {
+                    $sheet->setCellValue("B{$r}", $text);
+                }
+                $sheet->getStyle("B{$r}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle("A{$r}:E{$r}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle("A{$r}")->getAlignment()->setShrinkToFit(true);
+                $sheet->getRowDimension($r)->setRowHeight($reference ? 27 : -1);
                 $sheet->setCellValue("C{$r}", $row['income_sen'] / 100);
                 $sheet->setCellValue("D{$r}", $row['expense_sen'] / 100);
                 // Opening line carries the balance; later lines keep the template's running-balance formula.

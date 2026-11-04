@@ -36,7 +36,7 @@ export default function Input({ label, type = 'text', value, onChange, error, hi
                 autoComplete={autoComplete}
                 aria-invalid={!!error}
                 aria-describedby={error || hint ? `${id}-msg` : undefined}
-                className="h-10 rounded-control border border-line bg-surface px-3 text-sm outline-none transition focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/30 read-only:bg-surface-muted read-only:text-ink-muted aria-invalid:border-danger"
+                className="h-10 rounded-control border border-line bg-surface px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 read-only:bg-surface-muted read-only:text-ink-muted aria-invalid:border-danger"
             />
             <FieldMessage id={id} error={error} hint={hint} />
         </div>

@@ -1,3 +1,4 @@
+import MeetingCard, { type MeetingCardData } from '@/Components/meetings/MeetingCard';
 import ClubHeader from '@/Components/club/ClubHeader';
 import CommitteeBoard from '@/Components/club/CommitteeBoard';
 import SessionSelector from '@/Components/club/SessionSelector';
@@ -35,6 +36,7 @@ interface ClubShowProps {
     highlights: { id: number; title: string; items: string[] }[];
     counts: { followers: number; events: number; members: number; alumni: number };
     memberWall: { name: string; photo_url: string | null; profile_url: string }[];
+    meetings: MeetingCardData[];
     upcoming: { slug: string; name: string; starts_at: string; venue: string | null; poster_url: string | null; fee_sen: number; registration_open: boolean; members_only: boolean }[];
     membership: { status: string | null; fee_sen: number | null; drive: string | null; can_join: boolean };
     following: boolean;
@@ -65,7 +67,7 @@ function Tool({ href, children, tour, variant = 'secondary' }: { href: string; c
 
 /** A club's page: header, highlights, SLD requests, committee by year, feed, gallery, events, FAQ and (internal) documents. */
 export default function Show(props: ClubShowProps) {
-    const { club, session, isCurrentSession, sessions, committee, advisors, missingCompulsory, stories, highlights, counts, memberWall, upcoming, membership, following, posts, albums, events, faqs, agm, sldRequests, documents, can } =
+    const { club, session, isCurrentSession, sessions, committee, advisors, missingCompulsory, stories, highlights, counts, memberWall, upcoming, meetings, membership, following, posts, albums, events, faqs, agm, sldRequests, documents, can } =
         props;
     const tabs = [
         { key: 'committee', label: 'Committee' },
@@ -94,7 +96,7 @@ export default function Show(props: ClubShowProps) {
                         <SessionSelector sessions={sessions} selected={session} url={`/clubs/${club.slug}`} />
                     </div>
                     <div className="relative overflow-hidden rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
-                        <span className="absolute -right-8 -top-10 size-36 animate-float-soft rounded-full bg-gradient-to-br from-brand-yellow/40 to-brand-magenta/30 blur-2xl" aria-hidden="true" />
+                        <span className="absolute -right-8 -top-10 size-36 animate-float-soft rounded-full bg-gradient-to-br from-gold/40 to-primary-strong/30 blur-2xl" aria-hidden="true" />
                         <div className="relative flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{isCurrentSession ? 'Current committee' : 'Past committee'}</p>
@@ -121,10 +123,10 @@ export default function Show(props: ClubShowProps) {
                                 {upcoming.map((e) => (
                                     <li key={e.slug}>
                                         <Link href={`/events/${e.slug}`} className="group grid h-full overflow-hidden rounded-card border border-line bg-surface shadow-card transition hover:shadow-pop">
-                                            <span className="relative block aspect-[16/9] overflow-hidden bg-gradient-to-br from-brand-cyan to-brand-blue">
+                                            <span className="relative block aspect-[16/9] overflow-hidden bg-gradient-to-br from-primary to-primary">
                                                 {e.poster_url && <img src={e.poster_url} alt="" className="size-full object-cover object-top transition group-hover:scale-105" loading="lazy" />}
                                                 <span className="absolute left-3 top-3 grid min-w-12 justify-items-center rounded-control bg-surface px-2 py-1 leading-none shadow-card">
-                                                    <span className="text-[10px] font-semibold uppercase text-brand-magenta">{month(e.starts_at)}</span>
+                                                    <span className="text-[10px] font-semibold uppercase text-primary-strong">{month(e.starts_at)}</span>
                                                     <span className="text-lg font-bold">{day(e.starts_at)}</span>
                                                 </span>
                                             </span>
@@ -135,7 +137,7 @@ export default function Show(props: ClubShowProps) {
                                                     {e.venue && ` · ${e.venue}`}
                                                 </span>
                                                 {e.registration_open && (
-                                                    <span className="text-xs font-semibold text-brand-blue">
+                                                    <span className="text-xs font-semibold text-primary">
                                                         Register · {e.fee_sen ? rm(e.fee_sen) : 'Free'}
                                                         {e.members_only && ' · members only'}
                                                     </span>
@@ -145,6 +147,17 @@ export default function Show(props: ClubShowProps) {
                                     </li>
                                 ))}
                             </ul>
+                        </section>
+                    )}
+                    {isCurrentSession && meetings.length > 0 && (
+                        <section className="grid gap-3">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">Meetings and weekly activities</h3>
+                            <div className="grid gap-3 lg:grid-cols-2">
+                                {meetings.map((m) => (
+                                    <MeetingCard key={m.id} meeting={m} showClub={false} />
+                                ))}
+                            </div>
+                            {!following && !membership.status && <p className="text-xs text-ink-muted">Follow this club to see its activities in your feed and get notified.</p>}
                         </section>
                     )}
                     {isCurrentSession && (memberWall.length > 0 || can.internal) && (
@@ -157,7 +170,7 @@ export default function Show(props: ClubShowProps) {
                                     </p>
                                 </div>
                                 {can.internal && (
-                                    <Link href={`/clubs/${club.slug}/members`} className="text-sm font-medium text-brand-blue">
+                                    <Link href={`/clubs/${club.slug}/members`} className="text-sm font-medium text-primary">
                                         Full members list →
                                     </Link>
                                 )}
@@ -340,8 +353,8 @@ export default function Show(props: ClubShowProps) {
                     </div>
                 )}
                 {membership.drive && (
-                    <p className="rounded-card bg-gradient-to-r from-brand-yellow/30 to-brand-magenta/20 px-4 py-3 text-sm font-medium">
-                        🎉 {membership.drive} is on — join {club.name} now!
+                    <p className="rounded-card bg-gradient-to-r from-gold/30 to-primary-strong/20 px-4 py-3 text-sm font-medium">
+                        {membership.drive} is open. Join {club.name} now.
                     </p>
                 )}
                 {sldRequests.map((r) => (

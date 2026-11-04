@@ -52,7 +52,7 @@ export default function SessionSelector({ sessions, selected, url }: { sessions:
             </div>
             <div ref={rail} className="relative -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]" role="tablist" aria-label="Committee year">
                 <span
-                    className={`absolute top-0 h-full rounded-card bg-gradient-to-br from-brand-orange via-brand-magenta to-brand-blue shadow-pop transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${pill.ready ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute top-0 h-full rounded-card bg-gradient-to-br from-accent via-primary-strong to-primary shadow-pop transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${pill.ready ? 'opacity-100' : 'opacity-0'}`}
                     style={{ left: `${pill.left}px`, width: `${pill.width}px` }}
                     aria-hidden="true"
                 />
@@ -65,7 +65,7 @@ export default function SessionSelector({ sessions, selected, url }: { sessions:
                             role="tab"
                             aria-selected={on}
                             aria-current={on}
-                            className={`relative z-10 grid min-w-28 shrink-0 snap-center gap-0.5 rounded-card border px-4 py-2.5 text-left transition-colors duration-300 ${on ? 'border-transparent text-white' : 'border-line bg-surface hover:border-brand-cyan/60 hover:bg-surface-muted'}`}
+                            className={`relative z-10 grid min-w-28 shrink-0 snap-center gap-0.5 rounded-card border px-4 py-2.5 text-left transition-colors duration-300 ${on ? 'border-transparent text-white' : 'border-line bg-surface hover:border-primary/60 hover:bg-surface-muted'}`}
                             onClick={() => choose(s.name)}
                         >
                             <span className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${on ? 'text-white/80' : 'text-ink-muted'}`}>

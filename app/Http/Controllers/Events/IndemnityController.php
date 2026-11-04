@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\User;
 use App\Services\Documents\IndemnityPdf;
 use App\Services\Events\IndemnityService;
+use App\Support\DownloadName;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -62,7 +63,7 @@ class IndemnityController extends Controller
         $registration = $event->registrations()->where('user_id', $request->user()->id)->first();
 
         return $registration?->isPaidUp() && $registration->ensureTicket()->ticket_code
-            ? to_route('tickets.show', $registration->ticket_code)->with('success', 'Signed. Here is your ticket!')
+            ? to_route('tickets.show', $registration->ticket_code)->with('success', 'Indemnity form signed. Your ticket is ready.')
             : to_route('events.show', $event)->with('success', 'Indemnity signed.');
     }
 
@@ -86,6 +87,6 @@ class IndemnityController extends Controller
     {
         Gate::authorize('organises', $event);
 
-        return response()->download($pdf->render($event), "Indemnity - {$event->name}.pdf")->deleteFileAfterSend();
+        return response()->download($pdf->render($event), DownloadName::safe("Indemnity - {$event->name}.pdf"))->deleteFileAfterSend();
     }
 }

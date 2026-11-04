@@ -206,7 +206,7 @@ export default function Members({ club, portal = false, canManage, committeeFees
                     <div>
                         <h1 className="text-xl font-bold">Members{club && ` · ${club.name}`}</h1>
                         {club && (
-                            <Link href={portal ? '/admin/clubs' : `/clubs/${club.slug}`} className="text-sm text-brand-blue">
+                            <Link href={portal ? '/admin/clubs' : `/clubs/${club.slug}`} className="text-sm text-primary">
                                 {portal ? 'All clubs' : 'Back to club'}
                             </Link>
                         )}

@@ -38,7 +38,7 @@ interface WithdrawalProps {
     can: { sign: boolean; sld: boolean; bankin: boolean };
 }
 const ORDER = ['awaiting_finance', 'awaiting_bankin', 'bankin_uploaded', 'completed'];
-const action = 'grid gap-3 rounded-card border-2 border-brand-cyan/40 bg-brand-cyan/5 p-4';
+const action = 'grid gap-3 rounded-card border-2 border-primary/40 bg-primary/5 p-4';
 const fileLink = 'inline-flex items-center gap-1.5 rounded-control border border-line px-3 py-2 hover:bg-surface-muted';
 
 /** One fund withdrawal's journey: signatures, Finance, bank-in, SLD confirms; each person sees what they must do next. */
@@ -98,7 +98,7 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
             <div className="grid gap-5">
                 <header className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <Link href={`/clubs/${w.club.slug}/finance`} className="text-sm text-brand-blue">
+                        <Link href={`/clubs/${w.club.slug}/finance`} className="text-sm text-primary">
                             ← {w.club.name} finance
                         </Link>
                         <h1 className="text-xl font-bold">Fund withdrawal · {rm(w.total_sen)}</h1>
@@ -120,7 +120,7 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
                 <ol className="grid grid-cols-5 gap-1 text-center text-[11px] sm:text-xs" aria-label="Progress">
                     {journey.map((s, i) => (
                         <li key={i} className="grid justify-items-center gap-1">
-                            <span className={`grid size-7 place-items-center rounded-full text-xs font-bold transition ${s.done ? 'bg-success text-white' : s.current ? 'animate-tracker-pulse bg-brand-magenta text-white' : 'bg-surface-muted text-ink-muted'}`}>
+                            <span className={`grid size-7 place-items-center rounded-full text-xs font-bold transition ${s.done ? 'bg-success text-white' : s.current ? 'animate-tracker-pulse bg-primary-strong text-white' : 'bg-surface-muted text-ink-muted'}`}>
                                 {s.done ? '✓' : i + 1}
                             </span>
                             <span className={s.current ? 'font-semibold' : 'text-ink-muted'}>{s.label}</span>

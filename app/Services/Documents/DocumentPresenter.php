@@ -11,6 +11,7 @@ use App\Services\Approvals\ApprovalEngine;
 use App\Services\Approvals\ApproverResolver;
 use App\Services\Events\ProposalForm;
 use App\Services\Events\ProposalRules;
+use App\Services\Meetings\MeetingAttendance;
 use Illuminate\Support\Facades\Storage;
 
 /** Read-only view of a document, its data and its approval trail, for review and history pages. */
@@ -51,6 +52,13 @@ class DocumentPresenter
             'options' => $document->type === DocumentType::Proposal
                 ? ['natures' => ProposalForm::NATURES, 'sdgs' => ProposalForm::SDGS, 'fundSources' => ProposalForm::FUND_SOURCES]
                 : [],
+            // Minutes go up the chain with the meeting's attendance checklist.
+            'meeting' => $document->type === DocumentType::Minutes && $document->meeting ? [
+                'id' => $document->meeting->id,
+                'title' => $document->meeting->title,
+                'starts_at' => $document->meeting->starts_at->format('D, j M Y, g:i A'),
+                'attendance' => app(MeetingAttendance::class)->rows($document->meeting),
+            ] : null,
             'progress' => $this->progress($document),
             'steps' => $document->approvals->map(fn (Approval $a) => [
                 'id' => $a->id,

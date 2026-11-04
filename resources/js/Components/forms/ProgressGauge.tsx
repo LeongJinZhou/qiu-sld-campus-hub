@@ -44,9 +44,9 @@ export default function ProgressGauge({ items, title, onJump }: { items: GaugeIt
                 <svg viewBox="0 0 100 100" className="size-full -rotate-90">
                     <defs>
                         <linearGradient id="gauge-fill" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stopColor="var(--color-brand-orange)" />
-                            <stop offset="55%" stopColor="var(--color-brand-magenta)" />
-                            <stop offset="100%" stopColor="var(--color-brand-cyan)" />
+                            <stop offset="0%" stopColor="var(--color-accent)" />
+                            <stop offset="55%" stopColor="var(--color-primary-strong)" />
+                            <stop offset="100%" stopColor="var(--color-primary)" />
                         </linearGradient>
                     </defs>
                     <circle cx="50" cy="50" r={R} fill="none" stroke="var(--color-line)" strokeWidth="9" />

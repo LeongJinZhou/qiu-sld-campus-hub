@@ -98,7 +98,9 @@ class PdfConverter
             }
             $xml = (string) $zip->getFromIndex($i);
             $xml = (string) preg_replace('#<w:rFonts\b[^>]*/>#', '<w:rFonts w:ascii="'.self::FONT.'" w:hAnsi="'.self::FONT.'" w:cs="'.self::FONT.'" w:eastAsia="'.self::FONT.'"/>', $xml);
-            $xml = (string) preg_replace('#<w:(sz|szCs) w:val="\d+"\s*/>#', '<w:$1 w:val="'.$half.'"/>', $xml);
+            // Every size becomes 12 pt, except 9.5 pt (19 half-points): the AGM attendance tables, whose seven columns
+            // (with student IDs and emails) only fit on one line each at that size.
+            $xml = (string) preg_replace('#<w:(sz|szCs) w:val="(?!19")\d+"\s*/>#', '<w:$1 w:val="'.$half.'"/>', $xml);
             if ($name === 'word/styles.xml' && ! str_contains($xml, '<w:rPrDefault>')) {
                 $xml = (string) preg_replace('#<w:docDefaults>#', '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="'.self::FONT.'" w:hAnsi="'.self::FONT.'" w:cs="'.self::FONT.'"/><w:sz w:val="'.$half.'"/><w:szCs w:val="'.$half.'"/></w:rPr></w:rPrDefault>', $xml, 1);
             }

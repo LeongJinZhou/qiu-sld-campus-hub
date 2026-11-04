@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Services\Clubs\ClubRequests;
 use App\Services\Documents\DocumentExporter;
 use App\Services\Documents\DocumentPresenter;
+use App\Support\DownloadName;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -33,7 +34,8 @@ class DocumentController extends Controller
         abort_unless(in_array($format, $exporter->formats($document), true), 404);
 
         $file = $exporter->export($document, $format);
-        $name = ($document->event->name ?? $document->club->name)." - {$document->type->label()}.{$format}";
+        // A "/" or "\\" (e.g. in "Fund Request / Withdrawal" or an event name) is not allowed in a download name.
+        $name = DownloadName::safe(($document->event->name ?? $document->club->name)." - {$document->type->label()}.{$format}");
 
         return response()->download($file, $name)->deleteFileAfterSend();
     }

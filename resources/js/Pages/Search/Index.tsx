@@ -47,7 +47,7 @@ export default function Index({ q: initial, type, clubs, events, people }: Searc
             <Head title="Search" />
             <div className="grid gap-5">
                 <div className="sticky top-0 z-10 -mx-4 grid gap-3 bg-surface-muted/90 px-4 pb-3 pt-1 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none">
-                    <label className="flex h-12 items-center gap-3 rounded-full border border-line bg-surface px-4 shadow-card focus-within:ring-2 focus-within:ring-brand-cyan">
+                    <label className="flex h-12 items-center gap-3 rounded-full border border-line bg-surface px-4 shadow-card focus-within:ring-2 focus-within:ring-primary">
                         <Icon name="search" size={20} className="text-ink-muted" />
                         <input value={q} onChange={(e) => setQ(e.target.value)} type="search" placeholder="Search clubs, events and people" className="h-full flex-1 bg-transparent text-[15px] outline-none" aria-label="Search" autoFocus />
                     </label>
@@ -98,7 +98,7 @@ export default function Index({ q: initial, type, clubs, events, people }: Searc
                                         {e.poster_url ? (
                                             <img src={e.poster_url} alt="" className="size-16 shrink-0 rounded-control object-cover object-top" loading="lazy" />
                                         ) : (
-                                            <span className="grid size-16 shrink-0 place-items-center rounded-control bg-gradient-to-br from-brand-cyan to-brand-blue text-white">
+                                            <span className="grid size-16 shrink-0 place-items-center rounded-control bg-gradient-to-br from-primary to-primary text-white">
                                                 <Icon name="calendar" size={24} />
                                             </span>
                                         )}
@@ -131,7 +131,7 @@ export default function Index({ q: initial, type, clubs, events, people }: Searc
                         {type === 'all' && (
                             <div className="flex items-center justify-between">
                                 <h2 className={heading}>{q ? 'Clubs' : 'Discover clubs'}</h2>
-                                <button type="button" className="text-sm font-medium text-brand-blue" onClick={() => go('clubs')}>
+                                <button type="button" className="text-sm font-medium text-primary" onClick={() => go('clubs')}>
                                     See all
                                 </button>
                             </div>
@@ -140,7 +140,7 @@ export default function Index({ q: initial, type, clubs, events, people }: Searc
                             {clubs.map((club) => (
                                 <li key={club.slug}>
                                     <Link href={`/clubs/${club.slug}`} className="group grid overflow-hidden rounded-card border border-line bg-surface text-center shadow-card transition hover:-translate-y-0.5 hover:shadow-pop">
-                                        <span className="h-14 bg-gradient-to-r from-brand-yellow via-brand-orange to-brand-magenta" />
+                                        <span className="h-14 bg-gradient-to-r from-gold via-accent to-primary-strong" />
                                         <span className="-mt-9 grid justify-items-center gap-1.5 px-3 pb-4">
                                             <span className="rounded-full bg-surface p-0.5">
                                                 <Avatar src={club.logo_url} name={club.name} size="lg" ring />
@@ -157,7 +157,7 @@ export default function Index({ q: initial, type, clubs, events, people }: Searc
                 {type === 'clubs' && (
                     <p className="text-center text-sm text-ink-muted">
                         Can't find your club?{' '}
-                        <Link href="/clubs-apply" className="font-medium text-brand-blue hover:underline">
+                        <Link href="/clubs-apply" className="font-medium text-primary hover:underline">
                             Start a new club
                         </Link>
                     </p>

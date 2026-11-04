@@ -15,7 +15,7 @@ export default function FilterBar({ search, onSearch, placeholder = 'Search', ch
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
                 placeholder={placeholder}
-                className="h-10 min-w-48 flex-1 rounded-control border border-line bg-surface px-3 text-sm outline-none focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/30"
+                className="h-10 min-w-48 flex-1 rounded-control border border-line bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             />
             {children}
         </div>

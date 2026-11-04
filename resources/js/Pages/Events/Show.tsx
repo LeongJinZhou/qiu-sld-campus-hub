@@ -78,7 +78,7 @@ export default function Show({ event, committee, approval, registered, registrat
                 <div className="grid content-start gap-6">
                     {event.poster_url && <img src={event.poster_url} alt={`${event.name} poster`} className="w-full rounded-card border border-line" />}
                     <header className="grid gap-2">
-                        <Link href={`/clubs/${event.club.slug}`} className="text-sm font-medium text-brand-blue">
+                        <Link href={`/clubs/${event.club.slug}`} className="text-sm font-medium text-primary">
                             {event.club.name}
                         </Link>
                         <h1 className="text-2xl font-bold">{event.name}</h1>

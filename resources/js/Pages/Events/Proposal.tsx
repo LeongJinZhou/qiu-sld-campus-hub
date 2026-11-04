@@ -683,7 +683,7 @@ export default function Proposal(props: ProposalProps) {
                             ))}
                         </ol>
                         {!readOnly && (
-                            <button type="button" className="justify-self-start text-sm font-medium text-brand-blue" onClick={() => set('speakers', [...d.speakers, blankSpeaker()])}>
+                            <button type="button" className="justify-self-start text-sm font-medium text-primary" onClick={() => set('speakers', [...d.speakers, blankSpeaker()])}>
                                 ＋ Add another person
                             </button>
                         )}
@@ -783,7 +783,7 @@ export default function Proposal(props: ProposalProps) {
                                             />
                                             <Input value={trip.departure_pickup} onChange={(v) => setTrip(i, { departure_pickup: v })} label="Pickup point" required readOnly={readOnly} error={errors[`trips.${i}.departure_pickup`]} />
                                         </div>
-                                        <div className="grid gap-2 border-l-2 border-brand-cyan/50 pl-3">
+                                        <div className="grid gap-2 border-l-2 border-primary/50 pl-3">
                                             <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Destinations in order · the last one is the drop-off point</p>
                                             {trip.stops.map((st, s) => (
                                                 <div key={s} className="grid gap-2 rounded-control bg-surface-muted p-3">
@@ -814,7 +814,7 @@ export default function Proposal(props: ProposalProps) {
                                             ))}
                                             {errors[`trips.${i}.stops`] && <p className="text-xs text-danger">{errors[`trips.${i}.stops`]}</p>}
                                             {!readOnly && (
-                                                <button type="button" className="justify-self-start text-xs font-medium text-brand-blue" onClick={() => setTrip(i, { stops: [...trip.stops, blankStop()] })}>
+                                                <button type="button" className="justify-self-start text-xs font-medium text-primary" onClick={() => setTrip(i, { stops: [...trip.stops, blankStop()] })}>
                                                     ＋ Add a place on the way
                                                 </button>
                                             )}
@@ -840,7 +840,7 @@ export default function Proposal(props: ProposalProps) {
                                 ))}
                             </ol>
                             {!readOnly && (
-                                <button type="button" className="justify-self-start text-sm font-medium text-brand-blue" onClick={() => set('trips', [...d.trips, blankTrip()])}>
+                                <button type="button" className="justify-self-start text-sm font-medium text-primary" onClick={() => set('trips', [...d.trips, blankTrip()])}>
                                     ＋ Add another trip (different place or time)
                                 </button>
                             )}
@@ -1027,7 +1027,7 @@ export default function Proposal(props: ProposalProps) {
                                                 </table>
                                             </div>
                                             {!readOnly && (
-                                                <div className="flex flex-wrap gap-3 text-xs font-medium text-brand-blue">
+                                                <div className="flex flex-wrap gap-3 text-xs font-medium text-primary">
                                                     <button type="button" onClick={() => resizeTable(b, 'row', 1)}>
                                                         ＋ Row
                                                     </button>

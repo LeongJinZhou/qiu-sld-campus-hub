@@ -20,7 +20,7 @@ const SECTIONS: { key: Side; label: string; hint: string }[] = [
     { key: 'revenue', label: 'Revenue', hint: 'Ticket sales, sponsorship, club fund…' },
     { key: 'expenses', label: 'Expenses', hint: 'Everything you plan to buy or pay for' },
 ];
-const inputClass = 'h-10 w-full rounded-control border border-line text-sm outline-none transition focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/30 disabled:bg-surface-muted';
+const inputClass = 'h-10 w-full rounded-control border border-line text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:bg-surface-muted';
 
 /**
  * Revenue and expenses, money kept in sen. Prices are typed like on a calculator ("12.5" → RM 12.50 when you
@@ -134,7 +134,7 @@ export default function BudgetTable({ budget, onChange, disabled, errors }: { bu
                     {!disabled && (
                         <button
                             type="button"
-                            className="justify-self-start rounded-control border border-dashed border-line px-3 py-2 text-sm font-medium text-brand-blue transition hover:border-brand-cyan"
+                            className="justify-self-start rounded-control border border-dashed border-line px-3 py-2 text-sm font-medium text-primary transition hover:border-primary"
                             onClick={() => add(section.key)}
                         >
                             ＋ Add {section.key === 'revenue' ? 'revenue' : 'expense'}

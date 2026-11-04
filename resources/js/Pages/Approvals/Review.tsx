@@ -184,7 +184,7 @@ export default function Review({ approvalId, role, canAct, document, downloads, 
                                     <p className="text-ink-muted">If this needs a higher authority's signature, choose who signs. You then export it, have it signed, and upload the scan.</p>
                                     {paperOptions.map((o) => (
                                         <label key={o} className="flex items-center gap-2">
-                                            <input type="checkbox" checked={chosen.includes(o)} onChange={(e) => setChosen(e.target.checked ? [...chosen, o] : chosen.filter((c) => c !== o))} className="size-4 accent-brand-blue" /> {o}
+                                            <input type="checkbox" checked={chosen.includes(o)} onChange={(e) => setChosen(e.target.checked ? [...chosen, o] : chosen.filter((c) => c !== o))} className="size-4 accent-primary" /> {o}
                                         </label>
                                     ))}
                                     <input value={other} onChange={(e) => setOther(e.target.value)} maxLength={120} placeholder="Someone else (name and title)" className="h-9 rounded-control border border-line bg-surface px-2 text-sm" />
@@ -199,7 +199,7 @@ export default function Review({ approvalId, role, canAct, document, downloads, 
                                             <p className="font-medium">1. Export and have it signed</p>
                                             <div className="flex flex-wrap gap-2">
                                                 {downloads.map((format) => (
-                                                    <a key={format} href={`/documents/${document.id}/download/${format}`} className="text-brand-blue underline">
+                                                    <a key={format} href={`/documents/${document.id}/download/${format}`} className="text-primary underline">
                                                         {format.toUpperCase()}
                                                     </a>
                                                 ))}
@@ -211,7 +211,7 @@ export default function Review({ approvalId, role, canAct, document, downloads, 
                                                 <input type="file" accept="application/pdf,image/*" className="text-xs" onChange={(e) => paperForm.setData('scan', e.target.files?.[0] ?? null)} />
                                                 {paperForm.errors.scan && <p className="text-xs text-danger">{paperForm.errors.scan}</p>}
                                                 {paper.scan_url && (
-                                                    <a href={paper.scan_url} target="_blank" rel="noopener" className="text-xs text-brand-blue underline">
+                                                    <a href={paper.scan_url} target="_blank" rel="noopener" className="text-xs text-primary underline">
                                                         Signed scan on file
                                                     </a>
                                                 )}

@@ -10,6 +10,7 @@ use App\Services\Documents\PaymentBreakdownExport;
 use App\Services\Documents\PdfConverter;
 use App\Services\Finance\PaymentBreakdown;
 use App\Services\Time\SessionResolver;
+use App\Support\DownloadName;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -73,7 +74,7 @@ class PaymentBreakdownController extends Controller
             $file = $converted;
         }
 
-        return response()->download($file, Str::limit("{$club->name} - {$breakdown['title']}", 80, '')." payments.{$format}")->deleteFileAfterSend();
+        return response()->download($file, DownloadName::safe(Str::limit("{$club->name} - {$breakdown['title']}", 80, '')." payments.{$format}"))->deleteFileAfterSend();
     }
 
     private function authorizeFor(Club $club, ?Event $event = null): void

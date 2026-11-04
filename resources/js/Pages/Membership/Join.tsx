@@ -41,13 +41,13 @@ export default function Join({ club, fee, drive, membership, payment, committee,
                     <div>
                         <p className="text-sm text-ink-muted">Membership</p>
                         <h1 className="text-xl font-bold">{club.name}</h1>
-                        <Link href={`/clubs/${club.slug}`} className="text-sm text-brand-blue">
+                        <Link href={`/clubs/${club.slug}`} className="text-sm text-primary">
                             Back to club
                         </Link>
                     </div>
                 </header>
                 {drive && (
-                    <p className="flex items-center gap-2 rounded-card bg-gradient-to-r from-brand-yellow/30 to-brand-magenta/20 px-4 py-3 text-sm font-medium">
+                    <p className="flex items-center gap-2 rounded-card bg-gradient-to-r from-gold/30 to-primary-strong/20 px-4 py-3 text-sm font-medium">
                         <Icon name="sparkles" size={18} /> {drive.title} — membership drive is on now!
                     </p>
                 )}

@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
     'is_outdoor', 'is_faculty_event', 'cca_participant', 'cca_committee', 'status', 'poster_path', 'poster_checklist',
     'registration_open', 'members_only', 'attendance_open', 'qr_rotate_seconds', 'approved_at', 'fee_sen', 'payment_url', 'payment_account_name', 'payment_qr_paths',
 ])]
-#[Hidden(['attendance_secret'])]
+#[Hidden(['attendance_secret', 'checkin_qr_path', 'checkout_qr_path'])]
 class Event extends Model
 {
     /** @var array<string, mixed> */

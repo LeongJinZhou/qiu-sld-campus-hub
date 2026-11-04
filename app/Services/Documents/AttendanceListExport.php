@@ -37,7 +37,7 @@ class AttendanceListExport
         return $this->xlsx->render(self::TEMPLATE, function (Spreadsheet $book) use ($event, $participants, $committee, $preparer, $reviewer): void {
             $sheet = $book->getSheetByName('Participant');
             $sheet->setCellValue('B1', $event->name)->setCellValue('D1', $event->venue)
-                ->setCellValue('B2', $event->club->name)->setCellValue('D2', $event->cca_participant)
+                ->setCellValue('A2', 'Organizer:')->setCellValue('B2', $event->club->name)->setCellValue('D2', $event->cca_participant)
                 ->setCellValue('B3', $event->starts_at->format('d/m/Y'))
                 ->setCellValue('D3', $event->starts_at->format('g.i A').' – '.$event->ends_at->format('g.i A'));
             $this->xlsx->fillRows($sheet, 6, 19, $participants->values()->map(fn (Attendance $a, int $i) => [$i + 1, $a->user->name, $a->user->email])->all());

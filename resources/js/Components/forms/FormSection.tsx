@@ -18,7 +18,7 @@ interface FormSectionProps {
  */
 export default function FormSection({ title, hint, required, section, flag, editors, alert, children }: FormSectionProps) {
     const pulse = alert === 'flash' ? 'problem-flash' : alert === 'blink' ? 'problem-blink' : '';
-    const border = flag ? 'border-danger ring-4 ring-danger/15' : editors?.length ? 'border-brand-cyan ring-2 ring-brand-cyan/20' : 'border-line';
+    const border = flag ? 'border-danger ring-4 ring-danger/15' : editors?.length ? 'border-primary ring-2 ring-primary/20' : 'border-line';
     return (
         <section data-section={section} className={`grid scroll-mt-24 gap-4 rounded-card border bg-surface p-5 shadow-card transition-[box-shadow,border-color] duration-300 ${pulse} ${border}`}>
             <header className="flex flex-wrap items-start justify-between gap-2">
@@ -30,10 +30,10 @@ export default function FormSection({ title, hint, required, section, flag, edit
                     {hint && <p className="text-sm text-ink-muted">{hint}</p>}
                 </div>
                 {!!editors?.length && (
-                    <span className="flex items-center gap-1.5 rounded-full bg-brand-cyan/10 px-2 py-1 text-xs font-medium text-brand-blue">
+                    <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
                         <span className="relative flex size-2">
-                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand-cyan opacity-70" />
-                            <span className="relative inline-flex size-2 rounded-full bg-brand-cyan" />
+                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-70" />
+                            <span className="relative inline-flex size-2 rounded-full bg-primary" />
                         </span>
                         {editors.map((e) => e.name.split(' ')[0]).join(', ')} editing
                     </span>

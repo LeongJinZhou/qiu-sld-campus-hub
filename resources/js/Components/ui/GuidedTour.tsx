@@ -127,7 +127,7 @@ export default function GuidedTour() {
             {/* The circle: a pulsing ring around the highlighted element. */}
             {hole && (
                 <span
-                    className={`${styles.ring} pointer-events-none absolute rounded-2xl border-[3px] border-brand-yellow transition-all duration-300 ease-out`}
+                    className={`${styles.ring} pointer-events-none absolute rounded-2xl border-[3px] border-gold transition-all duration-300 ease-out`}
                     style={{ left: `${hole.x - 4}px`, top: `${hole.y - 4}px`, width: `${hole.w + 8}px`, height: `${hole.h + 8}px` }}
                 />
             )}
@@ -143,7 +143,7 @@ export default function GuidedTour() {
                     <p className="text-sm text-ink-muted">{step.body}</p>
                 </div>
                 <div className="h-1 overflow-hidden rounded-full bg-surface-muted">
-                    <div className="h-full rounded-full bg-gradient-to-r from-brand-orange to-brand-magenta transition-[width] duration-300" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-accent to-primary-strong transition-[width] duration-300" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
                 </div>
                 <div className="flex items-center justify-between gap-2">
                     <button type="button" className="text-sm text-ink-muted hover:text-ink" onClick={finish}>
@@ -155,7 +155,7 @@ export default function GuidedTour() {
                                 Back
                             </button>
                         )}
-                        <button type="button" className="h-9 rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-4 text-sm font-semibold text-white" onClick={next}>
+                        <button type="button" className="h-9 rounded-control bg-gradient-to-r from-accent to-primary-strong px-4 text-sm font-semibold text-white" onClick={next}>
                             {index === steps.length - 1 ? 'Got it' : 'Next'}
                         </button>
                     </div>

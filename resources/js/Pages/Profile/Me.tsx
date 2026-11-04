@@ -75,7 +75,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
                                     {e.poster_url ? (
                                         <img src={e.poster_url} alt="" className="size-14 shrink-0 rounded-control object-cover" />
                                     ) : (
-                                        <span className="grid size-14 shrink-0 place-items-center rounded-control bg-gradient-to-br from-brand-cyan to-brand-blue text-white">
+                                        <span className="grid size-14 shrink-0 place-items-center rounded-control bg-gradient-to-br from-primary to-primary text-white">
                                             <Icon name="calendar" size={22} />
                                         </span>
                                     )}
@@ -104,7 +104,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
                                     <strong className="block">{c.title}</strong>
                                     <span className="text-sm text-ink-muted">You {c.statement}</span>
                                     {c.code && (
-                                        <a href={`/certificates/${c.code}`} className="block text-xs text-brand-blue">
+                                        <a href={`/certificates/${c.code}`} className="block text-xs text-primary">
                                             Verification code {c.code}
                                         </a>
                                     )}
@@ -149,7 +149,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
                         </span>
                     </div>
                     <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                        <div className="h-full rounded-full bg-gradient-to-r from-brand-orange to-brand-magenta" style={{ width: `${(stepsDone / steps.length) * 100}%` }} />
+                        <div className="h-full rounded-full bg-gradient-to-r from-accent to-primary-strong" style={{ width: `${(stepsDone / steps.length) * 100}%` }} />
                     </div>
                     <ul className="grid gap-1 text-sm">
                         {steps.map((s) => {
@@ -229,7 +229,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
             <Modal open={qr} onClose={() => setQr(false)} title="My QIU profile QR">
                 <div className="grid justify-items-center gap-3">
                     <QrCode svg={qrSvg} label="Anyone who scans sees your public profile" downloadName="my-qiu-profile" />
-                    <a href={publicUrl} className="text-sm font-medium text-brand-blue">
+                    <a href={publicUrl} className="text-sm font-medium text-primary">
                         Open public profile
                     </a>
                 </div>

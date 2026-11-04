@@ -75,7 +75,7 @@ export default function Index({ actions, items, hasMore, limit, group, groups, t
                     </button>
                 </header>
                 {permission === 'default' && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-brand-cyan/40 bg-brand-cyan/5 p-4 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-primary/40 bg-primary/5 p-4 text-sm">
                         <span>Get a phone notification when you leave a payment or form half-way.</span>
                         <Button size="sm" onClick={() => void Notification.requestPermission().then(setPermission)}>
                             Turn on
@@ -123,10 +123,10 @@ export default function Index({ actions, items, hasMore, limit, group, groups, t
                     {!items.length && !actions.length && <EmptyState title="You're all caught up" description="Payments, approvals, club activity and reminders show up here." />}
                     <ul className="relative grid gap-2">
                         {items.map((n) => {
-                            const cls = `flex gap-3 rounded-card border p-4 pr-11 transition hover:shadow-card ${n.unread ? 'border-brand-magenta/40 bg-brand-magenta/5' : 'border-line bg-surface'}`;
+                            const cls = `flex gap-3 rounded-card border p-4 pr-11 transition hover:shadow-card ${n.unread ? 'border-primary-strong/40 bg-primary-strong/5' : 'border-line bg-surface'}`;
                             const body: ReactNode = (
                                 <>
-                                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-orange to-brand-magenta text-white">
+                                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent to-primary-strong text-white">
                                         <Icon name={ICONS[n.category] ?? 'bell'} size={18} />
                                     </span>
                                     <span className="grid min-w-0 gap-0.5">

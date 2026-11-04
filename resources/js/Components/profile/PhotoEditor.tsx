@@ -78,7 +78,7 @@ export default function PhotoEditor({ kind = 'photo', current, name, hasOverride
                     <>
                         <div className="grid justify-items-center gap-2">
                             {isCover ? (
-                                <div className="aspect-[3/1] w-full overflow-hidden rounded-card bg-gradient-to-r from-brand-yellow via-brand-orange to-brand-magenta">
+                                <div className="aspect-[3/1] w-full overflow-hidden rounded-card bg-gradient-to-r from-gold via-accent to-primary-strong">
                                     {current && <img src={current} alt="Current cover" className="size-full object-cover" />}
                                 </div>
                             ) : (

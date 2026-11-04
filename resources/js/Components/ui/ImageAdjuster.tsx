@@ -119,7 +119,7 @@ const ImageAdjuster = forwardRef<ImageAdjusterHandle, ImageAdjusterProps>(functi
             </div>
             <label className="flex items-center gap-3 text-sm">
                 <span className="text-ink-muted">Zoom</span>
-                <input value={zoom} onChange={(e) => setZoom(Number(e.target.value))} type="range" min="1" max="4" step="0.01" className="flex-1 accent-brand-magenta" aria-label="Zoom" />
+                <input value={zoom} onChange={(e) => setZoom(Number(e.target.value))} type="range" min="1" max="4" step="0.01" className="flex-1 accent-primary-strong" aria-label="Zoom" />
             </label>
         </div>
     );

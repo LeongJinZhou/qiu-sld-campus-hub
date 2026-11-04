@@ -44,7 +44,7 @@ export default function Index({ clubs, requests }: { clubs: Option[]; requests: 
                                     <button
                                         key={c.value}
                                         type="button"
-                                        className={`rounded-full border px-3 py-1 text-sm ${ids.includes(Number(c.value)) ? 'border-brand-blue bg-brand-cyan/15' : 'border-line'}`}
+                                        className={`rounded-full border px-3 py-1 text-sm ${ids.includes(Number(c.value)) ? 'border-primary bg-primary/15' : 'border-line'}`}
                                         onClick={() => toggle(Number(c.value))}
                                     >
                                         {c.label}

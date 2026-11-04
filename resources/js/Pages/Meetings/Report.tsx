@@ -25,6 +25,8 @@ interface Row {
     checked_out: number;
     rate: number;
     minutes: string;
+    minutes_id: number | null;
+    minutes_files: string[];
     upcoming: boolean;
 }
 interface ReportProps {
@@ -61,7 +63,7 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
                     {club ? (
                         <div>
                             <h1 className="text-xl font-bold">{title}</h1>
-                            <Link href={`/clubs/${club.slug}/meetings`} className="text-sm text-brand-blue">
+                            <Link href={`/clubs/${club.slug}/meetings`} className="text-sm text-primary">
                                 Back to meetings
                             </Link>
                         </div>
@@ -104,6 +106,7 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
                                 <th className="px-3 py-3 text-right font-medium">Out</th>
                                 <th className="px-3 py-3 text-right font-medium">Rate</th>
                                 <th className="px-3 py-3 font-medium">Minutes</th>
+                                <th className="px-3 py-3 font-medium">Files</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -112,7 +115,7 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
                                     <td className="whitespace-nowrap px-3 py-2 text-xs">{dateTime(r.date)}</td>
                                     {!club && <td className="px-3 py-2">{r.club}</td>}
                                     <td className="px-3 py-2">
-                                        <Link href={`/meetings/${r.id}`} className="font-medium text-brand-blue">
+                                        <Link href={`/meetings/${r.id}`} className="font-medium text-primary">
                                             {r.title}
                                         </Link>
                                         <div className="text-xs text-ink-muted">
@@ -129,11 +132,30 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
                                     <td className="px-3 py-2">
                                         <Badge tone={minutesTone(r.minutes)}>{r.minutes}</Badge>
                                     </td>
+                                    <td className="px-3 py-2">
+                                        <div className="flex flex-wrap gap-x-3 gap-y-1 whitespace-nowrap text-xs font-medium">
+                                            {r.minutes_id &&
+                                                r.minutes_files.map((f) => (
+                                                    <a key={f} href={`/documents/${r.minutes_id}/download/${f}`} className="text-primary">
+                                                        Minutes {f.toUpperCase()}
+                                                    </a>
+                                                ))}
+                                            <a href={`/meetings/${r.id}/attendance/export.xlsx`} className="text-primary">
+                                                Attendance Excel
+                                            </a>
+                                            <a href={`/meetings/${r.id}/attendance/export.pdf`} className="text-primary">
+                                                Attendance PDF
+                                            </a>
+                                            <a href={`/meetings/${r.id}/package.zip`} className="text-primary">
+                                                All (ZIP)
+                                            </a>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                             {!meetings.data.length && (
                                 <tr>
-                                    <td colSpan={club ? 8 : 9} className="px-3 py-8 text-center text-ink-muted">
+                                    <td colSpan={club ? 9 : 10} className="px-3 py-8 text-center text-ink-muted">
                                         No meetings match.
                                     </td>
                                 </tr>

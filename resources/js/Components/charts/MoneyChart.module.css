@@ -1,14 +1,5 @@
 .chart {
-    --income: #2a78d6;
-    --expense: #eb6834;
-}
-:global(:root[data-theme='dark']) .chart {
-    --income: #3987e5;
-    --expense: #d95926;
-}
-@media (prefers-color-scheme: dark) {
-    :global(:root[data-theme='system']) .chart {
-        --income: #3987e5;
-        --expense: #d95926;
-    }
+    /* Income and expenses use the app's status colours, so they read the same everywhere (and in dark mode). */
+    --income: var(--color-success);
+    --expense: var(--color-primary);
 }

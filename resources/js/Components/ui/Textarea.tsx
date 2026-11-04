@@ -10,9 +10,10 @@ interface TextareaProps {
     readOnly?: boolean;
     placeholder?: string;
     required?: boolean;
+    maxLength?: number;
 }
 
-export default function Textarea({ label, value, onChange, error, rows = 4, readOnly = false, placeholder, required }: TextareaProps) {
+export default function Textarea({ label, value, onChange, error, rows = 4, readOnly = false, placeholder, required, maxLength }: TextareaProps) {
     const id = useId();
     return (
         <div className="grid gap-1.5">
@@ -24,8 +25,9 @@ export default function Textarea({ label, value, onChange, error, rows = 4, read
                 rows={rows}
                 readOnly={readOnly}
                 placeholder={placeholder}
+                maxLength={maxLength}
                 aria-invalid={!!error}
-                className="rounded-control border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/30 read-only:bg-surface-muted"
+                className="rounded-control border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 read-only:bg-surface-muted"
             />
             <FieldMessage id={id} error={error} />
         </div>

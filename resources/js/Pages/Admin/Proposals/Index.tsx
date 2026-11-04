@@ -83,7 +83,7 @@ export default function Index({ proposals, filters, clubs, sessions }: Proposals
                             {proposals.data.map((p) => (
                                 <tr key={p.id} className="border-t border-line align-top">
                                     <td className="px-4 py-3">
-                                        <Link href={`/documents/${p.id}`} className="font-medium hover:text-brand-blue">
+                                        <Link href={`/documents/${p.id}`} className="font-medium hover:text-primary">
                                             {p.event}
                                         </Link>
                                         <p className="text-xs text-ink-muted">
@@ -99,7 +99,7 @@ export default function Index({ proposals, filters, clubs, sessions }: Proposals
                                     <td className={`px-4 py-3 text-right font-medium tabular-nums ${p.profit < 0 ? 'text-danger' : ''}`}>{money(p.profit)}</td>
                                     <td className="px-4 py-3">
                                         {p.downloadable && (
-                                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-medium text-brand-blue">
+                                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-medium text-primary">
                                                 <a href={`/documents/${p.id}/download/pdf`}>PDF</a>
                                                 <a href={`/documents/${p.id}/download/docx`}>Word</a>
                                                 <a href={`/admin/proposals/${p.id}/package.zip`} title="Proposal, withdrawals, attendance, post mortem and finance">

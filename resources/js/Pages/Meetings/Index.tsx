@@ -52,10 +52,10 @@ export default function Index({ club, calendarConnected, kinds, audiences, meeti
                     <header>
                         <h1 className="text-xl font-bold">Meetings &amp; activities · {club.name}</h1>
                         <span className="flex flex-wrap gap-4 text-sm">
-                            <Link href={`/clubs/${club.slug}`} className="text-brand-blue">
+                            <Link href={`/clubs/${club.slug}`} className="text-primary">
                                 Back to club
                             </Link>
-                            <Link href={`/clubs/${club.slug}/meetings/report`} className="text-brand-blue">
+                            <Link href={`/clubs/${club.slug}/meetings/report`} className="text-primary">
                                 Meetings report
                             </Link>
                         </span>
@@ -101,9 +101,9 @@ export default function Index({ club, calendarConnected, kinds, audiences, meeti
                         <Input value={data.ends_at} onChange={(v) => setData('ends_at', v)} type="datetime-local" label="Ends" error={errors.ends_at} />
                         <Checkbox checked={data.online} onChange={(v) => setData('online', v)} label="Online — create a Google Meet link" />
                         {data.online && !calendarConnected && (
-                            <p className="rounded-control bg-brand-cyan/10 p-3 text-sm">
+                            <p className="rounded-control bg-primary/10 p-3 text-sm">
                                 Meet links are created from your own QIU Google Calendar.{' '}
-                                <a href="/google/calendar/connect" className="font-semibold text-brand-blue">
+                                <a href="/google/calendar/connect" className="font-semibold text-primary">
                                     Connect Google Calendar
                                 </a>
                             </p>

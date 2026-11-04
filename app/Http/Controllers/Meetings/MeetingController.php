@@ -9,8 +9,11 @@ use App\Models\Meeting;
 use App\Services\Approvals\ApprovalEngine;
 use App\Services\Documents\DocumentExporter;
 use App\Services\Documents\DocumentPresenter;
+use App\Services\Documents\PdfConverter;
 use App\Services\Events\AttendanceQr;
+use App\Services\Events\CustomAttendanceQr;
 use App\Services\Google\CalendarMeetService;
+use App\Services\Meetings\MeetingAttendance;
 use App\Services\Meetings\Meetings;
 use App\Services\Meetings\MinutesForm;
 use App\Services\QrCodes;
@@ -25,6 +28,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use ZipArchive;
 
 class MeetingController extends Controller
 {
@@ -74,7 +79,7 @@ class MeetingController extends Controller
         return to_route('meetings.show', $meeting)->with('success', $meeting->meet_link ? "Meeting created — Meet link sent to {$who}." : "Created and {$who} notified.");
     }
 
-    public function show(Request $request, Meeting $meeting, DocumentPresenter $presenter, DocumentExporter $exporter, ApprovalEngine $engine, AttendanceQr $qr, QrCodes $codes): Response
+    public function show(Request $request, Meeting $meeting, DocumentPresenter $presenter, DocumentExporter $exporter, ApprovalEngine $engine, AttendanceQr $qr, QrCodes $codes, CustomAttendanceQr $custom, MeetingAttendance $checklist): Response
     {
         Gate::authorize('viewInternal', $meeting->club);
         $document = $meeting->minutes()->firstOrFail();
@@ -98,6 +103,11 @@ class MeetingController extends Controller
                 'in' => $time($u->pivot->checked_in_at), 'out' => $time($u->pivot->checked_out_at), 'method' => $u->pivot->method,
             ]]),
             // The rotating check-in / check-out codes are shown on the organiser's screen while the meeting is on.
+            'canManage' => Gate::allows('publish', $meeting->club),
+            // The committee's own uploaded check-in / check-out QR images, if any.
+            'customQr' => Gate::allows('publish', $meeting->club) ? $custom->urls($meeting) : null,
+            'checklist' => $checklist->rows($meeting),
+            'tab' => QueryInput::oneOf($request, 'tab', ['attendance', 'minutes']) ?? 'attendance',
             'qr' => $open && Gate::allows('publish', $meeting->club) ? [
                 'in' => $codes->svg(route('meetings.attend', ['meeting' => $meeting, 'action' => 'in', 'code' => $qr->code($meeting, 'in')])),
                 'out' => $codes->svg(route('meetings.attend', ['meeting' => $meeting, 'action' => 'out', 'code' => $qr->code($meeting, 'out')])),
@@ -140,6 +150,74 @@ class MeetingController extends Controller
         }
 
         return $back->with('success', $message);
+    }
+
+    /** The committee uploads (or removes) its own check-in and check-out QR images. */
+    public function customQr(Request $request, Meeting $meeting, CustomAttendanceQr $custom): RedirectResponse
+    {
+        Gate::authorize('publish', $meeting->club);
+        $data = $request->validate([
+            'in' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'out' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'remove_in' => ['boolean'], 'remove_out' => ['boolean'],
+        ]);
+        $custom->update($meeting, [...$data, 'in' => $request->file('in'), 'out' => $request->file('out')]);
+
+        return back()->with('success', 'Attendance QR codes updated.');
+    }
+
+    /** The attendance checklist as Excel or PDF, for the committee, advisor and SLD. */
+    public function attendanceExport(Meeting $meeting, string $format, MeetingAttendance $checklist, PdfConverter $pdf): BinaryFileResponse
+    {
+        Gate::authorize('viewInternal', $meeting->club);
+        abort_unless(in_array($format, ['xlsx', 'pdf'], true), 404);
+        $file = $checklist->export($meeting);
+        if ($format === 'pdf') {
+            $converted = $pdf->convert($file);
+            @unlink($file);
+            $file = $converted;
+        }
+
+        return response()->download($file, $this->fileName($meeting, 'Attendance').".{$format}")->deleteFileAfterSend();
+    }
+
+    /** Everything on file for one meeting in a ZIP: the minutes (Word and PDF) and the attendance checklist (Excel and PDF). */
+    public function package(Meeting $meeting, DocumentExporter $exporter, MeetingAttendance $checklist, PdfConverter $pdf): BinaryFileResponse
+    {
+        Gate::authorize('viewInternal', $meeting->club);
+        $zipPath = storage_path('app/private/generated/meeting-'.$meeting->id.'-'.now()->format('YmdHis').'-'.bin2hex(random_bytes(3)).'.zip');
+        @mkdir(dirname($zipPath), 0775, true);
+        $zip = new ZipArchive;
+        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $cleanup = [];
+        $sheet = $checklist->export($meeting);
+        $cleanup[] = $sheet;
+        $zip->addFromString($this->fileName($meeting, 'Attendance').'.xlsx', (string) file_get_contents($sheet));
+        $minutes = $meeting->minutes;
+        foreach ($minutes ? $exporter->formats($minutes) : [] as $format) {
+            try {
+                $file = $exporter->export($minutes, $format);
+                $cleanup[] = $file;
+                $zip->addFromString($this->fileName($meeting, 'Minutes').".{$format}", (string) file_get_contents($file));
+            } catch (\Throwable) {
+                // PDF needs LibreOffice; the Word original is still in the package.
+            }
+        }
+        try {
+            $sheetPdf = $pdf->convert($sheet);
+            $cleanup[] = $sheetPdf;
+            $zip->addFromString($this->fileName($meeting, 'Attendance').'.pdf', (string) file_get_contents($sheetPdf));
+        } catch (\Throwable) {
+        }
+        $zip->close();
+        array_map(fn (string $f) => @unlink($f), $cleanup);
+
+        return response()->download($zipPath, $this->fileName($meeting, 'Meeting package').'.zip')->deleteFileAfterSend();
+    }
+
+    private function fileName(Meeting $meeting, string $what): string
+    {
+        return trim(preg_replace('/[^A-Za-z0-9 ._()-]+/', '-', "{$meeting->club->name} - {$meeting->title} - {$what} - {$meeting->starts_at->format('Y-m-d')}"), ' -');
     }
 
     public function save(Request $request, Meeting $meeting): RedirectResponse

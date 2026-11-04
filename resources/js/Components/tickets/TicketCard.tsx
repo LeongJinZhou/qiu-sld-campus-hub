@@ -5,9 +5,9 @@ import type { CSSProperties } from 'react';
 import './TicketCard.css';
 
 const THEMES = {
-    party: { bg: 'from-brand-orange via-brand-magenta to-brand-blue', label: 'Party' },
-    nature: { bg: 'from-emerald-500 via-teal-500 to-brand-cyan', label: 'Outdoor' },
-    online: { bg: 'from-indigo-700 via-brand-blue to-brand-cyan', label: 'Online' },
+    party: { bg: 'from-accent via-primary-strong to-primary', label: 'Party' },
+    nature: { bg: 'from-emerald-500 via-teal-500 to-primary', label: 'Outdoor' },
+    online: { bg: 'from-indigo-700 via-primary to-primary', label: 'Online' },
 } as const;
 
 // Fixed pseudo-random particles, so the layout is the same on every render.
@@ -16,7 +16,7 @@ const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
     delay: `${(i * 0.73) % 6}s`,
     duration: `${6 + ((i * 1.9) % 5)}s`,
     size: 6 + ((i * 5) % 9),
-    hue: ['#FDDA1A', '#1CBDFD', '#E01CEB', '#FD8F1A', '#ffffff'][i % 5],
+    hue: ['#F2B544', '#D12A32', '#FFFFFF', '#E0702F', '#FBE9EA'][i % 5],
     rotate: `${(i * 47) % 360}deg`,
 }));
 
@@ -43,7 +43,7 @@ export default function TicketCard({ ticket, qrSvg = null, compact = false }: { 
     const status = {
         paid: { text: `Paid ${rm(ticket.amount_sen)}`, tone: 'bg-success text-white' },
         free: { text: 'Free entry', tone: 'bg-success text-white' },
-        checking: { text: 'Payment being checked', tone: 'bg-brand-cyan text-white' },
+        checking: { text: 'Payment being checked', tone: 'bg-primary text-white' },
         unpaid: { text: 'Not paid yet', tone: 'bg-warning text-white' },
     }[ticket.status];
     const paidUp = ticket.status === 'paid' || ticket.status === 'free';

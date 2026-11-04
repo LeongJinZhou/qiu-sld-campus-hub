@@ -44,7 +44,7 @@ interface CalendarProps {
 }
 const ITEM_ICON: Record<CalItem['kind'], 'users' | 'calendar' | 'file' | 'award'> = { meeting: 'users', activity: 'calendar', report_due: 'file', agm: 'award' };
 const time = (iso: string): string => new Date(iso).toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
-const tone = (e: CalEvent): string => (e.registered ? 'bg-success text-white' : e.followed ? 'bg-brand-blue text-white' : 'bg-brand-magenta/15 text-brand-magenta');
+const tone = (e: CalEvent): string => (e.registered ? 'bg-success text-white' : e.followed ? 'bg-primary text-white' : 'bg-primary-strong/15 text-primary-strong');
 const FILTERS: { k: Filter; l: string }[] = [
     { k: 'all', l: 'All events' },
     { k: 'followed', l: 'Clubs I follow' },
@@ -140,7 +140,7 @@ export default function Index({ month, today, events, years, feedUrl, items = []
                                 <span className="font-semibold">{m.label}</span>
                                 <span className="grid grid-cols-7 gap-0.5 text-center text-[10px]">
                                     {m.cells.map((c, i) => (
-                                        <span key={i} className={`grid aspect-square place-items-center rounded ${c && c.n ? 'bg-brand-magenta/80 font-bold text-white' : c && c.key === today ? 'ring-1 ring-brand-magenta' : 'text-ink-muted'}`}>
+                                        <span key={i} className={`grid aspect-square place-items-center rounded ${c && c.n ? 'bg-primary-strong/80 font-bold text-white' : c && c.key === today ? 'ring-1 ring-primary-strong' : 'text-ink-muted'}`}>
                                             {c?.day ?? ''}
                                         </span>
                                     ))}
@@ -175,11 +175,11 @@ export default function Index({ month, today, events, years, feedUrl, items = []
                                 <button
                                     key={d.key}
                                     type="button"
-                                    className={`flex min-h-16 flex-col gap-1 border-b border-r border-line p-1 text-left transition sm:min-h-28 sm:p-1.5 [&:nth-child(7n)]:border-r-0 ${d.inMonth ? '' : 'bg-surface-muted/60 text-ink-muted'} ${selectedDay === d.key ? 'bg-brand-cyan/10' : 'hover:bg-surface-muted'}`}
+                                    className={`flex min-h-16 flex-col gap-1 border-b border-r border-line p-1 text-left transition sm:min-h-28 sm:p-1.5 [&:nth-child(7n)]:border-r-0 ${d.inMonth ? '' : 'bg-surface-muted/60 text-ink-muted'} ${selectedDay === d.key ? 'bg-primary/10' : 'hover:bg-surface-muted'}`}
                                     aria-label={`${d.key}, ${d.events.length} events`}
                                     onClick={() => setSelectedDay(d.key)}
                                 >
-                                    <span className={`grid size-6 place-items-center rounded-full text-xs font-semibold ${d.key === today ? 'bg-brand-magenta text-white' : ''}`}>{d.day}</span>
+                                    <span className={`grid size-6 place-items-center rounded-full text-xs font-semibold ${d.key === today ? 'bg-primary-strong text-white' : ''}`}>{d.day}</span>
                                     <span className="hidden gap-0.5 sm:grid">
                                         {d.events.slice(0, 3).map((e) => (
                                             <span
@@ -210,7 +210,7 @@ export default function Index({ month, today, events, years, feedUrl, items = []
                                     {d.events.length > 0 && (
                                         <span className="flex flex-wrap gap-0.5 sm:hidden">
                                             {d.events.slice(0, 3).map((e) => (
-                                                <span key={e.slug} className={`size-1.5 rounded-full ${e.registered ? 'bg-success' : e.followed ? 'bg-brand-blue' : 'bg-brand-magenta'}`} />
+                                                <span key={e.slug} className={`size-1.5 rounded-full ${e.registered ? 'bg-success' : e.followed ? 'bg-primary' : 'bg-primary-strong'}`} />
                                             ))}
                                         </span>
                                     )}
@@ -224,10 +224,10 @@ export default function Index({ month, today, events, years, feedUrl, items = []
                         <span className="size-2 rounded-full bg-success" /> Registered
                     </span>
                     <span className="flex items-center gap-1">
-                        <span className="size-2 rounded-full bg-brand-blue" /> Club you follow
+                        <span className="size-2 rounded-full bg-primary" /> Club you follow
                     </span>
                     <span className="flex items-center gap-1">
-                        <span className="size-2 rounded-full bg-brand-magenta" /> Other events
+                        <span className="size-2 rounded-full bg-primary-strong" /> Other events
                     </span>
                     <span className="flex items-center gap-1">
                         <Icon name="users" size={12} /> Meeting
@@ -272,7 +272,7 @@ export default function Index({ month, today, events, years, feedUrl, items = []
                                         {e.poster_url ? (
                                             <img src={e.poster_url} alt="" className="size-14 shrink-0 rounded-lg object-cover" loading="lazy" />
                                         ) : (
-                                            <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-yellow to-brand-magenta text-white">
+                                            <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-gold to-primary-strong text-white">
                                                 <Icon name="calendar" size={22} />
                                             </span>
                                         )}

@@ -6,11 +6,9 @@ use App\Enums\DocumentStatus;
 use App\Enums\MembershipStatus;
 use App\Models\Agm;
 use App\Models\Event;
-use App\Models\Meeting;
 use App\Models\Membership;
-use App\Models\RoleAssignment;
 use App\Models\User;
-use App\Services\Time\SessionResolver;
+use App\Services\Meetings\MeetingVisibility;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -50,25 +48,24 @@ class EventCalendar
 
     /**
      * The rest of a person's calendar, shown only to those it concerns: meetings and weekly-report due dates for the
-     * committee and advisor, weekly activities and AGMs for members too, every AGM for SLD.
+     * committee and advisor, all-member activities for members and followers, AGMs for members, everything for SLD.
      *
      * @return list<array{key: string, kind: string, title: string, club: string, starts_at: string, ends_at: string, url: string}>
      */
     public function personal(User $user, CarbonImmutable $from, CarbonImmutable $to): array
     {
-        $session = app(SessionResolver::class)->current();
-        $runs = RoleAssignment::query()->acting($session, training: true)->where('user_id', $user->id)->pluck('scope_id')->unique();
+        $visibility = app(MeetingVisibility::class);
+        $runs = $visibility->runs($user);
         $member = Membership::where('user_id', $user->id)->whereIn('status', [MembershipStatus::Active, MembershipStatus::Grace])->pluck('club_id');
         $clubs = $runs->merge($member)->unique();
         $items = [];
-        foreach (Meeting::with('club', 'minutes')->whereIn('club_id', $clubs)->where('starts_at', '<', $to)->where('ends_at', '>=', $from->subDays(8))->get() as $m) {
+        // Committee: every meeting of their club; members and followers: all-member activities; SLD: every meeting.
+        foreach ($visibility->query($user, sldSeesAll: true)->with('minutes')->where('starts_at', '<', $to)->where('ends_at', '>=', $from->subDays(8))->get() as $m) {
             $isCommittee = $runs->contains($m->club_id);
-            if ($m->kind === 'committee' && ! $isCommittee) {
-                continue;
-            }
             if ($m->ends_at->gte($from)) {
                 $items[] = ['key' => "m{$m->id}", 'kind' => $m->kind === 'activity' ? 'activity' : 'meeting', 'title' => $m->title, 'club' => $m->club->name,
-                    'starts_at' => $m->starts_at->toIso8601String(), 'ends_at' => $m->ends_at->toIso8601String(), 'url' => route('meetings.show', $m)];
+                    'starts_at' => $m->starts_at->toIso8601String(), 'ends_at' => $m->ends_at->toIso8601String(),
+                    'url' => $isCommittee || $user->isSldAdmin() ? route('meetings.show', $m) : route('clubs.show', $m->club)];
             }
             // The weekly activity report is due a week after the activity, until it is submitted.
             $due = $m->ends_at->copy()->addDays(7)->setTime(23, 59);

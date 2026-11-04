@@ -46,7 +46,7 @@ erDiagram
 - **camsys is read-only**: `students` is a copy of an allow-list of columns from the university system; IC/passport, address, race, religion and grades are never stored.
 - **Signatures** store the drawn image and the stroke data, a server timestamp and a verification code; documents keep every submitted version.
 - **Foreign keys** cascade where the child has no meaning alone (e.g. a meeting's attendance) and are set to null where history must survive (e.g. the person who handled a payment).
-- **Clean install**: `database/schema/install.sql` in the deployment package is this schema plus only the Super Admin, the SLD Officer, the four account roles, the student-status map, intake months and club categories. No demo data.
+- **Clean install**: `database/schema/install.sql` in the deployment package is this schema plus only the Super Admin, the SLD Officer, the four account roles, the student-status map, intake months and club categories. No demo data. It contains no `DROP` statements: import it into an empty database; if a table already exists the import stops and nothing is overwritten.
 
 ## People & access
 
@@ -558,6 +558,8 @@ Events, their committee and door helpers, registrations and tickets, attendance 
 | `approved_at` | timestamp | yes |  |  |
 | `created_at` | timestamp | yes |  |  |
 | `updated_at` | timestamp | yes |  |  |
+| `checkin_qr_path` | varchar(255) | yes |  |  |
+| `checkout_qr_path` | varchar(255) | yes |  |  |
 
 Foreign keys: `club_id` → `clubs.id` (on delete cascade); `session_id` → `sessions_academic.id` (on delete restrict).
 
@@ -873,6 +875,8 @@ Committee meetings and weekly activities (audience, pax, rotating QR check-in/ou
 | `organiser_id` | bigint unsigned | no |  | index |
 | `created_at` | timestamp | yes |  |  |
 | `updated_at` | timestamp | yes |  |  |
+| `checkin_qr_path` | varchar(255) | yes |  |  |
+| `checkout_qr_path` | varchar(255) | yes |  |  |
 
 Foreign keys: `club_id` → `clubs.id` (on delete cascade); `organiser_id` → `users.id` (on delete restrict); `session_id` → `sessions_academic.id` (on delete restrict).
 

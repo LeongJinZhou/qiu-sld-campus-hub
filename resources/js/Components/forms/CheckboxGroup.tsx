@@ -25,7 +25,7 @@ export default function CheckboxGroup({ options, value, onChange, disabled, colu
                 return (
                     <label
                         key={key}
-                        className={`grid min-h-11 cursor-pointer items-center gap-2 rounded-control border px-3 py-2 text-sm leading-snug transition-colors has-[:disabled]:cursor-default ${numbered ? 'grid-cols-[1rem_1.5rem_1fr]' : 'grid-cols-[1rem_1fr]'} ${checked ? 'border-brand-cyan bg-brand-cyan/5' : 'border-line hover:bg-surface-muted'}`}
+                        className={`grid min-h-11 cursor-pointer items-center gap-2 rounded-control border px-3 py-2 text-sm leading-snug transition-colors has-[:disabled]:cursor-default ${numbered ? 'grid-cols-[1rem_1.5rem_1fr]' : 'grid-cols-[1rem_1fr]'} ${checked ? 'border-primary bg-primary/5' : 'border-line hover:bg-surface-muted'}`}
                     >
                         <input type="checkbox" checked={checked} disabled={disabled} className="size-4 accent-ink" onChange={(e) => onChange(e.target.checked ? [...value, v] : value.filter((x) => x !== v))} />
                         {numbered && <span className="text-right text-xs font-semibold tabular-nums text-ink-muted">{key}.</span>}

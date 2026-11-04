@@ -99,8 +99,8 @@ const PersonPicker = forwardRef<PersonPickerHandle, PersonPickerProps>(function 
                 {required && <span className="text-danger"> *</span>}
             </label>
             {picked ? (
-                <div className="fade-up flex items-center gap-3 rounded-control border border-brand-cyan/50 bg-brand-cyan/5 px-3 py-2 text-sm">
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-cyan to-brand-blue text-xs font-bold text-white">{picked.name.slice(0, 1)}</span>
+                <div className="fade-up flex items-center gap-3 rounded-control border border-primary/50 bg-primary/5 px-3 py-2 text-sm">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary text-xs font-bold text-white">{picked.name.slice(0, 1)}</span>
                     <span className="min-w-0 flex-1">
                         <span className="block truncate font-semibold">{picked.name}</span>
                         <span className="block truncate text-xs text-ink-muted">
@@ -108,7 +108,7 @@ const PersonPicker = forwardRef<PersonPickerHandle, PersonPickerProps>(function 
                             {picked.programme && ` · ${picked.programme}`}
                         </span>
                     </span>
-                    <button type="button" className="text-xs font-medium text-brand-blue" onClick={clear}>
+                    <button type="button" className="text-xs font-medium text-primary" onClick={clear}>
                         Change
                     </button>
                 </div>
@@ -126,12 +126,12 @@ const PersonPicker = forwardRef<PersonPickerHandle, PersonPickerProps>(function 
                         aria-controls={`${id}-list`}
                         aria-invalid={!!error}
                         placeholder={placeholder}
-                        className="h-10 w-full rounded-control border border-line bg-surface pl-9 pr-9 text-sm outline-none transition focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/30 aria-invalid:border-danger"
+                        className="h-10 w-full rounded-control border border-line bg-surface pl-9 pr-9 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 aria-invalid:border-danger"
                         onKeyDown={onKey}
                         onFocus={() => setOpen(results.length > 0)}
                         onBlur={() => window.setTimeout(() => setOpen(false), 150)}
                     />
-                    {loading && <span className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin rounded-full border-2 border-brand-cyan border-t-transparent" />}
+                    {loading && <span className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin rounded-full border-2 border-primary border-t-transparent" />}
                 </div>
             )}
             {open && !picked && q.trim().length >= 1 && (

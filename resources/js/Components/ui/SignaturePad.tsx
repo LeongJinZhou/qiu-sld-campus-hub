@@ -170,7 +170,7 @@ export default function SignaturePad({ value, onChange, label, disabled = false,
                     </div>
                 )}
             </div>
-            <div ref={wrapper} className={`relative overflow-hidden rounded-card border-2 border-dashed bg-white transition ${value ? 'border-brand-cyan' : 'border-line'}`} style={{ height: `${height}px` }}>
+            <div ref={wrapper} className={`relative overflow-hidden rounded-card border-2 border-dashed bg-white transition ${value ? 'border-primary' : 'border-line'}`} style={{ height: `${height}px` }}>
                 {/* Signing guide: baseline with an X, like a paper form. */}
                 <div className="pointer-events-none absolute inset-x-6 bottom-10 flex items-end gap-2 text-ink-muted/60" aria-hidden="true">
                     <span className="text-lg leading-none">✕</span>

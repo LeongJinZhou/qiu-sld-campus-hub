@@ -48,7 +48,7 @@ export default function ClubHeader({ club, counts, membership, following, hasSto
         <header className="grid gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
             <div className="grid grid-cols-[auto_1fr] items-center gap-4 sm:gap-8">
                 <button type="button" className="shrink-0" disabled={!hasStories} aria-label={hasStories ? 'View stories' : undefined} onClick={onOpenStories}>
-                    <span className={`grid size-[5.5rem] place-items-center rounded-full sm:size-32 ${hasStories ? 'bg-gradient-to-tr from-brand-yellow via-brand-orange to-brand-magenta' : 'bg-line'}`}>
+                    <span className={`grid size-[5.5rem] place-items-center rounded-full sm:size-32 ${hasStories ? 'bg-gradient-to-tr from-gold via-accent to-primary-strong' : 'bg-line'}`}>
                         <span className="grid size-[calc(100%-6px)] place-items-center overflow-hidden rounded-full border-[3px] border-surface bg-surface [&>span]:!size-full [&>span>span]:!size-full">
                             <Avatar src={club.logo_url} name={club.name} size="lg" />
                         </span>
@@ -83,7 +83,7 @@ export default function ClubHeader({ club, counts, membership, following, hasSto
                 )}
                 {club.bio && <p className="whitespace-pre-line break-words">{club.bio}</p>}
                 {club.instagram_handle && (
-                    <a href={`https://instagram.com/${club.instagram_handle}`} target="_blank" rel="noopener" className="inline-flex w-fit items-center gap-1.5 font-semibold text-brand-blue">
+                    <a href={`https://instagram.com/${club.instagram_handle}`} target="_blank" rel="noopener" className="inline-flex w-fit items-center gap-1.5 font-semibold text-primary">
                         <Icon name="instagram" size={15} />@{club.instagram_handle}
                     </a>
                 )}
@@ -92,7 +92,7 @@ export default function ClubHeader({ club, counts, membership, following, hasSto
             <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-sm">
                 <button
                     type="button"
-                    className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-control px-3 font-semibold transition active:scale-[0.97] ${following ? 'bg-surface-muted text-ink' : 'bg-brand-blue text-white hover:bg-brand-blue/90'} ${hasMembershipAction ? '' : 'col-span-2'}`}
+                    className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-control px-3 font-semibold transition active:scale-[0.97] ${following ? 'bg-surface-muted text-ink' : 'bg-primary text-white hover:bg-primary/90'} ${hasMembershipAction ? '' : 'col-span-2'}`}
                     aria-pressed={following}
                     onClick={follow}
                 >
@@ -102,7 +102,7 @@ export default function ClubHeader({ club, counts, membership, following, hasSto
                 {canJoin ? (
                     <Link
                         href={`/clubs/${club.slug}/join`}
-                        className={`inline-flex h-9 items-center justify-center truncate rounded-control bg-gradient-to-r from-brand-orange to-brand-magenta px-3 font-semibold text-white transition active:scale-[0.97] ${membership.drive ? 'animate-tracker-pulse' : ''}`}
+                        className={`inline-flex h-9 items-center justify-center truncate rounded-control bg-gradient-to-r from-accent to-primary-strong px-3 font-semibold text-white transition active:scale-[0.97] ${membership.drive ? 'animate-tracker-pulse' : ''}`}
                     >
                         {membership.status === 'grace' ? 'Renew' : membership.status === 'pending' ? 'Continue joining' : 'Join'}
                         {membership.fee_sen !== null && ` · ${membership.fee_sen ? `RM ${(membership.fee_sen / 100).toFixed(2)}` : 'Free'}`}

@@ -19,6 +19,24 @@ class MinutesDocx
 
     public function __construct(private readonly DocxRenderer $docx, private readonly MinutesForm $form) {}
 
+    /** A deadline that reads as a date prints as "15 Nov 2026" so it fits the narrow column on one line; other text is kept. */
+    public static function shortDate(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '' || ! preg_match('/\\d/', $value)) {
+            return $value;
+        }
+        $formats = ['j/n/Y', 'd/m/Y', 'j-n-Y', 'd-m-Y', 'Y-m-d', 'j F Y', 'j M Y', 'd F Y', 'd M Y', 'F j, Y', 'M j, Y', 'j.n.Y', 'd.m.Y'];
+        foreach ($formats as $format) {
+            $date = \DateTimeImmutable::createFromFormat("!{$format}", $value);
+            if ($date && $date->format($format) === $value) {
+                return $date->format('j M Y');
+            }
+        }
+
+        return $value;
+    }
+
     public function render(Document $document): string
     {
         $document->loadMissing(['club', 'meeting', 'approvals.signature']);
@@ -43,7 +61,7 @@ class MinutesDocx
                 'next_venue' => $d['next_venue'] ?: 'N/A',
             ]);
             DocxRenderer::block($t, 'summary', array_map(fn ($p) => ['summary_point' => (string) $p], array_values(array_filter($d['summary'] ?? [])) ?: ['N/A']));
-            $actions = array_map(fn ($a) => ['action_task' => $a['task'], 'action_pic' => $a['pic'], 'action_deadline' => $a['deadline'] ?: 'N/A'], $d['actions'] ?? []);
+            $actions = array_map(fn ($a) => ['action_task' => $a['task'], 'action_pic' => $a['pic'], 'action_deadline' => self::shortDate((string) $a['deadline']) ?: 'N/A'], $d['actions'] ?? []);
             $t->cloneRowAndSetValues('action_task', $actions ?: [['action_task' => 'N/A', 'action_pic' => 'N/A', 'action_deadline' => 'N/A']]);
 
             $approvals = $document->approvals->keyBy(fn (Approval $a) => $a->role->value);

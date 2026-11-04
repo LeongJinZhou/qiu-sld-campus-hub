@@ -74,7 +74,7 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                                 </li>
                             ))}
                         </ul>
-                        <Link href="/admin/clubs" className="mt-3 inline-block text-sm text-brand-blue">
+                        <Link href="/admin/clubs" className="mt-3 inline-block text-sm text-primary">
                             See all clubs →
                         </Link>
                     </Card>
@@ -85,7 +85,7 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                                     <li key={a.role} className="grid grid-cols-[9rem_1fr_auto] items-center gap-3" title={`${a.role}: ${a.waiting} waiting, ${a.overdue} overdue`}>
                                         <span className="truncate">{a.role}</span>
                                         <span className="h-2.5 rounded-r bg-surface-muted">
-                                            <span className="block h-full rounded-r bg-brand-blue" style={{ width: pct(a.waiting, maxWaiting) }} />
+                                            <span className="block h-full rounded-r bg-primary" style={{ width: pct(a.waiting, maxWaiting) }} />
                                         </span>
                                         <span className="flex items-center gap-2 tabular-nums">
                                             {a.waiting}
@@ -115,19 +115,19 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                                                 </span>
                                             </span>
                                             <span className="h-2 rounded-full bg-surface-muted">
-                                                <span className="block h-full rounded-full bg-brand-cyan" style={{ width: pct(row.n, agm.clubs) }} />
+                                                <span className="block h-full rounded-full bg-primary" style={{ width: pct(row.n, agm.clubs) }} />
                                             </span>
                                         </li>
                                     ))}
                                 </ul>
-                                <Link href="/admin/agm" className="mt-3 inline-block text-sm text-brand-blue">
+                                <Link href="/admin/agm" className="mt-3 inline-block text-sm text-primary">
                                     AGM details →
                                 </Link>
                             </>
                         ) : (
                             <p className="text-sm text-ink-muted">
                                 No AGM period open.{' '}
-                                <Link href="/admin/agm" className="text-brand-blue">
+                                <Link href="/admin/agm" className="text-primary">
                                     Open one
                                 </Link>
                             </p>

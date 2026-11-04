@@ -99,7 +99,7 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                                 )}
                             </p>
                         )}
-                        <section className="grid gap-3 rounded-card bg-gradient-to-r from-brand-cyan/15 via-brand-blue/10 to-brand-magenta/15 p-5 sm:grid-cols-3">
+                        <section className="grid gap-3 rounded-card bg-gradient-to-r from-primary/15 via-primary/10 to-primary-strong/15 p-5 sm:grid-cols-3">
                             <div>
                                 <p className="text-xs text-ink-muted">Session</p>
                                 <p className="text-lg font-bold">{period.session}</p>
@@ -222,11 +222,11 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                                             {annual.generated_at && (
                                                 <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
                                                     Generated {annual.generated_at} ·{' '}
-                                                    <a href={`/clubs/${club.slug}/annual-report/pptx`} className="text-brand-blue underline">
+                                                    <a href={`/clubs/${club.slug}/annual-report/pptx`} className="text-primary underline">
                                                         PPTX
                                                     </a>{' '}
                                                     ·{' '}
-                                                    <a href={`/clubs/${club.slug}/annual-report/pdf`} className="text-brand-blue underline">
+                                                    <a href={`/clubs/${club.slug}/annual-report/pdf`} className="text-primary underline">
                                                         PDF
                                                     </a>
                                                 </p>

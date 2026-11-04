@@ -7,10 +7,10 @@ import ProfilePopCard from './ProfilePopCard';
 
 // Each compulsory office has its own brand colour, so the four leaders stand out from the wider team.
 const ACCENTS: Record<string, string> = {
-    President: 'from-brand-orange to-brand-magenta',
-    'Vice President': 'from-brand-magenta to-brand-blue',
-    Secretary: 'from-brand-cyan to-brand-blue',
-    Treasurer: 'from-brand-yellow to-brand-orange',
+    President: 'from-accent to-primary-strong',
+    'Vice President': 'from-primary-strong to-primary',
+    Secretary: 'from-primary to-primary',
+    Treasurer: 'from-gold to-accent',
 };
 const subtitle = (m: MemberCard): string => [m.programme_short, m.year_group].filter(Boolean).join(' · ') || (m.title ?? '');
 
@@ -38,7 +38,7 @@ export default function CommitteeBoard({ committee, advisors }: { committee: Mem
                             className="relative flex items-center gap-4 overflow-hidden rounded-card border border-line bg-surface p-4 text-left shadow-card transition hover:shadow-pop sm:p-5"
                             onClick={() => show(a)}
                         >
-                            <span className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-brand-cyan to-brand-magenta" aria-hidden="true" />
+                            <span className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-primary to-primary-strong" aria-hidden="true" />
                             <Avatar src={a.photo_url} name={a.name} size="lg" ring />
                             <span className="grid min-w-0 flex-1 gap-0.5">
                                 <span className="text-gradient-cool text-xs font-semibold uppercase tracking-wide">Club advisor</span>
@@ -63,7 +63,7 @@ export default function CommitteeBoard({ committee, advisors }: { committee: Mem
                                     className="group grid h-full w-full content-start overflow-hidden rounded-card border border-line bg-surface text-center shadow-card transition hover:-translate-y-0.5 hover:shadow-pop"
                                     onClick={() => show(m)}
                                 >
-                                    <span className={`h-14 bg-gradient-to-r ${ACCENTS[m.position ?? ''] ?? 'from-brand-cyan to-brand-magenta'}`} />
+                                    <span className={`h-14 bg-gradient-to-r ${ACCENTS[m.position ?? ''] ?? 'from-primary to-primary-strong'}`} />
                                     <span className="-mt-10 grid justify-items-center gap-1.5 px-3 pb-4">
                                         <span className="rounded-full bg-surface p-1">
                                             <Avatar src={m.photo_url} name={m.name} size="lg" />
@@ -90,7 +90,7 @@ export default function CommitteeBoard({ committee, advisors }: { committee: Mem
                                     <span className="grid min-w-0">
                                         <strong className="truncate text-sm">{m.name}</strong>
                                         <span className="truncate text-xs">
-                                            <span className="font-medium text-brand-blue">{m.position}</span>
+                                            <span className="font-medium text-primary">{m.position}</span>
                                             {subtitle(m) && (
                                                 <>
                                                     {' · '}

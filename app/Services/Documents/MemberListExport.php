@@ -7,6 +7,7 @@ use App\Models\Club;
 use App\Services\Time\SessionResolver;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
 /** 10 Full Member List: Club Name, Advisor, then No / Name / Position / Student ID / Email / Year Group / Program. */
 class MemberListExport
@@ -35,6 +36,11 @@ class MemberListExport
                 $i + 1, $r['name'], $r['position'], $r['student_number'], $r['email'],
                 $r['status'] === 'alumni' ? 'Alumni' : $r['year_group'], $r['programme_short'],
             ])->all(), null, 'A5', true);
+            // Every column on one page width; the email column is as wide as the longest address, so none is cut off.
+            $sheet->getPageSetup()->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)->setFitToWidth(1)->setFitToHeight(0);
+            $longest = $rows->max(fn (array $r) => mb_strlen((string) $r['email'])) ?? 0;
+            $sheet->getColumnDimension('E')->setWidth(max($sheet->getColumnDimension('E')->getWidth(), $longest * 1.05 + 2));
+            $sheet->getColumnDimension('F')->setWidth(max($sheet->getColumnDimension('F')->getWidth(), 12));
         }, $output);
     }
 }

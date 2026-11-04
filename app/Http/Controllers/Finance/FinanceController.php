@@ -23,6 +23,7 @@ use App\Services\Finance\FundWithdrawals;
 use App\Services\Finance\Ledger;
 use App\Services\Finance\WithdrawalProgress;
 use App\Services\Time\SessionResolver;
+use App\Support\DownloadName;
 use Carbon\CarbonImmutable;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -105,7 +106,7 @@ class FinanceController extends Controller
         }
         $label = $session ? str_replace('/', '-', $session->name) : 'All';
 
-        return response()->download($file, "{$club->name} - Finance {$label}.{$format}")->deleteFileAfterSend();
+        return response()->download($file, DownloadName::safe("{$club->name} - Finance {$label}.{$format}"))->deleteFileAfterSend();
     }
 
     public function opening(Request $request, Club $club): RedirectResponse

@@ -99,7 +99,7 @@ export default function Indemnity({ event, student, saved, signedAt, mustSign }:
                                     <dd className="font-medium">{data.address}</dd>
                                 </div>
                             </dl>
-                            <button type="button" className="justify-self-start text-sm font-medium text-brand-blue" onClick={() => setEditing(true)}>
+                            <button type="button" className="justify-self-start text-sm font-medium text-primary" onClick={() => setEditing(true)}>
                                 Something changed? Edit
                             </button>
                         </FormSection>

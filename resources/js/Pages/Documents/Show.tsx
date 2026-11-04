@@ -80,6 +80,86 @@ export default function Show({ document, canEdit, downloads }: { document: Prese
                             <p className="mt-3 text-right font-semibold">Total {money(withdrawal.total_sen ?? 0)}</p>
                             <p className="mt-2 text-xs text-ink-muted">Bank details appear only on the official form download.</p>
                         </Card>
+                    ) : document.type === 'minutes' && document.meeting ? (
+                        <>
+                            <Card title="Minutes">
+                                <dl className="grid gap-3 text-sm">
+                                    <div>
+                                        <dt className="text-xs font-semibold text-ink-muted">Meeting</dt>
+                                        <dd>
+                                            {document.meeting.title} · <span className="whitespace-nowrap">{document.meeting.starts_at}</span>
+                                        </dd>
+                                    </div>
+                                    {typeof raw.purpose === 'string' && raw.purpose && (
+                                        <div>
+                                            <dt className="text-xs font-semibold text-ink-muted">Purpose</dt>
+                                            <dd>{raw.purpose}</dd>
+                                        </div>
+                                    )}
+                                    {Array.isArray(raw.summary) && (raw.summary as string[]).filter(Boolean).length > 0 && (
+                                        <div>
+                                            <dt className="text-xs font-semibold text-ink-muted">Summary</dt>
+                                            <dd>
+                                                <ul className="list-disc pl-5">
+                                                    {(raw.summary as string[]).filter(Boolean).map((p, i) => (
+                                                        <li key={i}>{p}</li>
+                                                    ))}
+                                                </ul>
+                                            </dd>
+                                        </div>
+                                    )}
+                                    {Array.isArray(raw.actions) && (raw.actions as { task: string; pic: string; deadline: string }[]).length > 0 && (
+                                        <div>
+                                            <dt className="text-xs font-semibold text-ink-muted">Action items</dt>
+                                            <dd>
+                                                <ul className="grid gap-1">
+                                                    {(raw.actions as { task: string; pic: string; deadline: string }[]).map((a, i) => (
+                                                        <li key={i}>
+                                                            {a.task} · <span className="text-ink-muted">{a.pic}</span>
+                                                            {a.deadline && <span className="whitespace-nowrap text-ink-muted"> · by {a.deadline}</span>}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </dd>
+                                        </div>
+                                    )}
+                                </dl>
+                                <Link href={`/meetings/${document.meeting.id}?tab=minutes`} className="mt-3 inline-block text-sm font-medium text-primary">
+                                    Open the meeting
+                                </Link>
+                            </Card>
+                            <Card
+                                title={`Attendance · ${document.meeting.attendance.filter((a) => a.present).length} of ${document.meeting.attendance.length} present`}
+                                actions={
+                                    <a href={`/meetings/${document.meeting.id}/attendance/export.pdf`} className="text-sm font-medium text-primary">
+                                        Download PDF
+                                    </a>
+                                }
+                            >
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="text-xs text-ink-muted">
+                                            <tr className="border-b border-line">
+                                                <th className="py-2 pr-3 font-medium">Name</th>
+                                                <th className="py-2 pr-3 font-medium">Role</th>
+                                                <th className="py-2 pr-3 font-medium">Present</th>
+                                                <th className="whitespace-nowrap py-2 font-medium">In / out</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {document.meeting.attendance.map((a) => (
+                                                <tr key={a.user_id} className="border-b border-line/60 last:border-0">
+                                                    <td className="py-2 pr-3">{a.name}</td>
+                                                    <td className="py-2 pr-3 text-ink-muted">{a.role}</td>
+                                                    <td className="py-2 pr-3">{a.present ? <Badge tone="success">Present</Badge> : <Badge tone="neutral">Absent</Badge>}</td>
+                                                    <td className="whitespace-nowrap py-2 text-ink-muted">{a.in ? `${a.in}${a.out ? ` – ${a.out}` : ''}` : '-'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
+                        </>
                     ) : (
                         document.type === 'attendance_list' && (
                             <Card title="03 Event Attendance List">
