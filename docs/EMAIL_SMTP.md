@@ -1,79 +1,72 @@
-# Email notifications (SMTP with Haraka)
+# Email notifications (Haraka SMTP + Gmail)
 
 Every notification in Campus Hub is also sent to the person's email:
 
 - **Approvals, payments, reminders and SLD requests** are always emailed, with a button that opens the action
   directly (for example **Review and sign** opens the approval).
 - **Club activity** (likes, comments, saves, new followers, new posts, events and activities from followed clubs) is
-  emailed only while that category is switched on in **Notifications → Settings**. Switching a category off stops
-  it in the app and by email.
-- Each email also links to **all notifications** and to **notification settings**.
+  emailed only while that category is switched on in **Notifications → Settings**. Switching it off stops it in the
+  app and by email.
+- Each email links to **all notifications** and to **notification settings**.
 
-The app sends mail by SMTP (`MAIL_*` in `.env`). The SMTP server is [Haraka](https://github.com/haraka/Haraka),
-packaged in `deploy/haraka/`. Any other SMTP server (for example Plesk's own mail server) also works with the same
-settings.
-
-## How it fits together
+## How it works
 
 ```text
-Campus Hub (Laravel) --SMTP 587, STARTTLS + login--> Haraka --DKIM-signed--> recipient's mail server
-                                                            \--or via SMTP_RELAY_HOST (smart host)
+Campus Hub (Laravel) --SMTP 127.0.0.1:2525, login--> Haraka --STARTTLS + login--> smtp.gmail.com --> recipient
+        \--------------------- if Haraka cannot be reached -----------------------> smtp.gmail.com (direct)
 ```
 
-Emails are queued, so the page never waits for the mail server. On Plesk, the every-minute scheduler sends them
-(`QUEUE_VIA_SCHEDULER=true`).
+- [Haraka](https://github.com/haraka/Haraka) runs **inside the Campus Hub container** (see `Dockerfile` and
+  `deploy/start.sh`). It listens on `127.0.0.1` only, so nothing outside the container can reach it, and the app
+  logs in with a random password created at every start.
+- Haraka relays every email through the Gmail account **qiuairesearch@gmail.com** using its Google app password.
+  Gmail signs (DKIM) and delivers the email, so no DNS changes are needed.
+- `MAIL_MAILER=failover` sends through Haraka first and Gmail directly if Haraka is down. If both fail, the queued
+  email is retried, never dropped.
+- Emails are queued: the container runs a queue worker and the scheduler in the background.
+- Haraka refuses mail from anyone who has not logged in (it is not an open relay), and a wrong password is rejected.
+  Email subjects are kept to one line and message text is escaped, so a club or event name cannot inject headers or
+  HTML.
 
-## 1. Run Haraka
+## Render
 
-On any Docker host (an Exabytes VPS, or a Render **Private Service** using `deploy/haraka/Dockerfile`):
+Add two environment variables to the web service (**Environment** tab), then redeploy:
 
-```bash
-docker build -t campushub-haraka deploy/haraka
-docker run -d --name haraka -p 587:587 \
-  -e SMTP_HOSTNAME=mail.qiu.edu.my \
-  -e SMTP_USER=campushub -e SMTP_PASS='a-long-random-password' \
-  -e DKIM_DOMAIN=qiu.edu.my -e DKIM_SELECTOR=campushub \
-  -v haraka-keys:/haraka/config/dkim \
-  campushub-haraka
-```
-
-| Variable | Meaning |
+| Key | Value |
 | --- | --- |
-| `SMTP_HOSTNAME` | The server's public name (used in the greeting and TLS certificate). |
-| `SMTP_USER`, `SMTP_PASS` | The login the app uses. Only logged-in senders may send. |
-| `DKIM_DOMAIN`, `DKIM_SELECTOR` | Sign every email with DKIM. The start-up log prints the DNS record to publish. |
-| `SMTP_RELAY_HOST`, `SMTP_RELAY_PORT`, `SMTP_RELAY_USER`, `SMTP_RELAY_PASS` | Optional smart host. Use it when the host blocks outgoing port 25 (common on cloud platforms) or to send through the university's mail server. |
+| `GMAIL_USERNAME` | `qiuairesearch@gmail.com` |
+| `GMAIL_APP_PASSWORD` | the 16-character Google app password |
 
-To use a real TLS certificate, mount it as `/haraka/config/tls_cert.pem` and `/haraka/config/tls_key.pem`;
-otherwise a self-signed one is created.
+`MAIL_FROM_ADDRESS` defaults to the Gmail address. Haraka's log is `storage/logs/haraka.log`.
 
-## 2. DNS for the sending domain (ask QIU IT)
+## Exabytes (Plesk)
 
-- **DKIM**: the `TXT` record printed in Haraka's log, e.g. `campushub._domainkey.qiu.edu.my`.
-- **SPF**: add the Haraka server's IP (or the smart host) to the domain's SPF record.
-- **Reverse DNS** for the server's IP should match `SMTP_HOSTNAME`.
+In `.env`, fill `GMAIL_APP_PASSWORD` (the template already has the other values). With `MAIL_MAILER=failover` the
+app sends through Gmail directly when Haraka is not running, so this works on any Plesk plan.
 
-Without these, mail may land in spam.
-
-## 3. Point the app at Haraka
-
-```dotenv
-MAIL_MAILER=smtp
-MAIL_HOST=mail.qiu.edu.my      # or the private hostname of the Haraka service
-MAIL_PORT=587
-MAIL_USERNAME=campushub
-MAIL_PASSWORD=a-long-random-password
-MAIL_VERIFY_PEER=true          # false only with Haraka's self-signed certificate on a private network
-MAIL_FROM_ADDRESS=noreply@qiu.edu.my
-MAIL_FROM_NAME="QIU Campus Hub"
-```
-
-Then `php artisan config:cache`.
-
-## 4. Check it
+To run Haraka on Plesk too (optional, needs the Node.js extension or SSH):
 
 ```bash
-php artisan tinker --execute 'App\Models\User::where("email","you@qiu.edu.my")->first()->notify(new App\Notifications\DocumentNotification("Test email", "Email delivery works.", url("/notifications")));'
+npm install -g Haraka@3 && haraka -i ~/haraka && cp deploy/haraka/config/* ~/haraka/config/
+HARAKA_DIR=~/haraka SMTP_LISTEN=127.0.0.1:2525 SMTP_TLS=off SMTP_USER=campushub SMTP_PASS='a-long-random-password' \
+  GMAIL_USERNAME=qiuairesearch@gmail.com GMAIL_APP_PASSWORD='xxxx xxxx xxxx xxxx' sh deploy/haraka/configure.sh
+haraka -c ~/haraka &
 ```
 
-Haraka's log shows the login, `dkim signed for qiu.edu.my`, and the delivery.
+Then set `MAIL_PASSWORD` in `.env` to the same `SMTP_PASS`. A standalone Haraka server (for example on a VPS) can also
+be built from `deploy/haraka/Dockerfile`.
+
+## Check it
+
+```bash
+php artisan tinker --execute 'Illuminate\Support\Facades\Notification::route("mail","you@example.com")->notify(new App\Notifications\DocumentNotification("Test email", "Email delivery works.", url("/notifications")));'
+```
+
+Gmail limits a personal account to about 500 emails a day. For more, switch `GMAIL_*` to a Google Workspace account
+or set `SMTP_RELAY_HOST` to another provider.
+
+## Keep the password safe
+
+The Google app password lives only in Render's environment and the server's `.env`, never in Git. To change it,
+create a new app password in the Google account (**Security → App passwords**), update both places, and remove the
+old one.

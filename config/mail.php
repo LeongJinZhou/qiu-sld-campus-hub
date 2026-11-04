@@ -81,12 +81,23 @@ return [
             'transport' => 'array',
         ],
 
+        // Gmail directly (smtp.gmail.com with a Google app password): the backup if Haraka cannot be reached.
+        'gmail' => [
+            'transport' => 'smtp',
+            'scheme' => 'smtp',
+            'host' => env('GMAIL_SMTP_HOST', 'smtp.gmail.com'),
+            'port' => 587,
+            'username' => env('GMAIL_USERNAME'),
+            'password' => str_replace(' ', '', (string) env('GMAIL_APP_PASSWORD', '')),
+            'timeout' => 20,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
+        // Production: Haraka first (it relays through Gmail), then Gmail directly, so a notification is never lost.
         'failover' => [
             'transport' => 'failover',
-            'mailers' => [
-                'smtp',
-                'log',
-            ],
+            // No "log" at the end: if every server fails the queued email is retried instead of silently dropped.
+            'mailers' => env('GMAIL_APP_PASSWORD') ? ['smtp', 'gmail'] : ['smtp'],
             'retry_after' => 60,
         ],
 

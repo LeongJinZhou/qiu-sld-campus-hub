@@ -22,7 +22,8 @@ trait SendsBrandedMail
         $action = $this->actionLabel($url);
 
         return (new MailMessage)
-            ->subject($title)
+            // One line only: a line break in a title (from a club or event name) can never add an email header.
+            ->subject(mb_substr(trim((string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $title)), 0, 180))
             ->view(['html' => 'emails.notification', 'text' => 'emails.notification-text'], [
                 'name' => trim(strtok((string) ($notifiable->name ?? ''), ' ') ?: 'there'),
                 'title' => $title,
