@@ -41,7 +41,7 @@ git bundle create -q "$DEST/qiu-campus-hub-$TAG-full-history.bundle" --all
 git bundle verify -q "$DEST/qiu-campus-hub-$TAG-full-history.bundle"
 tar -czf "$DEST/qiu-campus-hub-$TAG-working-folder.tar.gz" --exclude=node_modules --exclude=vendor -C .. "$(basename "$PWD")"
 git diff --quiet HEAD || git diff HEAD > "$DEST/uncommitted-changes-not-in-$TAG.patch"
-scripts/package-plesk.sh "$DEST/qiu-campus-hub-$TAG-plesk-package.zip"
+scripts/package-plesk.sh "qiu-campus-hub-$TAG-plesk-package.zip" && mv "qiu-campus-hub-$TAG-plesk-package.zip" "$DEST/"
 
 {
     echo "QIU SLD Campus Hub $TAG"
