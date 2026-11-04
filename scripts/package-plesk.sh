@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds a clean, ready-to-upload ZIP for Exabytes Plesk (or any PHP 8.3+ / MySQL host):
+# Builds a clean, ready-to-upload ZIP for Exabytes Plesk (or any PHP 8.4.1+ 64-bit / MySQL host):
 # compiled React frontend, production Composer packages, the clean-install SQL, and no .env, tests,
 # demo data, node_modules or local databases. Usage: scripts/package-plesk.sh [output.zip]
 set -euo pipefail
