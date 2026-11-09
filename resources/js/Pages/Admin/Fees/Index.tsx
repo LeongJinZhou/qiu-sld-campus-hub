@@ -27,6 +27,10 @@ interface Drive {
 }
 
 export default function Index({ fees, drives, clubs }: { fees: Fee[]; drives: Drive[]; clubs: Option[] }) {
+    const reject = (id: number): void => {
+        const reason = prompt('Why is this fee not approved? (sent to the treasurer)')?.trim();
+        if (reason) router.post(`/admin/fees/${id}/reject`, { reason }, { preserveScroll: true });
+    };
     const drive = useForm({ title: '', club_id: '' as number | string, starts_at: '', ends_at: '' });
     const submit = (e: FormEvent): void => {
         e.preventDefault();
@@ -47,9 +51,14 @@ export default function Index({ fees, drives, clubs }: { fees: Fee[]; drives: Dr
                                 {f.approved ? (
                                     <Badge tone="success">Approved</Badge>
                                 ) : (
-                                    <Button size="sm" onClick={() => router.post(`/admin/fees/${f.id}/approve`, {}, { preserveScroll: true })}>
-                                        Approve
-                                    </Button>
+                                    <span className="flex gap-2">
+                                        <Button size="sm" variant="secondary" onClick={() => reject(f.id)}>
+                                            Reject
+                                        </Button>
+                                        <Button size="sm" onClick={() => router.post(`/admin/fees/${f.id}/approve`, {}, { preserveScroll: true })}>
+                                            Approve
+                                        </Button>
+                                    </span>
                                 )}
                             </li>
                         ))}

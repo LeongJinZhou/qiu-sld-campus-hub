@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -81,6 +82,26 @@ class FeeController extends Controller
         $this->audit->log('fee.approved', $fee, ['amount_sen' => $fee->amount_sen]);
 
         return back()->with('success', 'Fee approved. Students can now join the club.');
+    }
+
+    /** A pending fee that SLD turns down is removed with the reason on record, so the club can propose again. */
+    public function reject(Request $request, ClubFee $fee): RedirectResponse
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'max:500']]);
+        if ($fee->approved_at !== null) {
+            return back()->with('error', 'An approved fee cannot be rejected.');
+        }
+        $fee->loadMissing('club');
+        $this->audit->log('fee.rejected', $fee->club, ['amount_sen' => $fee->amount_sen, 'reason' => $data['reason']]);
+        Storage::disk('public')->delete($fee->payment_qr_paths ?? []);
+        $fee->delete();
+        $fee->setter?->notify(new DocumentNotification(
+            "Membership fee not approved: {$fee->club->name}",
+            'SLD did not approve RM '.number_format($fee->amount_sen / 100, 2)." per member: {$data['reason']} You can propose another amount.",
+            route('clubs.show', $fee->club),
+        ));
+
+        return back()->with('success', 'Fee rejected. The treasurer has been told why.');
     }
 
     public function drive(Request $request): RedirectResponse

@@ -59,6 +59,9 @@ class VenueBookings
         if ($booking->status !== 'pending') {
             throw new DomainException('This request has already been answered.');
         }
+        if ($confirm && ($clash = $this->clash($booking))) {
+            throw new DomainException("This overlaps a confirmed booking of {$clash->venue} ({$clash->club->name}, ".substr((string) $clash->starts_at, 0, 5).'–'.substr((string) $clash->ends_at, 0, 5).'). Decline it or ask the club to pick another time.');
+        }
         $booking->update(['status' => $confirm ? 'confirmed' : 'declined', 'sld_note' => $note, 'decided_by' => $sld->id, 'decided_at' => now()]);
         $this->audit->log($confirm ? 'venue.confirmed' : 'venue.declined', $booking, ['note' => $note]);
         $booking->club->forceFill(['last_activity_at' => now()])->save();
@@ -68,6 +71,20 @@ class VenueBookings
             $this->summary($booking).($note ? " — SLD: {$note}" : '').($confirm && $booking->type === 'la_place' ? ' Please follow the La Place table rules.' : ''),
             route('venues.index', $booking->club),
         ));
+    }
+
+    /**
+     * A confirmed booking of the same venue at an overlapping time: same date for one-off bookings, same weekday and
+     * semester for semester bookings. (A semester slot against a one-off date is not compared: it needs the semester calendar.)
+     */
+    private function clash(VenueBooking $b): ?VenueBooking
+    {
+        return VenueBooking::with('club')->where('status', 'confirmed')->whereKeyNot($b->id)->where('venue', $b->venue)
+            ->where('starts_at', '<', $b->ends_at)->where('ends_at', '>', $b->starts_at)
+            ->when($b->type === 'semester',
+                fn ($q) => $q->where('type', 'semester')->where('weekday', $b->weekday)->where('semester', $b->semester),
+                fn ($q) => $q->where('type', '!=', 'semester')->whereDate('date', $b->date))
+            ->first();
     }
 
     public function summary(VenueBooking $b): string

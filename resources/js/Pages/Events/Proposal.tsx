@@ -1098,7 +1098,7 @@ export default function Proposal(props: ProposalProps) {
                         <LockedField label="Prepared by" value={locked.prepared_by} />
                         <LockedField label="Date" value="Server date when you sign" />
                     </div>
-                    <p className="text-sm text-ink-muted">Then: Club Advisor → SLD Officer → Assistant Registrar → Registrar → Bursar → COO{d.is_faculty_event && ' (Dean after the advisor)'}.</p>
+                    <p className="text-sm text-ink-muted">Then: Club Advisor → SLD Officer. If a higher authority must approve (Dean, Assistant Registrar, Registrar, Bursar, COO), SLD collects their signatures on paper at its step.</p>
                 </FormSection>
 
                 {/* At the end of the form (not docked), so it never covers the form on a phone or a laptop. */}

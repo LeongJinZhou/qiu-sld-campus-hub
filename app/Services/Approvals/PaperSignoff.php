@@ -5,6 +5,7 @@ namespace App\Services\Approvals;
 use App\Enums\ApproverRole;
 use App\Enums\ChainRole;
 use App\Models\Approval;
+use App\Models\Document;
 use App\Models\Staff;
 use App\Models\User;
 use App\Notifications\DocumentNotification;
@@ -30,6 +31,16 @@ class PaperSignoff
 
             return $name ? "{$role->label()} · {$name}" : $role->label();
         }, ApproverRole::cases());
+    }
+
+    /** @return list<string> the options to tick by default: a faculty event needs the Dean's signature */
+    public function suggested(Document $document): array
+    {
+        if (! $document->event?->is_faculty_event) {
+            return [];
+        }
+
+        return array_values(array_filter($this->options(), fn (string $option) => str_starts_with($option, ApproverRole::Dean->label())));
     }
 
     /** @param list<string> $signers */

@@ -82,6 +82,7 @@ class ApprovalController extends Controller
             'decidesExceptions' => $approval->role === ChainRole::SldOfficer,
             'paper' => $this->paper->present($approval),
             'paperOptions' => $approval->role === ChainRole::SldOfficer && $this->engine->canAct($approval, $request->user()) ? $this->paper->options() : [],
+            'paperSuggested' => $approval->role === ChainRole::SldOfficer ? $this->paper->suggested($approval->document) : [],
         ]);
     }
 
