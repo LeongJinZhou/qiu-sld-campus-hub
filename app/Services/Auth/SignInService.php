@@ -40,6 +40,10 @@ class SignInService
         if ($limited && ! $enforceDomain) {
             throw new NotInRecordsException; // the demo login must not mint accounts
         }
+        // SLD deactivated this staff member: they must not come back through the open door for other QIU accounts.
+        if ($limited && Staff::where('email', $email)->exists()) {
+            throw new NotInRecordsException;
+        }
 
         $user = User::firstOrNew(['email' => $email]);
         $returning = $user->last_login_at !== null;

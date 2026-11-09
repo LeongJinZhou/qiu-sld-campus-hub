@@ -40,7 +40,7 @@ class EventPurchaseController extends Controller
                 'buyer' => ['id' => $p->bought_by, 'name' => $p->buyer->name, 'qr_token' => $organiser && $p->status === EventPurchase::OWED ? $p->buyer->qr_token : null],
                 'verifier' => $p->verifier?->name, 'payer' => $p->payer?->name, 'review_note' => $p->review_note,
                 'settle_when' => $p->settle_when, 'settle_method' => $p->settle_method, 'payout_check' => $p->payout_check, 'payout_payee' => $p->payout_payee,
-                'mine' => $p->bought_by === $user->id, 'to_verify' => $p->status === EventPurchase::PENDING && $p->verifier_id === $user->id,
+                'mine' => $p->bought_by === $user->id, 'i_paid' => $p->paid_back_by === $user->id, 'to_verify' => $p->status === EventPurchase::PENDING && $p->verifier_id === $user->id,
                 'receipt_url' => URL::temporarySignedRoute('purchases.file', now()->addMinutes(30), [$p, 'receipt']),
                 'payout_url' => $p->payout_path ? URL::temporarySignedRoute('purchases.file', now()->addMinutes(30), [$p, 'payout']) : null,
                 'at' => $p->created_at?->diffForHumans(),

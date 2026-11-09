@@ -55,7 +55,8 @@ export default function PhotoEditor({ kind = 'photo', current, name, hasOverride
         });
     }
     async function save(): Promise<void> {
-        const blob = await adjuster.current?.exportBlob();
+        // An unreadable file is already explained inside the adjuster; there is nothing to send.
+        const blob = await adjuster.current?.exportBlob().catch(() => null);
         if (blob) send({ [kind]: new File([blob], `${kind}.jpg`, { type: 'image/jpeg' }) });
     }
 

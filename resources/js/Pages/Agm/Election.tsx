@@ -47,7 +47,7 @@ interface ElectionProps {
         nominations: [string, string];
         voting: [string, string];
         flags: { position: string; issue: 'no_candidate' | 'uncontested' | 'tie' }[];
-        handover_on: string;
+        handover_on: string | null;
         handed_over: boolean;
         vote_changes: number;
         positions: Position[];
@@ -208,7 +208,9 @@ export default function Election({ agm, manages, election, highlight }: Election
                                 <p className="font-medium sm:col-span-3">
                                     {election.handed_over
                                         ? 'The new committee has taken over.'
-                                        : `The current committee hands over until ${new Date(election.handover_on).toLocaleDateString('en-MY', { dateStyle: 'long' })}, when the new committee takes the titles and access.`}
+                                        : election.handover_on
+                                          ? `The current committee hands over until ${new Date(election.handover_on).toLocaleDateString('en-MY', { dateStyle: 'long' })}, when the new committee takes the titles and access.`
+                                          : 'SLD starts the handover after it acknowledges the AGM. Until then the current committee stays in charge.'}
                                 </p>
                             )}
                         </section>

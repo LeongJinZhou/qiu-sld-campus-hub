@@ -56,6 +56,8 @@ return [
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',
             'strict' => true,
+            // A silent camsys host must not hold every login for the OS connect timeout.
+            'options' => extension_loaded('pdo_mysql') ? [PDO::ATTR_TIMEOUT => 5] : [],
         ] : [
             'driver' => 'sqlite',
             'database' => env('CAMSYS_DATABASE', database_path('camsys.sqlite')),
