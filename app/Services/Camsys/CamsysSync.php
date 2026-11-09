@@ -131,7 +131,8 @@ class CamsysSync
         $email = strtolower(trim((string) $row->E_MAIL));
 
         return Student::updateOrCreate(['student_number' => $row->STUDENT_NUMBER], [
-            'user_id' => User::where('email', $email)->value('id'),
+            // An email change in camsys must not cut the link to the existing account (sign-in re-points its email).
+            'user_id' => User::where('email', $email)->value('id') ?? Student::where('student_number', $row->STUDENT_NUMBER)->value('user_id'),
             'name' => $row->STUDENT_NAME,
             'email' => $email,
             'gender' => $row->GENDER,

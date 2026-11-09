@@ -1,14 +1,14 @@
-{{ $kind }}
+{!! $kind !!}
 
-Hi {{ $name }},
+Hi {!! $name !!},
 
-{{ $title }}
+{!! $title !!}
 
-{{ $body }}
+{!! $body !!}
 
-{{ $action }}: {{ $url }}
+{!! $action !!}: {!! $url !!}
 
-See all your notifications: {{ $notificationsUrl }}
-Notification settings: {{ $settingsUrl }}
+See all your notifications: {!! $notificationsUrl !!}
+Notification settings: {!! $settingsUrl !!}
 
 QIU Campus Hub · Student Life Division, Quest International University

@@ -45,7 +45,11 @@ class SignInService
             throw new NotInRecordsException;
         }
 
-        $user = User::firstOrNew(['email' => $email]);
+        // If camsys changed this student's email, keep the account (and its roles) and move it to the new email.
+        $user = User::where('email', $email)->first()
+            ?? ($student?->user_id ? User::find($student->user_id) : null)
+            ?? new User;
+        $user->email = $email;
         $returning = $user->last_login_at !== null;
         $user->fill([
             // camsys/staff names are the official ones printed on SLD forms.
