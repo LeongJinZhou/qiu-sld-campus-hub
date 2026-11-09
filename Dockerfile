@@ -46,7 +46,7 @@ RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-avail
     && sed -ri 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf \
     && printf 'ServerTokens Prod\nServerSignature Off\nTraceEnable Off\n' > /etc/apache2/conf-available/hardening.conf && a2enconf hardening \
     && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
-    && printf 'upload_max_filesize=55M\npost_max_size=60M\nmemory_limit=512M\nexpose_php=Off\n' > "$PHP_INI_DIR/conf.d/campus-hub.ini"
+    && printf 'upload_max_filesize=55M\npost_max_size=60M\nmemory_limit=512M\nexpose_php=Off\ndisplay_errors=Off\n' > "$PHP_INI_DIR/conf.d/campus-hub.ini"
 
 WORKDIR /var/www/html
 COPY --chown=www-data:www-data . .

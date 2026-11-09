@@ -28,8 +28,17 @@ export default function Toast() {
             // The page props update after 'finish'; read them on the next tick.
             if (visit.completed && !visit.only.length && !visit.except.length) setTimeout(show, 0);
         });
+        // A refused upload or form comes back as validation errors; pages that do not print them would stay silent.
+        const offError = router.on('error', (e) => {
+            const first = Object.values(e.detail.errors)[0];
+            if (!first) return;
+            setMessage({ text: String(first), tone: 'error' });
+            clearTimeout(timer.current);
+            timer.current = setTimeout(() => setMessage(null), 6000);
+        });
         return () => {
             off();
+            offError();
             clearTimeout(timer.current);
         };
     }, [show]);

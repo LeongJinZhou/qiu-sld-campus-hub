@@ -6,6 +6,7 @@ use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\RoleMiddleware;
 
@@ -35,4 +36,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        // PHP drops the body when it exceeds post_max_size; say so instead of showing a bare error page.
+        $exceptions->render(fn (PostTooLargeException $e, Request $request) => $request->expectsJson()
+            ? response()->json(['message' => 'That file is too large.'], 413)
+            : back()->with('error', 'That file is too large. Event documents may be up to 50 MB, photos up to 8 MB.'));
     })->create();
