@@ -51,6 +51,7 @@ interface ProposalProps {
     options: { natures: Record<string, string>; sdgs: Record<number, string>; fundSources: Record<string, string>; compulsoryPositions: string[] };
     leadTime: { earliest: string; days: number };
     lastEdit: LastEdit;
+    revs: Record<string, string>;
     clubCommittee: { id: number; name: string }[];
     canDiscard: boolean;
     returnSections: { key: string; note: string }[];
@@ -184,6 +185,8 @@ export default function Proposal(props: ProposalProps) {
     // this person has not touched, and shows who is editing which part.
     const liveUrl = `/events/${event.slug}/proposal/live`;
     const base = useRef<Record<string, string>>(snapshotOf(strip({ ...props.data, signature: null, signature_strokes: null })));
+    // Revision of each part as this person last saw it; sent with a save so a newer version from someone else is never overwritten.
+    const revs = useRef<Record<string, string>>(props.revs);
     const latest = useRef(d);
     latest.current = d;
     const [saving, setSaving] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -202,14 +205,29 @@ export default function Proposal(props: ProposalProps) {
         if (!changed.length) return;
         setSaving('saving');
         try {
-            const res = await fetch(liveUrl, { method: 'PATCH', credentials: 'same-origin', headers: jsonHeaders(), body: JSON.stringify({ changes: Object.fromEntries(changed.map((k) => [k, JSON.parse(now[k] as string)])) }) });
-            const body = (await res.json()) as { lastEdit?: LastEdit; errors?: Record<string, string[]> };
+            const res = await fetch(liveUrl, { method: 'PATCH', credentials: 'same-origin', headers: jsonHeaders(), body: JSON.stringify({ changes: Object.fromEntries(changed.map((k) => [k, JSON.parse(now[k] as string)])), revs: Object.fromEntries(changed.map((k) => [k, revs.current[k]])) }) });
+            const body = (await res.json()) as { lastEdit?: LastEdit; errors?: Record<string, string[]>; conflicts?: string[]; data?: Record<string, unknown>; revs?: Record<string, string> };
+            if (res.status === 409 && body.conflicts?.length) {
+                // Someone saved the same part first: show their version, keep the rest of this person's changes queued.
+                const theirs = body.data ?? {};
+                for (const k of body.conflicts) {
+                    base.current[k] = JSON.stringify(theirs[k]);
+                    revs.current[k] = body.revs?.[k] ?? '';
+                }
+                form.setData((cur) => ({ ...cur, ...theirs }));
+                setSaving('error');
+                setSaveError('someone else changed the same part at the same moment. Their version is shown now; please type your change again');
+                return;
+            }
             if (!res.ok) {
                 setSaving('error');
                 setSaveError(body.errors ? (Object.values(body.errors)[0]?.[0] ?? null) : null);
                 return;
             }
-            changed.forEach((k) => (base.current[k] = now[k] as string));
+            changed.forEach((k) => {
+                base.current[k] = now[k] as string;
+                if (body.revs?.[k]) revs.current[k] = body.revs[k] as string;
+            });
             if (body.lastEdit) setLastEdit(body.lastEdit);
             setSaving('saved');
             setSaveError(null);
@@ -240,7 +258,7 @@ export default function Proposal(props: ProposalProps) {
             if (document.hidden) return;
             const res = await fetch(`${liveUrl}?section=${encodeURIComponent(mySection.current)}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } }).catch(() => null);
             if (!res?.ok) return;
-            const live = (await res.json()) as { status: string; data: Record<string, unknown>; lastEdit: LastEdit; editors: Editor[]; committee: CommitteeRow[]; missingCommittee: string[] };
+            const live = (await res.json()) as { status: string; data: Record<string, unknown>; revs: Record<string, string>; lastEdit: LastEdit; editors: Editor[]; committee: CommitteeRow[]; missingCommittee: string[] };
             setEditors(live.editors);
             setCommitteeList(live.committee);
             setMissingList(live.missingCommittee);
@@ -256,6 +274,7 @@ export default function Proposal(props: ProposalProps) {
                 if (key in local && local[key] === base.current[key] && remote !== base.current[key]) {
                     incoming[key] = value;
                     base.current[key] = remote;
+                    revs.current[key] = live.revs[key] ?? '';
                 }
             }
             if (Object.keys(incoming).length) form.setData((cur) => ({ ...cur, ...incoming }));
