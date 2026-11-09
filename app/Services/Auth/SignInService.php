@@ -20,7 +20,9 @@ class SignInService
 
     /**
      * Resolves a verified Google identity to a portal user, refreshing the student from camsys first.
-     * Only camsys students, registered staff and configured super admins get in.
+     * camsys students and registered staff are linked to their record (never duplicated). Any other QIU Google account
+     * becomes a limited student: no student record, so it cannot hold a position until camsys has it; staff and admin
+     * roles are never created here.
      *
      * @throws NotInRecordsException
      */
@@ -34,8 +36,9 @@ class SignInService
         $student = $this->camsys->syncByEmail($email);
         $staff = Staff::where('email', $email)->where('active', true)->first();
         $isSuperAdmin = in_array($email, array_map('strtolower', config('sld.superadmin_emails')), true);
-        if (! $student && ! $staff && ! $isSuperAdmin) {
-            throw new NotInRecordsException;
+        $limited = ! $student && ! $staff && ! $isSuperAdmin;
+        if ($limited && ! $enforceDomain) {
+            throw new NotInRecordsException; // the demo login must not mint accounts
         }
 
         $user = User::firstOrNew(['email' => $email]);
@@ -54,7 +57,7 @@ class SignInService
         $student?->update(['user_id' => $user->id]);
         $staff?->update(['user_id' => $user->id]);
 
-        if ($student) {
+        if ($student || $limited) {
             $this->roles->grantGlobal($user, GlobalRole::Student);
         }
         if ($staff) {

@@ -100,7 +100,7 @@ flowchart TB
 - Committee year timeline on the club page
 
 **Portal (committees, advisors, SLD)**
-- Google sign-in restricted to `@qiu.edu.my`, matched against the university student system (camsys)
+- Google sign-in restricted to `@qiu.edu.my`. A camsys student or registered staff member is linked to their record on first sign-in (never duplicated). Any other QIU account becomes a limited student with no student record: it cannot hold a committee position until camsys has it, and the nightly sync then links it to the same account. Staff and admin roles are never created automatically
 - Nightly camsys sync (read-only) with automatic year group and academic session rollover (1 July)
 - Scoped roles: club committee and advisor per session; President, Vice President, Secretary and Treasurer compulsory before any submission
 - SLD admin: dashboard, clubs, committees, staff accounts, transfer club to committee, requests to clubs (7-working-day replies), settings, audit log
