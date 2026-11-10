@@ -42,6 +42,6 @@ class EventCommitteeController extends Controller
         }
         $this->roles->remove($assignment);
 
-        return back()->with('success', 'Removed.');
+        return back()->with('success', 'Committee member removed.');
     }
 }

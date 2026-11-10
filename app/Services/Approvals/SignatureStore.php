@@ -84,7 +84,7 @@ class SignatureStore
             }
         }
         if ($points < 10) {
-            throw new DomainException('Please sign properly in the signature box.');
+            throw new DomainException('Please provide a complete signature in the signature box.');
         }
         // A real signature moves: points that never leave a tiny spot (a tap, or made-up data) are refused.
         $all = array_merge(...array_values($strokes));

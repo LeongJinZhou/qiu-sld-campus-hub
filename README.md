@@ -217,13 +217,13 @@ Everything sensitive stays on the server:
 - **AI calls** run server-side in queued jobs only, with minimal data.
 - Sign-in is rate-limited, every feature has its own limit, and every request has a site-wide ceiling (per person or IP); every role, committee and membership change is written to the audit log.
 - **Browser hardening:** a strict Content-Security-Policy (scripts only from this site, by nonce), no framing, HSTS, no-sniff, server version hidden; hidden files and scripts in the uploads folder are never served.
-- **Demo login** (`DEMO_LOGIN`) is for testing only. On a hosted server it is locked behind a passcode (`DEMO_LOGIN_PASSCODE_HASH`, a bcrypt hash) and the account list is never sent before it is entered. Keep it off in production.
+- **Demo sign-in** (`DEMO_LOGIN`) is for testing only. On a hosted server it is locked behind a passcode (`DEMO_LOGIN_PASSCODE_HASH`, a bcrypt hash) and the account list is never sent before it is entered. Keep it off in production.
 - The sample `database/camsys/*.sql` is **dummy data**. Never commit real student records.
 
 ## Roadmap
 
 - [x] Phase 0: Laravel setup, design system, layouts
-- [x] Phase 1: Login, camsys sync, roles, clubs, profiles
+- [x] Phase 1: Sign-in, camsys sync, roles, clubs, profiles
 - [x] Phase 2: Feed, events, proposals, approvals, attendance, indemnity
 - [x] Phase 3: Membership, payments, finance, meetings, minutes, post mortem, venues
 - [x] Phase 4: AGM, elections, Annual Activities Report

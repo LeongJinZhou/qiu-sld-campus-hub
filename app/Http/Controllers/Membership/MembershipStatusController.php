@@ -42,7 +42,7 @@ class MembershipStatusController extends Controller
         ], ['reason.required_if' => 'Give a reason; the member is told why.']);
         $action = $data['action'];
         if (! in_array($membership->status, self::ALLOWED[$action], true)) {
-            return back()->with('error', "That can't be done to a member who is {$membership->status->value}.");
+            return back()->with('error', "This action cannot be performed on a member whose status is {$membership->status->value}.");
         }
         $membership->loadMissing('user', 'club');
         $name = $membership->user->name;

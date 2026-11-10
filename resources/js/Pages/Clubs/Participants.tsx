@@ -158,7 +158,7 @@ export default function Participants({ club, session, sessions, events, rows: al
                                                                 {e.out && ` · Out ${e.out}`}
                                                             </Badge>
                                                         ) : (
-                                                            e.registered && <Badge>Registered, didn't attend</Badge>
+                                                            e.registered && <Badge>Registered but did not attend</Badge>
                                                         )}
                                                         {e.role === 'committee' && <Badge tone="info">Committee</Badge>}
                                                     </span>

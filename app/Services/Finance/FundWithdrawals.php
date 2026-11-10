@@ -85,7 +85,7 @@ class FundWithdrawals
         }
         $bank = array_map(fn ($v) => trim((string) $v), (array) ($input['bank'] ?? []));
         if (($bank['bank_name'] ?? '') === '' || ($bank['account_name'] ?? '') === '' || ! preg_match('/^\d[\d\s-]{5,28}\d$/', $bank['account_number'] ?? '')) {
-            throw new DomainException('Fill in the bank, the account name and the account number (digits only) the money goes to.');
+            throw new DomainException('Enter the bank name, account name and account number (digits only) of the receiving account.');
         }
 
         $items = array_values(array_map(fn ($i) => [

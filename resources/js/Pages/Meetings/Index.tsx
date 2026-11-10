@@ -72,7 +72,7 @@ export default function Index({ club, calendarConnected, kinds, audiences, meeti
                                             {m.audience && (
                                                 <Badge>
                                                     {m.audience}
-                                                    {m.pax ? ` · ${m.pax} pax` : ''}
+                                                    {m.pax ? ` · ${m.pax} participants` : ''}
                                                 </Badge>
                                             )}
                                             {m.upcoming && <Badge tone="success">Upcoming</Badge>}
@@ -109,7 +109,7 @@ export default function Index({ club, calendarConnected, kinds, audiences, meeti
                             </p>
                         )}
                         {(!data.online || isActivity) && <Input value={data.venue} onChange={(v) => setData('venue', v)} label={isActivity ? 'Location' : 'Venue'} required={isActivity} error={errors.venue} />}
-                        {isActivity && <Input value={data.pax} onChange={(v) => setData('pax', v)} type="number" label="Expected pax" required min={1} error={errors.pax} />}
+                        {isActivity && <Input value={data.pax} onChange={(v) => setData('pax', v)} type="number" label="Expected participants" required min={1} error={errors.pax} />}
                         {isActivity && <p className="text-xs text-ink-muted">Weekly activity: attendees earn CCA (1 hour = 1 CCA) once the minutes and attendance are approved.</p>}
                         <Button type="submit" loading={form.processing} disabled={data.online && !calendarConnected}>
                             {inviteLabel}

@@ -174,7 +174,7 @@ class ProposalController extends Controller
             $conflicts = array_values(array_filter(array_keys($changes), fn (string $key) => isset($sent[$key]) && $sent[$key] !== ($revs[$key] ?? null)));
             if ($conflicts) {
                 // Someone saved this part after this person last saw it: show their version rather than overwrite it.
-                return response()->json(['message' => 'Someone else changed this part at the same moment.', 'conflicts' => $conflicts, 'data' => Arr::only($current, $conflicts), 'revs' => $revs], 409);
+                return response()->json(['message' => 'Another user changed this section at the same time. Please refresh and try again.', 'conflicts' => $conflicts, 'data' => Arr::only($current, $conflicts), 'revs' => $revs], 409);
             }
             $merged = array_replace($current, $changes);
             $this->form->saveDraft($document, $merged, $request->user()->id);

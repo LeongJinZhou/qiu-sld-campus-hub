@@ -107,7 +107,7 @@ class NotificationController extends Controller
         $key = "left:{$request->user()->id}:".sha1($data['path']);
         if (cache()->add($key, true, now()->addMinutes(30))) {
             $request->user()->notify(new DocumentNotification(
-                'It seems you have half-way done this',
+                'You have an unfinished item',
                 "{$data['title']} is not finished yet. Tap to continue where you left off.",
                 url($data['path']),
             ));

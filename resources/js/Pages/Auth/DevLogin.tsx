@@ -15,8 +15,8 @@ export default function DevLogin({ locked, accounts }: { locked: boolean; accoun
     };
     return (
         <GuestLayout>
-            <Head title="Demo login" />
-            <Card title="Demo login">
+            <Head title="Demo sign-in" />
+            <Card title="Demo sign-in">
                 {locked ? (
                     <form className="grid gap-3" onSubmit={submit}>
                         <p className="text-sm text-ink-muted">Testing access. Enter the demo passcode to continue.</p>

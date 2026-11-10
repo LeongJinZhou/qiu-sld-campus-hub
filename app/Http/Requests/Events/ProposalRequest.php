@@ -116,8 +116,8 @@ class ProposalRequest extends FormRequest
             'budget.*.*.quantity.min' => 'Quantity must be at least 1.',
             'budget.*.*.quantity.integer' => 'Quantity must be a whole number.',
             'budget.*.*.price_sen.min' => 'Price cannot be negative.',
-            'speakers.required' => 'A workshop lists at least one speaker or external person.',
-            'speakers.min' => 'A workshop lists at least one speaker or external person.',
+            'speakers.required' => 'A workshop must list at least one speaker or external person.',
+            'speakers.min' => 'A workshop must list at least one speaker or external person.',
         ];
     }
 

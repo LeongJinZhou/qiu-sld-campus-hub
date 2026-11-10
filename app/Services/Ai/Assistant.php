@@ -105,7 +105,7 @@ class Assistant
     {
         $top = $found->take(5);
         if ($top->isEmpty()) {
-            return ['I couldn\'t find anything you can see that matches. Try naming the club or event, or ask about fees, events or your clubs.', [], ['What events are coming up?', 'What does each club charge?']];
+            return ['I could not find anything you can see that matches. Try naming the club or event, or ask about fees, events or your clubs.', [], ['What events are coming up?', 'What does each club charge?']];
         }
 
         return ["Here is what I found:\n".$top->map(fn ($f) => "• {$f['title']}: {$f['text']}")->implode("\n"), $top->pluck('id')->all(), []];

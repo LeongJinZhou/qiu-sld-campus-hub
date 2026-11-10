@@ -145,7 +145,7 @@ export default function Show({ event, committee, approval, registered, registrat
                             </>
                         ) : registered ? (
                             <>
-                                <p className="mt-2 text-sm font-medium text-success">You're registered.</p>
+                                <p className="mt-2 text-sm font-medium text-success">You are registered.</p>
                                 {registrationStatus === 'registered' && indemnity && !indemnity.signed && !indemnity.closed ? (
                                     <div className="mt-2">
                                         <IndemnityPrompt slug={event.slug} name={event.name} closesAt={indemnity.closes_at} />

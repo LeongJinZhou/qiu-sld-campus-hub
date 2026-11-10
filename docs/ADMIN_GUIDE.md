@@ -44,7 +44,7 @@ Documents reach you at the **SLD Officer** step (proposals, minutes, attendance 
 
 ## Venue requests (`/admin/venues`)
 
-La Place booths, semester venues and big rooms (at least 1 week ahead) arrive here and by email. **Confirm** or **Decline** with an optional note; the club is notified.
+La Place booths, semester venues and large rooms (at least 1 week in advance) arrive here and by email. **Confirm** or **Decline** with an optional note; the club is notified.
 
 ## Requests to clubs (`/admin/requests`)
 

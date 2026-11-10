@@ -68,7 +68,7 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
         upload.post(`/withdrawals/${w.id}/${step}`, { preserveScroll: true, forceFormData: true, onSuccess: () => upload.reset() });
     };
     const complete = (): void => {
-        if (confirm(`Confirm RM ${(w.total_sen / 100).toFixed(2)} arrived? It will be recorded in the club finance.`)) router.post(`/withdrawals/${w.id}/complete`, {}, { preserveScroll: true });
+        if (confirm(`Confirm that RM ${(w.total_sen / 100).toFixed(2)} has arrived? It will be recorded in the club's finance records.`)) router.post(`/withdrawals/${w.id}/complete`, {}, { preserveScroll: true });
     };
     const sendBack = (): void => {
         const note = prompt('What is wrong with the bank-in proof? (sent to the Treasurer)');
@@ -181,7 +181,7 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
                 {can.sld && w.stage === 'bankin_uploaded' && (
                     <section className={action}>
                         <h2 className="font-semibold">SLD: confirm the bank-in</h2>
-                        <p className="text-sm">Open the proof below. Confirming records the withdrawal in the club finance; the balance changes only now.</p>
+                        <p className="text-sm">Open the proof below. Confirming records the withdrawal in the club's finance records; the balance changes only now.</p>
                         <div className="flex flex-wrap gap-2">
                             <Button onClick={complete}>Confirm &amp; record</Button>
                             <Button variant="secondary" onClick={sendBack}>

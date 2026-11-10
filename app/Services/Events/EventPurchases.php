@@ -169,8 +169,8 @@ class EventPurchases
         $purchase->buyer->notify(new DocumentNotification(
             $approve ? 'Purchase verified' : 'Purchase not accepted',
             $approve
-                ? "{$user->name} verified your RM ".number_format($purchase->total_sen / 100, 2).' purchase. You will be paid back '.($settleWhen === 'now' ? 'soon' : 'after the event').'.'
-                : ($note ?: 'Talk to the event committee about this purchase.'),
+                ? "{$user->name} verified your RM ".number_format($purchase->total_sen / 100, 2).' purchase. You will be reimbursed '.($settleWhen === 'now' ? 'soon' : 'after the event').'.'
+                : ($note ?: 'Please contact the event committee about this purchase.'),
             route('events.purchases', $purchase->event),
         ));
     }
@@ -181,7 +181,7 @@ class EventPurchases
         $this->assertPayable($purchase, $payer);
         $token = $this->qr->profileToken((string) $photo->getRealPath());
         if ($token === null) {
-            throw new DomainException("The photo doesn't show {$purchase->buyer->name}'s QR code clearly. Retake it with their phone and the cash in view.");
+            throw new DomainException("The photo does not show {$purchase->buyer->name}'s QR code clearly. Retake it with their phone and the cash in view.");
         }
         if (! hash_equals((string) $purchase->buyer->qr_token, $token)) {
             throw new DomainException("That QR code belongs to someone else. Scan {$purchase->buyer->name}'s own QR code.");
@@ -195,7 +195,7 @@ class EventPurchases
             'payout_path' => $photo->store("purchase-payouts/{$purchase->club_id}", 'local'), 'payout_check' => 'ok',
         ]);
         $purchase->buyer->notify(new DocumentNotification(
-            'Did you get your cash?',
+            'Have you received your cash?',
             "{$payer->name} is paying you back RM ".number_format($purchase->total_sen / 100, 2).' in cash. Confirm once you have it.',
             route('events.purchases', $purchase->event),
         ));
@@ -243,7 +243,7 @@ class EventPurchases
         $purchase->update(['payout_payee' => $reading->payee, 'payout_reference' => $reference]);
         if ($problems !== []) {
             $purchase->update(['status' => EventPurchase::OWED, 'payout_check' => 'mismatch', 'review_note' => 'Transfer not accepted: '.implode('; ', $problems).'.']);
-            $purchase->payer?->notify(new DocumentNotification('Pay-back transfer not accepted', (string) $purchase->review_note, route('events.purchases', $purchase->event)));
+            $purchase->payer?->notify(new DocumentNotification('Reimbursement transfer not accepted', (string) $purchase->review_note, route('events.purchases', $purchase->event)));
 
             return;
         }
@@ -299,7 +299,7 @@ class EventPurchases
         });
         $this->audit->log('purchase.recorded', $purchase->event, ['purchase_id' => $purchase->id, 'total_sen' => $purchase->total_sen]);
         if ($purchase->paid_with === 'own') {
-            $purchase->buyer->notify(new DocumentNotification('Paid back', 'RM '.number_format($purchase->total_sen / 100, 2)." for {$purchase->summary()} is settled and recorded in the club finance.", route('events.purchases', $purchase->event)));
+            $purchase->buyer->notify(new DocumentNotification('Paid back', 'RM '.number_format($purchase->total_sen / 100, 2)." for {$purchase->summary()} is settled and recorded in the finance records of the club.", route('events.purchases', $purchase->event)));
         }
     }
 
@@ -309,10 +309,10 @@ class EventPurchases
             throw new DomainException('This purchase is not waiting to be paid back.');
         }
         if (! $payer->can('organises', $purchase->event) || $payer->is($purchase->buyer)) {
-            throw new DomainException('Someone else on the committee pays the buyer back.');
+            throw new DomainException('Another committee member must pay the buyer back.');
         }
         if ($purchase->settle_when === 'after_event' && $purchase->event->ends_at->isFuture()) {
-            throw new DomainException('This one is paid back after the event ends.');
+            throw new DomainException('This purchase will be paid back after the event ends.');
         }
     }
 

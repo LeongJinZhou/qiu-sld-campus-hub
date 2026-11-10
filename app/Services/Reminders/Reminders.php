@@ -186,7 +186,7 @@ class Reminders
                     continue;
                 }
                 $this->send("halfway:{$item['key']}:{$person->id}:".today()->toDateString(), collect([$person]),
-                    'It seems you have half-way done this', "{$item['title']}. {$item['body']}", $item['url']);
+                    'You have an unfinished item', "{$item['title']}. {$item['body']}", $item['url']);
             }
         }
     }

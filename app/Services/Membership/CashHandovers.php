@@ -137,7 +137,7 @@ class CashHandovers
         $decoded = $this->decode($photo->getRealPath());
         $token = $decoded !== null && preg_match('#/p/([A-Za-z0-9_-]+)#', $decoded, $m) ? $m[1] : null;
         if ($token === null) {
-            throw new DomainException("The photo doesn't show the student's QR code clearly. Retake it with the student's phone and the cash in view.");
+            throw new DomainException("The photo does not show the student's QR code clearly. Retake it with the student's phone and the cash in view.");
         }
         if (! hash_equals((string) $handover->qr_token_hash, hash('sha256', $token))) {
             throw new DomainException("That QR code belongs to someone else. Scan {$handover->student->name}'s own QR code.");
@@ -254,7 +254,7 @@ class CashHandovers
     {
         $side = $this->sideOf($handover, $user);
         if ($side === null || ($required && $side !== $required)) {
-            throw new DomainException('This step is not yours to take.');
+            throw new DomainException('This step is not assigned to you.');
         }
         if ($handover->expires_at->isPast()) {
             throw new DomainException('This handover request has expired.');

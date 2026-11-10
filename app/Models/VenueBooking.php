@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['club_id', 'user_id', 'type', 'venue', 'date', 'starts_at', 'ends_at', 'semester', 'weekday', 'purpose', 'items', 'activity', 'status', 'sld_note', 'decided_by', 'decided_at'])]
 class VenueBooking extends Model
 {
-    public const TYPES = ['la_place' => 'La Place booth', 'semester' => 'Semester permanent venue', 'big_room' => 'One-off big room'];
+    public const TYPES = ['la_place' => 'La Place booth', 'semester' => 'Semester permanent venue', 'big_room' => 'One-off large room'];
 
     protected function casts(): array
     {

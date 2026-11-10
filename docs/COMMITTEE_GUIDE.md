@@ -23,7 +23,7 @@ The club page shows the advisor, the four executive offices, the rest of the com
 4. **Poster.** Tick every item on the checklist (logos, title, date, time, venue, registration, CCA, contact) and upload it. Use real QIU photos only.
 5. **Outdoor / off-campus?** Everyone attending must sign the indemnity form; signing closes 3 days before the event. People who haven't signed get a reminder, and cannot clock in.
 6. **On the day: door and attendance.** Everyone confirmed gets a **ticket** with a QR and their ticket/transaction ID (in Activities). At the door choose **Scan people**, **Show QR** or **Both**, and **Clock in** or **Clock out**:
-   - *Scan people:* scan a ticket or personal QR (or type a name, ticket ID or student ID). The card shows **Paid / NOT PAID**, check-in times and buttons to clock in or out. Set the scan to *Check only* to just verify.
+   - *Scan people:* scan a ticket or personal QR (or type a name, ticket ID or student ID). The card shows **Paid / Not paid**, check-in times and buttons to clock in or out. Set the scan to *Check only* to just verify.
    - *Show QR:* participants scan the screen. Pick how often it changes (10 s – 10 min); a photo of an old code stops working.
    - **People** lists everyone with filters (paid, not paid, in, not in). Use it after the event to follow up anyone who has not paid.
    - **Student helpers:** add students by student ID; they can scan and clock people in/out for that event only.
@@ -62,7 +62,7 @@ For a weekly activity, attendance is required before submitting. CCA hours are a
 
 ## Venues
 
-Book a La Place booth (agree to the table rules), a semester venue, or a big room at least 1 week ahead. SLD confirms in the app.
+Book a La Place booth (agree to the table rules), a semester venue, or a large room at least 1 week in advance. SLD confirms in the app.
 
 ## AGM season
 

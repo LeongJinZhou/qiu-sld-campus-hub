@@ -193,7 +193,7 @@ export default function Show(props: ClubShowProps) {
                                     )}
                                 </ul>
                             ) : (
-                                <p className="text-sm text-ink-muted">No members yet — share the club QR to get the first sign-ups.</p>
+                                <p className="text-sm text-ink-muted">No members yet. Share the club QR code to receive the first sign-ups.</p>
                             )}
                         </section>
                     )}

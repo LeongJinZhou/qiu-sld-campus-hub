@@ -62,7 +62,7 @@ class Meetings
             $club->forceFill(['last_activity_at' => now()])->save();
             Notification::send($invitees->reject(fn (User $u) => $u->is($organiser)), new DocumentNotification(
                 ($activity ? 'Weekly activity' : 'Committee meeting')." · {$club->name}: {$data['title']}",
-                $start->format('D j M, g:i A').($data['venue'] ? " · {$data['venue']}" : '').($meet ? ' · Google Meet' : '').($activity && ! empty($data['pax']) ? " · {$data['pax']} pax" : ''),
+                $start->format('D j M, g:i A').($data['venue'] ? " · {$data['venue']}" : '').($meet ? ' · Google Meet' : '').($activity && ! empty($data['pax']) ? " · {$data['pax']} participants" : ''),
                 route('meetings.show', $meeting),
             ));
 

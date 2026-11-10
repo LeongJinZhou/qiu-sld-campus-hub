@@ -197,7 +197,7 @@ export default function FundRequest({ club, events, selectedEvent, earliestWeekl
             </div>
             <Modal open={confirming} onClose={() => setConfirming(false)} title="Are these bank details correct?">
                 <div className="grid gap-4 text-sm">
-                    <p className="text-ink-muted">Money sent to a wrong account is very hard to get back. Read each line once more.</p>
+                    <p className="text-ink-muted">Money sent to an incorrect account is very difficult to recover. Please review each line again.</p>
                     <dl className="grid gap-2 rounded-card border-2 border-warning/50 bg-warning/5 p-4">
                         <div className="flex justify-between gap-3">
                             <dt className="text-ink-muted">Bank</dt>

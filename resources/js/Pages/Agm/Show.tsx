@@ -188,7 +188,7 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                                                     <Button variant="secondary" size="sm" loading={drafting} onClick={() => router.post(`/clubs/${club.slug}/annual-report/draft`, {}, { preserveScroll: true })}>
                                                         <Icon name="sparkles" size={16} /> {drafting ? 'Writing…' : 'Write empty details with AI'}
                                                     </Button>
-                                                    {annual.ai === 'failed' && <p className="mt-1 text-sm text-warning">AI couldn't write the details — please write them yourself.</p>}
+                                                    {annual.ai === 'failed' && <p className="mt-1 text-sm text-warning">The AI assistant could not write the details. Please write them yourself.</p>}
                                                 </div>
                                             )}
                                             <ul className="grid gap-4">

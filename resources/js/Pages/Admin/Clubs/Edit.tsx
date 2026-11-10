@@ -214,7 +214,7 @@ export default function Edit({ club, categories, session = '', isCurrentSession,
                                     value={advisor.data.staff_id}
                                     onChange={(v) => advisor.setData('staff_id', Number(v))}
                                     options={staff.map((s) => ({ value: s.id, label: s.label }))}
-                                    placeholder="Choose staff"
+                                    placeholder="Choose a staff member"
                                     error={advisor.errors.staff_id ?? advisor.errors.session}
                                 />
                                 {!staff.length && <p className="text-xs text-ink-muted">No active staff yet. Add staff under Staff first.</p>}

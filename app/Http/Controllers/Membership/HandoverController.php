@@ -25,7 +25,9 @@ class HandoverController extends Controller
     {
         $side = $this->handovers->sideOf($handover, $request->user()) ?? abort(403);
         $handover->load('student', 'committee', 'payment.club');
-        $token = $side === 'student' ? $this->handovers->qrPayload($handover, $request->user()) : null;
+        // An expired request has no QR to show; the page explains that instead of failing.
+        $expired = $handover->expires_at->isPast();
+        $token = $side === 'student' && ! $expired ? $this->handovers->qrPayload($handover, $request->user()) : null;
 
         return Inertia::render('Membership/Handover', [
             'side' => $side,
@@ -44,6 +46,7 @@ class HandoverController extends Controller
                 'student_done' => $handover->student_done_at !== null,
                 'committee_done' => $handover->committee_done_at !== null,
                 'expires_at' => $handover->expires_at->format('D, j M Y, g:i A'),
+                'expired' => $expired && ! in_array($handover->status->value, ['completed', 'declined'], true),
                 'cash_check' => $handover->cash_check,
                 'photo_url' => $handover->photo_path ? URL::temporarySignedRoute('handovers.photo', now()->addMinutes(30), $handover) : null,
             ],

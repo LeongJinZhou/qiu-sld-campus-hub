@@ -66,7 +66,7 @@ class MeetingController extends Controller
             'online' => ['boolean'],
             'audience' => ['nullable', 'required_if:kind,activity', 'in:'.implode(',', array_keys(Meeting::AUDIENCES))],
             'pax' => ['nullable', 'required_if:kind,activity', 'integer', 'min:1', 'max:5000'],
-        ], ['venue.required_if' => 'Enter the location of the weekly activity.', 'pax.required_if' => 'Enter the expected pax.', 'audience.required_if' => 'Choose who is invited.']);
+        ], ['venue.required_if' => 'Enter the location of the weekly activity.', 'pax.required_if' => 'Enter the expected number of participants.', 'audience.required_if' => 'Choose who is invited.']);
 
         try {
             $meeting = $this->meetings->create($club, $request->user(), [...$data, 'online' => $request->boolean('online')]);

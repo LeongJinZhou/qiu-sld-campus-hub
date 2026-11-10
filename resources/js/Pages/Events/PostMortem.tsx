@@ -94,7 +94,7 @@ export default function PostMortem({ event, header, areas, document }: PostMorte
                 <FormSection title="Event">
                     <div className="grid gap-3 sm:grid-cols-3">
                         <LockedField label="Event Name" value={header.event} />
-                        <LockedField label="Organizing Club" value={header.club} />
+                        <LockedField label="Organising Club" value={header.club} />
                         <LockedField label="Date" value={header.date} />
                         <LockedField label="Time" value={header.time} />
                         <LockedField label="Venue" value={header.venue} />

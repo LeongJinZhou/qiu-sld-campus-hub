@@ -101,7 +101,7 @@ class FeeController extends Controller
             route('clubs.show', $fee->club),
         ));
 
-        return back()->with('success', 'Fee rejected. The treasurer has been told why.');
+        return back()->with('success', 'Fee rejected. The treasurer has been informed of the reason.');
     }
 
     public function drive(Request $request): RedirectResponse

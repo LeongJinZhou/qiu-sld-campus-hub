@@ -66,7 +66,7 @@ class WithdrawalProgress
     {
         $this->assertStage($document, 'awaiting_bankin');
         if (! $this->approvers->canAct($treasurer, $document, ChainRole::Treasurer)) {
-            throw new DomainException('Only the Treasurer who signed for this withdrawal uploads the bank-in proof.');
+            throw new DomainException('Only the Treasurer who signed for this withdrawal can upload the bank-in proof.');
         }
         $document->update(['finance_stage' => 'bankin_uploaded', 'bankin_path' => $proof->store("withdrawals/{$document->club_id}", 'local'),
             'bankin_reference' => $reference ? mb_substr(trim($reference), 0, 100) : null, 'finance_note' => null]);

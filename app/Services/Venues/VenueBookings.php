@@ -34,7 +34,7 @@ class VenueBookings
     {
         $type = $data['type'];
         if ($type === 'big_room' && CarbonImmutable::parse($data['date'])->lt(CarbonImmutable::today()->addDays(self::BIG_ROOM_LEAD_DAYS))) {
-            throw new DomainException('Big rooms must be booked at least 1 week ahead.');
+            throw new DomainException('Large rooms must be booked at least 1 week in advance.');
         }
         if ($type !== 'semester' && CarbonImmutable::parse($data['date'])->isPast() && ! CarbonImmutable::parse($data['date'])->isToday()) {
             throw new DomainException('Choose a date from today onwards.');

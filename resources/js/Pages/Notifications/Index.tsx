@@ -59,7 +59,7 @@ export default function Index({ actions, items, hasMore, limit, group, groups, t
     };
     const clearAll = (): void => {
         const what = group ? (groups.find((g) => g.key === group)?.label ?? 'these') : 'all';
-        if (confirm(`Clear ${what} notifications? Action needed items stay until they are done.`)) router.delete('/notifications', { data: group ? { group } : {}, preserveScroll: true });
+        if (confirm(`Clear ${what} notifications? Items that need action stay until they are completed.`)) router.delete('/notifications', { data: group ? { group } : {}, preserveScroll: true });
     };
     const toggle = (key: string, on: boolean): void => setMutes(on ? mutes.filter((k) => k !== key) : [...mutes, key]);
     const saveMutes = (): void => router.put('/notifications/mutes', { muted: mutes }, { preserveScroll: true, onSuccess: () => setSettings(false) });
@@ -76,7 +76,7 @@ export default function Index({ actions, items, hasMore, limit, group, groups, t
                 </header>
                 {permission === 'default' && (
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-primary/40 bg-primary/5 p-4 text-sm">
-                        <span>Get a phone notification when you leave a payment or form half-way.</span>
+                        <span>Get a phone notification when you leave a payment or form halfway.</span>
                         <Button size="sm" onClick={() => void Notification.requestPermission().then(setPermission)}>
                             Turn on
                         </Button>

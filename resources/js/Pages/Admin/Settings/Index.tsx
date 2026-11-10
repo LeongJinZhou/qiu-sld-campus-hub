@@ -85,10 +85,10 @@ export default function Index({ programmes: programmeList, unmappedCodes, intake
                 <Card title="Deadlines and requirements">
                     <p className="mb-4 text-sm text-ink-muted">Rules every club works to. Exceptions (a late proposal, a budget deficit) need a reason and your approval.</p>
                     <form className="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2" onSubmit={on(() => rules.put('/admin/settings/rules', options))}>
-                        <Input {...rule('proposal_lead_days')} label="Proposal lead time (days)" hint="Days before the event a proposal must be in" />
-                        <Input {...rule('min_photos')} label="Minimum photos" hint="Weekly report, AGM and completed event" />
-                        <Input {...rule('transfer_days')} label="Transfer deadline (days)" hint="Finance transfers an approved withdrawal within" />
-                        <Input {...rule('handover_days')} label="Handover overlap (days)" hint="Incoming committee's view-only training" />
+                        <Input {...rule('proposal_lead_days')} label="Proposal lead time (days)" hint="Days before the event by which a proposal must be submitted" />
+                        <Input {...rule('min_photos')} label="Minimum photos" hint="For weekly reports, AGMs and completed events" />
+                        <Input {...rule('transfer_days')} label="Transfer deadline (days)" hint="Finance must transfer an approved withdrawal within this many days" />
+                        <Input {...rule('handover_days')} label="Handover overlap (days)" hint="Training period with view-only access for the incoming committee" />
                         <div className="sm:col-span-2">
                             <Button type="submit" loading={rules.processing}>
                                 Save rules
@@ -117,7 +117,7 @@ export default function Index({ programmes: programmeList, unmappedCodes, intake
                         })}
                     >
                         <Textarea value={statuses.data.active} onChange={(v) => statuses.setData('active', v)} label="Counts as an active student" rows={4} error={statuses.errors.active} />
-                        <Textarea value={statuses.data.alumni} onChange={(v) => statuses.setData('alumni', v)} label="Counts as alumni / no longer studying" rows={4} error={statuses.errors.alumni} />
+                        <Textarea value={statuses.data.alumni} onChange={(v) => statuses.setData('alumni', v)} label="Counts as alumni (no longer studying)" rows={4} error={statuses.errors.alumni} />
                         <div>
                             <Button type="submit" loading={statuses.processing}>
                                 Save

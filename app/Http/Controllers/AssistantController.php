@@ -51,6 +51,6 @@ class AssistantController extends Controller
     {
         AssistantMessage::where('user_id', $request->user()->id)->delete();
 
-        return back()->with('success', 'Your assistant history is deleted.');
+        return back()->with('success', 'Your assistant history has been deleted.');
     }
 }
