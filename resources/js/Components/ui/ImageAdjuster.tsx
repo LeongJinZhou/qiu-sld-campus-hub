@@ -24,11 +24,13 @@ const ImageAdjuster = forwardRef<ImageAdjusterHandle, ImageAdjusterProps>(functi
     const [pos, setPos] = useState({ x: 0, y: 0 });
     const [natural, setNatural] = useState({ w: 1, h: 1 });
     const [box, setBox] = useState({ w: 1, h: 1 });
+    const [broken, setBroken] = useState(false);
     const url = useMemo(() => URL.createObjectURL(file), [file]);
 
     useEffect(() => {
         setZoom(1);
         setPos({ x: 0, y: 0 });
+        setBroken(false);
         return () => URL.revokeObjectURL(url);
     }, [url]);
     useEffect(() => {
@@ -80,6 +82,7 @@ const ImageAdjuster = forwardRef<ImageAdjusterHandle, ImageAdjusterProps>(functi
 
     useImperativeHandle(ref, () => ({
         exportBlob: () => {
+            if (broken) return Promise.reject(new Error('This file is not a photo the browser can read.'));
             const scale = natural.w / size.w; // screen px → source px
             const sx = (size.w - size.fw) / 2 - pos.x;
             const sy = (size.h - size.fh) / 2 - pos.y;
@@ -113,9 +116,10 @@ const ImageAdjuster = forwardRef<ImageAdjusterHandle, ImageAdjusterProps>(functi
                     draggable={false}
                     className="pointer-events-none absolute left-1/2 top-1/2 max-w-none cursor-grab"
                     style={{ width: `${size.w}px`, height: `${size.h}px`, transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))` }}
+                    onError={() => setBroken(true)}
                     onLoad={() => setNatural({ w: img.current?.naturalWidth || 1, h: img.current?.naturalHeight || 1 })}
                 />
-                <span className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs font-medium text-white drop-shadow">Drag to move</span>
+                <span className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs font-medium text-white drop-shadow">{broken ? 'This file is not a photo. Choose another one.' : 'Drag to move'}</span>
             </div>
             <label className="flex items-center gap-3 text-sm">
                 <span className="text-ink-muted">Zoom</span>

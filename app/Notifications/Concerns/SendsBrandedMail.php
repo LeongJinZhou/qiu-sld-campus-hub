@@ -17,6 +17,18 @@ trait SendsBrandedMail
         return ['database' => 'sync'];
     }
 
+    /** First word of the name; a title ("Dr", "Ms") needs the next word too, or the email opens with "Hi Dr,". */
+    private function greetingName(string $name): string
+    {
+        $words = preg_split('/\s+/', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $first = $words[0] ?? 'there';
+        if (isset($words[1]) && preg_match('/^(dr|mr|mrs|ms|miss|prof|ir|ts|dato|datuk|datin|puan|encik|cik)\.?$/i', $first)) {
+            $first .= ' '.$words[1];
+        }
+
+        return $first;
+    }
+
     protected function brandedMail(object $notifiable, string $title, string $body, string $url, ?string $category = null): MailMessage
     {
         $action = $this->actionLabel($url);
@@ -25,7 +37,7 @@ trait SendsBrandedMail
             // One line only: a line break in a title (from a club or event name) can never add an email header.
             ->subject(mb_substr(trim((string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $title)), 0, 180))
             ->view(['html' => 'emails.notification', 'text' => 'emails.notification-text'], [
-                'name' => trim(strtok((string) ($notifiable->name ?? ''), ' ') ?: 'there'),
+                'name' => $this->greetingName((string) ($notifiable->name ?? '')),
                 'title' => $title,
                 'body' => $body,
                 'url' => $url,

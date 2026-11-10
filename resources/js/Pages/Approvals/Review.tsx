@@ -22,12 +22,14 @@ interface ReviewProps {
     decidesExceptions: boolean;
     paper?: { signers: { label: string; signed: boolean }[]; scan_url: string | null; complete: boolean } | null;
     paperOptions?: string[];
+    paperSuggested?: string[];
 }
 
 /** One approver's step: check the document, then approve and sign, or mark what is wrong and return or reject. */
-export default function Review({ approvalId, role, canAct, document, downloads, exceptions, decidesExceptions, paper = null, paperOptions = [] }: ReviewProps) {
+export default function Review({ approvalId, role, canAct, document, downloads, exceptions, decidesExceptions, paper = null, paperOptions = [], paperSuggested = [] }: ReviewProps) {
     // Higher authorities signing on paper (SLD's step): choose who, export, upload the signed scan, tick who signed.
-    const [chosen, setChosen] = useState<string[]>([]);
+    // A faculty event arrives with the Dean already ticked; SLD can untick.
+    const [chosen, setChosen] = useState<string[]>(paperSuggested);
     const [other, setOther] = useState('');
     const startPaper = (): void => router.post(`/approvals/${approvalId}/paper`, { signers: [...chosen, ...(other.trim() ? [other.trim()] : [])] }, { preserveScroll: true });
     const paperForm = useForm({ scan: null as File | null, signed: (paper?.signers ?? []).filter((s) => s.signed).map((s) => s.label) });

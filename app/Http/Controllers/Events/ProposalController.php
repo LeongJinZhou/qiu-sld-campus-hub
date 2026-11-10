@@ -25,6 +25,7 @@ use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,7 @@ class ProposalController extends Controller
             'editable' => $document->status->isEditable(),
             'approval' => $document->approvals()->exists() ? ['progress' => $presenter->progress($document), 'steps' => $presenter->present($document)['steps']] : null,
             'data' => $data,
+            'revs' => $this->form->revisions($data),
             'lastEdit' => $this->lastEdit($document),
             'clubCommittee' => app(Meetings::class)->committee($event->club)->reject(fn ($u) => $u->is($user))->values()->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]),
             'canDiscard' => $document->status->value === 'draft' && ! $document->versions()->where('number', '>', 0)->exists(),
@@ -132,6 +134,7 @@ class ProposalController extends Controller
         return response()->json([
             'status' => $document->status->value,
             'data' => $data = $this->form->current($document),
+            'revs' => $this->form->revisions($data),
             'lastEdit' => $this->lastEdit($document),
             'editors' => $present->except($user->id)->map(fn (array $p, int $id) => ['id' => $id, ...collect($p)->except('at')->all()])->values(),
             'committee' => $this->committee($event),
@@ -161,10 +164,23 @@ class ProposalController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()->toArray()], 422);
         }
-        $merged = array_replace($this->form->current($document), $changes);
-        $this->form->saveDraft($document, $merged, $request->user()->id);
+        $sent = (array) $request->input('revs', []);
 
-        return response()->json(['lastEdit' => $this->lastEdit($document)]);
+        // Read, compare and write under one lock, so two saves at the same instant cannot both pass the check.
+        return DB::transaction(function () use ($document, $changes, $sent, $request): JsonResponse {
+            Document::whereKey($document->id)->lockForUpdate()->first();
+            $current = $this->form->current($document);
+            $revs = $this->form->revisions($current);
+            $conflicts = array_values(array_filter(array_keys($changes), fn (string $key) => isset($sent[$key]) && $sent[$key] !== ($revs[$key] ?? null)));
+            if ($conflicts) {
+                // Someone saved this part after this person last saw it: show their version rather than overwrite it.
+                return response()->json(['message' => 'Someone else changed this part at the same moment.', 'conflicts' => $conflicts, 'data' => Arr::only($current, $conflicts), 'revs' => $revs], 409);
+            }
+            $merged = array_replace($current, $changes);
+            $this->form->saveDraft($document, $merged, $request->user()->id);
+
+            return response()->json(['lastEdit' => $this->lastEdit($document), 'revs' => $this->form->revisions($merged)]);
+        });
     }
 
     /** A speaker photo or a picture for an added part: cleaned (GD re-encode) and stored; the form keeps its path. */

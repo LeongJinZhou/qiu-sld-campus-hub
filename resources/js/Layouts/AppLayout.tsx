@@ -135,6 +135,7 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
                 </header>
 
                 <main className={`mx-auto w-full min-w-0 px-4 py-6 md:px-8 md:py-8 ${wide ? 'max-w-6xl' : 'max-w-4xl'}`}>{children}</main>
+                <p className="px-4 pb-6 text-center text-xs text-ink-muted">All times are Malaysia time (MYT).</p>
             </div>
 
             {/* Mobile bottom tab bar */}

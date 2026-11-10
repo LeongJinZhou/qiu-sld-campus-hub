@@ -59,7 +59,14 @@ class CamsysSync
     /** Refreshes one student by their QIU email (used on every login). */
     public function syncByEmail(string $email): ?Student
     {
-        $rows = $this->query()->whereRaw('LOWER(E_MAIL) = ?', [strtolower($email)])->get()->all();
+        try {
+            $rows = $this->query()->whereRaw('LOWER(E_MAIL) = ?', [strtolower($email)])->get()->all();
+        } catch (Throwable $e) {
+            // camsys down or not configured: sign in from the last nightly copy instead of failing every login.
+            report($e);
+
+            return Student::where('email', strtolower($email))->first();
+        }
         $row = $this->latestPerStudent($rows)[0] ?? null;
 
         return $row ? $this->upsert($row, new StudentIdParser(IntakeMap::months())) : null;
@@ -124,7 +131,8 @@ class CamsysSync
         $email = strtolower(trim((string) $row->E_MAIL));
 
         return Student::updateOrCreate(['student_number' => $row->STUDENT_NUMBER], [
-            'user_id' => User::where('email', $email)->value('id'),
+            // An email change in camsys must not cut the link to the existing account (sign-in re-points its email).
+            'user_id' => User::where('email', $email)->value('id') ?? Student::where('student_number', $row->STUDENT_NUMBER)->value('user_id'),
             'name' => $row->STUDENT_NAME,
             'email' => $email,
             'gender' => $row->GENDER,

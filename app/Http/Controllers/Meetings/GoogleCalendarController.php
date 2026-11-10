@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Meetings;
 
 use App\Http\Controllers\Controller;
 use App\Services\Google\CalendarMeetService;
+use GuzzleHttp\Exception\ClientException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirect;
 
 /** Incremental consent for the Calendar scope, asked for only when someone first creates a Meet link. */
@@ -28,8 +30,12 @@ class GoogleCalendarController extends Controller
 
     public function callback(Request $request): RedirectResponse
     {
-        $google = Socialite::driver('google')->redirectUrl(route('google.calendar.callback'))->user();
         $back = $request->session()->pull('calendar.return', route('feed'));
+        try {
+            $google = Socialite::driver('google')->redirectUrl(route('google.calendar.callback'))->user();
+        } catch (InvalidStateException|ClientException) {
+            return redirect($back)->with('error', 'Google Calendar was not connected. Please try again.');
+        }
 
         // The calendar must belong to the signed-in QIU account.
         if (strcasecmp((string) $google->getEmail(), $request->user()->email) !== 0) {

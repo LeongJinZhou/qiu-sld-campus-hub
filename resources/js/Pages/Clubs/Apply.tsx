@@ -30,7 +30,14 @@ export default function Apply({ categories, advisors, positions, me, mine }: App
                         ))}
                     </section>
                 )}
-                <ApplicationForm action="/clubs-apply" categories={categories} advisors={advisors} positions={positions} me={me} />
+                {me ? (
+                    <ApplicationForm action="/clubs-apply" categories={categories} advisors={advisors} positions={positions} me={me} />
+                ) : (
+                    // No student record yet (a QIU account that is not in camsys): the form could only fail at the end.
+                    <p className="rounded-card border border-line bg-surface p-4 text-sm shadow-card" role="status">
+                        Only active QIU students can start a club. Your account is not linked to a student record yet. It links automatically once the university student system has you; ask SLD if this looks wrong.
+                    </p>
+                )}
             </div>
         </AppLayout>
     );

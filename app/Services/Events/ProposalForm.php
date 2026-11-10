@@ -145,6 +145,18 @@ class ProposalForm
      *
      * @param  array<string, mixed>  $data
      */
+    /**
+     * One short revision per top-level part of the draft. A live save sends the revision it was based on, so a save
+     * made on an older version of the same part is caught instead of silently replacing the newer text.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, string>
+     */
+    public function revisions(array $data): array
+    {
+        return array_map(fn ($value) => md5((string) json_encode($value)), $data);
+    }
+
     public function saveDraft(Document $document, array $data, int $userId): void
     {
         $this->drafts->save($document, $data, $userId);

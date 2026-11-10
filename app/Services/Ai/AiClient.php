@@ -13,7 +13,8 @@ class AiClient
     {
         $key = config('services.anthropic.key');
 
-        return $key ? new Client(apiKey: $key) : null;
+        // Fail fast: a rate-limited or hung call must fall back to manual review within a minute, not hold a worker for minutes.
+        return $key ? new Client(apiKey: $key, requestOptions: ['timeout' => 45.0, 'maxRetries' => 1]) : null;
     }
 
     public function model(): string

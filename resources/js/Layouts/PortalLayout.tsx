@@ -79,6 +79,7 @@ export default function PortalLayout({ title, children }: { title: string; child
                     )}
                 </header>
                 <main className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">{children}</main>
+                <p className="px-4 pb-6 text-center text-xs text-ink-muted">All times are Malaysia time (MYT).</p>
             </div>
 
             <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} title="SLD Admin" side="left">

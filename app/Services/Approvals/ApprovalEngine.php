@@ -24,7 +24,8 @@ use Illuminate\Support\Facades\Notification;
 
 /**
  * Ordered approval chains: Approve / Return (with comment) / Reject. Returned documents are edited and
- * resubmitted; earlier approvals survive unless the budget or dates changed. Dates are always server time.
+ * resubmitted. Any change to the signed content restarts the review (see Chains::isMaterialChange); an unchanged
+ * resubmission keeps earlier approvals. Dates are always server time.
  */
 class ApprovalEngine
 {

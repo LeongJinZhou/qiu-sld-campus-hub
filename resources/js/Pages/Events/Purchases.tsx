@@ -29,6 +29,7 @@ interface Purchase {
     buyer: { id: number; name: string; qr_token: string | null };
     verifier: string | null;
     payer: string | null;
+    i_paid: boolean;
     review_note: string | null;
     settle_when: 'now' | 'after_event' | null;
     settle_method: 'cash' | 'online' | null;
@@ -345,7 +346,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
                                                     I got {rm(p.total_sen)} in cash
                                                 </Button>
                                             )}
-                                            {can.organise && p.status === 'paying' && p.payout_check === 'unread' && (
+                                            {p.i_paid && p.status === 'paying' && p.payout_check === 'unread' && (
                                                 <div className="grid gap-2 rounded-control bg-surface-muted p-3 text-sm">
                                                     <p>
                                                         The transfer receipt could not be read automatically. Check that it went to <strong>{p.buyer.name}</strong> for {rm(p.total_sen)}.

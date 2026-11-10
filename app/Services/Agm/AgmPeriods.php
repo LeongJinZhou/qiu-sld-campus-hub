@@ -34,10 +34,11 @@ class AgmPeriods
         if ($this->current()) {
             throw new DomainException('An AGM period is already open. Close it first.');
         }
-        $period = AgmPeriod::create([
-            'session_id' => $this->sessions->forName($data['session'])->id,
+        // Reopening a closed period of the same session reuses it, so the clubs' AGMs stay attached to it.
+        $sessionId = $this->sessions->forName($data['session'])->id;
+        $period = AgmPeriod::updateOrCreate(['session_id' => $sessionId], [
             'starts_on' => $data['starts_on'], 'agm_deadline' => $data['agm_deadline'], 'report_deadline' => $data['report_deadline'],
-            'opened_by' => $sld->id,
+            'opened_by' => $sld->id, 'closed_at' => null,
         ]);
         $this->audit->log('agm_period.opened', $period, $data);
 

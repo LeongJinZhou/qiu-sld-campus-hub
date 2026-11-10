@@ -32,9 +32,13 @@ class StaffAccounts
     {
         $staff->update($data);
         if ($staff->user) {
-            $data['active']
-                ? $this->roles->grantGlobal($staff->user, GlobalRole::Staff)
-                : $this->roles->revokeGlobal($staff->user, GlobalRole::Staff);
+            if ($data['active']) {
+                $this->roles->grantGlobal($staff->user, GlobalRole::Staff);
+            } else {
+                // A deactivated officer must lose SLD rights too, not only the staff role.
+                $this->roles->revokeGlobal($staff->user, GlobalRole::Staff);
+                $this->roles->revokeGlobal($staff->user, GlobalRole::Admin);
+            }
         }
         $this->audit->log('staff.updated', $staff, $staff->getChanges());
     }

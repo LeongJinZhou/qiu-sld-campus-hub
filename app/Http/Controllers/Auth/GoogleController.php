@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Auth;
 use App\Exceptions\NotInRecordsException;
 use App\Http\Controllers\Controller;
 use App\Services\Auth\SignInService;
+use GuzzleHttp\Exception\ClientException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirect;
 
 class GoogleController extends Controller
@@ -29,8 +31,14 @@ class GoogleController extends Controller
 
     public function callback(SignInService $signIn): RedirectResponse
     {
-        $google = Socialite::driver('google')->user();
+        // Read the flag first: a failed callback must not leave it set for the next, normal sign-in.
         $alumni = (bool) session()->pull('alumni_sign_in', false);
+        try {
+            $google = Socialite::driver('google')->user();
+        } catch (InvalidStateException|ClientException) {
+            // Cancelled consent, expired state or a replayed link.
+            return to_route('login')->with('error', 'Google sign-in did not complete. Please try again.');
+        }
 
         try {
             if ($alumni) {

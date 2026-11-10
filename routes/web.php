@@ -317,6 +317,7 @@ Route::middleware('auth')->group(function () {
         Route::post('venues/{booking}', [VenueController::class, 'decide'])->name('venues.decide');
         Route::get('fees', [FeeController::class, 'index'])->name('fees.index');
         Route::post('fees/{fee}/approve', [FeeController::class, 'approve'])->name('fees.approve');
+        Route::post('fees/{fee}/reject', [FeeController::class, 'reject'])->name('fees.reject');
         Route::post('drives', [FeeController::class, 'drive'])->name('drives.store');
 
         Route::get('moderation', [Admin\ModerationController::class, 'index'])->name('moderation.index');

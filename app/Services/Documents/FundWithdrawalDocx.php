@@ -37,8 +37,8 @@ class FundWithdrawalDocx
                 'purpose' => $document->event ? "the {$document->event->name} event that will be held on {$document->event->starts_at->format('j.n.Y')}" : (string) ($d['purpose'] ?? ''),
             ]);
             $t->cloneRowAndSetValues('item_no', array_map(fn (array $i, int $n) => [
-                'item_no' => (string) ($n + 1), 'item_description' => $i['description'], 'item_price' => $rm($i['unit_sen']),
-                'item_quantity' => (string) $i['quantity'], 'item_total' => $rm($i['amount_sen']), 'item_method' => FundWithdrawals::METHODS[$i['method']] ?? $i['method'],
+                'item_no' => (string) ($n + 1), 'item_description' => (string) ($i['description'] ?? ''), 'item_price' => $rm((int) ($i['unit_sen'] ?? $i['amount_sen'] ?? 0)), // older items had no unit price
+                'item_quantity' => (string) ($i['quantity'] ?? 1), 'item_total' => $rm((int) ($i['amount_sen'] ?? 0)), 'item_method' => FundWithdrawals::METHODS[$i['method'] ?? ''] ?? ($i['method'] ?? ''),
             ], $d['items'] ?? [], array_keys($d['items'] ?? [])) ?: [array_fill_keys(['item_no', 'item_description', 'item_price', 'item_quantity', 'item_total', 'item_method'], '')]);
 
             // The bank account the money goes to (older forms listed saved payees instead).

@@ -5,6 +5,7 @@ namespace App\Services\Google;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use DomainException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -17,6 +18,8 @@ class CalendarMeetService
     public const SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 
     private const EVENTS_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+
+    private const UNAVAILABLE = 'Google Calendar is not available right now. Try again in a few minutes.';
 
     private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
@@ -31,18 +34,26 @@ class CalendarMeetService
      */
     public function createMeeting(User $organiser, string $title, CarbonInterface $start, CarbonInterface $end, array $attendeeEmails, ?string $description = null): array
     {
-        $response = Http::withToken($this->accessToken($organiser))
-            ->post(self::EVENTS_URL.'?conferenceDataVersion=1&sendUpdates=all', [
-                'summary' => $title,
-                'description' => $description,
-                'start' => ['dateTime' => $start->toIso8601String(), 'timeZone' => config('app.timezone')],
-                'end' => ['dateTime' => $end->toIso8601String(), 'timeZone' => config('app.timezone')],
-                'attendees' => array_map(fn (string $email) => ['email' => $email], array_values(array_unique($attendeeEmails))),
-                'conferenceData' => ['createRequest' => ['requestId' => (string) Str::uuid(), 'conferenceSolutionKey' => ['type' => 'hangoutsMeet']]],
-            ]);
+        try {
+            $response = Http::withToken($this->accessToken($organiser))
+                ->post(self::EVENTS_URL.'?conferenceDataVersion=1&sendUpdates=all', [
+                    'summary' => $title,
+                    'description' => $description,
+                    'start' => ['dateTime' => $start->toIso8601String(), 'timeZone' => config('app.timezone')],
+                    'end' => ['dateTime' => $end->toIso8601String(), 'timeZone' => config('app.timezone')],
+                    'attendees' => array_map(fn (string $email) => ['email' => $email], array_values(array_unique($attendeeEmails))),
+                    'conferenceData' => ['createRequest' => ['requestId' => (string) Str::uuid(), 'conferenceSolutionKey' => ['type' => 'hangoutsMeet']]],
+                ]);
+        } catch (ConnectionException) {
+            throw new DomainException(self::UNAVAILABLE);
+        }
 
         if (! $response->successful() || ! $response->json('hangoutLink')) {
-            throw new DomainException('Google Calendar did not create the Meet link. Reconnect your Google calendar and try again.');
+            throw new DomainException(match (true) {
+                in_array($response->status(), [401, 403], true) => 'Google refused the request. Reconnect your Google calendar and try again.',
+                $response->serverError() || $response->status() === 429 => self::UNAVAILABLE,
+                default => 'Google Calendar did not create the Meet link. Try again.',
+            });
         }
 
         return ['link' => (string) $response->json('hangoutLink'), 'event_id' => (string) $response->json('id')];
@@ -57,14 +68,23 @@ class CalendarMeetService
             throw new DomainException('Connect your QIU Google calendar first.');
         }
 
-        $response = Http::asForm()->post(self::TOKEN_URL, [
-            'client_id' => config('services.google.client_id'),
-            'client_secret' => config('services.google.client_secret'),
-            'refresh_token' => $user->google_refresh_token,
-            'grant_type' => 'refresh_token',
-        ]);
+        try {
+            $response = Http::asForm()->post(self::TOKEN_URL, [
+                'client_id' => config('services.google.client_id'),
+                'client_secret' => config('services.google.client_secret'),
+                'refresh_token' => $user->google_refresh_token,
+                'grant_type' => 'refresh_token',
+            ]);
+        } catch (ConnectionException) {
+            throw new DomainException(self::UNAVAILABLE);
+        }
         if (! $response->successful()) {
-            throw new DomainException('Your Google calendar connection expired. Connect it again.');
+            if (! in_array($response->status(), [400, 401], true)) {
+                throw new DomainException(self::UNAVAILABLE); // a Google outage must not throw away a good connection
+            }
+            // Revoked or expired for good: forget it so the page offers "Connect" again.
+            $user->forceFill(['google_token' => null, 'google_refresh_token' => null, 'google_token_expires_at' => null])->save();
+            throw new DomainException('Your Google calendar connection ended (access was removed or expired). Connect it again.');
         }
         $user->forceFill([
             'google_token' => $response->json('access_token'),
