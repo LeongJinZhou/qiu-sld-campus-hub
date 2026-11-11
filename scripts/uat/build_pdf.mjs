@@ -18,7 +18,8 @@ renderer.heading = (text, depth) => {
     if (depth <= 2) headings.push({ id, text: text.replace(/<[^>]+>/g, ''), depth });
     return `<h${depth} id="${id}">${text}</h${depth}>`;
 };
-const body = marked.parse(readFileSync(input, 'utf8'), { renderer, gfm: true });
+// A table whose first column is "ID" keeps the ID on one line (G-01 must not wrap to G- / 01).
+const body = marked.parse(readFileSync(input, 'utf8'), { renderer, gfm: true }).replace(/<table>(\s*<thead>\s*<tr>\s*<th>ID<\/th>)/g, '<table class="idtable">$1');
 const toc = headings.map((h) => `<li class="d${h.depth}"><a href="#${h.id}">${h.text}</a></li>`).join('\n');
 
 const css = `
@@ -36,9 +37,10 @@ tr { page-break-inside: avoid; }
 th { background: #7a1020; color: #fff; text-align: left; padding: 5px 7px; }
 td { border: 1px solid #d7dce3; padding: 4px 7px; vertical-align: top; }
 tr:nth-child(even) td { background: #f6f7f9; }
+.idtable td:first-child { white-space: nowrap; }
 code { font: 9pt Menlo, Consolas, monospace; background: #eef0f4; padding: 1px 4px; border-radius: 3px; }
 pre { background: #eef0f4; padding: 8px 10px; border-radius: 4px; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 8.8pt; }
-img { max-width: 100%; border: 1px solid #d7dce3; border-radius: 4px; margin: 6px 0; page-break-inside: avoid; }
+img { max-width: 100%; max-height: 225mm; width: auto; height: auto; object-fit: contain; display: block; border: 1px solid #d7dce3; border-radius: 4px; margin: 6px 0; page-break-inside: avoid; }
 blockquote { border-left: 4px solid #c9a227; background: #fbf7e8; margin: 10px 0; padding: 6px 12px; }
 .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
 .cover .brand { color: #7a1020; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 11pt; }

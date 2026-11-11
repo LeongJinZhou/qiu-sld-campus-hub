@@ -18,7 +18,7 @@ One screen for the whole division:
 
 ## Setting up a club
 
-1. **Clubs → New club.** Name, category, established year, bio, Instagram handle, logo (PNG or JPG; SVG logos cannot be printed on Word forms).
+1. **Clubs → New club.** Name, category, established year, bio, Instagram handle, logo (JPG, PNG or WebP, up to 4 MB; SVG logos cannot be printed on Word forms).
 2. **Committee.** Pick students for President, Vice President, Secretary and Treasurer (all four are compulsory and must be different active students), plus any extra positions.
 3. **Advisor.** Choose the advisor from the staff list and select **Add advisor**. Every active staff member is listed, including those who have not signed in yet; their account is created for them.
 4. **Transfer.** When the club is ready, **Transfer to committee**. The committee and advisor can then edit the club profile. You keep oversight and can **Take back** at any time.
@@ -27,7 +27,7 @@ A club cannot submit any document until all four compulsory positions are filled
 
 ## Staff and approvers
 
-**Staff** lists every staff account. Set the *approver role* (Assistant Registrar, Registrar, Bursar, COO, Dean) and department. The names printed on official forms come from here, never from the template, so update this list when people change jobs.
+**Staff** lists every staff account. Choose the *approver role* (Assistant Registrar, Registrar, Bursar, COO, Dean) and the department when you add a staff account; the approver role cannot be changed afterwards, so add a new account if it must change. The names printed on official forms come from here, never from the template, so update this list when people change jobs.
 
 ## Finance
 
@@ -58,7 +58,7 @@ Ask one club or all clubs for something (a document, a confirmation). Clubs must
 4. **Annual report themes**: add colour/font/background themes; clubs pick one when they generate the Annual Activities Report.
 5. **Close period** when the season is over.
 
-Election winners take their positions automatically on 1 July (or as soon as results are published, if that is later).
+Election winners do not take over automatically. After SLD acknowledges the AGM, SLD selects **Start handover**. The incoming committee then has view-only access for the overlap period (default 7 days, set in Settings). When the overlap ends, a daily job moves the roles to the new committee and issues certificates to the outgoing committee.
 
 ## Meetings and minutes (`/admin/meetings`)
 

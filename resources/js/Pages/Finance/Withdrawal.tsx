@@ -48,7 +48,7 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
     const at = w.stage ? ORDER.indexOf(w.stage) : -1;
     const journey = [
         { label: 'Filled in', done: true, current: false },
-        { label: 'Treasurer, Advisor & SLD sign', done: signed, current: !signed },
+        { label: 'Treasurer, President, Advisor & SLD sign', done: signed, current: !signed },
         { label: 'Finance signs', done: at > 0, current: at === 0 },
         { label: 'Bank-in', done: at > 1, current: at === 1 },
         { label: 'SLD confirms', done: at > 2, current: at === 2 },

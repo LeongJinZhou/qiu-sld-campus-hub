@@ -152,7 +152,7 @@ export default function PayPanel({ amountSen, accountName, paymentUrl, qrCodes, 
                     <div className="grid gap-2 rounded-control bg-surface-muted p-4 text-sm">
                         <p className="font-semibold">How paying in cash works</p>
                         <ol className="grid gap-1.5 text-ink-muted">
-                            <li>1. Choose who you'll pay below. They accept on their phone.</li>
+                            <li>1. Choose who you will pay below. They accept on their phone.</li>
                             <li>
                                 2. Meet them with exactly <strong className="text-ink">{rm(amountSen)}</strong>. You both tap <strong className="text-ink">Ready</strong>.
                             </li>

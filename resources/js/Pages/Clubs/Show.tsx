@@ -435,7 +435,7 @@ export default function Show(props: ClubShowProps) {
                 )}
                 {missingCompulsory.length > 0 && (
                     <p className="rounded-card bg-warning/10 px-4 py-3 text-sm text-warning">
-                        Compulsory positions vacant: {missingCompulsory.join(', ')}. Documents can't be submitted until they are filled.{' '}
+                        Compulsory positions vacant: {missingCompulsory.join(', ')}. Documents cannot be submitted until they are filled.{' '}
                         {can.manage && (
                             <Link href={`/admin/clubs/${club.slug}/edit`} className="font-semibold underline">
                                 Assign

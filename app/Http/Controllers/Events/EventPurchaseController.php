@@ -99,7 +99,7 @@ class EventPurchaseController extends Controller
 
     public function received(Request $request, EventPurchase $purchase): RedirectResponse
     {
-        return $this->attempt(fn () => $this->purchases->confirmReceived($purchase, $request->user()), 'Thanks! Recorded in the club finance.');
+        return $this->attempt(fn () => $this->purchases->confirmReceived($purchase, $request->user()), 'Thank you. The payment is recorded in the finance records of the club.');
     }
 
     public function confirmTransfer(Request $request, EventPurchase $purchase): RedirectResponse

@@ -40,7 +40,7 @@ The club page shows the advisor, the four executive offices, the rest of the com
 - **The Finance page is the year's report.** The top shows the club's total money (fund held by QIU and advances not yet spent) and the session's income and expenses. The tabs hold the overview, every transaction, adding a transaction, the membership fee, fund withdrawals and payees. Pick the session to see brought forward, income, expenses and closing balance, a breakdown *by type* and *by event*, and every transaction with its evidence (receipt, online payment receipt, cash photo or 07 form). Filter by type, event, payment method, dates or text, sort it, and export the official 02 Finance Record exactly as filtered. This is the AGM Financial Report.
 - **Who paid.** From **By event** tap **Who paid →** for any event (or **Who paid · money tally** on the event page): everyone registered, paid or still pending, method, who received the cash, and a check that payments, the ledger and *paid places × fee* agree. **Membership fees →** gives the same for membership, split by membership drive. Both export to Excel and PDF.
 - **Ledger rules.** SLD enters the opening balance first. Every expense needs the original receipt (not a bank screenshot); a receipt can also be attached to a transaction afterwards.
-- **Fund withdrawal (07).** Items come from the approved budget. For events, request right after approval; for weekly activities, at least 2 weeks ahead. Chain: preparer (any committee member) → President → Advisor → Assistant Registrar → Bursar → COO.
+- **Fund withdrawal (07).** Items come from the approved budget. For events, request right after approval; for weekly activities, at least 2 weeks ahead. Chain: Treasurer (preparer) → President → Advisor → SLD. After SLD approves, Finance signs the printed form, the Treasurer uploads the bank-in proof and SLD confirms it.
 
 ## Meetings and minutes (Secretary)
 
@@ -70,7 +70,7 @@ When SLD opens the AGM period, your club page shows a countdown.
 
 1. **Schedule the AGM** (venue or Google Meet). Every member is invited.
 2. **Attendance.** Show the QR at the AGM; members scan it (it opens 1 hour before).
-3. **Election.** Set the nomination and voting windows. Members nominate themselves (they must be able to serve the full July–June term) and vote once per position. Publish results after voting closes. Winners take over on 1 July.
+3. **Election.** Set the nomination and voting windows. Members nominate themselves (they must be able to serve the full July–June term) and vote once per position. Publish results after voting closes. Winners take over after SLD starts the handover and the overlap period ends.
 4. **AGM Report (01).** AI drafts objectives, the opening speech and the agenda from your session; you need at least 2 objectives. Attendance, the current committee, the election and appointments fill themselves. Secretary signs → President → Advisor → SLD.
 5. **Annual Activities Report (12).** AI writes each event's details (edit them), pick a theme, generate PPTX and PDF. Photos come from each event's gallery album.
 6. **Submit the package**: AGM Report, Financial Report, Full Member List and Annual Activities Report together.

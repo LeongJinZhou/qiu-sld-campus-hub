@@ -20,7 +20,7 @@ class ContentModeration
             return null;
         }
         if (ContentFilter::offences($text) !== []) {
-            return "{$what} contains language that isn't allowed here. Please rephrase it respectfully.";
+            return "{$what} contains language that is not allowed here. Please rephrase it respectfully.";
         }
         if ($this->classifier->isToxic($text)) {
             return "{$what} reads as abusive or insulting. Please rephrase it respectfully.";

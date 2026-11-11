@@ -5,7 +5,7 @@ Usage: route_sweep.py --base http://127.0.0.1:8321 --db path/to/database.sqlite 
 The app must run with demo login enabled (APP_ENV=local) against a COPY of the database. Read-only except for the
 side effects of GET endpoints (attendance scans, generated exports), so never point it at production.
 """
-import argparse, collections, concurrent.futures as cf, http.cookiejar, itertools, json, re, sqlite3, urllib.error, urllib.parse, urllib.request
+import argparse, collections, time, concurrent.futures as cf, http.cookiejar, itertools, json, re, sqlite3, urllib.error, urllib.parse, urllib.request
 
 ROLES = {
     'guest': None,
@@ -108,8 +108,15 @@ def main():
     routes = [r for r in json.load(open(a.routes)) if 'GET' in r['method'] and not SKIP.match(r['uri']) and 'signed' not in ' '.join(r.get('middleware', []))]
     targets = sorted({(r['uri'], p) for r in routes for p in expand(db, r['uri'])})
 
+    # Sign-in is rate limited (10 per minute per address): sign in one role at a time, with a pause, before any threads start.
+    clients = {}
+    for role in ROLES:
+        clients[role] = client(a.base, ROLES[role])
+        if ROLES[role]:
+            time.sleep(7)
+
     def run(role):
-        call = client(a.base, ROLES[role])
+        call = clients[role]
         res = {}
         for uri, path in targets:
             code, body = call(path)
@@ -121,6 +128,9 @@ def main():
 
     with cf.ThreadPoolExecutor(4) as ex:
         results = dict(ex.map(run, ROLES))
+    for role, email in ROLES.items():
+        if email and all(v['status'] == 302 for v in results[role].values()):
+            print(f'WARNING: {role} looks signed out (every page redirected); its results are not valid')
     summary = {role: dict(collections.Counter(str(v['status']) for v in res.values())) for role, res in results.items()}
     fivexx = [(role, p, v['status'], v.get('msg', '')) for role, res in results.items() for p, v in res.items() if v['status'] == 'ERR' or (isinstance(v['status'], int) and v['status'] >= 500)]
     # A 404 for the super admin on a URL built from real data is suspicious (a hidden record or a missing route).
