@@ -35,7 +35,7 @@ export default function Review({ approvalId, role, canAct, document, downloads, 
     const paperForm = useForm({ scan: null as File | null, signed: (paper?.signers ?? []).filter((s) => s.signed).map((s) => s.label) });
     const savePaper = (): void => paperForm.post(`/approvals/${approvalId}/paper/record`, { preserveScroll: true, forceFormData: true, onSuccess: () => paperForm.setData('scan', null) });
     const cancelPaper = (): void => {
-        if (confirm('No paper signatures needed after all? The uploaded scan is removed.')) router.delete(`/approvals/${approvalId}/paper`, { preserveScroll: true });
+        if (confirm('Remove the paper signature requirement? The uploaded scan will be deleted.')) router.delete(`/approvals/${approvalId}/paper`, { preserveScroll: true });
     };
     const [confirming, setConfirming] = useState(false);
 

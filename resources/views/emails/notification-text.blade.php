@@ -1,6 +1,6 @@
 {!! $kind !!}
 
-Hi {!! $name !!},
+Dear {!! $name !!},
 
 {!! $title !!}
 

@@ -20,6 +20,10 @@ mkdir -p "$STAGE/database/schema" && cp database/schema/install.sql "$STAGE/data
 rm -rf "$STAGE/tests" "$STAGE/tools/pwa" "$STAGE/tools/templates" "$STAGE/.github" "$STAGE/docs/screenshots" \
        "$STAGE/database/camsys" "$STAGE/phpunit.xml" "$STAGE/render.yaml" "$STAGE/scripts" \
        "$STAGE"/database/seeders/{Demo*,RestoreDemoMediaSeeder,StaffSeeder,SettingsSeeder}.php
+# Render / Firebase / Docker files and the developer .env.example are not used on Plesk (the guide uses
+# .env.production.example); leaving them in only invites copying the wrong file.
+rm -rf "$STAGE/.firebaserc" "$STAGE/firebase.json" "$STAGE/Dockerfile" "$STAGE/.dockerignore" "$STAGE/design" \
+       "$STAGE/deploy/firebase-public" "$STAGE/deploy/start.sh" "$STAGE/.env.example"
 cat > "$STAGE/database/seeders/DatabaseSeeder.php" <<'PHP'
 <?php
 

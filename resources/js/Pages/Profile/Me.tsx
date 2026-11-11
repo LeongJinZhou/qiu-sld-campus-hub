@@ -56,7 +56,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
         { label: 'Add a profile photo', done: account.has_photo_override || !!profile.photo_url, action: () => setPhoto(true) },
         { label: 'Join a club', done: (profile.clubs?.length ?? 0) > 0, href: '/search?type=clubs' },
         { label: 'Sign up for an event', done: upcoming.length > 0 || (profile.events?.length ?? 0) > 0, href: '/feed' },
-        { label: 'Link a personal email (keeps your login after graduation)', done: !!account.personal_email, action: () => setEditing(true) },
+        { label: 'Link a personal email (keeps your access after graduation)', done: !!account.personal_email, action: () => setEditing(true) },
     ];
     const stepsDone = steps.filter((s) => s.done).length;
 
@@ -203,7 +203,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
                             <Icon name="qr" size={16} /> My QR
                         </Button>
                         <Button variant="secondary" size="sm" onClick={() => void share()}>
-                            <Icon name="send" size={16} /> {copied ? 'Copied!' : 'Share'}
+                            <Icon name="send" size={16} /> {copied ? 'Copied' : 'Share'}
                         </Button>
                     </>
                 }
@@ -245,7 +245,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
                         </div>
                     </Card>
                     <Input value={form.data.personal_email} onChange={(v) => form.setData('personal_email', v)} type="email" label="Personal email" hint="Keep signing in as alumni after graduation." error={form.errors.personal_email} />
-                    <p className="text-xs text-ink-muted">Your name, student ID and programme come from university records and can't be edited here.</p>
+                    <p className="text-xs text-ink-muted">Your name, student ID and programme come from university records and cannot be edited here.</p>
                     <Button type="submit" loading={form.processing}>
                         Save
                     </Button>

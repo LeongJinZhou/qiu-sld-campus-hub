@@ -137,7 +137,7 @@ class ActionItems
             ->whereDoesntHave('indemnities', fn ($q) => $q->where('user_id', $user->id))->get()
             ->map(fn (Event $e) => [
                 'key' => "indemnity:{$e->id}", 'kind' => 'indemnity', 'title' => "One step left: sign the indemnity for {$e->name}",
-                'body' => 'You have not finished. Your details are filled in; just check and sign to get your ticket. Signing closes '.$e->indemnityClosesAt()->format('D, j M Y').'.',
+                'body' => 'You have not finished signing. Your details are filled in; please check them and sign to receive your ticket. Signing closes '.$e->indemnityClosesAt()->format('D, j M Y').'.',
                 'url' => route('events.indemnity', $e), 'since' => null,
             ])->values()->all();
     }

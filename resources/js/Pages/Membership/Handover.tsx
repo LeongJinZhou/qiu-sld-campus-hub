@@ -28,6 +28,7 @@ interface HandoverProps {
         student_done: boolean;
         committee_done: boolean;
         expires_at: string;
+        expired: boolean;
         cash_check: 'ai' | 'committee' | 'needs_confirmation' | null;
         photo_url: string | null;
     };
@@ -283,7 +284,13 @@ export default function Handover({ side, handover: h, qrSvg, expectToken }: Hand
                 </header>
                 <StepIndicator steps={steps} />
                 <section className="grid gap-4 rounded-card border border-line bg-surface p-5 shadow-card">{body}</section>
-                <p className="text-center text-xs text-ink-muted">Request expires {h.expires_at}.</p>
+                {h.expired ? (
+                    <p className="rounded-card border border-line bg-surface p-3 text-center text-sm" role="status">
+                        This cash handover request expired on {h.expires_at}. Please ask the committee to start a new request.
+                    </p>
+                ) : (
+                    <p className="text-center text-xs text-ink-muted">Request expires {h.expires_at}.</p>
+                )}
             </div>
         </AppLayout>
     );

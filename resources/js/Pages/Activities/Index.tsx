@@ -90,7 +90,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                 <header className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h1 className="text-2xl font-bold">Activities</h1>
-                        <p className="text-sm text-ink-muted">Your tickets, the clubs you run and the clubs you've joined.</p>
+                        <p className="text-sm text-ink-muted">Your tickets, the clubs you run and the clubs you have joined.</p>
                     </div>
                     <Link href="/calendar" className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-2 text-sm font-semibold shadow-card transition hover:-translate-y-0.5">
                         <Icon name="calendar" size={16} /> Calendar
@@ -284,7 +284,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
 
                 {joined.length > 0 && (
                     <section className="grid gap-3">
-                        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">Clubs you've joined</h2>
+                        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">Clubs you have joined</h2>
                         <ul className="grid gap-2 sm:grid-cols-2">
                             {joined.map((c) => (
                                 <li key={c.slug}>

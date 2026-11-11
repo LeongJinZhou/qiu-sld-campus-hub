@@ -48,7 +48,7 @@ export default function Join({ club, fee, drive, membership, payment, committee,
                 </header>
                 {drive && (
                     <p className="flex items-center gap-2 rounded-card bg-gradient-to-r from-gold/30 to-primary-strong/20 px-4 py-3 text-sm font-medium">
-                        <Icon name="sparkles" size={18} /> {drive.title} — membership drive is on now!
+                        <Icon name="sparkles" size={18} /> {drive.title} — membership drive is running now.
                     </p>
                 )}
                 {member ? (

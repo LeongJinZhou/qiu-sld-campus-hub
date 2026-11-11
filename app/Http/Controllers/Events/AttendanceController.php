@@ -113,7 +113,7 @@ class AttendanceController extends Controller
         }
         $event->helpers()->syncWithoutDetaching([$user->id => ['added_by' => $request->user()->id]]);
         $audit->log('event.helper_added', $event, ['user_id' => $user->id]);
-        $user->notify(new DocumentNotification("You're helping at {$event->name}", 'You can scan tickets and attendance at the door.', route('events.attendance', $event)));
+        $user->notify(new DocumentNotification("You are helping at {$event->name}", 'You can scan tickets and attendance at the door.', route('events.attendance', $event)));
 
         return back()->with('success', "{$user->name} can now scan tickets and attendance.");
     }

@@ -114,7 +114,7 @@ class AgmController extends Controller
             return to_route('feed')->with('error', $e->getMessage());
         }
 
-        return to_route('clubs.show', $agm->club)->with('success', "You're marked present at the {$agm->club->name} AGM.");
+        return to_route('clubs.show', $agm->club)->with('success', "You are marked as present at the {$agm->club->name} AGM.");
     }
 
     /** Committee marks people present by hand, or by student ID. */
@@ -126,7 +126,7 @@ class AgmController extends Controller
             ? Student::where('student_number', strtoupper(trim($data['student_number'])))->first()?->ensureUser()
             : User::find($data['user_id']);
         if (! $user) {
-            return back()->with('error', 'No student found.');
+            return back()->with('error', 'No matching student was found.');
         }
         try {
             $this->agms->attend($agm, $user, 'manual');

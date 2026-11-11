@@ -51,7 +51,7 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
                         </a>
                         {devLogin && (
                             <Link href="/dev/login-as" className="text-sm font-medium text-primary">
-                                Demo login (testing only)
+                                Demo sign-in (testing only)
                             </Link>
                         )}
                     </div>

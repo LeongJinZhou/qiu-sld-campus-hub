@@ -13,6 +13,6 @@ class PdfConversionFailed extends RuntimeException
 {
     public function render(): RedirectResponse
     {
-        return back()->with('error', 'The PDF could not be made right now. Download the Excel, Word or PowerPoint version instead, or try again in a minute.');
+        return back()->with('error', 'The PDF could not be generated right now. Download the Excel, Word or PowerPoint version instead, or try again in a minute.');
     }
 }

@@ -61,7 +61,7 @@
                   <span class="pill" style="display:inline-block;background:#fbe9ea;color:#b21f27;border-radius:999px;padding:6px 12px;font:700 11px/1 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;">
                     <span class="dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#d12a32;margin-right:6px;vertical-align:1px;"></span>{{ $kind }}
                   </span>
-                  <p class="muted" style="margin:22px 0 6px;font:400 15px/1.6 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#6b6b72;">Hi {{ $name }},</p>
+                  <p class="muted" style="margin:22px 0 6px;font:400 15px/1.6 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#6b6b72;">Dear {{ $name }},</p>
                   <h1 class="title ink" style="margin:0 0 14px;font:800 26px/1.25 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171a;letter-spacing:-.025em;">{{ $title }}</h1>
                   <p class="ink" style="margin:0;font:400 16px/1.65 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#3f3f46;">{{ $body }}</p>
                 </td>
@@ -76,7 +76,7 @@
                     </tr>
                   </table>
                   <p class="muted" style="margin:16px 0 0;font:400 12px/1.6 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#6b6b72;">
-                    Button not working? Open this link:<br>
+                    If the button does not work, open this link:<br>
                     <a class="link" href="{{ $url }}" style="color:#b21f27;text-decoration:none;word-break:break-all;">{{ $url }}</a>
                   </p>
                 </td>
@@ -100,9 +100,9 @@
         <tr>
           <td style="padding:22px 24px 0;text-align:center;font:400 12px/1.7 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#8a8a93;" class="muted">
             @if ($mutable)
-              You receive this because this type of notification is switched on. Switch it off in Notification settings and it stops by email too.
+              You are receiving this email because this type of notification is switched on. To stop receiving it by email, switch it off in Notification settings.
             @else
-              Approvals, payments and reminders are always sent so nothing important is missed.
+              Approvals, payments and reminders are always sent, so that you do not miss anything important.
             @endif
             <br>QIU Campus Hub &middot; Student Life Division, Quest International University, Ipoh, Perak, Malaysia
           </td>

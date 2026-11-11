@@ -121,7 +121,7 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
                                         <div className="text-xs text-ink-muted">
                                             {r.kind}
                                             {r.venue && ` · ${r.venue}`}
-                                            {r.pax ? ` · ${r.pax} pax planned` : ''}
+                                            {r.pax ? ` · ${r.pax} participants planned` : ''}
                                         </div>
                                     </td>
                                     <td className="px-3 py-2 text-xs">{r.audience}</td>

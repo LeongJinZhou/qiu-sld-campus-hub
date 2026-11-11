@@ -98,7 +98,7 @@ class Elections
     /** The committee names a candidate (picked by name or typed student ID); the same eligibility applies. */
     public function nominateFor(ElectionPosition $position, User $committee, string $studentNumber, ?string $statement): Candidate
     {
-        $student = Student::where('student_number', trim($studentNumber))->first() ?? throw new DomainException('No student with that ID in university records.');
+        $student = Student::where('student_number', trim($studentNumber))->first() ?? throw new DomainException('No student with that ID was found in university records.');
         $candidate = $this->nominate($position, $student->ensureUser(), $statement ?: "Nominated by the {$position->election->agm->club->name} committee.", null);
         $candidate->update(['nominated_by' => $committee->id]);
 
@@ -235,7 +235,7 @@ class Elections
     public function startHandover(Election $election, User $sld): void
     {
         if (! $sld->isSldAdmin()) {
-            throw new DomainException('Only SLD starts the handover.');
+            throw new DomainException('Only SLD can start the handover.');
         }
         if (! $election->agm->acknowledged_at) {
             throw new DomainException('Acknowledge the AGM first.');

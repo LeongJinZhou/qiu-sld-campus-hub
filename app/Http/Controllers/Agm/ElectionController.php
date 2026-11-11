@@ -146,7 +146,7 @@ class ElectionController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', "You're standing for {$position->position}. Good luck!");
+        return back()->with('success', "You are standing for {$position->position}. Good luck.");
     }
 
     public function vote(Request $request, ElectionPosition $position): RedirectResponse

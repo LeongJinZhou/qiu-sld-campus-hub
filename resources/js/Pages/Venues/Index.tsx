@@ -37,7 +37,7 @@ export default function Index({ club, types, rules, earliestBigRoom, bookings }:
                         ← {club.name}
                     </Link>
                     <h1 className="text-2xl font-bold">Venue booking</h1>
-                    <p className="text-sm text-ink-muted">SLD is emailed and confirms in the app. You'll get a notification.</p>
+                    <p className="text-sm text-ink-muted">SLD is notified by email and will confirm in the app. You will receive a notification.</p>
                 </div>
                 <Card title="New request">
                     <form className="grid gap-4" onSubmit={submit}>
@@ -57,7 +57,7 @@ export default function Index({ club, types, rules, earliestBigRoom, bookings }:
                             <Input value={data.starts_at} onChange={(v) => setData('starts_at', v)} type="time" label="From" error={errors.starts_at} />
                             <Input value={data.ends_at} onChange={(v) => setData('ends_at', v)} type="time" label="To" error={errors.ends_at} />
                         </div>
-                        {data.type === 'big_room' && <p className="text-xs text-ink-muted">Big rooms need at least 1 week's notice (earliest {date(earliestBigRoom)}).</p>}
+                        {data.type === 'big_room' && <p className="text-xs text-ink-muted">Large rooms need at least 1 week's notice (earliest {date(earliestBigRoom)}).</p>}
                         <Input value={data.purpose} onChange={(v) => setData('purpose', v)} label="Purpose" placeholder="Membership drive booth" error={errors.purpose} />
                         {data.type === 'la_place' && <Input value={data.items} onChange={(v) => setData('items', v)} label="Items sold or promoted" placeholder="Club T-shirts, flyers" error={errors.items} />}
                         <Textarea value={data.activity} onChange={(v) => setData('activity', v)} label="Activity" rows={3} placeholder="What will happen at the venue?" error={errors.activity} />

@@ -49,7 +49,7 @@ type Filter = 'all' | 'paid' | 'unpaid' | 'in' | 'notin';
 const STATUS: Record<Person['status'], { label: string; tone: BadgeTone }> = {
     paid: { label: 'Paid', tone: 'success' },
     free: { label: 'Registered', tone: 'success' },
-    unpaid: { label: 'NOT PAID', tone: 'danger' },
+    unpaid: { label: 'Not paid', tone: 'danger' },
     checking: { label: 'Payment being checked', tone: 'warning' },
     committee: { label: 'Committee', tone: 'info' },
     walk_in: { label: 'Walk-in', tone: 'neutral' },

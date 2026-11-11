@@ -65,9 +65,9 @@ export default function Indemnity({ event, student, saved, signedAt, mustSign }:
                         <div className="grid gap-3 sm:grid-cols-2">
                             <LockedField label="Name of Activity" value={event.name} />
                             <LockedField label="Venue" value={event.venue} />
-                            <LockedField label="Date (s) of travel" value={event.dates} />
-                            <LockedField label="Organizer" value={event.organizer} />
-                            <LockedField label="Staff In charge" value={event.staff_in_charge} />
+                            <LockedField label="Date(s) of travel" value={event.dates} />
+                            <LockedField label="Organiser" value={event.organizer} />
+                            <LockedField label="Staff in charge" value={event.staff_in_charge} />
                         </div>
                     </FormSection>
                     {!editing && !hasErrors ? (

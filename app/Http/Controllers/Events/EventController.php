@@ -65,7 +65,7 @@ class EventController extends Controller
 
         $drafts->started($event, $request->user());
 
-        return to_route('proposals.edit', $event)->with('success', 'Proposal started. It saves automatically, and the committee has been told.');
+        return to_route('proposals.edit', $event)->with('success', 'Proposal started. It saves automatically, and the committee has been notified.');
     }
 
     public function show(Request $request, Event $event, DocumentPresenter $presenter): Response

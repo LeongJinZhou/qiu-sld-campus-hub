@@ -137,7 +137,7 @@ class ApprovalEngine
     public function returnToClub(Approval $approval, User $user, string $comment, array $sections = []): void
     {
         if (trim($comment) === '' && $sections === []) {
-            throw new DomainException('Say what needs changing: a comment or the parts to fix.');
+            throw new DomainException('State what needs changing: add a comment or select the parts to fix.');
         }
         if ($comment === '') {
             $comment = 'Please fix: '.implode('; ', array_map(fn (array $s) => "{$s['key']}: {$s['note']}", $sections));

@@ -24,6 +24,6 @@ class EventCommitteeRequest extends FormRequest
     /** @return array<string, string> */
     public function messages(): array
     {
-        return ['student_number.exists' => 'No student with that ID in the synced camsys records.'];
+        return ['student_number.exists' => 'No student with that ID was found in the synchronised university records.'];
     }
 }

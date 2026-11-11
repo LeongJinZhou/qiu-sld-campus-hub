@@ -53,6 +53,6 @@ class ClubCommitteeController extends Controller
         abort_unless($assignment->scope_type === ScopeType::Club && $assignment->scope_id === $club->id, 404);
         $this->roles->remove($assignment);
 
-        return back()->with('success', 'Removed.');
+        return back()->with('success', 'Committee member removed.');
     }
 }

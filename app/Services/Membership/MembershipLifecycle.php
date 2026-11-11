@@ -79,8 +79,8 @@ class MembershipLifecycle
     {
         $m->update(['status' => MembershipStatus::Alumni, 'alumni_since' => $today, 'grace_ends_on' => null]);
         $m->user->notify(new DocumentNotification(
-            "You're now a {$m->club->name} alumnus",
-            'Congratulations on graduating! You stay in the club as alumni, with no fee to pay.',
+            "You are now a {$m->club->name} alumnus",
+            'Congratulations on your graduation. You remain in the club as an alumnus, with no fee to pay.',
             route('clubs.show', $m->club),
         ));
     }

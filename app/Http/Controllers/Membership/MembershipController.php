@@ -68,7 +68,7 @@ class MembershipController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', $membership->status->value === 'active' ? "Welcome to {$club->name}!" : 'Now pay online or in cash to activate your membership.');
+        return back()->with('success', $membership->status->value === 'active' ? "Welcome to {$club->name}." : 'Now pay online or in cash to activate your membership.');
     }
 
     public function receipt(Request $request, Club $club, OnlinePayments $payments): RedirectResponse

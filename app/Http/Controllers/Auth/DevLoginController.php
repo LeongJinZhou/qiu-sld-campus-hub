@@ -32,7 +32,7 @@ class DevLoginController extends Controller
         $passcode = (string) $request->validate(['passcode' => ['required', 'string', 'max:200']])['passcode'];
         $hash = (string) config('sld.demo_passcode_hash');
         if ($hash === '' || ! Hash::check($passcode, $hash)) {
-            return back()->withErrors(['passcode' => 'Wrong passcode.']);
+            return back()->withErrors(['passcode' => 'Incorrect passcode.']);
         }
         $request->session()->regenerate();
         $request->session()->put('demo_unlocked', true);

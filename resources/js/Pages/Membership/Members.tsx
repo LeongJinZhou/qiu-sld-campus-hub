@@ -497,8 +497,8 @@ export default function Members({ club, portal = false, canManage, committeeFees
                         <Input {...text('joined_from')} type="date" label="Joined from" />
                         <Input {...text('joined_to')} type="date" label="Joined to" />
                         <Input {...text('expiring_days')} type="number" label="Expiring within (days)" />
-                        <Input {...text('min_events')} type="number" label="Min. events attended" />
-                        <Input {...text('min_cca')} type="number" label="Min. CCA hours" />
+                        <Input {...text('min_events')} type="number" label="Minimum events attended" />
+                        <Input {...text('min_cca')} type="number" label="Minimum CCA hours" />
                     </div>
                     {!club && (
                         <>

@@ -114,7 +114,7 @@ class PaperSignoff
     private function assertSldStep(Approval $approval, User $user): void
     {
         if ($approval->role !== ChainRole::SldOfficer || ! $this->engine->canAct($approval, $user)) {
-            throw new DomainException('Only SLD, at its own step, arranges signatures on paper.');
+            throw new DomainException('Only SLD can arrange paper signatures, at its own step.');
         }
     }
 }

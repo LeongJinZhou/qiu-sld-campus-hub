@@ -174,7 +174,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
                             ← {event.name}
                         </Link>
                         <h1 className="text-2xl font-bold">Purchases &amp; claims</h1>
-                        <p className="text-sm text-ink-muted">Snap every receipt at the till. Items and prices are read for you; claims are verified and paid back here.</p>
+                        <p className="text-sm text-ink-muted">Photograph every receipt at the till. Items and prices are read for you; claims are verified and paid back here.</p>
                     </div>
                     <label className="relative inline-flex cursor-pointer items-center gap-2 overflow-hidden rounded-control bg-ink px-5 py-3 text-sm font-semibold text-white shadow-pop transition hover:-translate-y-0.5 active:scale-[0.98]">
                         <span className="absolute inset-0 animate-shimmer" aria-hidden="true" />
@@ -363,7 +363,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
                         );
                     })}
                 </section>
-                {!purchases.length && <p className="rounded-card border border-dashed border-line p-8 text-center text-sm text-ink-muted">No purchases yet. Snap the first receipt when you buy something for the event.</p>}
+                {!purchases.length && <p className="rounded-card border border-dashed border-line p-8 text-center text-sm text-ink-muted">No purchases yet. Photograph the first receipt when you buy something for the event.</p>}
             </div>
             <Modal open={paying !== null} onClose={() => setPaying(null)} title={paying ? `Pay back ${paying.buyer.name} · ${rm(paying.total_sen)}` : ''}>
                 {paying && (

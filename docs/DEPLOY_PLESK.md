@@ -17,6 +17,12 @@ Plesk → **Websites & Domains → your domain → PHP**:
 - `proc_open` must **not** be in `disable_functions` (PDF conversion and the PPTX report run LibreOffice/Python).
 - Additional directives: `expose_php = Off` and `display_errors = Off` (hides the PHP version and errors).
 - If nginx proxies the site, **Apache & nginx Settings → Additional nginx directives**: `client_max_body_size 60m;`
+- **URL rewriting must work, or every page except the home page shows `404 Not Found` (sign out, links, everything).**
+  With *FPM served by Apache* the shipped `public/.htaccess` does it (Apache needs `mod_rewrite` and `AllowOverride All`
+  for the site; Plesk's default has both). With *FPM served by nginx* (no Apache behind it) `.htaccess` is **ignored**: put this in
+  **Apache & nginx Settings → Additional nginx directives**:
+  `location / { try_files $uri $uri/ /index.php?$query_string; }`
+  Test: `https://your-domain/index.php/not-in-records` opens a page but `https://your-domain/not-in-records` shows 404 → rewriting is the problem.
 
 Use the **same PHP 8.4** for the website, the SSH terminal and the scheduled task. Plesk's plain `php` in SSH is
 often the operating system's older PHP, so the commands below use the full path `/opt/plesk/php/8.4/bin/php`

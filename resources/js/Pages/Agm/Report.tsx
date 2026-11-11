@@ -113,7 +113,7 @@ export default function Report({ agm, document, data: initial, record, minObject
                     )}
                     <FormSection title="Header">
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <LockedField label="Student organization" value={record.club} />
+                            <LockedField label="Student organisation" value={record.club} />
                             <LockedField label="Date" value={record.date} />
                             <LockedField label="Time" value={record.time} />
                             <LockedField label="Venue" value={record.venue} />
@@ -128,7 +128,7 @@ export default function Report({ agm, document, data: initial, record, minObject
                                 <Icon name="sparkles" size={16} /> {drafting ? 'Drafting…' : 'Draft objectives, speech and agenda with AI'}
                             </Button>
                         )}
-                        {ai === 'failed' && <p className="text-sm text-warning">AI couldn't draft this time — please write them yourself.</p>}
+                        {ai === 'failed' && <p className="text-sm text-warning">The AI assistant could not draft these sections. Please write them yourself.</p>}
                         <DynamicTable
                             rows={data.objectives.map((text) => ({ text }))}
                             onChange={(rows) => setData('objectives', rows.map((r) => r.text))}

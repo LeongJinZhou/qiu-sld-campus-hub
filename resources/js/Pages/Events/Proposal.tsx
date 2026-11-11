@@ -456,7 +456,7 @@ export default function Proposal(props: ProposalProps) {
         } catch {
             return;
         }
-        setCelebrate('Proposal approved!');
+        setCelebrate('Proposal approved');
     }, [status, event.slug]);
     const section = (key: ProposalSection) => ({ section: key, alert: alertFor(key), flag: flag(key), editors: editorsIn(key) });
 
