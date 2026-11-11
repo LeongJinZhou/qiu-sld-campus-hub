@@ -123,7 +123,21 @@ export default function GuidedTour() {
             ) : (
                 <div className="absolute inset-0 bg-[rgb(10_10_14/0.62)]" />
             )}
-            <div className="absolute inset-0" onClick={(e) => e.target === e.currentTarget && next()} />
+            {/* A click outside the card ends the guide; a click on the highlighted button also does what that button does
+                (before, every click was swallowed and only moved the guide on, so the page seemed stuck behind a dark layer). */}
+            <div
+                className="absolute inset-0"
+                onClick={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    // Find what sits under the guide at this point, so the click still reaches it.
+                    const layer = e.currentTarget.parentElement;
+                    if (layer) layer.style.pointerEvents = 'none';
+                    const under = document.elementFromPoint(e.clientX, e.clientY);
+                    if (layer) layer.style.pointerEvents = '';
+                    finish();
+                    if (under instanceof HTMLElement) under.click();
+                }}
+            />
             {/* The circle: a pulsing ring around the highlighted element. */}
             {hole && (
                 <span

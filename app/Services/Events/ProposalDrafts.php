@@ -12,6 +12,7 @@ use App\Notifications\DocumentNotification;
 use App\Services\Meetings\Meetings;
 use App\Services\Time\SessionResolver;
 use DomainException;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
@@ -80,6 +81,8 @@ class ProposalDrafts
         if ($document->status !== DocumentStatus::Draft || $document->versions()->where('number', '>', 0)->exists()) {
             throw new DomainException('Only a draft that was never submitted can be discarded.');
         }
+        // Nobody should land on a dead page: drop the notifications that link to this draft.
+        DatabaseNotification::where('data->url', route('proposals.edit', $event))->delete();
         $event->delete();
     }
 }
