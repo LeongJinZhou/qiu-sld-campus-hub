@@ -1,5 +1,6 @@
 import Card from '@/Components/ui/Card';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { url } from '@/lib/url';
 import { Head } from '@inertiajs/react';
 
 export default function Certificate({ code, certificate }: { code: string; certificate: { title: string; name: string; statement: string; issued_at: string } | null }) {
@@ -7,7 +8,7 @@ export default function Certificate({ code, certificate }: { code: string; certi
         <GuestLayout>
             <Head title="Verify certificate" />
             <Card className="grid gap-4">
-                <img src="/brand/student-activity-black.png" alt="QIU Student Activity" className="mx-auto h-12 w-auto" />
+                <img src={url('/brand/student-activity-black.png')} alt="QIU Student Activity" className="mx-auto h-12 w-auto" />
                 <h1 className="text-center text-lg font-semibold">Certificate verification</h1>
                 <p className="text-center font-mono text-sm text-ink-muted">{code}</p>
                 {certificate ? (

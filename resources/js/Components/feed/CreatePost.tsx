@@ -3,6 +3,7 @@ import FileUpload from '@/Components/ui/FileUpload';
 import Modal from '@/Components/ui/Modal';
 import Select from '@/Components/ui/Select';
 import Textarea from '@/Components/ui/Textarea';
+import { url } from '@/lib/url';
 import { useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 
@@ -32,9 +33,9 @@ export default function CreatePost({ clubs, events, open, onClose }: CreatePostP
         };
         if (mode === 'story') {
             story.transform((d) => ({ photo: d.photo[0] ?? null }));
-            story.post(`/clubs/${club}/stories`, done);
+            story.post(url(`/clubs/${club}/stories`), done);
         } else {
-            post.post(`/clubs/${club}/posts`, done);
+            post.post(url(`/clubs/${club}/posts`), done);
         }
     }
 

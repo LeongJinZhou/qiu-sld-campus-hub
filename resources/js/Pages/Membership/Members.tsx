@@ -1,3 +1,4 @@
+import ButtonLink from '@/Components/forms/ButtonLink';
 import CheckboxGroup from '@/Components/forms/CheckboxGroup';
 import Badge, { type BadgeTone } from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
@@ -12,6 +13,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import PortalLayout from '@/Layouts/PortalLayout';
 import { copy } from '@/lib/clone';
 import { date } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 
@@ -113,7 +115,7 @@ function fromServer(filters: Filters): Filters {
 
 export default function Members({ club, portal = false, canManage, committeeFees = [], filters, counts, rows, pagination, options, views }: MembersProps) {
     // SLD stays inside the admin portal; the club's own committee and advisor use the club page.
-    const url = club ? (portal ? `/admin/clubs/${club.slug}/members` : `/clubs/${club.slug}/members`) : '/admin/members';
+    const listUrl = url(club ? (portal ? `/admin/clubs/${club.slug}/members` : `/clubs/${club.slug}/members`) : '/admin/members');
     const [f, setF] = useState<Filters>(() => fromServer(filters));
     useEffect(() => setF(fromServer(filters)), [filters]);
     const [sort, setSort] = useState<string[][]>(Array.isArray(filters.sort) ? (filters.sort as string[][]) : [['name', 'asc']]);
@@ -129,7 +131,7 @@ export default function Members({ club, portal = false, canManage, committeeFees
             sort: (state.sort ?? sort).map(([k, d]) => `${k}:${d}`),
             ...(state.extra ?? {}),
         };
-        router.get(url, query as never, { preserveState: true, preserveScroll: true, replace: true });
+        router.get(listUrl, query as never, { preserveState: true, preserveScroll: true, replace: true });
     };
     const first = useRef(true);
     useEffect(() => {
@@ -150,7 +152,7 @@ export default function Members({ club, portal = false, canManage, committeeFees
     const activeCount = Object.entries(filters).filter(([k, v]) => !['search', 'sort'].includes(k) && (Array.isArray(v) ? v.length : v !== undefined)).length;
     const clear = (): void => {
         setSearch('');
-        router.get(url, {}, { preserveScroll: true });
+        router.get(listUrl, {}, { preserveScroll: true });
     };
     const toggleSort = (field: string): void => {
         const [head] = sort;
@@ -170,7 +172,7 @@ export default function Members({ club, portal = false, canManage, committeeFees
     };
     const saveView = (): void => {
         const name = prompt('Name this view');
-        if (name) router.post('/saved-views', { name, filters: { ...filters } } as never, { preserveScroll: true });
+        if (name) router.post(url('/saved-views'), { name, filters: { ...filters } } as never, { preserveScroll: true });
     };
     // Export uses the same simple filters (search, session, dates) as the screen.
     const exportQuery = new URLSearchParams(Object.entries(filters).filter((e): e is [string, string] => typeof e[1] === 'string')).toString();
@@ -188,7 +190,7 @@ export default function Members({ club, portal = false, canManage, committeeFees
     function sendManage(e: FormEvent): void {
         e.preventDefault();
         if (!managing || !club) return;
-        manageForm.post(`/clubs/${club.slug}/memberships/${managing.row.id}/status`, { preserveScroll: true, onSuccess: () => setManaging(null) });
+        manageForm.post(url(`/clubs/${club.slug}/memberships/${managing.row.id}/status`), { preserveScroll: true, onSuccess: () => setManaging(null) });
     }
 
     const head = (field: string, label: string, right = false): ReactNode => (
@@ -206,24 +208,20 @@ export default function Members({ club, portal = false, canManage, committeeFees
                     <div>
                         <h1 className="text-xl font-bold">Members{club && ` · ${club.name}`}</h1>
                         {club && (
-                            <Link href={portal ? '/admin/clubs' : `/clubs/${club.slug}`} className="text-sm text-primary">
+                            <Link href={url(portal ? '/admin/clubs' : `/clubs/${club.slug}`)} className="text-sm text-primary">
                                 {portal ? 'All clubs' : 'Back to club'}
                             </Link>
                         )}
                     </div>
                     {club && (
                         <div className="flex flex-wrap gap-2">
-                            <a href={`/clubs/${club.slug}/members/export/xlsx?${exportQuery}`}>
-                                <Button variant="secondary" size="sm">
-                                    <Icon name="file" size={16} /> 10 Full Member List (Excel)
-                                </Button>
-                            </a>
-                            <a href={`/clubs/${club.slug}/members/export/pdf?${exportQuery}`}>
-                                <Button variant="secondary" size="sm">
-                                    PDF
-                                </Button>
-                            </a>
-                            <Button size="sm" variant="secondary" onClick={() => router.post(`/clubs/${club.slug}/members/remind`, {}, { preserveScroll: true })}>
+                            <ButtonLink plain size="sm" href={`/clubs/${club.slug}/members/export/xlsx?${exportQuery}`}>
+                                <Icon name="file" size={16} /> 10 Full Member List (Excel)
+                            </ButtonLink>
+                            <ButtonLink plain size="sm" href={`/clubs/${club.slug}/members/export/pdf?${exportQuery}`}>
+                                PDF
+                            </ButtonLink>
+                            <Button size="sm" variant="secondary" onClick={() => router.post(url(`/clubs/${club.slug}/members/remind`), {}, { preserveScroll: true })}>
                                 <Icon name="bell" size={16} /> Remind unpaid
                             </Button>
                         </div>
@@ -272,7 +270,7 @@ export default function Members({ club, portal = false, canManage, committeeFees
                                 <button type="button" className="font-medium" onClick={() => openView(v.filters)}>
                                     {v.name}
                                 </button>
-                                <button type="button" className="text-ink-muted hover:text-danger" aria-label={`Delete view ${v.name}`} onClick={() => router.delete(`/saved-views/${v.id}`, { preserveScroll: true })}>
+                                <button type="button" className="text-ink-muted hover:text-danger" aria-label={`Delete view ${v.name}`} onClick={() => router.delete(url(`/saved-views/${v.id}`), { preserveScroll: true })}>
                                     ✕
                                 </button>
                             </span>
@@ -311,7 +309,7 @@ export default function Members({ club, portal = false, canManage, committeeFees
                                                 {(r.clubs ?? []).map((c) => (
                                                     <li key={c.club_id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3">
                                                         <span className="min-w-0">
-                                                            <Link href={`/admin/clubs/${c.club_slug}/members`} className="block truncate font-medium hover:underline">
+                                                            <Link href={url(`/admin/clubs/${c.club_slug}/members`)} className="block truncate font-medium hover:underline">
                                                                 {c.club}
                                                             </Link>
                                                             <span className="block truncate text-xs text-ink-muted">

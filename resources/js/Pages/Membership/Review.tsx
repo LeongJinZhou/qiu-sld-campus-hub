@@ -3,6 +3,7 @@ import Button from '@/Components/ui/Button';
 import EmptyState from '@/Components/ui/EmptyState';
 import AppLayout from '@/Layouts/AppLayout';
 import { rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -26,7 +27,7 @@ export default function Review({ club, fee_sen, pending_total, items }: { club: 
     function decide(id: number, approve: boolean): void {
         const note = approve ? null : prompt('Reason for rejecting (sent to the student)');
         if (!approve && !note) return;
-        router.post(`/payments/${id}/decide`, { approve, note, reference: references[id] || null }, { preserveScroll: true });
+        router.post(url(`/payments/${id}/decide`), { approve, note, reference: references[id] || null }, { preserveScroll: true });
     }
     const flagged = (p: Item, ...flags: string[]): string => (p.flags.some((f) => flags.includes(f)) ? 'font-semibold text-danger' : '');
 

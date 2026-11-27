@@ -40,6 +40,10 @@ class SecurityHeaders
             $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
         }
         $response->headers->remove('X-Powered-By');
+        // PHP adds its own "X-Powered-By: PHP/x.y" when the host leaves expose_php on; it never leaves the app.
+        if (! headers_sent()) {
+            header_remove('X-Powered-By');
+        }
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

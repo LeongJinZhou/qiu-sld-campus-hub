@@ -2,11 +2,12 @@ import CreatePost from '@/Components/feed/CreatePost';
 import PostCard from '@/Components/feed/PostCard';
 import MeetingCard, { type MeetingCardData } from '@/Components/meetings/MeetingCard';
 import StoryBar from '@/Components/feed/StoryBar';
-import Button from '@/Components/ui/Button';
 import EmptyState from '@/Components/ui/EmptyState';
 import Icon from '@/Components/ui/Icon';
 import AppLayout from '@/Layouts/AppLayout';
 import type { PostCardData, StoryGroup } from '@/types';
+import ButtonLink from '@/Components/forms/ButtonLink';
+import { url } from '@/lib/url';
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -56,10 +57,10 @@ export default function Index({ stories, posts, archive, meetings, group, publis
                     <button
                         data-tour="feed-create"
                         type="button"
-                        className="reveal flex items-center gap-3 rounded-card border border-line bg-surface p-4 text-left text-sm text-ink-muted shadow-card transition hover:-translate-y-0.5 hover:shadow-pop"
+                        className="reveal flex items-center gap-3 rounded-card border border-ink-muted/50 bg-surface p-4 text-left text-sm font-medium text-ink shadow-card transition hover:-translate-y-0.5 hover:border-primary hover:shadow-pop"
                         onClick={() => setCreating(true)}
                     >
-                        <span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-accent to-primary-strong text-white">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-white">
                             <Icon name="plus" size={20} />
                         </span>
                         Share a post, recap or story with your club…
@@ -71,7 +72,7 @@ export default function Index({ stories, posts, archive, meetings, group, publis
                             <h2 id="feed-meetings" className="text-sm font-semibold">
                                 Coming up in your clubs
                             </h2>
-                            <Link href="/calendar" className="text-xs font-medium text-primary">
+                            <Link href={url('/calendar')} className="text-xs font-medium text-primary">
                                 Open calendar
                             </Link>
                         </div>
@@ -82,9 +83,7 @@ export default function Index({ stories, posts, archive, meetings, group, publis
                 )}
                 {posts.data.length === 0 && archive.length === 0 ? (
                     <EmptyState title="No posts yet" description="Follow clubs to see their events and recaps here.">
-                        <Link href="/clubs">
-                            <Button>Discover clubs</Button>
-                        </Link>
+                        <ButtonLink href={url('/clubs')} variant="primary">Discover clubs</ButtonLink>
                     </EmptyState>
                 ) : (
                     posts.data.length === 0 && <p className="rounded-card border border-dashed border-line p-5 text-center text-sm text-ink-muted">Nothing new this week. Earlier posts are below.</p>

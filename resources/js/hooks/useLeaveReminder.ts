@@ -1,3 +1,4 @@
+import { appPath, url } from '@/lib/url';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -13,18 +14,21 @@ export function useLeaveReminder(title: string, active: boolean): void {
         const onHide = (): void => {
             const { title: name, active: on } = latest.current;
             if (document.visibilityState !== 'hidden' || !on) return;
+            // The server builds the link with url(), which adds the folder itself, so it gets the app path;
+            // the phone notification opens the full path.
             const path = location.pathname + location.search;
+            const appPagePath = appPath(location.pathname) + location.search;
             const token = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? '');
-            void fetch('/notifications/left-halfway', {
+            void fetch(url('/notifications/left-halfway'), {
                 method: 'POST',
                 keepalive: true, // still sent while the page is being hidden
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ title: name, path }),
+                body: JSON.stringify({ title: name, path: appPagePath }),
             }).catch(() => undefined);
             if ('Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
                 void navigator.serviceWorker.ready.then((sw) =>
-                    sw.showNotification('It seems you have half-way done this', { body: `${name} is not finished. Tap to continue.`, tag: path, data: { url: path }, icon: '/icons/icon-192.png' }),
+                    sw.showNotification('It seems you have half-way done this', { body: `${name} is not finished. Tap to continue.`, tag: path, data: { url: path }, icon: url('/icons/icon-192.png') }),
                 );
             }
         };

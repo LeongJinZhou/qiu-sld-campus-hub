@@ -24,6 +24,36 @@ Plesk → **Websites & Domains → your domain → PHP**:
   `location / { try_files $uri $uri/ /index.php?$query_string; }`
   Test: `https://your-domain/index.php/not-in-records` opens a page but `https://your-domain/not-in-records` shows 404 → rewriting is the problem.
 
+### 1a. Hide server version banners
+
+`expose_php = Off` removes `X-Powered-By: PHP/…` (the app also strips it). Plesk and Passenger add their own
+banners; remove them in **Apache & nginx Settings → Additional nginx directives**:
+
+```nginx
+server_tokens off;
+more_clear_headers 'X-Powered-By' 'Server';   # needs nginx headers-more (Plesk ships it); else use the two lines below
+# proxy_hide_header X-Powered-By;
+# passenger_show_version_in_header off;
+```
+
+Check: `curl -sI https://your-domain/campus-hub/ | grep -iE 'x-powered-by|^server'` shows no version numbers.
+
+### 1b. Running in a subfolder (e.g. `https://aihubdev.qiu.edu.my/campus-hub/`)
+
+One build works at a domain root and in a subfolder: the built files load each other by relative paths, and every
+in-app link goes through `resources/js/lib/url.ts`, which reads the folder from the page. No rebuild and no hand
+edits of `app.blade.php`, `manifest.webmanifest` or `sw.js` are needed. Only three things to set:
+
+- `.env`: `APP_URL=https://aihubdev.qiu.edu.my/campus-hub` (no slash at the end). The Google redirect URI becomes
+  `https://aihubdev.qiu.edu.my/campus-hub/auth/google/callback`.
+- nginx must send `/campus-hub` (no slash) to `/campus-hub/`, or a signed-out deep link (`/campus-hub/feed`) ends on
+  a 404. The app always redirects to `/campus-hub/` with the slash; this rule covers people typing the address:
+  ```nginx
+  location = /campus-hub { return 301 /campus-hub/; }
+  ```
+- Check: `curl -sI https://aihubdev.qiu.edu.my/campus-hub` → `301` to `/campus-hub/`; `curl -sI …/campus-hub/feed`
+  signed out → `302` to `/campus-hub/` → `200`.
+
 Use the **same PHP 8.4** for the website, the SSH terminal and the scheduled task. Plesk's plain `php` in SSH is
 often the operating system's older PHP, so the commands below use the full path `/opt/plesk/php/8.4/bin/php`
 (check yours with `ls /opt/plesk/php/`).

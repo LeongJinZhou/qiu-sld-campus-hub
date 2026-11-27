@@ -9,6 +9,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, type ReactNode } from 'react';
 import { useCardGlow } from '@/hooks/useCardGlow';
 import { navMatches } from '@/lib/nav';
+import { appPath, url } from '@/lib/url';
 
 interface NavItem {
     label: string;
@@ -24,19 +25,19 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
     const user = auth.user;
 
     const items: NavItem[] = [
-        { label: 'Feed', icon: 'home', href: '/feed', match: '/feed' },
-        { label: 'Search', icon: 'search', href: '/search', match: '/search' },
-        { label: 'Activities', icon: 'ticket', href: '/activities', match: '/activities' },
-        { label: 'Calendar', icon: 'calendar', href: '/calendar', match: '/calendar' },
-        { label: 'Assistant', icon: 'sparkles', href: '/assistant', match: '/assistant' },
-        { label: 'Notifications', icon: 'bell', href: '/notifications', match: '/notifications', badge: (nav?.unread ?? 0) + (nav?.actions ?? 0) },
-        ...(nav?.isStaff ? [{ label: 'Approvals', icon: 'check' as const, href: '/approvals', match: '/approvals' }] : []),
-        { label: 'Profile', icon: 'user', href: '/me', match: '/me' },
+        { label: 'Feed', icon: 'home', href: url('/feed'), match: '/feed' },
+        { label: 'Search', icon: 'search', href: url('/search'), match: '/search' },
+        { label: 'Activities', icon: 'ticket', href: url('/activities'), match: '/activities' },
+        { label: 'Calendar', icon: 'calendar', href: url('/calendar'), match: '/calendar' },
+        { label: 'Assistant', icon: 'sparkles', href: url('/assistant'), match: '/assistant' },
+        { label: 'Notifications', icon: 'bell', href: url('/notifications'), match: '/notifications', badge: (nav?.unread ?? 0) + (nav?.actions ?? 0) },
+        ...(nav?.isStaff ? [{ label: 'Approvals', icon: 'check' as const, href: url('/approvals'), match: '/approvals' }] : []),
+        { label: 'Profile', icon: 'user', href: url('/me'), match: '/me' },
     ];
     // Mobile tab bar: Feed, Search, Activities, Notifications, Profile. (Posting lives on the feed and club pages.)
     const mobileItems = items.filter((i) => !['Approvals', 'Calendar', 'Assistant'].includes(i.label));
     // Whole path segments only: /meetings must not light up /me (Profile).
-    const path = page.url.split(/[?#]/)[0] ?? '';
+    const path = appPath(page.url).split(/[?#]/)[0] ?? '';
     const isActive = (item: NavItem): boolean => navMatches(path, item.match);
 
     useCardGlow();
@@ -60,7 +61,7 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
 
             {/* Desktop / tablet top bar, as in the QIU Industry Day app: brand, sections with a red underline, actions. */}
             <header className="sticky top-0 z-30 hidden h-[4.5rem] items-center gap-6 border-b border-line bg-surface/95 px-[clamp(1.25rem,4vw,4rem)] backdrop-blur-md md:flex lg:gap-10">
-                <Link href="/feed" aria-label="Campus Hub home">
+                <Link href={url('/feed')} aria-label="Campus Hub home">
                     <Brand tag="SLD" />
                 </Link>
                 <nav className="flex h-full items-center gap-5 lg:gap-7" aria-label="Primary">
@@ -95,17 +96,17 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
                         </Link>
                     )}
                     {nav?.isAdmin && (
-                        <Link href="/admin" className="inline-flex h-11 items-center gap-1.5 rounded-control border border-line bg-surface px-3.5 text-[0.78rem] font-bold transition hover:border-primary/40 hover:bg-primary-soft">
+                        <Link href={url('/admin')} aria-label="SLD Admin" className="inline-flex h-11 items-center gap-1.5 rounded-control border border-line bg-surface px-3.5 text-[0.78rem] font-bold transition hover:border-primary/40 hover:bg-primary-soft">
                             <Icon name="shield" size={16} /> <span className="hidden lg:inline">SLD Admin</span>
                         </Link>
                     )}
                     {user && (
-                        <Link href="/me" data-tour="nav-profile" aria-label="Profile" className={`flex h-11 items-center gap-2 rounded-control border px-1.5 transition hover:border-primary/40 lg:pr-3 ${isActive({ label: 'Profile', icon: 'user', href: '/me', match: '/me' }) ? 'border-primary/40 bg-primary-soft' : 'border-line bg-surface'}`}>
+                        <Link href={url('/me')} data-tour="nav-profile" aria-label="Profile" className={`flex h-11 items-center gap-2 rounded-control border px-1.5 transition hover:border-primary/40 lg:pr-3 ${isActive({ label: 'Profile', icon: 'user', href: url('/me'), match: '/me' }) ? 'border-primary/40 bg-primary-soft' : 'border-line bg-surface'}`}>
                             <Avatar src={user.avatar_url} name={user.name} size="xs" />
                             <span className="hidden max-w-32 truncate text-[0.78rem] font-bold lg:inline">{user.name.split(' ')[0]}</span>
                         </Link>
                     )}
-                    <button type="button" aria-label="Sign out" title="Sign out" className="grid size-11 place-items-center rounded-control bg-ink text-white transition hover:bg-ink/85" onClick={() => router.post('/logout')}>
+                    <button type="button" aria-label="Sign out" title="Sign out" className="grid size-11 place-items-center rounded-control bg-ink text-white transition hover:bg-ink/85" onClick={() => router.post(url('/logout'))}>
                         <Icon name="logout" size={18} />
                     </button>
                 </div>
@@ -114,20 +115,20 @@ export default function AppLayout({ wide = false, children }: { wide?: boolean; 
             <div className="min-w-0 pb-20 md:pb-0">
                 {/* Mobile top bar */}
                 <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface/90 px-4 backdrop-blur md:hidden">
-                    <Link href="/feed" aria-label="Campus Hub home">
+                    <Link href={url('/feed')} aria-label="Campus Hub home">
                         <Brand />
                     </Link>
                     <div className="flex items-center gap-4">
-                        <Link href="/assistant" aria-label="Assistant">
+                        <Link href={url('/assistant')} aria-label="Assistant">
                             <Icon name="sparkles" />
                         </Link>
                         {nav?.isStaff && (
-                            <Link href="/approvals" aria-label="Approvals">
+                            <Link href={url('/approvals')} aria-label="Approvals">
                                 <Icon name="check" />
                             </Link>
                         )}
                         {nav?.isAdmin && (
-                            <Link href="/admin" aria-label="SLD Admin">
+                            <Link href={url('/admin')} aria-label="SLD Admin">
                                 <Icon name="shield" />
                             </Link>
                         )}

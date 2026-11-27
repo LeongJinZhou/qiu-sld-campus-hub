@@ -1,6 +1,7 @@
 import MoneyChart from '@/Components/charts/MoneyChart';
 import Badge from '@/Components/ui/Badge';
 import { date, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Link } from '@inertiajs/react';
 
 export interface ClubYear {
@@ -23,10 +24,10 @@ const label = (c: string): string => c.replace(/_/g, ' ').replace(/^\w/, (m) => 
 export default function YearInReview({ club, year }: { club: { slug: string; name: string }; year: ClubYear }) {
     const q = `session=${encodeURIComponent(year.session)}`;
     const downloads = [
-        { label: 'Financial Report (02)', href: `/clubs/${club.slug}/finance/export/pdf?${q}` },
-        { label: 'Finance workbook (Excel)', href: `/clubs/${club.slug}/finance/workbook/xlsx?period=session&${q}` },
-        { label: 'Full Member List (10)', href: `/clubs/${club.slug}/members/export/xlsx` },
-        { label: 'Annual Activities Report (12)', href: `/clubs/${club.slug}/annual-report/pdf?session=${year.session_id}` },
+        { label: 'Financial Report (02)', href: url(`/clubs/${club.slug}/finance/export/pdf?${q}`) },
+        { label: 'Finance workbook (Excel)', href: url(`/clubs/${club.slug}/finance/workbook/xlsx?period=session&${q}`) },
+        { label: 'Full Member List (10)', href: url(`/clubs/${club.slug}/members/export/xlsx`) },
+        { label: 'Annual Activities Report (12)', href: url(`/clubs/${club.slug}/annual-report/pdf?session=${year.session_id}`) },
     ];
     const net = year.finance.income_sen - year.finance.expense_sen;
     const cards = [
@@ -75,7 +76,7 @@ export default function YearInReview({ club, year }: { club: { slug: string; nam
                                     <tr key={e.slug} className="border-t border-line">
                                         <td className="whitespace-nowrap py-2 pr-3">{date(e.date)}</td>
                                         <td className="py-2 pr-3">
-                                            <Link href={`/events/${e.slug}/documents`} className="font-medium hover:underline">
+                                            <Link href={url(`/events/${e.slug}/documents`)} className="font-medium hover:underline">
                                                 {e.name}
                                             </Link>
                                         </td>

@@ -42,8 +42,9 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            // Relative, so photos load whatever address the app is opened on (localhost, LAN IP, domain).
-            'url' => env('PUBLIC_STORAGE_URL', '/storage'),
+            // Relative, so photos load whatever address the app is opened on (localhost, LAN IP, domain). In a
+            // subfolder install (APP_URL=https://host/campus-hub) the folder comes first: /campus-hub/storage.
+            'url' => env('PUBLIC_STORAGE_URL', rtrim((string) parse_url((string) env('APP_URL', ''), PHP_URL_PATH), '/').'/storage'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

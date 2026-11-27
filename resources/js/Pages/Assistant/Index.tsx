@@ -1,6 +1,7 @@
 import Button from '@/Components/ui/Button';
 import Icon from '@/Components/ui/Icon';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, type FormEvent } from 'react';
 
@@ -22,14 +23,14 @@ export default function Index({ messages }: { messages: Message[] }) {
     const send = (question: string): void => {
         if (!question.trim() || form.processing) return;
         form.transform(() => ({ question }));
-        form.post('/assistant', { preserveScroll: true, onSuccess: () => form.reset() });
+        form.post(url('/assistant'), { preserveScroll: true, onSuccess: () => form.reset() });
     };
     const ask = (e: FormEvent): void => {
         e.preventDefault();
         send(form.data.question);
     };
     const clearAll = (): void => {
-        if (confirm('Delete your whole assistant history? This cannot be undone.')) router.delete('/assistant', { preserveScroll: true });
+        if (confirm('Delete your whole assistant history? This cannot be undone.')) router.delete(url('/assistant'), { preserveScroll: true });
     };
     const lastId = messages[messages.length - 1]?.id;
 
@@ -101,7 +102,7 @@ export default function Index({ messages }: { messages: Message[] }) {
                                     type="button"
                                     className="absolute -top-2 right-1 hidden rounded-full bg-surface px-1.5 text-xs text-ink-muted shadow-card focus:block group-hover:block"
                                     aria-label="Delete this message"
-                                    onClick={() => router.delete(`/assistant/${m.id}`, { preserveScroll: true })}
+                                    onClick={() => router.delete(url(`/assistant/${m.id}`), { preserveScroll: true })}
                                 >
                                     ×
                                 </button>

@@ -14,7 +14,12 @@
 </head>
 <body>
 <main>
-    <img src="/icons/icon-192.png" alt="QIU Student Activity">
+    <img id="icon" src="icons/icon-192.png" alt="QIU Student Activity">
+    <script>
+        // This page is shown in place of any page that failed to load, so the icon is found from the app's own
+        // folder (the service worker scope: '/' or '/campus-hub/'), where the worker cached it.
+        navigator.serviceWorker?.getRegistration().then(function (r) { if (r) document.getElementById('icon').src = r.scope + 'icons/icon-192.png'; });
+    </script>
     <h1>You're offline</h1>
     <p>Campus Hub needs a connection to load clubs, events and forms. Your drafts are saved on the server, so nothing is lost.</p>
     <button type="button" onclick="location.reload()">Try again</button>

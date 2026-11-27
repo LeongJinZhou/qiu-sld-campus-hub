@@ -10,6 +10,18 @@ const variants = {
 };
 const sizes = { sm: 'h-8 px-3 text-sm', md: 'h-10 px-4 text-sm', lg: 'h-12 px-6 text-base' };
 
+/** The look of a Button, for a link that must look like one (a link is never a button inside an anchor). */
+export function buttonClass(variant: keyof typeof variants = 'primary', size: keyof typeof sizes = 'md', block = false, className?: string): string {
+    return cx(
+        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition active:scale-[0.97] hover:-translate-y-px',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+        variants[variant],
+        sizes[size],
+        block && 'w-full',
+        className,
+    );
+}
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: keyof typeof variants;
     size?: keyof typeof sizes;

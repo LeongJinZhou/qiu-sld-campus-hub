@@ -5,6 +5,7 @@ import Celebration from '@/Components/ui/Celebration';
 import Drawer from '@/Components/ui/Drawer';
 import Toast from '@/Components/ui/Toast';
 import { useCardGlow } from '@/hooks/useCardGlow';
+import { appPath, url } from '@/lib/url';
 import { Link, usePage } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 
@@ -39,7 +40,8 @@ export default function PortalLayout({ title, children }: { title: string; child
             : []),
         { label: '← Back to Campus Hub', href: '/feed' },
     ];
-    const isActive = (href: string): boolean => (href === '/admin' ? page.url === '/admin' : page.url.startsWith(href));
+    const current = appPath(page.url);
+    const isActive = (href: string): boolean => (href === '/admin' ? current === '/admin' : current.startsWith(href));
 
     return (
         <div className="min-h-dvh md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
@@ -48,13 +50,13 @@ export default function PortalLayout({ title, children }: { title: string; child
             <CommitteeFeePopup />
             <aside className="hidden border-r border-line bg-surface md:block">
                 <div className="sticky top-0 grid gap-6 p-5">
-                    <Link href="/admin" aria-label="SLD Admin home">
+                    <Link href={url('/admin')} aria-label="SLD Admin home">
                         <Brand tag="ADMIN" />
                     </Link>
                     <p className="eyebrow -mb-3 px-3">SLD portal</p>
                     <nav className="grid gap-1 text-sm">
                         {links.map((link) => (
-                            <Link key={link.href} href={link.href} aria-current={isActive(link.href) ? 'page' : undefined}
+                            <Link key={link.href} href={url(link.href)} aria-current={isActive(link.href) ? 'page' : undefined}
                                 className={`relative rounded-control px-3 py-2 font-semibold transition ${isActive(link.href) ? 'bg-primary-soft text-primary before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-r before:bg-primary' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'}`}>
                                 {link.label}
                             </Link>
@@ -63,7 +65,7 @@ export default function PortalLayout({ title, children }: { title: string; child
                 </div>
             </aside>
 
-            <div>
+            <div className="min-w-0">
                 <header className="sticky top-0 z-30 flex h-[4.5rem] items-center justify-between gap-3 border-b border-line bg-surface/95 px-4 backdrop-blur-md md:px-8">
                     <button type="button" className="md:hidden" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
                         ☰
@@ -73,7 +75,7 @@ export default function PortalLayout({ title, children }: { title: string; child
                         <h1 className="truncate text-lg font-extrabold tracking-tight">{title}</h1>
                     </div>
                     {user && (
-                        <Link href="/me">
+                        <Link href={url('/me')} aria-label="My profile">
                             <Avatar src={user.avatar_url} name={user.name} size="sm" />
                         </Link>
                     )}
@@ -85,7 +87,7 @@ export default function PortalLayout({ title, children }: { title: string; child
             <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} title="SLD Admin" side="left">
                 <nav className="grid gap-1 text-sm">
                     {links.map((link) => (
-                        <Link key={link.href} href={link.href} className="rounded-control px-3 py-2 hover:bg-surface-muted" onClick={() => setMenuOpen(false)}>
+                        <Link key={link.href} href={url(link.href)} className="rounded-control px-3 py-2 hover:bg-surface-muted" onClick={() => setMenuOpen(false)}>
                             {link.label}
                         </Link>
                     ))}

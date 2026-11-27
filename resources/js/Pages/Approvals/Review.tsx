@@ -1,4 +1,5 @@
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import ProposalView from '@/Components/forms/ProposalView';
 import Button from '@/Components/ui/Button';
 import Card from '@/Components/ui/Card';
@@ -7,6 +8,7 @@ import SignaturePad from '@/Components/ui/SignaturePad';
 import Textarea from '@/Components/ui/Textarea';
 import AppLayout from '@/Layouts/AppLayout';
 import { PROPOSAL_SECTIONS, type ProposalSection } from '@/lib/proposal';
+import { url } from '@/lib/url';
 import type { PresentedDocument } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
@@ -31,11 +33,11 @@ export default function Review({ approvalId, role, canAct, document, downloads, 
     // A faculty event arrives with the Dean already ticked; SLD can untick.
     const [chosen, setChosen] = useState<string[]>(paperSuggested);
     const [other, setOther] = useState('');
-    const startPaper = (): void => router.post(`/approvals/${approvalId}/paper`, { signers: [...chosen, ...(other.trim() ? [other.trim()] : [])] }, { preserveScroll: true });
+    const startPaper = (): void => router.post(url(`/approvals/${approvalId}/paper`), { signers: [...chosen, ...(other.trim() ? [other.trim()] : [])] }, { preserveScroll: true });
     const paperForm = useForm({ scan: null as File | null, signed: (paper?.signers ?? []).filter((s) => s.signed).map((s) => s.label) });
-    const savePaper = (): void => paperForm.post(`/approvals/${approvalId}/paper/record`, { preserveScroll: true, forceFormData: true, onSuccess: () => paperForm.setData('scan', null) });
+    const savePaper = (): void => paperForm.post(url(`/approvals/${approvalId}/paper/record`), { preserveScroll: true, forceFormData: true, onSuccess: () => paperForm.setData('scan', null) });
     const cancelPaper = (): void => {
-        if (confirm('Remove the paper signature requirement? The uploaded scan will be deleted.')) router.delete(`/approvals/${approvalId}/paper`, { preserveScroll: true });
+        if (confirm('Remove the paper signature requirement? The uploaded scan will be deleted.')) router.delete(url(`/approvals/${approvalId}/paper`), { preserveScroll: true });
     };
     const [confirming, setConfirming] = useState(false);
 
@@ -56,7 +58,7 @@ export default function Review({ approvalId, role, canAct, document, downloads, 
     const decide = (decision: Decision): void => {
         setDeciding(decision);
         form.transform((d) => ({ ...d, decision, ...(decision !== 'approve' && markedList.length ? { sections: markedList } : {}) }));
-        form.post(`/approvals/${approvalId}`, { preserveScroll: true, onFinish: () => setDeciding(null) });
+        form.post(url(`/approvals/${approvalId}`), { preserveScroll: true, onFinish: () => setDeciding(null) });
     };
     const verdictButton = (value: 'ok' | 'problems', title: string, hint: string, on: string, cls: string) => (
         <button
@@ -95,11 +97,9 @@ export default function Review({ approvalId, role, canAct, document, downloads, 
                     {downloads.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {downloads.map((format) => (
-                                <a key={format} href={`/documents/${document.id}/download/${format}`}>
-                                    <Button variant="secondary" size="sm">
-                                        Open official {format.toUpperCase()}
-                                    </Button>
-                                </a>
+                                <ButtonLink key={format} plain size="sm" href={`/documents/${document.id}/download/${format}`}>
+                                    Open official {format.toUpperCase()}
+                                </ButtonLink>
                             ))}
                         </div>
                     )}
@@ -201,7 +201,7 @@ export default function Review({ approvalId, role, canAct, document, downloads, 
                                             <p className="font-medium">1. Export and have it signed</p>
                                             <div className="flex flex-wrap gap-2">
                                                 {downloads.map((format) => (
-                                                    <a key={format} href={`/documents/${document.id}/download/${format}`} className="text-primary underline">
+                                                    <a key={format} href={url(`/documents/${document.id}/download/${format}`)} className="text-primary underline">
                                                         {format.toUpperCase()}
                                                     </a>
                                                 ))}

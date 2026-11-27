@@ -1,6 +1,7 @@
 import EvidencePhotos, { type Evidence } from '@/Components/reports/EvidencePhotos';
 import Badge from '@/Components/ui/Badge';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import { Head, router } from '@inertiajs/react';
 import type { ChangeEvent } from 'react';
 
@@ -17,7 +18,7 @@ interface Item {
 export default function Documents({ event, evidence, items }: { event: { slug: string; name: string }; evidence: Evidence; items: Item[] }) {
     const upload = (id: number, e: ChangeEvent<HTMLInputElement>): void => {
         const file = e.target.files?.[0];
-        if (file) router.post(`/events/${event.slug}/documents/${id}`, { file }, { preserveScroll: true, forceFormData: true });
+        if (file) router.post(url(`/events/${event.slug}/documents/${id}`), { file }, { preserveScroll: true, forceFormData: true });
     };
     return (
         <AppLayout>
@@ -50,7 +51,7 @@ export default function Documents({ event, evidence, items }: { event: { slug: s
                     ))}
                 </ul>
                 <EvidencePhotos evidence={evidence} canEdit title="Event photos" />
-                <a href={`/events/${event.slug}/photos.zip`} className="justify-self-start text-sm font-medium text-primary">
+                <a href={url(`/events/${event.slug}/photos.zip`)} className="justify-self-start text-sm font-medium text-primary">
                     Download all photos (ZIP)
                 </a>
             </div>

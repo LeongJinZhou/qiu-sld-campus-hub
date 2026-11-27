@@ -1,5 +1,6 @@
 import Icon, { type IconName } from '@/Components/ui/Icon';
 import { cx } from '@/lib/cx';
+import { url } from '@/lib/url';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { useEffect, useState } from 'react';
 
@@ -159,7 +160,7 @@ export default function ApprovalTracker({ progress, steps = [], compact = false 
                                 )}
                                 {step.comment && <p className="rounded-control bg-surface-muted px-3 py-2">“{step.comment}”</p>}
                                 {step.verification_code && (
-                                    <a href={`/verify/${step.verification_code}`} className="text-xs text-primary">
+                                    <a href={url(`/verify/${step.verification_code}`)} className="text-xs text-primary">
                                         Verify signature {step.verification_code}
                                     </a>
                                 )}

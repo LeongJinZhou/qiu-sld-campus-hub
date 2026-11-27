@@ -3,6 +3,7 @@ import Button from '@/Components/ui/Button';
 import Card from '@/Components/ui/Card';
 import Input from '@/Components/ui/Input';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -20,7 +21,7 @@ const tone = (s: string): 'success' | 'danger' | 'warning' => (s === 'confirmed'
 
 export default function Index({ bookings }: { bookings: Booking[] }) {
     const [notes, setNotes] = useState<Record<number, string>>({});
-    const decide = (id: number, confirm: boolean): void => router.post(`/admin/venues/${id}`, { confirm, note: notes[id] ?? null }, { preserveScroll: true });
+    const decide = (id: number, confirm: boolean): void => router.post(url(`/admin/venues/${id}`), { confirm, note: notes[id] ?? null }, { preserveScroll: true });
     return (
         <PortalLayout title="Venue requests">
             <Head title="Venue requests" />

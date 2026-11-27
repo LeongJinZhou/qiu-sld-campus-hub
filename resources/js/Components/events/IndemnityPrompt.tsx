@@ -1,6 +1,7 @@
-import Button from '@/Components/ui/Button';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Icon from '@/Components/ui/Icon';
 import Modal from '@/Components/ui/Modal';
+import { url } from '@/lib/url';
 import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
@@ -17,7 +18,7 @@ export default function IndemnityPrompt({ slug, name, closesAt }: { slug: string
             <div className="flex items-center gap-3 rounded-card border border-warning/40 bg-warning/10 p-3 text-sm">
                 <Icon name="file" size={20} className="text-warning" />
                 <p className="flex-1">One step left: sign the indemnity form to get your ticket.</p>
-                <Link href={`/events/${slug}/indemnity`} className="font-semibold text-primary">
+                <Link href={url(`/events/${slug}/indemnity`)} className="font-semibold text-primary">
                     Sign
                 </Link>
             </div>
@@ -31,11 +32,9 @@ export default function IndemnityPrompt({ slug, name, closesAt }: { slug: string
                         <p className="text-sm text-ink-muted">{name} is an outdoor event. Sign the indemnity form and your ticket appears. Your name and details are already filled in.</p>
                         {closesAt && <p className="text-xs text-ink-muted">Signing closes {closesAt}.</p>}
                     </div>
-                    <Link href={`/events/${slug}/indemnity`} className="w-full">
-                        <Button block size="lg">
-                            Sign now
-                        </Button>
-                    </Link>
+                    <ButtonLink href={`/events/${slug}/indemnity`} variant="primary" size="lg" className="w-full">
+                        Sign now
+                    </ButtonLink>
                     <button type="button" className="text-sm text-ink-muted underline" onClick={() => setOpen(false)}>
                         Later (you will be reminded)
                     </button>

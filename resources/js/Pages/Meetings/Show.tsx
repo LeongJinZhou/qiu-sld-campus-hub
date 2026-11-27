@@ -1,6 +1,7 @@
 import CustomQrPanel, { type CustomQr } from '@/Components/attendance/CustomQrPanel';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
 import AutosaveNote from '@/Components/forms/AutosaveNote';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import DynamicTable from '@/Components/forms/DynamicTable';
 import FormSection from '@/Components/forms/FormSection';
 import EvidencePhotos, { type Evidence } from '@/Components/reports/EvidencePhotos';
@@ -16,6 +17,7 @@ import Textarea from '@/Components/ui/Textarea';
 import { useAutosave } from '@/hooks/useAutosave';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
@@ -86,11 +88,11 @@ export default function Show({ evidence, meeting, people, present, checkins, che
     const [attendance, setAttendance] = useState<number[]>([...present]);
     useEffect(() => setAttendance([...present]), [present]);
     const toggle = (id: number): void => setAttendance(attendance.includes(id) ? attendance.filter((x) => x !== id) : [...attendance, id]);
-    const saveAttendance = (): void => router.post(`/meetings/${meeting.id}/attendance`, { present: attendance }, { preserveScroll: true });
+    const saveAttendance = (): void => router.post(url(`/meetings/${meeting.id}/attendance`), { present: attendance }, { preserveScroll: true });
 
     const form = useForm<Minutes & { signature: string | null; signature_strokes: string | null }>({ ...minutes.data, signature: null, signature_strokes: null });
     const { data, setData, errors } = form;
-    const url = `/meetings/${meeting.id}/minutes`;
+    const minutesUrl = url(`/meetings/${meeting.id}/minutes`);
     const drafting = minutes.ai === 'pending';
     // While the AI drafts, refresh until the draft lands, then load it into the form.
     usePoll(2500, { only: ['minutes'] }, { autoStart: drafting });
@@ -98,20 +100,20 @@ export default function Show({ evidence, meeting, people, present, checkins, che
         if (!drafting) setData((d) => ({ ...d, ...minutes.data }));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [minutes.ai]);
-    const autosaved = useAutosave(url, plain(data), minutes.editable && !drafting, form.processing);
+    const autosaved = useAutosave(minutesUrl, plain(data), minutes.editable && !drafting, form.processing);
     // useForm keeps the last transform: set it before every request, so the signature goes with the submission only.
     const save = (): void => {
         form.transform(plain);
-        form.put(url, { preserveScroll: true });
+        form.put(minutesUrl, { preserveScroll: true });
     };
     const draftWithAi = (): void => {
         form.transform(plain);
-        form.post(`${url}/draft`, { preserveScroll: true });
+        form.post(`${minutesUrl}/draft`, { preserveScroll: true });
     };
     const [signing, setSigning] = useState(false);
     const submit = (): void => {
         form.transform((d) => d);
-        form.post(`${url}/submit`, { preserveScroll: true, onSuccess: () => setSigning(false) });
+        form.post(`${minutesUrl}/submit`, { preserveScroll: true, onSuccess: () => setSigning(false) });
     };
     const readOnly = !minutes.editable;
 
@@ -136,14 +138,14 @@ export default function Show({ evidence, meeting, people, present, checkins, che
 
     const shown = people.filter((p) => p.name.toLowerCase().includes(search.trim().toLowerCase()));
     const checkedOut = Object.values(checkins).filter((c) => c.out).length;
-    const exportBase = `/meetings/${meeting.id}`;
+    const exportBase = `/meetings/${meeting.id}`; // an app path; ButtonLink adds the mount folder
 
     return (
         <AppLayout wide>
             <Head title={meeting.title} />
             <div className="grid gap-6">
                 <header className="grid gap-3">
-                    <Link href={`/clubs/${meeting.club.slug}/meetings`} className="flex items-center gap-1 text-sm font-medium text-primary">
+                    <Link href={url(`/clubs/${meeting.club.slug}/meetings`)} className="flex items-center gap-1 text-sm font-medium text-primary">
                         ← {meeting.club.name} meetings
                     </Link>
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -172,17 +174,18 @@ export default function Show({ evidence, meeting, people, present, checkins, che
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {meeting.meet_link && (
-                                <a href={meeting.meet_link} target="_blank" rel="noopener">
-                                    <Button>
-                                        <Icon name="camera" size={16} /> Join Google Meet
-                                    </Button>
+                                <a
+                                    href={meeting.meet_link}
+                                    target="_blank"
+                                    rel="noopener"
+                                    className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-control bg-primary px-4 text-sm font-medium text-white shadow-sm transition hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                >
+                                    <Icon name="camera" size={16} /> Join Google Meet
                                 </a>
                             )}
-                            <a href={`${exportBase}/package.zip`}>
-                                <Button variant="secondary">
-                                    <Icon name="download" size={16} /> Download all (ZIP)
-                                </Button>
-                            </a>
+                            <ButtonLink plain href={`${exportBase}/package.zip`}>
+                                <Icon name="download" size={16} /> Download all (ZIP)
+                            </ButtonLink>
                         </div>
                     </div>
                 </header>
@@ -207,16 +210,12 @@ export default function Show({ evidence, meeting, people, present, checkins, che
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        <a href={`${exportBase}/attendance/export.xlsx`}>
-                                            <Button size="sm" variant="secondary">
-                                                <Icon name="download" size={14} /> Excel
-                                            </Button>
-                                        </a>
-                                        <a href={`${exportBase}/attendance/export.pdf`}>
-                                            <Button size="sm" variant="secondary">
-                                                <Icon name="download" size={14} /> PDF
-                                            </Button>
-                                        </a>
+                                        <ButtonLink plain size="sm" href={`${exportBase}/attendance/export.xlsx`}>
+                                            <Icon name="download" size={14} /> Excel
+                                        </ButtonLink>
+                                        <ButtonLink plain size="sm" href={`${exportBase}/attendance/export.pdf`}>
+                                            <Icon name="download" size={14} /> PDF
+                                        </ButtonLink>
                                     </div>
                                 </div>
                                 <dl className="grid grid-cols-3 gap-2 text-center">
@@ -296,7 +295,7 @@ export default function Show({ evidence, meeting, people, present, checkins, che
                                         </section>
                                     )
                                 )}
-                                {customQr && <CustomQrPanel qr={customQr} uploadUrl={`/meetings/${meeting.id}/custom-qr`} title={meeting.title} />}
+                                {customQr && <CustomQrPanel qr={customQr} uploadUrl={url(`/meetings/${meeting.id}/custom-qr`)} title={meeting.title} />}
                             </aside>
                         </div>
                     ) : (
@@ -309,11 +308,9 @@ export default function Show({ evidence, meeting, people, present, checkins, che
                             {minutes.downloads.length > 0 && (
                                 <div className="flex flex-wrap gap-2">
                                     {minutes.downloads.map((f) => (
-                                        <a key={f} href={`/documents/${minutes.id}/download/${f}`}>
-                                            <Button variant="secondary" size="sm">
-                                                <Icon name="download" size={14} /> Minutes ({f.toUpperCase()})
-                                            </Button>
-                                        </a>
+                                        <ButtonLink key={f} plain size="sm" href={`/documents/${minutes.id}/download/${f}`}>
+                                            <Icon name="download" size={14} /> Minutes ({f.toUpperCase()})
+                                        </ButtonLink>
                                     ))}
                                 </div>
                             )}

@@ -1,4 +1,5 @@
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Badge, { type BadgeTone } from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
 import Card from '@/Components/ui/Card';
@@ -13,6 +14,7 @@ import Tabs from '@/Components/ui/Tabs';
 import AppLayout from '@/Layouts/AppLayout';
 import { copy } from '@/lib/clone';
 import { date, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -89,13 +91,13 @@ const evidence = 'inline-flex items-center gap-1 font-medium text-primary';
 /** A club's finance: money position, the session at a glance, filterable ledger with evidence, and the forms around it. */
 export default function Ledger(props: LedgerProps) {
     const { club, ready, opening, report, sessions, categories, methods, clubEvents, position, payees, requests, fee, can, workbook } = props;
-    const url = `/clubs/${club.slug}/finance`;
+    const financeUrl = url(`/clubs/${club.slug}/finance`);
     // Filters live in the address bar, so a filtered view can be shared and the export matches the screen.
     const [f, setF] = useState<Filters>(() => ({ category: '', event_id: '', method: '', search: '', from: '', to: '', sort: 'date_asc', session: report.session, ...copy(props.filters) }));
     const apply = (changes: Filters = {}): void => {
         const next = { ...f, ...changes };
         setF(next);
-        router.get(url, query(next), { preserveScroll: true, preserveState: true, replace: true, only: ['report', 'filters'] });
+        router.get(financeUrl, query(next), { preserveScroll: true, preserveState: true, replace: true, only: ['report', 'filters'] });
     };
     const first = useRef(true);
     useEffect(() => {
@@ -103,12 +105,12 @@ export default function Ledger(props: LedgerProps) {
             first.current = false;
             return;
         }
-        const timer = setTimeout(() => router.get(url, query(f), { preserveScroll: true, preserveState: true, replace: true, only: ['report', 'filters'] }), 350);
+        const timer = setTimeout(() => router.get(financeUrl, query(f), { preserveScroll: true, preserveState: true, replace: true, only: ['report', 'filters'] }), 350);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [f.search]);
-    const clear = (): void => router.get(url, { session: f.session ?? '' }, { preserveScroll: true });
-    const exportUrl = (format: string): string => `${url}/export/${format}?${new URLSearchParams(query(f))}`;
+    const clear = (): void => router.get(financeUrl, { session: f.session ?? '' }, { preserveScroll: true });
+    const exportUrl = (format: string): string => `${financeUrl}/export/${format}?${new URLSearchParams(query(f))}`;
 
     // Workbook export: Overview sheet first, then one sheet per ticked section (drive, normal, each event, other).
     const [exporting, setExporting] = useState(false);
@@ -124,7 +126,7 @@ export default function Ledger(props: LedgerProps) {
     const workbookUrl = (format: string): string => {
         const q = new URLSearchParams({ period, ...(period === 'session' ? { session: f.session ?? '' } : {}) });
         (picked.length ? picked : ['none']).forEach((k) => q.append('sections[]', k));
-        return `${url}/workbook/${format}?${q}`;
+        return `${financeUrl}/workbook/${format}?${q}`;
     };
     const showBalance = !report.filtered && (f.sort ?? 'date_asc') === 'date_asc';
 
@@ -133,14 +135,14 @@ export default function Ledger(props: LedgerProps) {
     const addEntry = (e: FormEvent): void => {
         e.preventDefault();
         entry.transform((d) => ({ ...d, receipt: d.receipt[0] ?? null }));
-        entry.post(`${url}/entries`, { preserveScroll: true, onSuccess: () => entry.reset('description', 'amount_rm', 'receipt', 'original') });
+        entry.post(`${financeUrl}/entries`, { preserveScroll: true, onSuccess: () => entry.reset('description', 'amount_rm', 'receipt', 'original') });
     };
     const [attaching, setAttaching] = useState<number | null>(null);
     const attachForm = useForm({ receipt: [] as File[] });
     const attach = (e: FormEvent): void => {
         e.preventDefault();
         attachForm.transform((d) => ({ receipt: d.receipt[0] ?? null }));
-        attachForm.post(`${url}/entries/${attaching}/receipt`, {
+        attachForm.post(`${financeUrl}/entries/${attaching}/receipt`, {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => {
@@ -155,7 +157,7 @@ export default function Ledger(props: LedgerProps) {
     const toggleFeeQr = (path: string): void => feeForm.setData('remove_qr', feeForm.data.remove_qr.includes(path) ? feeForm.data.remove_qr.filter((p) => p !== path) : [...feeForm.data.remove_qr, path]);
     const saveFee = (e: FormEvent): void => {
         e.preventDefault();
-        feeForm.post(`/clubs/${club.slug}/fee`, { preserveScroll: true, forceFormData: true, onSuccess: () => feeForm.reset('qr', 'remove_qr') });
+        feeForm.post(url(`/clubs/${club.slug}/fee`), { preserveScroll: true, forceFormData: true, onSuccess: () => feeForm.reset('qr', 'remove_qr') });
     };
     const field = <K extends keyof typeof payee.data>(key: K) => ({ value: payee.data[key], onChange: (v: string) => payee.setData(key, v as never), error: payee.errors[key] });
 
@@ -185,7 +187,7 @@ export default function Ledger(props: LedgerProps) {
             <div className="grid gap-6">
                 <header className="flex flex-wrap items-end justify-between gap-4">
                     <div className="grid gap-1">
-                        <Link href={`/clubs/${club.slug}`} className="text-sm font-medium text-primary">
+                        <Link href={url(`/clubs/${club.slug}`)} className="text-sm font-medium text-primary">
                             ← {club.name}
                         </Link>
                         <h1 className="text-2xl font-bold tracking-tight">Club finance</h1>
@@ -193,17 +195,13 @@ export default function Ledger(props: LedgerProps) {
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {can.edit && (
-                            <Link href={`/clubs/${club.slug}/payments/review`}>
-                                <Button variant="secondary">
-                                    <Icon name="check" size={16} /> Review payments
-                                </Button>
-                            </Link>
+                            <ButtonLink href={`/clubs/${club.slug}/payments/review`}>
+                                <Icon name="check" size={16} /> Review payments
+                            </ButtonLink>
                         )}
-                        <Link href={`/clubs/${club.slug}/fund-requests/create`}>
-                            <Button>
-                                <Icon name="plus" size={16} /> Request a fund withdrawal
-                            </Button>
-                        </Link>
+                        <ButtonLink variant="primary" href={`/clubs/${club.slug}/fund-requests/create`}>
+                            <Icon name="plus" size={16} /> Request a fund withdrawal
+                        </ButtonLink>
                     </div>
                 </header>
 
@@ -304,7 +302,7 @@ export default function Ledger(props: LedgerProps) {
                                     <Card
                                         title="By event"
                                         actions={
-                                            <Link href={`/clubs/${club.slug}/finance/membership?session=${encodeURIComponent(report.session)}`} className="text-sm font-medium text-primary">
+                                            <Link href={url(`/clubs/${club.slug}/finance/membership?session=${encodeURIComponent(report.session)}`)} className="text-sm font-medium text-primary">
                                                 Membership fees →
                                             </Link>
                                         }
@@ -326,7 +324,7 @@ export default function Ledger(props: LedgerProps) {
                                                             </span>
                                                             <span className={`text-right font-semibold tabular-nums ${net(e) < 0 ? 'text-danger' : 'text-success'}`}>{rm(net(e))}</span>
                                                         </button>
-                                                        <Link href={`/clubs/${club.slug}/finance/events/${e.slug}`} className="rounded-control px-2 py-2 text-xs font-medium text-primary hover:bg-surface-muted" aria-label={`Who paid for ${e.event}`}>
+                                                        <Link href={url(`/clubs/${club.slug}/finance/events/${e.slug}`)} className="rounded-control px-2 py-2 text-xs font-medium text-primary hover:bg-surface-muted" aria-label={`Who paid for ${e.event}`}>
                                                             Who paid →
                                                         </Link>
                                                     </li>
@@ -343,16 +341,12 @@ export default function Ledger(props: LedgerProps) {
                                         <p className="text-xs text-ink-muted">The official 02 Finance Record for the AGM, or a workbook with one sheet per event.</p>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        <a href={exportUrl('xlsx')}>
-                                            <Button variant="secondary">
-                                                <Icon name="file" size={16} /> 02 Finance Record (Excel)
-                                            </Button>
-                                        </a>
-                                        <a href={exportUrl('pdf')}>
-                                            <Button variant="secondary">
-                                                <Icon name="download" size={16} /> PDF
-                                            </Button>
-                                        </a>
+                                        <ButtonLink plain href={exportUrl('xlsx')}>
+                                            <Icon name="file" size={16} /> 02 Finance Record (Excel)
+                                        </ButtonLink>
+                                        <ButtonLink plain href={exportUrl('pdf')}>
+                                            <Icon name="download" size={16} /> PDF
+                                        </ButtonLink>
                                         <Button variant="secondary" onClick={() => openExport()}>
                                             <Icon name="grid" size={16} /> Workbook
                                         </Button>
@@ -561,7 +555,7 @@ export default function Ledger(props: LedgerProps) {
                         <ul className="grid gap-3">
                             {requests.map((r) => (
                                 <li key={r.id}>
-                                    <Link href={`/withdrawals/${r.id}`} className="grid gap-2 rounded-control border border-line p-3 text-sm hover:shadow-card">
+                                    <Link href={url(`/withdrawals/${r.id}`)} className="grid gap-2 rounded-control border border-line p-3 text-sm hover:shadow-card">
                                         <span className="flex justify-between gap-3">
                                             <span className="min-w-0">
                                                 <Badge tone={r.scope === 'Event' ? 'info' : 'neutral'}>{r.scope}</Badge> <strong>{r.event ?? r.purpose}</strong>
@@ -593,7 +587,7 @@ export default function Ledger(props: LedgerProps) {
                                 className="grid gap-3 sm:grid-cols-2"
                                 onSubmit={(e) => {
                                     e.preventDefault();
-                                    payee.post(`/clubs/${club.slug}/finance/payees`, { preserveScroll: true, onSuccess: () => payee.reset() });
+                                    payee.post(url(`/clubs/${club.slug}/finance/payees`), { preserveScroll: true, onSuccess: () => payee.reset() });
                                 }}
                             >
                                 <Select
@@ -626,7 +620,7 @@ export default function Ledger(props: LedgerProps) {
                             className="grid gap-3 sm:grid-cols-[10rem_12rem_1fr_auto] sm:items-end"
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                openingForm.post(`/clubs/${club.slug}/finance/opening`, { preserveScroll: true });
+                                openingForm.post(url(`/clubs/${club.slug}/finance/opening`), { preserveScroll: true });
                             }}
                         >
                             <Input value={openingForm.data.amount_rm} onChange={(v) => openingForm.setData('amount_rm', v)} type="number" label="Amount (RM)" error={openingForm.errors.amount_rm} />
@@ -685,16 +679,12 @@ export default function Ledger(props: LedgerProps) {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                        <a href={workbookUrl('xlsx')}>
-                            <Button block>
-                                <Icon name="file" size={16} /> Excel
-                            </Button>
-                        </a>
-                        <a href={workbookUrl('pdf')}>
-                            <Button block variant="secondary">
-                                PDF
-                            </Button>
-                        </a>
+                        <ButtonLink plain variant="primary" className="w-full" href={workbookUrl('xlsx')}>
+                            <Icon name="file" size={16} /> Excel
+                        </ButtonLink>
+                        <ButtonLink plain className="w-full" href={workbookUrl('pdf')}>
+                            PDF
+                        </ButtonLink>
                     </div>
                 </div>
             </Modal>

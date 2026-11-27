@@ -3,6 +3,7 @@ import Avatar from '@/Components/ui/Avatar';
 import Modal from '@/Components/ui/Modal';
 import AppLayout from '@/Layouts/AppLayout';
 import type { CommentData, PostCardData } from '@/types';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -16,7 +17,7 @@ export default function Post({ post, comments, likers }: { post: PostCardData; c
     const [showLikers, setShowLikers] = useState(false);
     // SLD and the club's committee can delete comments.
     const removeComment = (id: number): void => {
-        if (confirm('Delete this comment for everyone?')) router.delete(`/comments/${id}`, { preserveScroll: true });
+        if (confirm('Delete this comment for everyone?')) router.delete(url(`/comments/${id}`), { preserveScroll: true });
     };
     const [first, second] = likers;
     const rest = post.likes_count - (second ? 2 : 1);

@@ -1,3 +1,4 @@
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Badge from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
 import Table from '@/Components/ui/Table';
@@ -28,9 +29,13 @@ export default function Indemnities({ event, people }: { event: { slug: string; 
                             {event.name} · {signed} of {people.length} signed
                         </p>
                     </div>
-                    <a href={`/events/${event.slug}/indemnities/pdf`}>
-                        <Button disabled={signed === 0}>Download all signed (PDF)</Button>
-                    </a>
+                    {signed === 0 ? (
+                        <Button disabled>Download all signed (PDF)</Button>
+                    ) : (
+                        <ButtonLink plain variant="primary" href={`/events/${event.slug}/indemnities/pdf`}>
+                            Download all signed (PDF)
+                        </ButtonLink>
+                    )}
                 </header>
                 <Table
                     columns={COLUMNS}

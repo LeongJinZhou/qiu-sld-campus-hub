@@ -12,7 +12,9 @@ import Input from '@/Components/ui/Input';
 import Select from '@/Components/ui/Select';
 import Textarea from '@/Components/ui/Textarea';
 import AppLayout from '@/Layouts/AppLayout';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import { date, dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress } from '@/types';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
 import { useEffect, type FormEvent } from 'react';
@@ -59,19 +61,19 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
         if (!drafting) annualForm.setData('details', detailsOf(annual?.events ?? []));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [annual?.ai]);
-    const saveAnnual = (then?: () => void): void => annualForm.put(`/clubs/${club.slug}/annual-report`, { preserveScroll: true, onSuccess: () => then?.() });
-    const generate = (): void => saveAnnual(() => router.post(`/clubs/${club.slug}/annual-report/generate`, {}, { preserveScroll: true }));
+    const saveAnnual = (then?: () => void): void => annualForm.put(url(`/clubs/${club.slug}/annual-report`), { preserveScroll: true, onSuccess: () => then?.() });
+    const generate = (): void => saveAnnual(() => router.post(url(`/clubs/${club.slug}/annual-report/generate`), {}, { preserveScroll: true }));
     const packageReady = Object.values(agm?.checklist ?? {}).every((i) => i.ready);
     const mark = (id: number): void => {
-        if (agm) router.post(`/agms/${agm.id}/attendance`, { user_id: id }, { preserveScroll: true, only: ['agm'] });
+        if (agm) router.post(url(`/agms/${agm.id}/attendance`), { user_id: id }, { preserveScroll: true, only: ['agm'] });
     };
     const submitSchedule = (e: FormEvent): void => {
         e.preventDefault();
-        schedule.post(`/clubs/${club.slug}/agm`, { preserveScroll: true });
+        schedule.post(url(`/clubs/${club.slug}/agm`), { preserveScroll: true });
     };
     const submitById = (e: FormEvent): void => {
         e.preventDefault();
-        if (agm) byId.post(`/agms/${agm.id}/attendance`, { preserveScroll: true, onSuccess: () => byId.reset() });
+        if (agm) byId.post(url(`/agms/${agm.id}/attendance`), { preserveScroll: true, onSuccess: () => byId.reset() });
     };
 
     return (
@@ -79,7 +81,7 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
             <Head title={`AGM · ${club.name}`} />
             <div className="grid gap-6">
                 <header>
-                    <Link href={`/clubs/${club.slug}`} className="text-sm text-ink-muted hover:underline">
+                    <Link href={url(`/clubs/${club.slug}`)} className="text-sm text-ink-muted hover:underline">
                         ← {club.name}
                     </Link>
                     <h1 className="text-2xl font-bold">Annual General Meeting</h1>
@@ -93,7 +95,7 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                             <p className="rounded-card bg-success/10 px-4 py-3 text-sm text-success">
                                 SLD acknowledged this AGM on {agm.acknowledged_at}.{' '}
                                 {agm.archive_session_id && (
-                                    <a href={`/clubs/${club.slug}/archive/${agm.archive_session_id}`} className="font-semibold underline">
+                                    <a href={url(`/clubs/${club.slug}/archive/${agm.archive_session_id}`)} className="font-semibold underline">
                                         Download the year's archive (ZIP)
                                     </a>
                                 )}
@@ -125,7 +127,7 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                                     {schedule.data.online && !calendarConnected ? (
                                         <p className="text-sm text-warning">
                                             Connect your QIU Google Calendar first.{' '}
-                                            <a href="/google/calendar/connect" className="underline">
+                                            <a href={url('/google/calendar/connect')} className="underline">
                                                 Connect
                                             </a>
                                         </p>
@@ -155,24 +157,18 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                                                 </span>
                                             )}
                                             {agm.meet_link && (
-                                                <a href={agm.meet_link} target="_blank" rel="noopener">
-                                                    <Button size="sm">
-                                                        <Icon name="camera" size={16} /> Join Google Meet
-                                                    </Button>
-                                                </a>
+                                                <ButtonLink plain href={agm.meet_link} target="_blank" rel="noopener" size="sm" variant="primary">
+                                                    <Icon name="camera" size={16} /> Join Google Meet
+                                                </ButtonLink>
                                             )}
                                         </p>
                                         <div className="mt-4 flex flex-wrap gap-2">
-                                            <Link href={`/agms/${agm.id}/election`}>
-                                                <Button variant="secondary" size="sm">
-                                                    Election {agm.election && <Badge>{agm.election}</Badge>}
-                                                </Button>
-                                            </Link>
-                                            <Link href={`/agms/${agm.id}/report`}>
-                                                <Button variant="secondary" size="sm">
-                                                    AGM Report (01)
-                                                </Button>
-                                            </Link>
+                                            <ButtonLink href={url(`/agms/${agm.id}/election`)} variant="secondary" size="sm">
+                                                Election {agm.election && <Badge>{agm.election}</Badge>}
+                                            </ButtonLink>
+                                            <ButtonLink href={url(`/agms/${agm.id}/report`)} variant="secondary" size="sm">
+                                                AGM Report (01)
+                                            </ButtonLink>
                                         </div>
                                         {agm.report && agm.report.total > 0 && (
                                             <div className="mt-4">
@@ -185,7 +181,7 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                                             <p className="mb-3 text-sm text-ink-muted">One details slide and one photos slide per approved event of {period.session}. Photos come from each event's gallery album (up to 6).</p>
                                             {annual.ai_available && annual.events.length > 0 && (
                                                 <div className="mb-3">
-                                                    <Button variant="secondary" size="sm" loading={drafting} onClick={() => router.post(`/clubs/${club.slug}/annual-report/draft`, {}, { preserveScroll: true })}>
+                                                    <Button variant="secondary" size="sm" loading={drafting} onClick={() => router.post(url(`/clubs/${club.slug}/annual-report/draft`), {}, { preserveScroll: true })}>
                                                         <Icon name="sparkles" size={16} /> {drafting ? 'Writing…' : 'Write empty details with AI'}
                                                     </Button>
                                                     {annual.ai === 'failed' && <p className="mt-1 text-sm text-warning">The AI assistant could not write the details. Please write them yourself.</p>}
@@ -222,11 +218,11 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                                             {annual.generated_at && (
                                                 <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
                                                     Generated {annual.generated_at} ·{' '}
-                                                    <a href={`/clubs/${club.slug}/annual-report/pptx`} className="text-primary underline">
+                                                    <a href={url(`/clubs/${club.slug}/annual-report/pptx`)} className="text-primary underline">
                                                         PPTX
                                                     </a>{' '}
                                                     ·{' '}
-                                                    <a href={`/clubs/${club.slug}/annual-report/pdf`} className="text-primary underline">
+                                                    <a href={url(`/clubs/${club.slug}/annual-report/pdf`)} className="text-primary underline">
                                                         PDF
                                                     </a>
                                                 </p>
@@ -245,7 +241,7 @@ export default function Show({ club, period, calendarConnected, agm, people, ann
                                         {agm.package_submitted_at ? (
                                             <p className="mt-3 text-sm font-medium text-success">Submitted {agm.package_submitted_at}</p>
                                         ) : (
-                                            <Button className="mt-3" disabled={!packageReady} onClick={() => router.post(`/agms/${agm.id}/package`, {}, { preserveScroll: true })}>
+                                            <Button className="mt-3" disabled={!packageReady} onClick={() => router.post(url(`/agms/${agm.id}/package`), {}, { preserveScroll: true })}>
                                                 Submit package
                                             </Button>
                                         )}

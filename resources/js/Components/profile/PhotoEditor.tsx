@@ -4,6 +4,7 @@ import CameraCapture from '@/Components/ui/CameraCapture';
 import Icon from '@/Components/ui/Icon';
 import ImageAdjuster, { type ImageAdjusterHandle } from '@/Components/ui/ImageAdjuster';
 import Modal from '@/Components/ui/Modal';
+import { url } from '@/lib/url';
 import { router } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
@@ -43,7 +44,7 @@ export default function PhotoEditor({ kind = 'photo', current, name, hasOverride
     }
     function send(data: Record<string, File | number>): void {
         setSaving(true);
-        router.post('/me', data, {
+        router.post(url('/me'), data, {
             forceFormData: true,
             preserveScroll: true,
             onFinish: () => setSaving(false),

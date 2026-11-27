@@ -4,7 +4,9 @@ import Icon from '@/Components/ui/Icon';
 import Modal from '@/Components/ui/Modal';
 import AppLayout from '@/Layouts/AppLayout';
 import { monthDays, TZ, yearMonths, type Filter } from '@/lib/calendar';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import { rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -58,7 +60,7 @@ export default function Index({ month, today, events, years, feedUrl, items = []
     const [filter, setFilter] = useState<Filter>('all');
     const days = monthDays(month, events, items, filter);
     const months = yearMonths(year, events, items, filter);
-    const go = (m: string, v: 'month' | 'year' = view): void => router.get('/calendar', { month: m, ...(v === 'year' ? { view: v } : {}) }, { preserveState: true, preserveScroll: true, replace: true, only: ['month', 'events', 'items', 'view'] });
+    const go = (m: string, v: 'month' | 'year' = view): void => router.get(url('/calendar'), { month: m, ...(v === 'year' ? { view: v } : {}) }, { preserveState: true, preserveScroll: true, replace: true, only: ['month', 'events', 'items', 'view'] });
     const shift = (by: number): void => {
         const d = new Date(year, mon - 1 + by, 1);
         go(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
@@ -140,12 +142,12 @@ export default function Index({ month, today, events, years, feedUrl, items = []
                                 <span className="font-semibold">{m.label}</span>
                                 <span className="grid grid-cols-7 gap-0.5 text-center text-[10px]">
                                     {m.cells.map((c, i) => (
-                                        <span key={i} className={`grid aspect-square place-items-center rounded ${c && c.n ? 'bg-primary-strong/80 font-bold text-white' : c && c.key === today ? 'ring-1 ring-primary-strong' : 'text-ink-muted'}`}>
+                                        <span key={i} className={`grid aspect-square place-items-center rounded ${c && c.n ? 'bg-ink font-bold text-white' : c && c.key === today ? 'font-semibold text-ink ring-1 ring-primary-strong' : 'font-medium text-ink'}`}>
                                             {c?.day ?? ''}
                                         </span>
                                     ))}
                                 </span>
-                                <span className="text-xs text-ink-muted">{m.cells.reduce((s, c) => s + (c?.n ?? 0), 0)} things on</span>
+                                <span className="text-xs font-medium text-ink">{m.cells.reduce((s, c) => s + (c?.n ?? 0), 0)} things on</span>
                             </button>
                         ))}
                     </section>
@@ -307,20 +309,18 @@ export default function Index({ month, today, events, years, feedUrl, items = []
                         )}
                         <p className="flex items-center gap-2">
                             <Icon name="users" size={16} className="text-ink-muted" />
-                            <Link href={`/clubs/${open.club_slug}`} className="font-medium hover:underline">
+                            <Link href={url(`/clubs/${open.club_slug}`)} className="font-medium hover:underline">
                                 {open.club}
                             </Link>
                         </p>
                         {!!open.fee_sen && <p className="text-ink-muted">Fee {rm(open.fee_sen)}</p>}
                         <div className="grid grid-cols-2 gap-2">
-                            <Link href={`/events/${open.slug}`}>
-                                <Button block>{open.registered ? 'View my ticket' : open.registration_open ? 'Details & register' : 'Details'}</Button>
-                            </Link>
-                            <a href={open.google_url} target="_blank" rel="noopener">
-                                <Button block variant="secondary">
-                                    Add to Google
-                                </Button>
-                            </a>
+                            <ButtonLink href={url(`/events/${open.slug}`)} block variant="primary">
+                                {open.registered ? 'View my ticket' : open.registration_open ? 'Details & register' : 'Details'}
+                            </ButtonLink>
+                            <ButtonLink plain href={open.google_url} target="_blank" rel="noopener" block variant="secondary">
+                                Add to Google
+                            </ButtonLink>
                         </div>
                     </div>
                 )}
@@ -328,11 +328,9 @@ export default function Index({ month, today, events, years, feedUrl, items = []
             <Modal open={subscribing} onClose={() => setSubscribing(false)} title="Add all campus events to Google Calendar">
                 <div className="grid gap-3 text-sm">
                     <p className="text-ink-muted">Subscribe once and every approved event appears in your Google Calendar, kept up to date automatically (Google refreshes it every few hours).</p>
-                    <a href={googleSubscribe} target="_blank" rel="noopener">
-                        <Button block>
-                            <Icon name="calendar" size={16} /> Open Google Calendar to subscribe
-                        </Button>
-                    </a>
+                    <ButtonLink plain href={googleSubscribe} target="_blank" rel="noopener" block variant="primary">
+                        <Icon name="calendar" size={16} /> Open Google Calendar to subscribe
+                    </ButtonLink>
                     <p className="text-xs text-ink-muted">Or in Google Calendar: Other calendars → ＋ → From URL, and paste this private link:</p>
                     <div className="flex gap-2">
                         <input value={feedUrl} readOnly className="h-9 min-w-0 flex-1 rounded-control border border-line bg-surface-muted px-2 font-mono text-xs" aria-label="Calendar link" onFocus={(e) => e.target.select()} />

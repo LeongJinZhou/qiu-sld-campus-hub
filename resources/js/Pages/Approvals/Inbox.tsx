@@ -2,6 +2,7 @@ import ApprovalTracker from '@/Components/forms/ApprovalTracker';
 import Badge from '@/Components/ui/Badge';
 import EmptyState from '@/Components/ui/EmptyState';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import type { ApprovalProgress } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 
@@ -35,7 +36,7 @@ export default function Inbox({ stats, recent, items }: InboxProps) {
                 <ul className="grid gap-2">
                     {items.map((item) => (
                         <li key={item.id}>
-                            <Link href={`/approvals/${item.id}`} className="grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card transition hover:shadow-pop">
+                            <Link href={url(`/approvals/${item.id}`)} className="grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card transition hover:shadow-pop">
                                 <span className="flex flex-wrap items-center justify-between gap-3">
                                     <span className="grid">
                                         <strong>
@@ -62,7 +63,7 @@ export default function Inbox({ stats, recent, items }: InboxProps) {
                         <ul className="divide-y divide-line rounded-card border border-line bg-surface text-sm">
                             {recent.map((r) => (
                                 <li key={`${r.document_id}${r.decision}`} className="flex justify-between gap-3 p-3">
-                                    <Link href={`/documents/${r.document_id}`}>
+                                    <Link href={url(`/documents/${r.document_id}`)}>
                                         {r.type} · {r.club}
                                     </Link>
                                     <span className="text-ink-muted">

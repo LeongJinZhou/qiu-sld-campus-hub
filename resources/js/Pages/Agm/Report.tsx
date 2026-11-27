@@ -6,10 +6,12 @@ import LockedField from '@/Components/forms/LockedField';
 import Badge from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
 import Icon from '@/Components/ui/Icon';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Modal from '@/Components/ui/Modal';
 import SignaturePad from '@/Components/ui/SignaturePad';
 import Textarea from '@/Components/ui/Textarea';
 import { useAutosave } from '@/hooks/useAutosave';
+import { url } from '@/lib/url';
 import AppLayout from '@/Layouts/AppLayout';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, useForm, usePoll } from '@inertiajs/react';
@@ -58,10 +60,10 @@ const tone = (a?: string): 'success' | 'neutral' | 'info' => (a === 'present' ? 
 export default function Report({ agm, document, data: initial, record, minObjectives, ai, aiAvailable }: AgmReportProps) {
     const form = useForm<ReportData & { signature: string | null; signature_strokes: string | null }>({ ...initial, signature: null, signature_strokes: null });
     const { data, setData, errors } = form;
-    const url = `/agms/${agm.id}/report`;
+    const reportUrl = url(`/agms/${agm.id}/report`);
     const drafting = ai === 'pending';
     const draft: ReportData = { objectives: data.objectives, speech: data.speech, agenda: data.agenda, adjournment: data.adjournment };
-    const autosaved = useAutosave(url, draft, document.editable && !drafting, form.processing);
+    const autosaved = useAutosave(reportUrl, draft, document.editable && !drafting, form.processing);
     usePoll(2500, { only: ['data', 'ai'] }, { autoStart: drafting });
     // When the AI draft lands, load it into the form.
     useEffect(() => {
@@ -73,16 +75,16 @@ export default function Report({ agm, document, data: initial, record, minObject
     // useForm keeps the last transform: set it before every request, so the signature goes with the submission only.
     const save = (): void => {
         form.transform(strip);
-        form.put(url, { preserveScroll: true });
+        form.put(reportUrl, { preserveScroll: true });
     };
     const draftWithAi = (): void => {
         form.transform(strip);
-        form.post(`${url}/draft`, { preserveScroll: true });
+        form.post(`${reportUrl}/draft`, { preserveScroll: true });
     };
     const [signing, setSigning] = useState(false);
     const submit = (): void => {
         form.transform((d) => d);
-        form.post(`${url}/submit`, { preserveScroll: true, onSuccess: () => setSigning(false) });
+        form.post(`${reportUrl}/submit`, { preserveScroll: true, onSuccess: () => setSigning(false) });
     };
     const filledObjectives = data.objectives.filter((o) => o.trim()).length;
     const readOnly = !document.editable;
@@ -94,7 +96,7 @@ export default function Report({ agm, document, data: initial, record, minObject
             <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
                 <div className="grid content-start gap-6">
                     <header className="grid gap-1">
-                        <Link href={`/clubs/${agm.club.slug}/agm`} className="text-sm text-primary">
+                        <Link href={url(`/clubs/${agm.club.slug}/agm`)} className="text-sm text-primary">
                             {agm.club.name} · AGM
                         </Link>
                         <h1 className="text-2xl font-bold">Annual General Meeting Report</h1>
@@ -103,11 +105,9 @@ export default function Report({ agm, document, data: initial, record, minObject
                     {document.downloads.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {document.downloads.map((f) => (
-                                <a key={f} href={`/documents/${document.id}/download/${f}`}>
-                                    <Button variant="secondary" size="sm">
-                                        Official 01 AGM Report ({f.toUpperCase()})
-                                    </Button>
-                                </a>
+                                <ButtonLink plain key={f} href={url(`/documents/${document.id}/download/${f}`)} variant="secondary" size="sm">
+                                    Official 01 AGM Report ({f.toUpperCase()})
+                                </ButtonLink>
                             ))}
                         </div>
                     )}

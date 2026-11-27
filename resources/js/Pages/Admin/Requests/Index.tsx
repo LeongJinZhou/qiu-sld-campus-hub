@@ -5,6 +5,7 @@ import Checkbox from '@/Components/ui/Checkbox';
 import Input from '@/Components/ui/Input';
 import Textarea from '@/Components/ui/Textarea';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import type { Option } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
@@ -27,7 +28,7 @@ export default function Index({ clubs, requests }: { clubs: Option[]; requests: 
     const toggle = (id: number): void => form.setData('club_ids', ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
     const submit = (e: FormEvent): void => {
         e.preventDefault();
-        form.post('/admin/requests', { preserveScroll: true, onSuccess: () => form.reset() });
+        form.post(url('/admin/requests'), { preserveScroll: true, onSuccess: () => form.reset() });
     };
     return (
         <PortalLayout title="Requests to clubs">

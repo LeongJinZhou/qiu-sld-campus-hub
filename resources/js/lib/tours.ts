@@ -14,7 +14,7 @@ export type TourName = 'student' | 'committee';
 export const TOURS: Record<TourName, { title: string; page: string; steps: TourStep[] }> = {
     student: {
         title: 'Welcome to Campus Hub',
-        page: '/feed',
+        page: '/feed', // an app path without the mount folder: compare with appPath(page.url)
         steps: [
             { target: 'nav-feed', title: 'Your feed', body: 'Posts and events from QIU clubs, with upcoming meetings of the clubs you follow or belong to at the top. The last 7 days show in full; older posts are grouped by fortnight, month and year.' },
             { target: 'feed-create', title: 'Share with your club', body: 'Committee members post photos, event recaps and 24-hour stories here.' },

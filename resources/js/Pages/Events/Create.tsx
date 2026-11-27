@@ -3,6 +3,7 @@ import Card from '@/Components/ui/Card';
 import Input from '@/Components/ui/Input';
 import AppLayout from '@/Layouts/AppLayout';
 import { date } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
@@ -10,12 +11,13 @@ export default function Create({ club, earliest, leadDays }: { club: { slug: str
     const form = useForm({ name: '', starts_at: '', ends_at: '', expected_participants: 30 as number | string });
     const submit = (e: FormEvent): void => {
         e.preventDefault();
-        form.post(`/clubs/${club.slug}/events`);
+        form.post(url(`/clubs/${club.slug}/events`));
     };
     return (
         <AppLayout>
             <Head title="New event" />
-            <Card className="mx-auto max-w-xl" title={`New event · ${club.name}`}>
+            <h1 className="mx-auto mb-4 max-w-xl text-xl font-bold">New event · {club.name}</h1>
+            <Card className="mx-auto max-w-xl">
                 <form className="grid gap-4" onSubmit={submit}>
                     <Input value={form.data.name} onChange={(v) => form.setData('name', v)} label="Event name" required error={form.errors.name} />
                     <Input

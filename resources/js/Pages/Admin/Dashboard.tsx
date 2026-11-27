@@ -2,6 +2,7 @@ import Badge from '@/Components/ui/Badge';
 import Card from '@/Components/ui/Card';
 import PortalLayout from '@/Layouts/PortalLayout';
 import { rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link } from '@inertiajs/react';
 
 interface DashboardProps {
@@ -26,7 +27,9 @@ const pct = (n: number, of: number): string => `${of ? Math.round((n / of) * 100
 export default function Dashboard({ session, clubs_by_status, approvals, overdue, events_this_month, agm, members, payments, balances }: DashboardProps) {
     const totalClubs = clubs_by_status.active + clubs_by_status.at_risk + clubs_by_status.inactive;
     const maxWaiting = Math.max(1, ...approvals.map((a) => a.waiting));
-    const tile = 'rounded-card border border-line bg-surface p-4 shadow-card';
+    const tile = 'min-w-0 rounded-card border border-line bg-surface p-4 shadow-card';
+    // Stronger than text-ink-muted so small labels stay readable (4.5:1) in dark mode.
+    const label = 'text-xs text-ink/80';
 
     return (
         <PortalLayout title={`Dashboard · ${session}`}>
@@ -34,27 +37,27 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
             <div className="grid gap-6">
                 <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <div className={tile}>
-                        <p className="text-xs text-ink-muted">Active members</p>
+                        <p className={label}>Active members</p>
                         <p className="text-3xl font-bold tabular-nums">{members.active + members.grace}</p>
-                        <p className="text-xs text-ink-muted">
+                        <p className={label}>
                             {members.grace} in grace · {members.alumni} alumni
                         </p>
                     </div>
                     <div className={tile}>
-                        <p className="text-xs text-ink-muted">Fees collected this session</p>
+                        <p className={label}>Fees collected this session</p>
                         <p className="text-3xl font-bold tabular-nums">{rm(payments.paid_sen)}</p>
-                        <p className="text-xs text-ink-muted">{payments.pending_review} receipts waiting for Treasurers</p>
+                        <p className={label}>{payments.pending_review} receipts waiting for Treasurers</p>
                     </div>
                     <div className={tile}>
-                        <p className="text-xs text-ink-muted">Overdue approvals</p>
+                        <p className={label}>Overdue approvals</p>
                         <p className={`text-3xl font-bold tabular-nums ${overdue.approvals ? 'text-danger' : ''}`}>{overdue.approvals}</p>
-                        <p className="text-xs text-ink-muted">past their 3-working-day step</p>
+                        <p className={label}>past their 3-working-day step</p>
                     </div>
                     <div className={tile}>
-                        <p className="text-xs text-ink-muted">Overdue post-event documents</p>
+                        <p className={`${label} break-words`}>Overdue post-event documents</p>
                         <p className={`text-3xl font-bold tabular-nums ${overdue.post_event ? 'text-danger' : ''}`}>{overdue.post_event}</p>
-                        <p className="text-xs text-ink-muted">finance, receipts, post mortem, reel…</p>
-                        <Link href="/admin/requests" className={`text-xs ${overdue.sld_requests ? 'text-danger' : 'text-ink-muted'}`}>
+                        <p className={`${label} break-words`}>finance record, receipts, proposal, poster, participant list, post mortem, survey and reel</p>
+                        <Link href={url('/admin/requests')} className={`text-xs ${overdue.sld_requests ? 'text-danger' : 'text-ink/80'}`}>
                             {overdue.sld_requests} overdue replies to SLD
                         </Link>
                     </div>
@@ -74,7 +77,7 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                                 </li>
                             ))}
                         </ul>
-                        <Link href="/admin/clubs" className="mt-3 inline-block text-sm text-primary">
+                        <Link href={url('/admin/clubs')} className="mt-3 inline-block text-sm text-primary">
                             See all clubs →
                         </Link>
                     </Card>
@@ -95,7 +98,7 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-sm text-ink-muted">Nothing waiting.</p>
+                            <p className="text-sm text-ink/80">Nothing waiting.</p>
                         )}
                     </Card>
                     <Card title={`AGM ${agm?.session ?? ''}`}>
@@ -120,14 +123,14 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                                         </li>
                                     ))}
                                 </ul>
-                                <Link href="/admin/agm" className="mt-3 inline-block text-sm text-primary">
+                                <Link href={url('/admin/agm')} className="mt-3 inline-block text-sm text-primary">
                                     AGM details →
                                 </Link>
                             </>
                         ) : (
-                            <p className="text-sm text-ink-muted">
+                            <p className="text-sm text-ink/80">
                                 No AGM period open.{' '}
-                                <Link href="/admin/agm" className="text-primary">
+                                <Link href={url('/admin/agm')} className="text-primary">
                                     Open one
                                 </Link>
                             </p>
@@ -138,7 +141,7 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                             <ul className="divide-y divide-line text-sm">
                                 {events_this_month.map((e) => (
                                     <li key={e.slug} className="flex items-center justify-between gap-3 py-2">
-                                        <Link href={`/events/${e.slug}`} className="min-w-0">
+                                        <Link href={url(`/events/${e.slug}`)} className="min-w-0">
                                             <span className="font-medium">{e.name}</span>{' '}
                                             <span className="text-ink-muted">
                                                 · {e.club} · {e.date}
@@ -149,7 +152,7 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-sm text-ink-muted">No events this month.</p>
+                            <p className="text-sm text-ink/80">No events this month.</p>
                         )}
                     </Card>
                 </div>
@@ -157,7 +160,7 @@ export default function Dashboard({ session, clubs_by_status, approvals, overdue
                     <ul className="grid gap-1 text-sm sm:grid-cols-2">
                         {balances.map((b) => (
                             <li key={b.slug} className="flex justify-between gap-3 rounded-control px-2 py-1.5 hover:bg-surface-muted">
-                                <Link href={`/clubs/${b.slug}/finance`}>{b.name}</Link>
+                                <Link href={url(`/clubs/${b.slug}/finance`)}>{b.name}</Link>
                                 {b.ready ? <span className={`tabular-nums ${b.balance_sen < 0 ? 'text-danger' : ''}`}>{rm(b.balance_sen)}</span> : <Badge tone="warning">No opening balance</Badge>}
                             </li>
                         ))}

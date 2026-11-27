@@ -1,5 +1,6 @@
 import { useDebounced } from '@/hooks/useDebounced';
 import { forwardRef, useEffect, useId, useImperativeHandle, useState, type KeyboardEvent } from 'react';
+import { url } from '@/lib/url';
 import Icon from './Icon';
 
 export interface Person {
@@ -48,7 +49,7 @@ const PersonPicker = forwardRef<PersonPickerHandle, PersonPickerProps>(function 
         }
         let cancelled = false;
         setLoading(true);
-        fetch(`/people/lookup?q=${encodeURIComponent(query.trim())}`, { headers: { Accept: 'application/json' } })
+        fetch(url(`/people/lookup?q=${encodeURIComponent(query.trim())}`), { headers: { Accept: 'application/json' } })
             .then(async (res) => (res.ok ? ((await res.json()) as Person[]) : []))
             .then((people) => {
                 if (cancelled) return;

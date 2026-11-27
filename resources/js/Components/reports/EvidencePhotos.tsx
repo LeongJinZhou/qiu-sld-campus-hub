@@ -1,4 +1,5 @@
 import Icon from '@/Components/ui/Icon';
+import { url } from '@/lib/url';
 import { router } from '@inertiajs/react';
 import { useState, type ChangeEvent } from 'react';
 
@@ -19,10 +20,10 @@ export default function EvidencePhotos({ evidence, canEdit, title }: { evidence:
         e.target.value = '';
         if (!files.length) return;
         setUploading(true);
-        router.post(`/evidence/${evidence.type}/${evidence.id}`, { photos: files }, { forceFormData: true, preserveScroll: true, onFinish: () => setUploading(false) });
+        router.post(url(`/evidence/${evidence.type}/${evidence.id}`), { photos: files }, { forceFormData: true, preserveScroll: true, onFinish: () => setUploading(false) });
     }
     const remove = (id: number): void => {
-        if (confirm('Remove this photo?')) router.delete(`/evidence-photos/${id}`, { preserveScroll: true });
+        if (confirm('Remove this photo?')) router.delete(url(`/evidence-photos/${id}`), { preserveScroll: true });
     };
 
     return (

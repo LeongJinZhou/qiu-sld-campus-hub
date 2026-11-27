@@ -1,4 +1,5 @@
 import { TOURS, type TourName, type TourStep } from '@/lib/tours';
+import { appPath, url } from '@/lib/url';
 import { useWindowEvent } from '@/hooks/useWindowEvent';
 import { router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
@@ -29,7 +30,7 @@ export default function GuidedTour() {
     const markSeen = useCallback(
         (name: TourName): void => {
             if (user?.tours_seen?.includes(name)) return;
-            router.post('/me/tours', { tour: name, seen: true }, { preserveScroll: true, preserveState: true, only: ['auth'] });
+            router.post(url('/me/tours'), { tour: name, seen: true }, { preserveScroll: true, preserveState: true, only: ['auth'] });
         },
         [user],
     );
@@ -76,7 +77,7 @@ export default function GuidedTour() {
         const seen = user.tours_seen ?? [];
         const asked = new URLSearchParams(window.location.search).get('tour') as TourName | null;
         const club = user.committee_club;
-        const onMyClub = club && page.url.startsWith(`/clubs/${club.slug}`) && page.component === 'Clubs/Show';
+        const onMyClub = club && appPath(page.url).startsWith(`/clubs/${club.slug}`) && page.component === 'Clubs/Show';
         const wanted: TourName | null =
             asked && asked in TOURS ? asked : onMyClub && !seen.includes('committee') ? 'committee' : page.component === 'Feed/Index' && !seen.includes('student') ? 'student' : null;
         if (!wanted) return;

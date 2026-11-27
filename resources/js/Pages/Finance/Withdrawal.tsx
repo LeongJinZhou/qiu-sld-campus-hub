@@ -1,4 +1,5 @@
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Badge from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
 import Icon from '@/Components/ui/Icon';
@@ -7,6 +8,7 @@ import Modal from '@/Components/ui/Modal';
 import SignaturePad from '@/Components/ui/SignaturePad';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type ChangeEvent } from 'react';
@@ -57,7 +59,7 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
     const [signing, setSigning] = useState(false);
     const doSign = (): void => {
         sign.transform((d) => ({ ...d, bank_confirmed: true }));
-        sign.post(`/withdrawals/${w.id}/sign`, { preserveScroll: true, onFinish: () => setSigning(false) });
+        sign.post(url(`/withdrawals/${w.id}/sign`), { preserveScroll: true, onFinish: () => setSigning(false) });
     };
     const upload = useForm({ file: null as File | null, reference: '' });
     const send = (step: 'finance-signed' | 'bank-in', e: ChangeEvent<HTMLInputElement>): void => {
@@ -65,14 +67,14 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
         e.target.value = '';
         if (!file) return;
         upload.transform((d) => ({ ...d, file }));
-        upload.post(`/withdrawals/${w.id}/${step}`, { preserveScroll: true, forceFormData: true, onSuccess: () => upload.reset() });
+        upload.post(url(`/withdrawals/${w.id}/${step}`), { preserveScroll: true, forceFormData: true, onSuccess: () => upload.reset() });
     };
     const complete = (): void => {
-        if (confirm(`Confirm that RM ${(w.total_sen / 100).toFixed(2)} has arrived? It will be recorded in the club's finance records.`)) router.post(`/withdrawals/${w.id}/complete`, {}, { preserveScroll: true });
+        if (confirm(`Confirm that RM ${(w.total_sen / 100).toFixed(2)} has arrived? It will be recorded in the club's finance records.`)) router.post(url(`/withdrawals/${w.id}/complete`), {}, { preserveScroll: true });
     };
     const sendBack = (): void => {
         const note = prompt('What is wrong with the bank-in proof? (sent to the Treasurer)');
-        if (note) router.post(`/withdrawals/${w.id}/reject-proof`, { note }, { preserveScroll: true });
+        if (note) router.post(url(`/withdrawals/${w.id}/reject-proof`), { note }, { preserveScroll: true });
     };
     const bankDetails = w.bank && (
         <>
@@ -98,14 +100,14 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
             <div className="grid gap-5">
                 <header className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <Link href={`/clubs/${w.club.slug}/finance`} className="text-sm text-primary">
+                        <Link href={url(`/clubs/${w.club.slug}/finance`)} className="text-sm text-primary">
                             ← {w.club.name} finance
                         </Link>
                         <h1 className="text-xl font-bold">Fund withdrawal · {rm(w.total_sen)}</h1>
                         <p className="text-sm text-ink-muted">
                             <Badge tone={w.scope === 'event' ? 'info' : 'neutral'}>{w.scope === 'event' ? 'Event' : 'Club'}</Badge>{' '}
                             {w.event ? (
-                                <Link href={`/events/${w.event.slug}`} className="font-medium hover:underline">
+                                <Link href={url(`/events/${w.event.slug}`)} className="font-medium hover:underline">
                                     {w.event.name}
                                 </Link>
                             ) : (
@@ -148,11 +150,9 @@ export default function Withdrawal({ withdrawal: w, approval, can }: WithdrawalP
                         <p className="text-sm">1. Download the 07 form and pass it to Finance to sign. 2. Upload Finance's signed copy here.</p>
                         <div className="flex flex-wrap gap-2">
                             {w.files.form && (
-                                <a href={w.files.form}>
-                                    <Button variant="secondary">
-                                        <Icon name="file" size={16} /> Download 07 form (PDF)
-                                    </Button>
-                                </a>
+                                <ButtonLink plain href={w.files.form}>
+                                    <Icon name="file" size={16} /> Download 07 form (PDF)
+                                </ButtonLink>
                             )}
                             <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-control bg-ink px-4 text-sm font-medium text-white">
                                 {upload.processing ? 'Uploading…' : 'Upload Finance-signed copy'}

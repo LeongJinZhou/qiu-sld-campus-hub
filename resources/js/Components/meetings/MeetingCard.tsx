@@ -1,5 +1,6 @@
 import Avatar from '@/Components/ui/Avatar';
 import Icon from '@/Components/ui/Icon';
+import { url } from '@/lib/url';
 import { Link } from '@inertiajs/react';
 
 export interface MeetingCardData {
@@ -62,7 +63,7 @@ export default function MeetingCard({ meeting, showClub = true }: { meeting: Mee
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-3">
                     {showClub && (
-                        <Link href={`/clubs/${meeting.club.slug}`} className="flex items-center gap-2 text-xs font-medium">
+                        <Link href={url(`/clubs/${meeting.club.slug}`)} className="flex items-center gap-2 text-xs font-medium">
                             <Avatar src={meeting.club.logo_url} name={meeting.club.name} size="xs" />
                             {meeting.club.name}
                         </Link>

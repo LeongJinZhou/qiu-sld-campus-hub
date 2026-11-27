@@ -9,6 +9,7 @@ import Input from '@/Components/ui/Input';
 import Select from '@/Components/ui/Select';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
@@ -41,7 +42,7 @@ export default function Index({ club, calendarConnected, kinds, audiences, meeti
     const inviteLabel = isActivity && data.audience === 'members' ? 'Create & invite all members' : 'Create & invite committee';
     const submit = (e: FormEvent): void => {
         e.preventDefault();
-        form.post(`/clubs/${club.slug}/meetings`);
+        form.post(url(`/clubs/${club.slug}/meetings`));
     };
 
     return (
@@ -52,10 +53,10 @@ export default function Index({ club, calendarConnected, kinds, audiences, meeti
                     <header>
                         <h1 className="text-xl font-bold">Meetings &amp; activities · {club.name}</h1>
                         <span className="flex flex-wrap gap-4 text-sm">
-                            <Link href={`/clubs/${club.slug}`} className="text-primary">
+                            <Link href={url(`/clubs/${club.slug}`)} className="text-primary">
                                 Back to club
                             </Link>
-                            <Link href={`/clubs/${club.slug}/meetings/report`} className="text-primary">
+                            <Link href={url(`/clubs/${club.slug}/meetings/report`)} className="text-primary">
                                 Meetings report
                             </Link>
                         </span>
@@ -64,7 +65,7 @@ export default function Index({ club, calendarConnected, kinds, audiences, meeti
                     <ul className="grid gap-3">
                         {meetings.map((m) => (
                             <li key={m.id}>
-                                <Link href={`/meetings/${m.id}`} className="grid gap-2 rounded-card border border-line bg-surface p-4 shadow-card transition hover:shadow-pop">
+                                <Link href={url(`/meetings/${m.id}`)} className="grid gap-2 rounded-card border border-line bg-surface p-4 shadow-card transition hover:shadow-pop">
                                     <span className="flex flex-wrap items-center justify-between gap-2">
                                         <strong>{m.title}</strong>
                                         <span className="flex flex-wrap gap-2">
@@ -103,7 +104,7 @@ export default function Index({ club, calendarConnected, kinds, audiences, meeti
                         {data.online && !calendarConnected && (
                             <p className="rounded-control bg-primary/10 p-3 text-sm">
                                 Meet links are created from your own QIU Google Calendar.{' '}
-                                <a href="/google/calendar/connect" className="font-semibold text-primary">
+                                <a href={url('/google/calendar/connect')} className="font-semibold text-primary">
                                     Connect Google Calendar
                                 </a>
                             </p>

@@ -1,5 +1,6 @@
 import CustomQrPanel, { type CustomQr } from '@/Components/attendance/CustomQrPanel';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Avatar from '@/Components/ui/Avatar';
 import Badge, { type BadgeTone } from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
@@ -13,6 +14,7 @@ import SignaturePad from '@/Components/ui/SignaturePad';
 import AppLayout from '@/Layouts/AppLayout';
 import { rm } from '@/lib/format';
 import { matchesSearch } from '@/lib/search';
+import { url } from '@/lib/url';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -59,7 +61,7 @@ const toggle = (on: boolean): string => `rounded-control px-2 py-2 ${on ? 'bg-su
 
 /** The event door desk: scan tickets or profile QRs, show the rotating QR, find anyone, helpers and the 03 list sign-off. */
 export default function Attendance({ event, action, qr, customQr, find, results, people, counts, helpers, signOff, can, limits }: AttendanceProps) {
-    const url = `/events/${event.slug}/attendance`;
+    const deskUrl = url(`/events/${event.slug}/attendance`);
     const stats = [
         { l: 'Registered', v: counts.registered, warn: false },
         { l: event.fee_sen ? 'Paid' : 'Confirmed', v: counts.paid, warn: false },
@@ -92,16 +94,16 @@ export default function Attendance({ event, action, qr, customQr, find, results,
     const onScan = (code: string): void => {
         if (code === lastScan.current) return;
         lastScan.current = code;
-        router.post(`${url}?action=${action}`, { action: scanAction, code }, { preserveScroll: true, preserveState: true, onFinish: () => setTimeout(() => (lastScan.current = ''), 2500) });
+        router.post(`${deskUrl}?action=${action}`, { action: scanAction, code }, { preserveScroll: true, preserveState: true, onFinish: () => setTimeout(() => (lastScan.current = ''), 2500) });
     };
     const [query, setQuery] = useState(find);
-    const lookup = (text = query): void => router.get(url, { find: text.trim(), action }, { preserveState: true, preserveScroll: true, replace: true });
+    const lookup = (text = query): void => router.get(deskUrl, { find: text.trim(), action }, { preserveState: true, preserveScroll: true, replace: true });
     const clearLookup = (): void => {
         setQuery('');
-        router.get(url, { action }, { preserveState: true, preserveScroll: true, replace: true });
+        router.get(deskUrl, { action }, { preserveState: true, preserveScroll: true, replace: true });
     };
-    const act = (p: Person, a: 'in' | 'out' | 'register'): void => router.post(`${url}?action=${action}`, { action: a, code: p.student_number ?? p.key }, { preserveScroll: true, preserveState: true });
-    const setAction = (a: 'in' | 'out'): void => router.get(url, { action: a, ...(find ? { find } : {}) }, { preserveState: true, preserveScroll: true, replace: true });
+    const act = (p: Person, a: 'in' | 'out' | 'register'): void => router.post(`${deskUrl}?action=${action}`, { action: a, code: p.student_number ?? p.key }, { preserveScroll: true, preserveState: true });
+    const setAction = (a: 'in' | 'out'): void => router.get(deskUrl, { action: a, ...(find ? { find } : {}) }, { preserveState: true, preserveScroll: true, replace: true });
 
     // Rotating QR: count down, fetch the next code when it expires.
     const [left, setLeft] = useState(qr?.seconds_left ?? 0);
@@ -122,7 +124,7 @@ export default function Attendance({ event, action, qr, customQr, find, results,
     const pace = useForm({ qr_rotate_seconds: String(qr?.seconds ?? 60) });
     const savePace = (seconds: number): void => {
         pace.transform(() => ({ qr_rotate_seconds: seconds }));
-        pace.put(`${url}/settings`, { preserveScroll: true, onSuccess: () => router.reload({ only: ['qr'] }) });
+        pace.put(`${deskUrl}/settings`, { preserveScroll: true, onSuccess: () => router.reload({ only: ['qr'] }) });
     };
     const qrBox = useRef<HTMLDivElement>(null);
     const fullscreen = (): void => void qrBox.current?.requestFullscreen?.().catch(() => undefined);
@@ -144,7 +146,7 @@ export default function Attendance({ event, action, qr, customQr, find, results,
     const helperPicker = useRef<PersonPickerHandle>(null);
     const addHelper = (e: FormEvent): void => {
         e.preventDefault();
-        helper.post(`/events/${event.slug}/helpers`, {
+        helper.post(url(`/events/${event.slug}/helpers`), {
             preserveScroll: true,
             onSuccess: () => {
                 helper.reset();
@@ -155,7 +157,7 @@ export default function Attendance({ event, action, qr, customQr, find, results,
     const [signing, setSigning] = useState(false);
     const sign = useForm({ signature: null as string | null, signature_strokes: null as string | null });
     const submitList = (): void =>
-        sign.post(`${url}/submit`, {
+        sign.post(`${deskUrl}/submit`, {
             preserveScroll: true,
             onSuccess: () => {
                 setSigning(false);
@@ -178,7 +180,7 @@ export default function Attendance({ event, action, qr, customQr, find, results,
                 <header className="grid gap-3">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
-                            <Link href={`/events/${event.slug}`} className="text-sm text-primary">
+                            <Link href={url(`/events/${event.slug}`)} className="text-sm text-primary">
                                 ← {event.name}
                             </Link>
                             <h1 className="text-xl font-bold">Door &amp; attendance</h1>
@@ -190,17 +192,13 @@ export default function Attendance({ event, action, qr, customQr, find, results,
                                         Sign &amp; submit list
                                     </Button>
                                 )}
-                                <a href={`${url}/export`}>
-                                    <Button size="sm" variant="secondary">
-                                        03 Attendance (XLSX)
-                                    </Button>
-                                </a>
+                                <ButtonLink plain size="sm" href={`${deskUrl}/export`}>
+                                    03 Attendance (XLSX)
+                                </ButtonLink>
                                 {event.is_outdoor && (
-                                    <Link href={`/events/${event.slug}/indemnities`}>
-                                        <Button size="sm" variant="ghost">
-                                            Indemnities
-                                        </Button>
-                                    </Link>
+                                    <ButtonLink size="sm" variant="ghost" href={`/events/${event.slug}/indemnities`}>
+                                        Indemnities
+                                    </ButtonLink>
                                 )}
                             </div>
                         )}
@@ -347,7 +345,7 @@ export default function Attendance({ event, action, qr, customQr, find, results,
                             )}
                         </Card>
                     )}
-                    {customQr && <CustomQrPanel qr={customQr} uploadUrl={`/events/${event.slug}/custom-qr`} title={event.name} />}
+                    {customQr && <CustomQrPanel qr={customQr} uploadUrl={url(`/events/${event.slug}/custom-qr`)} title={event.name} />}
                 </div>
                 {find && (
                     <section className="grid gap-3">
@@ -460,7 +458,7 @@ export default function Attendance({ event, action, qr, customQr, find, results,
                                             <strong className="truncate">{h.name}</strong>
                                             <span className="text-xs text-ink-muted">{h.student_number}</span>
                                         </span>
-                                        <button type="button" className="text-xs text-danger" onClick={() => router.delete(`/events/${event.slug}/helpers/${h.id}`, { preserveScroll: true })}>
+                                        <button type="button" className="text-xs text-danger" onClick={() => router.delete(url(`/events/${event.slug}/helpers/${h.id}`), { preserveScroll: true })}>
                                             Remove
                                         </button>
                                     </li>

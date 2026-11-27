@@ -1,5 +1,6 @@
 import Card from '@/Components/ui/Card';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { url } from '@/lib/url';
 import { Head, Link } from '@inertiajs/react';
 
 export default function NotFoundInRecords() {
@@ -15,7 +16,7 @@ export default function NotFoundInRecords() {
                     We could not match this Google account to a current QIU student or staff record. Sign in with your <strong>@qiu.edu.my</strong> account, or contact the Student Life Division (SLD) if you think this
                     is a mistake.
                 </p>
-                <Link href="/" className="text-sm font-medium text-primary">
+                <Link href={url('/')} className="text-sm font-medium text-primary">
                     Try another account
                 </Link>
             </Card>

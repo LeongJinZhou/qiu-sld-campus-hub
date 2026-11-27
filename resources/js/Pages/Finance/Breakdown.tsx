@@ -1,5 +1,5 @@
 import Badge from '@/Components/ui/Badge';
-import Button from '@/Components/ui/Button';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Card from '@/Components/ui/Card';
 import EmptyState from '@/Components/ui/EmptyState';
 import Icon from '@/Components/ui/Icon';
@@ -8,6 +8,7 @@ import Select from '@/Components/ui/Select';
 import AppLayout from '@/Layouts/AppLayout';
 import { date, rm } from '@/lib/format';
 import { matchesSearch } from '@/lib/search';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -46,12 +47,12 @@ const tone = (s: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' 
     s === 'Paid' ? 'success' : s === 'Rejected' ? 'danger' : s === 'Being checked' ? 'info' : s.startsWith('Registered') ? 'neutral' : 'warning';
 
 /** Who paid for membership (or an event), how and to whom, with the Treasurer's reconciliation check. */
-export default function Breakdown({ club, breakdown, url, session, sessions }: BreakdownProps) {
+export default function Breakdown({ club, breakdown, url: pagePath, session, sessions }: BreakdownProps) {
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('');
     const statuses = [...new Set(breakdown.rows.map((r) => r.status))];
     const rows = breakdown.rows.filter((r) => (!status || r.status === status) && matchesSearch(search, r.name, r.student_number, r.email, r.order_id));
-    const exportUrl = (format: string): string => `${url}/export/${format}${session ? `?session=${encodeURIComponent(session)}` : ''}`;
+    const exportUrl = (format: string): string => url(`${pagePath}/export/${format}${session ? `?session=${encodeURIComponent(session)}` : ''}`);
     const { check } = breakdown;
     const expected = check.expected_sen !== null;
 
@@ -61,22 +62,20 @@ export default function Breakdown({ club, breakdown, url, session, sessions }: B
             <div className="grid gap-6">
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div className="min-w-0">
-                        <Link href={`/clubs/${club.slug}/finance`} className="text-sm text-primary">
+                        <Link href={url(`/clubs/${club.slug}/finance`)} className="text-sm text-primary">
                             ← Finance · {club.name}
                         </Link>
                         <h1 className="text-xl font-bold">{breakdown.title}</h1>
                         <p className="text-sm text-ink-muted">{breakdown.subtitle}</p>
                     </div>
                     <div className="flex flex-wrap items-end gap-2">
-                        {session && <Select value={session} onChange={(s) => router.get(url, { session: s }, { preserveScroll: true })} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />}
-                        <a href={exportUrl('xlsx')}>
-                            <Button variant="secondary">
-                                <Icon name="file" size={16} /> Excel
-                            </Button>
-                        </a>
-                        <a href={exportUrl('pdf')}>
-                            <Button variant="secondary">PDF</Button>
-                        </a>
+                        {session && <Select value={session} onChange={(s) => router.get(url(pagePath), { session: s }, { preserveScroll: true })} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />}
+                        <ButtonLink plain href={exportUrl('xlsx')}>
+                            <Icon name="file" size={16} /> Excel
+                        </ButtonLink>
+                        <ButtonLink plain href={exportUrl('pdf')}>
+                            PDF
+                        </ButtonLink>
                     </div>
                 </header>
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

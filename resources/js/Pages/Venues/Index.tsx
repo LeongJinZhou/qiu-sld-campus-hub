@@ -7,6 +7,7 @@ import Select from '@/Components/ui/Select';
 import Textarea from '@/Components/ui/Textarea';
 import AppLayout from '@/Layouts/AppLayout';
 import { date } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
@@ -26,14 +27,14 @@ export default function Index({ club, types, rules, earliestBigRoom, bookings }:
     const { data, setData, errors } = form;
     const submit = (e: FormEvent): void => {
         e.preventDefault();
-        form.post(`/clubs/${club.slug}/venues`, { preserveScroll: true, onSuccess: () => form.reset() });
+        form.post(url(`/clubs/${club.slug}/venues`), { preserveScroll: true, onSuccess: () => form.reset() });
     };
     return (
         <AppLayout>
             <Head title={`Venues · ${club.name}`} />
             <div className="grid gap-6">
                 <div>
-                    <Link href={`/clubs/${club.slug}`} className="text-sm text-ink-muted hover:underline">
+                    <Link href={url(`/clubs/${club.slug}`)} className="text-sm text-ink-muted hover:underline">
                         ← {club.name}
                     </Link>
                     <h1 className="text-2xl font-bold">Venue booking</h1>

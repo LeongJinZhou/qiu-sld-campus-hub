@@ -1,10 +1,14 @@
 // Click-through crawl: sign in as each role and follow every in-app link, recording any 404/5xx response,
 // failed request, JavaScript console error or page error. 403 is reported separately (it is a permission decision).
 // Usage: node crawl_ui.mjs <baseUrl> <out.json> [maxPagesPerRole=120] [role,role,...]
+// baseUrl may include a subfolder (http://host/campus-hub): links on the page already carry it.
 import { chromium } from 'playwright';
 import { writeFileSync } from 'node:fs';
 
-const [base, out, maxArg, rolesArg] = process.argv.slice(2);
+const [baseArg, out, maxArg, rolesArg] = process.argv.slice(2);
+const base = baseArg.replace(/\/+$/, '');
+const origin = new URL(base).origin;
+const folder = new URL(base).pathname.replace(/\/+$/, '');
 const MAX = Number(maxArg ?? 120);
 const EMAILS = {
     guest: null, alumni: 'weikeat.chong@example.com', student: 'kavitha.g@example.com', member: 'siti.wijaya@example.com',
@@ -35,19 +39,20 @@ for (const role of roles) {
         const xs = (await ctx.cookies()).find((c) => c.name === 'XSRF-TOKEN');
         await ctx.request.post(base + '/dev/login-as', { data: { email: EMAILS[role] }, headers: { 'X-XSRF-TOKEN': decodeURIComponent(xs.value), Accept: 'application/json' }, maxRedirects: 0 });
     }
-    const queue = [EMAILS[role] ? '/feed' : '/'], seen = new Set();
+    const queue = [folder + (EMAILS[role] ? '/feed' : '/')], seen = new Set();
     while (queue.length && seen.size < MAX) {
         const u = queue.shift();
         if (seen.has(u)) continue;
         seen.add(u);
         current = u;
-        const res = await page.goto(base + u, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => null);
+        const res = await page.goto(origin + u, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => null);
         if (!res) { problems.push(`NAVFAIL ${u}`); continue; }
         await page.locator('button:has-text("Remind me next time")').click({ timeout: 500 }).catch(() => {});
         // Open every tab/menu button once so content behind it is part of the page (no navigation, no form submit).
         const links = await page.$$eval('a[href]', (as) => as.map((a) => a.getAttribute('href')));
         for (const l of links) {
             if (!l || !l.startsWith('/') || l.startsWith('//')) continue;
+            if (folder && !l.startsWith(`${folder}/`)) { problems.push(`OUTSIDE ${folder}: ${l} (on ${current})`); continue; }
             const p = l.split('#')[0];
             if (SKIP.test(p) || seen.has(p)) continue;
             queue.push(p);

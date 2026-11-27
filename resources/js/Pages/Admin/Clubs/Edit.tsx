@@ -9,6 +9,7 @@ import PositionPicker from '@/Components/ui/PositionPicker';
 import Select from '@/Components/ui/Select';
 import Textarea from '@/Components/ui/Textarea';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import type { MemberCard, Option } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useRef, type FormEvent } from 'react';
@@ -60,7 +61,7 @@ export default function Edit({ club, categories, session = '', isCurrentSession,
     const saveDetails = (e: FormEvent): void => {
         e.preventDefault();
         details.transform((d) => ({ ...d, logo: d.logo[0] ?? null, ...(club ? { _method: 'put' } : {}) }));
-        details.post(club ? `/admin/clubs/${club.slug}` : '/admin/clubs', { preserveScroll: true });
+        details.post(url(club ? `/admin/clubs/${club.slug}` : '/admin/clubs'), { preserveScroll: true });
     };
 
     const assign = useForm({ session, student_number: '', position: '' });
@@ -78,16 +79,16 @@ export default function Edit({ club, categories, session = '', isCurrentSession,
     }
     const submitAssign = (e: FormEvent): void => {
         e.preventDefault();
-        assign.post(`/admin/clubs/${club?.slug}/committee`, { preserveScroll: true, onSuccess: () => assign.reset('student_number', 'position') });
+        assign.post(url(`/admin/clubs/${club?.slug}/committee`), { preserveScroll: true, onSuccess: () => assign.reset('student_number', 'position') });
     };
     const submitAdvisor = (e: FormEvent): void => {
         e.preventDefault();
-        advisor.post(`/admin/clubs/${club?.slug}/advisors`, { preserveScroll: true, onSuccess: () => advisor.reset('staff_id') });
+        advisor.post(url(`/admin/clubs/${club?.slug}/advisors`), { preserveScroll: true, onSuccess: () => advisor.reset('staff_id') });
     };
     const remove = (member: MemberCard): void => {
-        if (confirm(`Remove ${member.name} (${member.position})?`)) router.delete(`/admin/clubs/${club?.slug}/assignments/${member.assignment_id}`, { preserveScroll: true });
+        if (confirm(`Remove ${member.name} (${member.position})?`)) router.delete(url(`/admin/clubs/${club?.slug}/assignments/${member.assignment_id}`), { preserveScroll: true });
     };
-    const changeSession = (value: string): void => router.get(`/admin/clubs/${club?.slug}/edit`, { session: value }, { preserveScroll: true });
+    const changeSession = (value: string): void => router.get(url(`/admin/clubs/${club?.slug}/edit`), { session: value }, { preserveScroll: true });
 
     return (
         <PortalLayout title={club ? club.name : 'New club'}>
@@ -230,11 +231,11 @@ export default function Edit({ club, categories, session = '', isCurrentSession,
                                     : 'SLD is setting this club up. Transfer it once the committee and advisor are in place.'}
                             </p>
                             {club.managed_by === 'committee' ? (
-                                <Button variant="secondary" block onClick={() => router.delete(`/admin/clubs/${club.slug}/transfer`, { preserveScroll: true })}>
+                                <Button variant="secondary" block onClick={() => router.delete(url(`/admin/clubs/${club.slug}/transfer`), { preserveScroll: true })}>
                                     Take back
                                 </Button>
                             ) : (
-                                <Button block disabled={missingCompulsory.length > 0 || !advisors.length} onClick={() => router.post(`/admin/clubs/${club.slug}/transfer`, {}, { preserveScroll: true })}>
+                                <Button block disabled={missingCompulsory.length > 0 || !advisors.length} onClick={() => router.post(url(`/admin/clubs/${club.slug}/transfer`), {}, { preserveScroll: true })}>
                                     Transfer to committee
                                 </Button>
                             )}

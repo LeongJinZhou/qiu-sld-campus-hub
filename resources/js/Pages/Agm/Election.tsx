@@ -11,6 +11,7 @@ import PersonPicker from '@/Components/ui/PersonPicker';
 import Textarea from '@/Components/ui/Textarea';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
 
@@ -76,10 +77,10 @@ export default function Election({ agm, manages, election, highlight }: Election
     // Committee: add or remove positions before voting, and name candidates by name or student ID.
     const [newPosition, setNewPosition] = useState('');
     const addPosition = (): void => {
-        if (election && newPosition.trim()) router.post(`/elections/${election.id}/positions`, { position: newPosition.trim() }, { preserveScroll: true, onSuccess: () => setNewPosition('') });
+        if (election && newPosition.trim()) router.post(url(`/elections/${election.id}/positions`), { position: newPosition.trim() }, { preserveScroll: true, onSuccess: () => setNewPosition('') });
     };
     const removePosition = (p: Position): void => {
-        if (confirm(`Remove ${p.position} from the ballot?`)) router.delete(`/election-positions/${p.id}`, { preserveScroll: true });
+        if (confirm(`Remove ${p.position} from the ballot?`)) router.delete(url(`/election-positions/${p.id}`), { preserveScroll: true });
     };
     const [naming, setNaming] = useState<Position | null>(null);
     const pick = useForm({ student_number: '', statement: '' });
@@ -87,7 +88,7 @@ export default function Election({ agm, manages, election, highlight }: Election
     const nameCandidate = (e: FormEvent): void => {
         e.preventDefault();
         if (!naming) return;
-        pick.post(`/election-positions/${naming.id}/nominate-member`, {
+        pick.post(url(`/election-positions/${naming.id}/nominate-member`), {
             preserveScroll: true,
             onSuccess: () => {
                 setNaming(null);
@@ -112,7 +113,7 @@ export default function Election({ agm, manages, election, highlight }: Election
         e.preventDefault();
         if (!standing) return;
         nomination.transform((d) => ({ statement: d.statement, photo: d.photo[0] ?? null }));
-        nomination.post(`/election-positions/${standing.id}/nominate`, {
+        nomination.post(url(`/election-positions/${standing.id}/nominate`), {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => {
@@ -127,7 +128,7 @@ export default function Election({ agm, manages, election, highlight }: Election
             p.voted_for !== null
                 ? `Change your ${p.position} vote to ${c.name}? You can change it ${p.changes_left} more time${p.changes_left === 1 ? '' : 's'}${p.changes_left === 1 ? ' (this is the last)' : ''}.`
                 : `Vote for ${c.name} as ${p.position}? You can change your mind up to ${election.vote_changes} times before voting closes.`;
-        if (confirm(msg)) router.post(`/election-positions/${p.id}/vote`, { candidate_id: c.id }, { preserveScroll: true });
+        if (confirm(msg)) router.post(url(`/election-positions/${p.id}/vote`), { candidate_id: c.id }, { preserveScroll: true });
     };
     const setupField = (key: 'nominations_open_at' | 'nominations_close_at' | 'voting_open_at' | 'voting_close_at', label: string) => (
         <Input value={setup.data[key]} onChange={(v) => setup.setData(key, v)} type="datetime-local" label={label} error={setup.errors[key]} />
@@ -138,7 +139,7 @@ export default function Election({ agm, manages, election, highlight }: Election
             <Head title={`Election · ${agm.club.name}`} />
             <div className="grid gap-6">
                 <header>
-                    <Link href={manages ? `/clubs/${agm.club.slug}/agm` : `/clubs/${agm.club.slug}`} className="text-sm text-ink-muted hover:underline">
+                    <Link href={url(manages ? `/clubs/${agm.club.slug}/agm` : `/clubs/${agm.club.slug}`)} className="text-sm text-ink-muted hover:underline">
                         ← {agm.club.name}
                     </Link>
                     <h1 className="text-2xl font-bold">Committee election{election && ` ${election.term}`}</h1>
@@ -150,7 +151,7 @@ export default function Election({ agm, manages, election, highlight }: Election
                                 className="grid gap-4"
                                 onSubmit={(e) => {
                                     e.preventDefault();
-                                    setup.post(`/agms/${agm.id}/election`, { preserveScroll: true });
+                                    setup.post(url(`/agms/${agm.id}/election`), { preserveScroll: true });
                                 }}
                             >
                                 <p className="text-sm text-ink-muted">President, Vice President, Secretary and Treasurer are always on the ballot. Add other positions if needed.</p>
@@ -304,7 +305,7 @@ export default function Election({ agm, manages, election, highlight }: Election
                             </Card>
                         ))}
                         {manages && election.phase === 'closed' && (
-                            <Button className="justify-self-start" onClick={() => router.post(`/elections/${election.id}/publish`, {}, { preserveScroll: true })}>
+                            <Button className="justify-self-start" onClick={() => router.post(url(`/elections/${election.id}/publish`), {}, { preserveScroll: true })}>
                                 Publish results
                             </Button>
                         )}

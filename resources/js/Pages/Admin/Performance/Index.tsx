@@ -1,6 +1,7 @@
 import Badge from '@/Components/ui/Badge';
 import Select from '@/Components/ui/Select';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, type CSSProperties, type PointerEvent } from 'react';
 
@@ -54,12 +55,12 @@ export default function Index({ session, sessions, weights, clubs, categories, c
     const [showTable, setShowTable] = useState(false);
     const level = club ? 'club' : category ? 'clubs' : 'categories';
     const visibleClubs = clubs.filter((c) => !category || c.category === category);
-    const openClub = (slug: string): void => router.get('/admin/performance', { session, club: slug }, { preserveState: true, preserveScroll: true, only: ['club'] });
+    const openClub = (slug: string): void => router.get(url('/admin/performance'), { session, club: slug }, { preserveState: true, preserveScroll: true, only: ['club'] });
     const closeClub = (): void => {
         setMonth(null);
-        router.get('/admin/performance', { session }, { preserveState: true, preserveScroll: true, only: ['club'] });
+        router.get(url('/admin/performance'), { session }, { preserveState: true, preserveScroll: true, only: ['club'] });
     };
-    const changeSession = (s: string): void => router.get('/admin/performance', { session: s, ...(club ? { club: club.slug } : {}) }, { preserveScroll: true });
+    const changeSession = (s: string): void => router.get(url('/admin/performance'), { session: s, ...(club ? { club: club.slug } : {}) }, { preserveScroll: true });
     const leader = clubs[0];
     // One shared tooltip for every bar: follows the pointer, shows the exact values.
     const [tip, setTip] = useState<{ x: number; y: number; title: string; lines: string[] } | null>(null);
@@ -337,7 +338,7 @@ export default function Index({ session, sessions, weights, clubs, categories, c
                                             <tr key={e.slug} className="border-t border-line">
                                                 <td className="whitespace-nowrap py-2 tabular-nums text-ink-muted">{e.date}</td>
                                                 <td>
-                                                    <Link href={`/events/${e.slug}/attendance`} className="font-medium hover:underline">
+                                                    <Link href={url(`/events/${e.slug}/attendance`)} className="font-medium hover:underline">
                                                         {e.name}
                                                     </Link>
                                                 </td>

@@ -34,6 +34,7 @@ export default function Input({ label, type = 'text', value, onChange, error, hi
                 min={min}
                 max={max}
                 autoComplete={autoComplete}
+                aria-label={label ? undefined : placeholder}
                 aria-invalid={!!error}
                 aria-describedby={error || hint ? `${id}-msg` : undefined}
                 className="h-10 rounded-control border border-line bg-surface px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 read-only:bg-surface-muted read-only:text-ink-muted aria-invalid:border-danger"

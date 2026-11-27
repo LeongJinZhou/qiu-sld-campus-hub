@@ -3,6 +3,7 @@ import Button from '@/Components/ui/Button';
 import Card from '@/Components/ui/Card';
 import EmptyState from '@/Components/ui/EmptyState';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import { Head, router } from '@inertiajs/react';
 
 interface Report {
@@ -21,7 +22,7 @@ interface RecentPost {
     pinned: boolean;
     hidden: boolean;
 }
-const act = (url: string): void => router.post(url, {}, { preserveScroll: true });
+const act = (path: string): void => router.post(url(path), {}, { preserveScroll: true });
 
 export default function Index({ reports, recent }: { reports: Report[]; recent: RecentPost[] }) {
     return (

@@ -2,6 +2,7 @@ import Badge from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
 import Table from '@/Components/ui/Table';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import { Head, useForm } from '@inertiajs/react';
 
 interface Run {
@@ -32,7 +33,7 @@ export default function Index({ runs }: { runs: Run[] }) {
                         Student details are copied from the university student system (camsys) every night at 02:00, and again for each student when they sign in. The portal only reads from camsys; it never changes
                         it.
                     </p>
-                    <Button loading={form.processing} onClick={() => form.post('/admin/sync', { preserveScroll: true })}>
+                    <Button loading={form.processing} onClick={() => form.post(url('/admin/sync'), { preserveScroll: true })}>
                         Sync now
                     </Button>
                 </div>

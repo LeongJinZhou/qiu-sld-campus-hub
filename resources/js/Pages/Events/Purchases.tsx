@@ -7,6 +7,7 @@ import Modal from '@/Components/ui/Modal';
 import Select from '@/Components/ui/Select';
 import AppLayout from '@/Layouts/AppLayout';
 import { rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useState, type ChangeEvent } from 'react';
 
@@ -80,7 +81,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
         e.target.value = '';
         if (!file) return;
         setSnapping(true);
-        router.post(`/events/${event.slug}/purchases`, { receipt: file }, { forceFormData: true, preserveScroll: true, onFinish: () => setSnapping(false) });
+        router.post(url(`/events/${event.slug}/purchases`), { receipt: file }, { forceFormData: true, preserveScroll: true, onFinish: () => setSnapping(false) });
     };
     const busy = purchases.some((p) => p.status === 'reading' || p.payout_check === 'reading');
     useEffect(() => {
@@ -119,7 +120,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
         if (!d) return;
         setSubmitting(id);
         router.put(
-            `/purchases/${id}`,
+            url(`/purchases/${id}`),
             {
                 items: d.items.filter((i) => i.name.trim()).map((i) => ({ name: i.name.trim(), quantity: Number(i.quantity), unit_sen: toSen(i.price_rm) })),
                 shop: d.shop || null,
@@ -131,10 +132,10 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
             { preserveScroll: true, onFinish: () => setSubmitting(null) },
         );
     }
-    const verify = (p: Purchase, settle_when: 'now' | 'after_event'): void => router.post(`/purchases/${p.id}/verify`, { approve: true, settle_when }, { preserveScroll: true });
+    const verify = (p: Purchase, settle_when: 'now' | 'after_event'): void => router.post(url(`/purchases/${p.id}/verify`), { approve: true, settle_when }, { preserveScroll: true });
     const reject = (p: Purchase): void => {
         const note = prompt('Why is this purchase not accepted? (sent to the buyer)');
-        if (note) router.post(`/purchases/${p.id}/verify`, { approve: false, note }, { preserveScroll: true });
+        if (note) router.post(url(`/purchases/${p.id}/verify`), { approve: false, note }, { preserveScroll: true });
     };
 
     // Pay back: cash (photo of the buyer's own QR with the cash) or transfer (upload the transfer receipt).
@@ -144,14 +145,14 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
     const sendPayout = (path: 'pay-cash' | 'pay-online', data: { photo?: File; receipt?: File }): void => {
         if (!paying) return;
         payForm.transform(() => data);
-        payForm.post(`/purchases/${paying.id}/${path}`, { preserveScroll: true, forceFormData: true, onSuccess: () => setPaying(null), onFinish: () => payForm.reset() });
+        payForm.post(url(`/purchases/${paying.id}/${path}`), { preserveScroll: true, forceFormData: true, onSuccess: () => setPaying(null), onFinish: () => payForm.reset() });
     };
     const onCashPhoto = (blob: Blob): void => sendPayout('pay-cash', { photo: new File([blob], 'payback.jpg', { type: 'image/jpeg' }) });
     const onTransfer = (e: ChangeEvent<HTMLInputElement>): void => {
         const file = e.target.files?.[0];
         if (file) sendPayout('pay-online', { receipt: file });
     };
-    const post = (p: Purchase, action: string): void => router.post(`/purchases/${p.id}/${action}`, {}, { preserveScroll: true });
+    const post = (p: Purchase, action: string): void => router.post(url(`/purchases/${p.id}/${action}`), {}, { preserveScroll: true });
     const totals = {
         budget: budget.reduce((s, l) => s + l.budget_sen, 0),
         spent: budget.reduce((s, l) => s + l.spent_sen, 0),
@@ -170,7 +171,7 @@ export default function Purchases({ event, purchases, budget, budgetLines, verif
             <div className="grid gap-6">
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <Link href={`/events/${event.slug}`} className="text-sm text-primary">
+                        <Link href={url(`/events/${event.slug}`)} className="text-sm text-primary">
                             ← {event.name}
                         </Link>
                         <h1 className="text-2xl font-bold">Purchases &amp; claims</h1>
