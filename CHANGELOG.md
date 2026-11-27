@@ -5,6 +5,22 @@ the annotated tag `vX.Y.Z` and the branch `release/vX.Y.Z` (`GITHUB_RELEASE=1` a
 (Git bundle, working-folder snapshot, Plesk package, manifest, checksums). GitHub rulesets freeze `v*` tags and
 `release/**` branches: they cannot be moved, merged into or deleted. Work continues on `main` through pull requests.
 
+## Unreleased (2026-11-27)
+
+### Fixed
+- **Subfolder installs (Plesk `https://aihubdev.qiu.edu.my/campus-hub/`).** One build now works at a domain root
+  (Render) and in a subfolder. Before, page code loaded from `/build/` outside the folder (black screen), and many
+  links, forms and exports (e.g. SLD Admin meetings Excel/PDF) pointed outside the folder (404).
+  - Every in-app path goes through `resources/js/lib/url.ts`; Vite builds with a relative base; manifest, service
+    worker, offline page and storage URLs follow the folder. Set `APP_URL=https://host/campus-hub` (no slash).
+  - Signed-out deep links (`/campus-hub/feed`) now redirect to `/campus-hub/` (200) instead of `/campus-hub` (404).
+  - Rollback: revert the commit, rebuild. No schema or data change.
+- UAT layout fixes: SLD fees drive form, clubs table, audit details, dashboard labels, finance and meetings on
+  phones, proposal date row, club tabs, profile tabs. Contrast: feed composer, calendar year view, dark dashboard.
+- Accessibility: no buttons inside links, names on icon-only controls, labelled inputs, keyboard theme switch.
+- Theme switch: quick clicks no longer send parallel saves (HTTP 503); the last choice is saved.
+- PHP `X-Powered-By` header removed; valid `favicon.ico`.
+
 ## 1.0.1 (2026-11-04)
 
 ### Security
