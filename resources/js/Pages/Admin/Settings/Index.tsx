@@ -4,6 +4,7 @@ import Input from '@/Components/ui/Input';
 import Textarea from '@/Components/ui/Textarea';
 import PortalLayout from '@/Layouts/PortalLayout';
 import { date } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
@@ -52,7 +53,7 @@ export default function Index({ programmes: programmeList, unmappedCodes, intake
                     <p className="mb-4 text-sm text-ink-muted">
                         Short names shown on profiles and forms (for example BCS). The university system has no short form, so set one for each programme code. New codes appear here with the short form blank.
                     </p>
-                    <form className="grid gap-2" onSubmit={on(() => programmes.put('/admin/settings/programmes', options))}>
+                    <form className="grid gap-2" onSubmit={on(() => programmes.put(url('/admin/settings/programmes'), options))}>
                         <div className={listHeader}>
                             <span>Programme code</span>
                             <span>Short form</span>
@@ -84,7 +85,7 @@ export default function Index({ programmes: programmeList, unmappedCodes, intake
                 </Card>
                 <Card title="Deadlines and requirements">
                     <p className="mb-4 text-sm text-ink-muted">Rules every club works to. Exceptions (a late proposal, a budget deficit) need a reason and your approval.</p>
-                    <form className="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2" onSubmit={on(() => rules.put('/admin/settings/rules', options))}>
+                    <form className="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2" onSubmit={on(() => rules.put(url('/admin/settings/rules'), options))}>
                         <Input {...rule('proposal_lead_days')} label="Proposal lead time (days)" hint="Days before the event by which a proposal must be submitted" />
                         <Input {...rule('min_photos')} label="Minimum photos" hint="For weekly reports, AGMs and completed events" />
                         <Input {...rule('transfer_days')} label="Transfer deadline (days)" hint="Finance must transfer an approved withdrawal within this many days" />
@@ -100,7 +101,7 @@ export default function Index({ programmes: programmeList, unmappedCodes, intake
                     <p className="mb-4 text-sm text-ink-muted">
                         The most CCA hours one event can give participants or its committee. Committees can set any value up to this on their proposal; only SLD admins change the limit.
                     </p>
-                    <form className="flex items-end gap-3" onSubmit={on(() => cca.put('/admin/settings/cca', options))}>
+                    <form className="flex items-end gap-3" onSubmit={on(() => cca.put(url('/admin/settings/cca'), options))}>
                         <Input value={cca.data.max_hours} onChange={(v) => cca.setData('max_hours', v)} type="number" label="Maximum CCA hours per event" required error={cca.errors.max_hours} />
                         <Button type="submit" loading={cca.processing}>
                             Save
@@ -113,7 +114,7 @@ export default function Index({ programmes: programmeList, unmappedCodes, intake
                         className="grid gap-4"
                         onSubmit={on(() => {
                             statuses.transform((d) => ({ active: lines(d.active), alumni: lines(d.alumni) }));
-                            statuses.put('/admin/settings/statuses', options);
+                            statuses.put(url('/admin/settings/statuses'), options);
                         })}
                     >
                         <Textarea value={statuses.data.active} onChange={(v) => statuses.setData('active', v)} label="Counts as an active student" rows={4} error={statuses.errors.active} />
@@ -129,7 +130,7 @@ export default function Index({ programmes: programmeList, unmappedCodes, intake
                     <p className="mb-4 text-sm text-ink-muted">
                         Real student IDs (QIU-YYYYMM-NNNN) already include the intake month. This table is only used for older IDs without it: intake 1, 2, 3 of the year map to a month.
                     </p>
-                    <form className="grid gap-2" onSubmit={on(() => intakes.put('/admin/settings/intakes', options))}>
+                    <form className="grid gap-2" onSubmit={on(() => intakes.put(url('/admin/settings/intakes'), options))}>
                         <div className={listHeader}>
                             <span>Intake no.</span>
                             <span>Month (1–12)</span>
@@ -171,7 +172,7 @@ export default function Index({ programmes: programmeList, unmappedCodes, intake
                             </li>
                         ))}
                     </ul>
-                    <form className="grid gap-2" onSubmit={on(() => session.put('/admin/settings/sessions', { ...options, onSuccess: () => session.reset() }))}>
+                    <form className="grid gap-2" onSubmit={on(() => session.put(url('/admin/settings/sessions'), { ...options, onSuccess: () => session.reset() }))}>
                         <p className="text-sm font-medium">Add a future session</p>
                         <div className="flex items-start gap-2">
                             <div className="flex-1">

@@ -1,8 +1,9 @@
 import IndemnityPrompt from '@/Components/events/IndemnityPrompt';
 import TicketCard from '@/Components/tickets/TicketCard';
-import Button from '@/Components/ui/Button';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Icon from '@/Components/ui/Icon';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import type { Ticket } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { useEffect } from 'react';
@@ -23,7 +24,7 @@ export default function Show({ ticket, qrSvg, mine }: { ticket: Ticket; qrSvg: s
         <AppLayout>
             <Head title={`Ticket · ${ticket.event.name}`} />
             <div className="grid gap-5 pb-6">
-                <Link href="/activities" className="flex items-center gap-1 text-sm text-primary">
+                <Link href={url('/activities')} className="flex items-center gap-1 text-sm text-primary">
                     <Icon name="ticket" size={16} /> All my activities
                 </Link>
                 {mine && ticket.event.needs_indemnity && ['paid', 'free'].includes(ticket.status) && (
@@ -34,15 +35,13 @@ export default function Show({ ticket, qrSvg, mine }: { ticket: Ticket; qrSvg: s
                 <TicketCard ticket={ticket} qrSvg={qrSvg} />
                 <div className="mx-auto grid w-full max-w-sm gap-2">
                     {mine && ticket.status === 'unpaid' && (
-                        <Link href={`/events/${ticket.event.slug}/pay`}>
-                            <Button block>Pay now</Button>
-                        </Link>
+                        <ButtonLink href={`/events/${ticket.event.slug}/pay`} variant="primary" className="w-full">
+                            Pay now
+                        </ButtonLink>
                     )}
-                    <Link href={`/events/${ticket.event.slug}`}>
-                        <Button block variant="ghost">
-                            Event details
-                        </Button>
-                    </Link>
+                    <ButtonLink href={`/events/${ticket.event.slug}`} variant="ghost" className="w-full">
+                        Event details
+                    </ButtonLink>
                 </div>
             </div>
         </AppLayout>

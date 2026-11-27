@@ -5,6 +5,7 @@ import SessionSelector from '@/Components/club/SessionSelector';
 import CreatePost from '@/Components/feed/CreatePost';
 import StoryViewer, { type StoryViewerGroup } from '@/Components/feed/StoryViewer';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Avatar from '@/Components/ui/Avatar';
 import Badge from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
@@ -15,6 +16,7 @@ import Tabs from '@/Components/ui/Tabs';
 import Textarea from '@/Components/ui/Textarea';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress, MemberCard, SessionOption } from '@/types';
 import { Deferred, Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
@@ -57,11 +59,9 @@ const loading = <p className="text-sm text-ink-muted">Loading…</p>;
 
 function Tool({ href, children, tour, variant = 'secondary' }: { href: string; children: ReactNode; tour?: string; variant?: 'primary' | 'secondary' }) {
     return (
-        <Link href={href} data-tour={tour}>
-            <Button size="sm" variant={variant}>
-                {children}
-            </Button>
-        </Link>
+        <ButtonLink href={href} tour={tour} size="sm" variant={variant}>
+            {children}
+        </ButtonLink>
     );
 }
 
@@ -82,7 +82,7 @@ export default function Show(props: ClubShowProps) {
     const [viewing, setViewing] = useState<StoryViewerGroup | null>(null);
     const highlight = (storyId: number): void => {
         const title = prompt('Add to which highlight? (e.g. Events, Recruitment)');
-        if (title) router.post(`/clubs/${club.slug}/stories/${storyId}/highlight`, { title }, { preserveScroll: true });
+        if (title) router.post(url(`/clubs/${club.slug}/stories/${storyId}/highlight`), { title }, { preserveScroll: true });
     };
     const [creating, setCreating] = useState(false);
     const album = useForm({ title: '', photos: [] as File[] });
@@ -92,11 +92,11 @@ export default function Show(props: ClubShowProps) {
         committee: (
             <>
                 <div className="mb-5 grid gap-4">
-                    <div data-tour="committee-year">
+                    <div data-tour="committee-year" className="min-w-0">
                         <SessionSelector sessions={sessions} selected={session} url={`/clubs/${club.slug}`} />
                     </div>
                     <div className="relative overflow-hidden rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
-                        <span className="absolute -right-8 -top-10 size-36 animate-float-soft rounded-full bg-gradient-to-br from-gold/40 to-primary-strong/30 blur-2xl" aria-hidden="true" />
+                        <span className="absolute -right-8 -top-10 hidden size-36 animate-float-soft rounded-full bg-gradient-to-br from-gold/40 to-primary-strong/30 blur-2xl dark:block" aria-hidden="true" />
                         <div className="relative flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{isCurrentSession ? 'Current committee' : 'Past committee'}</p>
@@ -122,7 +122,7 @@ export default function Show(props: ClubShowProps) {
                             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                 {upcoming.map((e) => (
                                     <li key={e.slug}>
-                                        <Link href={`/events/${e.slug}`} className="group grid h-full overflow-hidden rounded-card border border-line bg-surface shadow-card transition hover:shadow-pop">
+                                        <Link href={url(`/events/${e.slug}`)} className="group grid h-full overflow-hidden rounded-card border border-line bg-surface shadow-card transition hover:shadow-pop">
                                             <span className="relative block aspect-[16/9] overflow-hidden bg-gradient-to-br from-primary to-primary">
                                                 {e.poster_url && <img src={e.poster_url} alt="" className="size-full object-cover object-top transition group-hover:scale-105" loading="lazy" />}
                                                 <span className="absolute left-3 top-3 grid min-w-12 justify-items-center rounded-control bg-surface px-2 py-1 leading-none shadow-card">
@@ -170,7 +170,7 @@ export default function Show(props: ClubShowProps) {
                                     </p>
                                 </div>
                                 {can.internal && (
-                                    <Link href={`/clubs/${club.slug}/members`} className="text-sm font-medium text-primary">
+                                    <Link href={url(`/clubs/${club.slug}/members`)} className="text-sm font-medium text-primary">
                                         Full members list →
                                     </Link>
                                 )}
@@ -223,7 +223,7 @@ export default function Show(props: ClubShowProps) {
                             className="grid gap-3 rounded-card border border-dashed border-line p-4"
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                album.post(`/clubs/${club.slug}/albums`, { preserveScroll: true, onSuccess: () => album.reset() });
+                                album.post(url(`/clubs/${club.slug}/albums`), { preserveScroll: true, onSuccess: () => album.reset() });
                             }}
                         >
                             <Input value={album.data.title} onChange={(v) => album.setData('title', v)} label="New album" placeholder="e.g. Orientation Week 2026" error={album.errors.title} />
@@ -256,7 +256,7 @@ export default function Show(props: ClubShowProps) {
                     <ul className="grid gap-2">
                         {events?.map((e) => (
                             <li key={e.slug}>
-                                <Link href={`/events/${e.slug}`} className="flex items-center gap-3 rounded-card border border-line bg-surface p-3 hover:shadow-card">
+                                <Link href={url(`/events/${e.slug}`)} className="flex items-center gap-3 rounded-card border border-line bg-surface p-3 hover:shadow-card">
                                     {e.poster_url && <img src={e.poster_url} alt="" className="size-14 rounded-control object-cover" />}
                                     <span className="grid flex-1 text-sm">
                                         <strong>{e.name}</strong>
@@ -280,7 +280,7 @@ export default function Show(props: ClubShowProps) {
                         <summary className="cursor-pointer font-medium">{f.question}</summary>
                         <p className="mt-2 whitespace-pre-line text-sm">{f.answer}</p>
                         {can.publish && (
-                            <button type="button" className="mt-2 text-xs text-danger" onClick={() => router.delete(`/clubs/${club.slug}/faqs/${f.id}`, { preserveScroll: true })}>
+                            <button type="button" className="mt-2 text-xs text-danger" onClick={() => router.delete(url(`/clubs/${club.slug}/faqs/${f.id}`), { preserveScroll: true })}>
                                 Remove
                             </button>
                         )}
@@ -291,7 +291,7 @@ export default function Show(props: ClubShowProps) {
                         className="grid gap-3 rounded-card border border-dashed border-line p-4"
                         onSubmit={(e) => {
                             e.preventDefault();
-                            faq.post(`/clubs/${club.slug}/faqs`, { preserveScroll: true, onSuccess: () => faq.reset() });
+                            faq.post(url(`/clubs/${club.slug}/faqs`), { preserveScroll: true, onSuccess: () => faq.reset() });
                         }}
                     >
                         <Input value={faq.data.question} onChange={(v) => faq.setData('question', v)} label="Question" error={faq.errors.question} />
@@ -310,7 +310,7 @@ export default function Show(props: ClubShowProps) {
                     <ul className="grid gap-2">
                         {documents?.map((d) => (
                             <li key={d.id}>
-                                <Link href={`/documents/${d.id}`} className="grid gap-2 rounded-card border border-line bg-surface p-3 text-sm hover:shadow-card">
+                                <Link href={url(`/documents/${d.id}`)} className="grid gap-2 rounded-card border border-line bg-surface p-3 text-sm hover:shadow-card">
                                     <span className="flex items-center justify-between gap-3">
                                         <span>
                                             <strong>{d.type}</strong>
@@ -345,7 +345,7 @@ export default function Show(props: ClubShowProps) {
                 {(highlights.length > 0 || can.publish) && (
                     <div className="flex gap-4 overflow-x-auto pb-1">
                         {highlights.map((h) => (
-                            <button key={h.id} type="button" className="grid w-16 shrink-0 justify-items-center gap-1" onClick={() => setViewing({ name: h.title, logo_url: club.logo_url, stories: h.items.map((url, i) => ({ id: -i - 1, url, at: null })) })}>
+                            <button key={h.id} type="button" className="grid w-16 shrink-0 justify-items-center gap-1" onClick={() => setViewing({ name: h.title, logo_url: club.logo_url, stories: h.items.map((src, i) => ({ id: -i - 1, url: src, at: null })) })}>
                                 <img src={h.items[0]} alt="" className="size-14 rounded-full border border-line object-cover p-0.5" />
                                 <span className="w-full truncate text-center text-[11px]">{h.title}</span>
                             </button>
@@ -377,7 +377,7 @@ export default function Show(props: ClubShowProps) {
                                 className="grid gap-2"
                                 onSubmit={(e) => {
                                     e.preventDefault();
-                                    router.post(`/sld-requests/${r.id}/reply`, { reply: replies[r.id] ?? '' }, { preserveScroll: true });
+                                    router.post(url(`/sld-requests/${r.id}/reply`), { reply: replies[r.id] ?? '' }, { preserveScroll: true });
                                 }}
                             >
                                 <Textarea value={replies[r.id] ?? ''} onChange={(v) => setReplies({ ...replies, [r.id]: v })} rows={2} placeholder="Reply to SLD" />
@@ -437,15 +437,17 @@ export default function Show(props: ClubShowProps) {
                     <p className="rounded-card bg-warning/10 px-4 py-3 text-sm text-warning">
                         Compulsory positions vacant: {missingCompulsory.join(', ')}. Documents cannot be submitted until they are filled.{' '}
                         {can.manage && (
-                            <Link href={`/admin/clubs/${club.slug}/edit`} className="font-semibold underline">
+                            <Link href={url(`/admin/clubs/${club.slug}/edit`)} className="font-semibold underline">
                                 Assign
                             </Link>
                         )}
                     </p>
                 )}
-                <Tabs tabs={tabs} active={tab} onChange={setTab}>
-                    {panels[tab]}
-                </Tabs>
+                <div className="min-w-0 pb-24 md:pb-0">
+                    <Tabs tabs={tabs} active={tab} onChange={setTab}>
+                        {panels[tab]}
+                    </Tabs>
+                </div>
             </div>
             <StoryViewer group={viewing} onClose={() => setViewing(null)}>
                 {(storyId) =>

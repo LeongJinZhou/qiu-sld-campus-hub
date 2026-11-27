@@ -21,6 +21,7 @@ import Textarea from '@/Components/ui/Textarea';
 import { useLeaveReminder } from '@/hooks/useLeaveReminder';
 import AppLayout from '@/Layouts/AppLayout';
 import { date, dateTime, hoursBetween, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { PROPOSAL_SECTIONS, sectionOfField, type ProposalSection } from '@/lib/proposal';
 import type { ApprovalProgress, ApprovalStep, ProposalBlock, ProposalData, ProposalSpeaker, ProposalStop, ProposalTrip } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -109,7 +110,7 @@ export default function Proposal(props: ProposalProps) {
     const breakEven = d.budget.revenue.reduce((s, i) => s + i.price_sen * i.quantity, 0) >= expensesSen;
     const writtenObjectives = d.objectives.filter((o) => filled(o)).length;
     // Pictures (speaker photos, pictures in added parts) upload straight away; the form keeps their stored path.
-    const imageUrl = `/events/${event.slug}/proposal/image`;
+    const imageUrl = url(`/events/${event.slug}/proposal/image`);
 
     // "Seminars/Conference/Workshop": speakers are listed (each with a photo), and two persons in charge replace the four fixed offices.
     const isWorkshop = d.nature.includes('seminar');
@@ -183,7 +184,7 @@ export default function Proposal(props: ProposalProps) {
     // Live co-editing. Only the parts this person changed are saved (half a second after they stop typing, at most 1.5 s
     // apart), merged on the server into the shared draft; every 1.5 s the page picks up what the others changed in parts
     // this person has not touched, and shows who is editing which part.
-    const liveUrl = `/events/${event.slug}/proposal/live`;
+    const liveUrl = url(`/events/${event.slug}/proposal/live`);
     const base = useRef<Record<string, string>>(snapshotOf(strip({ ...props.data, signature: null, signature_strokes: null })));
     // Revision of each part as this person last saw it; sent with a save so a newer version from someone else is never overwritten.
     const revs = useRef<Record<string, string>>(props.revs);
@@ -294,7 +295,7 @@ export default function Proposal(props: ProposalProps) {
     const [asking, setAsking] = useState(false);
     const ask = useForm({ user_ids: [] as number[], note: '' });
     const sendAsk = (): void =>
-        ask.post(`/events/${event.slug}/proposal/ask`, {
+        ask.post(url(`/events/${event.slug}/proposal/ask`), {
             preserveScroll: true,
             onSuccess: () => {
                 setAsking(false);
@@ -302,7 +303,7 @@ export default function Proposal(props: ProposalProps) {
             },
         });
     const discard = (): void => {
-        if (confirm('Discard this draft? It cannot be undone.')) router.delete(`/events/${event.slug}/proposal`);
+        if (confirm('Discard this draft? It cannot be undone.')) router.delete(url(`/events/${event.slug}/proposal`));
     };
     const [signing, setSigning] = useState(false);
 
@@ -395,11 +396,11 @@ export default function Proposal(props: ProposalProps) {
     const save = (e?: FormEvent): void => {
         e?.preventDefault();
         form.transform((data) => strip(data));
-        form.put(`/events/${event.slug}/proposal`, { preserveScroll: true });
+        form.put(url(`/events/${event.slug}/proposal`), { preserveScroll: true });
     };
     const submit = (): void => {
         form.transform((data) => data);
-        form.post(`/events/${event.slug}/proposal/submit`, {
+        form.post(url(`/events/${event.slug}/proposal/submit`), {
             preserveScroll: true,
             onSuccess: () => setSigning(false),
             onError: () => {
@@ -418,7 +419,7 @@ export default function Proposal(props: ProposalProps) {
         if (!slot?.student_number) return;
         setSlot(position, { busy: true });
         router.post(
-            `/events/${event.slug}/committee`,
+            url(`/events/${event.slug}/committee`),
             { student_number: slot.student_number, position, responsibility: slot.responsibility },
             {
                 preserveScroll: true,
@@ -436,14 +437,14 @@ export default function Proposal(props: ProposalProps) {
     const member = useForm({ student_number: '', position: '', responsibility: '' });
     const memberPicker = useRef<PersonPickerHandle>(null);
     const addMember = (): void =>
-        member.post(`/events/${event.slug}/committee`, {
+        member.post(url(`/events/${event.slug}/committee`), {
             preserveScroll: true,
             onSuccess: () => {
                 member.reset();
                 memberPicker.current?.clear();
             },
         });
-    const removeMember = (id: number): void => router.delete(`/events/${event.slug}/committee/${id}`, { preserveScroll: true });
+    const removeMember = (id: number): void => router.delete(url(`/events/${event.slug}/committee/${id}`), { preserveScroll: true });
 
     // The first time the committee opens its approved proposal on this device, celebrate it.
     const [celebrate, setCelebrate] = useState<string | null>(null);
@@ -477,10 +478,10 @@ export default function Proposal(props: ProposalProps) {
                             <strong className="text-success">Approved.</strong> Download the signed proposal to keep a copy.
                         </p>
                         <div className="flex gap-2">
-                            <a href={`/documents/${documentId}/download/pdf`} className="rounded-control bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/85">
+                            <a href={url(`/documents/${documentId}/download/pdf`)} className="rounded-control bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/85">
                                 Download PDF
                             </a>
-                            <a href={`/documents/${documentId}/download/docx`} className="rounded-control border border-line bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-muted">
+                            <a href={url(`/documents/${documentId}/download/docx`)} className="rounded-control border border-line bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-muted">
                                 Word
                             </a>
                         </div>
@@ -519,7 +520,7 @@ export default function Proposal(props: ProposalProps) {
                     </div>
                     <Input value={d.name} onChange={(v) => set('name', v)} label="Event Name" required readOnly={readOnly} error={errors.name} />
                     <Textarea value={d.summary} onChange={(v) => set('summary', v)} label="Event Summary" required rows={3} readOnly={readOnly} error={errors.summary} />
-                    <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="grid items-start gap-4 sm:grid-cols-3">
                         <Input value={d.expected_participants} onChange={(v) => set('expected_participants', v as unknown as number)} type="number" label="Expected participants" required readOnly={readOnly} error={errors.expected_participants} />
                         <Input
                             value={d.starts_at}

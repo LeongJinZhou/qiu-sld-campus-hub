@@ -1,9 +1,10 @@
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import ProposalView from '@/Components/forms/ProposalView';
 import Badge from '@/Components/ui/Badge';
-import Button from '@/Components/ui/Button';
 import Card from '@/Components/ui/Card';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import type { PresentedDocument } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 
@@ -39,27 +40,23 @@ export default function Show({ document, canEdit, downloads }: { document: Prese
                     {downloads.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {downloads.map((format) => (
-                                <a key={format} href={`/documents/${document.id}/download/${format}`}>
-                                    <Button variant="secondary" size="sm">
-                                        Download official {format.toUpperCase()}
-                                    </Button>
-                                </a>
+                                <ButtonLink key={format} plain size="sm" href={`/documents/${document.id}/download/${format}`}>
+                                    Download official {format.toUpperCase()}
+                                </ButtonLink>
                             ))}
                         </div>
                     )}
                     {canEdit && document.event && (
-                        <Link href={`/events/${document.event.slug}/proposal`}>
-                            <Button>Edit and resubmit</Button>
-                        </Link>
+                        <ButtonLink variant="primary" className="justify-self-start" href={`/events/${document.event.slug}/proposal`}>
+                            Edit and resubmit
+                        </ButtonLink>
                     )}
                     {document.type === 'agm_report' && document.agm_id && (
                         <Card title="01 AGM Report">
                             <p className="text-sm">{objectives} objectives · attendance, committee and election sections are frozen from records.</p>
-                            <Link href={`/agms/${document.agm_id}/report`} className="mt-3 inline-block">
-                                <Button variant="secondary" size="sm">
-                                    Open the full report
-                                </Button>
-                            </Link>
+                            <ButtonLink size="sm" className="mt-3" href={`/agms/${document.agm_id}/report`}>
+                                Open the full report
+                            </ButtonLink>
                         </Card>
                     )}
                     {document.type === 'proposal' && document.version ? (
@@ -124,14 +121,14 @@ export default function Show({ document, canEdit, downloads }: { document: Prese
                                         </div>
                                     )}
                                 </dl>
-                                <Link href={`/meetings/${document.meeting.id}?tab=minutes`} className="mt-3 inline-block text-sm font-medium text-primary">
+                                <Link href={url(`/meetings/${document.meeting.id}?tab=minutes`)} className="mt-3 inline-block text-sm font-medium text-primary">
                                     Open the meeting
                                 </Link>
                             </Card>
                             <Card
                                 title={`Attendance · ${document.meeting.attendance.filter((a) => a.present).length} of ${document.meeting.attendance.length} present`}
                                 actions={
-                                    <a href={`/meetings/${document.meeting.id}/attendance/export.pdf`} className="text-sm font-medium text-primary">
+                                    <a href={url(`/meetings/${document.meeting.id}/attendance/export.pdf`)} className="text-sm font-medium text-primary">
                                         Download PDF
                                     </a>
                                 }

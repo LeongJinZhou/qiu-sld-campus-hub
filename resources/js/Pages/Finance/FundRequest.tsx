@@ -8,6 +8,7 @@ import Textarea from '@/Components/ui/Textarea';
 import { useLocalDraft } from '@/hooks/useAutosave';
 import AppLayout from '@/Layouts/AppLayout';
 import { date, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -89,7 +90,7 @@ export default function FundRequest({ club, events, selectedEvent, earliestWeekl
     const [confirming, setConfirming] = useState(false);
     const send = (): void => {
         form.transform((d) => ({ ...d, bank_confirmed: true }));
-        form.post(`/clubs/${club.slug}/fund-requests`, { onSuccess: () => draft.clear(), onFinish: () => setConfirming(false) });
+        form.post(url(`/clubs/${club.slug}/fund-requests`), { onSuccess: () => draft.clear(), onFinish: () => setConfirming(false) });
     };
     const setBank = (key: keyof typeof data.bank) => (v: string): void => setData('bank', { ...data.bank, [key]: v });
     const err = errors as Record<string, string>;

@@ -6,6 +6,7 @@ import Input from '@/Components/ui/Input';
 import Pagination from '@/Components/ui/Pagination';
 import { useFilterVisit } from '@/hooks/useFilterVisit';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import type { Option, Paginated } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
@@ -25,15 +26,15 @@ const ROLE_LABELS: Record<string, string> = { superadmin: 'Super Admin', admin: 
 export default function Index({ search: initial, users, managedRoles, domain }: { search: string; users: Paginated<UserRow>; managedRoles: Option[]; domain: string }) {
     const add = useForm({ name: '', email: '', title: '' });
     const [search, setSearch] = useState(initial);
-    useFilterVisit('/admin/roles', { search }, 300);
+    useFilterVisit(url('/admin/roles'), { search }, 300);
     const submitAdd = (e: FormEvent): void => {
         e.preventDefault();
-        add.post('/admin/roles', { preserveScroll: true, onSuccess: () => add.reset() });
+        add.post(url('/admin/roles'), { preserveScroll: true, onSuccess: () => add.reset() });
     };
     function toggle(user: UserRow, role: string, on: boolean): void {
         const managed = managedRoles.map((r) => String(r.value));
         const roles = user.roles.filter((r) => managed.includes(r) && r !== role);
-        router.put(`/admin/roles/${user.id}`, { roles: on ? [...roles, role] : roles }, { preserveScroll: true });
+        router.put(url(`/admin/roles/${user.id}`), { roles: on ? [...roles, role] : roles }, { preserveScroll: true });
     }
 
     return (

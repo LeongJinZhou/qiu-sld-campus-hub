@@ -3,6 +3,7 @@ import Badge from '@/Components/ui/Badge';
 import Icon from '@/Components/ui/Icon';
 import Modal from '@/Components/ui/Modal';
 import QrCode from '@/Components/ui/QrCode';
+import { url } from '@/lib/url';
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -36,7 +37,7 @@ export default function ClubHeader({ club, counts, membership, following, hasSto
     const member = ['active', 'alumni'].includes(membership.status ?? '');
     const canJoin = membership.can_join && !member;
     const hasMembershipAction = canJoin || member;
-    const follow = (): void => router.post(`/clubs/${club.slug}/follow`, {}, { preserveScroll: true });
+    const follow = (): void => router.post(url(`/clubs/${club.slug}/follow`), {}, { preserveScroll: true });
     const stats = [
         { label: 'events', value: counts.events },
         { label: 'members', value: counts.members },
@@ -101,7 +102,7 @@ export default function ClubHeader({ club, counts, membership, following, hasSto
                 </button>
                 {canJoin ? (
                     <Link
-                        href={`/clubs/${club.slug}/join`}
+                        href={url(`/clubs/${club.slug}/join`)}
                         className={`inline-flex h-9 items-center justify-center truncate rounded-control bg-gradient-to-r from-accent to-primary-strong px-3 font-semibold text-white transition active:scale-[0.97] ${membership.drive ? 'animate-tracker-pulse' : ''}`}
                     >
                         {membership.status === 'grace' ? 'Renew' : membership.status === 'pending' ? 'Continue joining' : 'Join'}

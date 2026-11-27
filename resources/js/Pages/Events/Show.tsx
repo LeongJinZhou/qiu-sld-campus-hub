@@ -1,5 +1,6 @@
 import IndemnityPrompt from '@/Components/events/IndemnityPrompt';
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Avatar from '@/Components/ui/Avatar';
 import Badge from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
@@ -9,6 +10,7 @@ import Icon from '@/Components/ui/Icon';
 import Input from '@/Components/ui/Input';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
@@ -47,11 +49,9 @@ interface EventShowProps {
 
 function LinkButton({ href, children, variant = 'secondary' }: { href: string; children: ReactNode; variant?: 'primary' | 'secondary' }) {
     return (
-        <Link href={href}>
-            <Button block variant={variant}>
-                {children}
-            </Button>
-        </Link>
+        <ButtonLink href={href} variant={variant} className="w-full">
+            {children}
+        </ButtonLink>
     );
 }
 
@@ -62,10 +62,10 @@ export default function Show({ event, committee, approval, registered, registrat
     const savePayment = (e: FormEvent): void => {
         e.preventDefault();
         pay.transform((d) => ({ ...d, _method: 'put' }));
-        pay.post(`/events/${event.slug}/payment-settings`, { preserveScroll: true, forceFormData: true, onSuccess: () => pay.reset('qr', 'remove_qr') });
+        pay.post(url(`/events/${event.slug}/payment-settings`), { preserveScroll: true, forceFormData: true, onSuccess: () => pay.reset('qr', 'remove_qr') });
     };
-    const register = (): void => router.post(`/events/${event.slug}/register`, {}, { preserveScroll: true });
-    const unregister = (): void => router.delete(`/events/${event.slug}/register`, { preserveScroll: true });
+    const register = (): void => router.post(url(`/events/${event.slug}/register`), {}, { preserveScroll: true });
+    const unregister = (): void => router.delete(url(`/events/${event.slug}/register`), { preserveScroll: true });
     const audience = [
         { v: false, l: 'Anyone at QIU', d: 'Members and non-members can register.' },
         { v: true, l: 'Club members only', d: `Only ${event.club.name} members (and the committee). Others are asked to join first.` },
@@ -78,7 +78,7 @@ export default function Show({ event, committee, approval, registered, registrat
                 <div className="grid content-start gap-6">
                     {event.poster_url && <img src={event.poster_url} alt={`${event.name} poster`} className="w-full rounded-card border border-line" />}
                     <header className="grid gap-2">
-                        <Link href={`/clubs/${event.club.slug}`} className="text-sm font-medium text-primary">
+                        <Link href={url(`/clubs/${event.club.slug}`)} className="text-sm font-medium text-primary">
                             {event.club.name}
                         </Link>
                         <h1 className="text-2xl font-bold">{event.name}</h1>
@@ -134,11 +134,9 @@ export default function Show({ event, committee, approval, registered, registrat
                         {registrationStatus === 'pending_payment' ? (
                             <>
                                 <p className="mt-2 text-sm font-medium text-warning">Place reserved — payment pending.</p>
-                                <Link href={`/events/${event.slug}/pay`}>
-                                    <Button block className="mt-2">
-                                        Pay {rm(payment.fee_sen)}
-                                    </Button>
-                                </Link>
+                                <ButtonLink href={`/events/${event.slug}/pay`} variant="primary" className="mt-2 w-full">
+                                    Pay {rm(payment.fee_sen)}
+                                </ButtonLink>
                                 <button type="button" className="mt-1 text-xs text-ink-muted underline" onClick={unregister}>
                                     Cancel
                                 </button>
@@ -152,11 +150,9 @@ export default function Show({ event, committee, approval, registered, registrat
                                     </div>
                                 ) : (
                                     ticketUrl && (
-                                        <Link href={ticketUrl}>
-                                            <Button block className="mt-2">
-                                                View my ticket
-                                            </Button>
-                                        </Link>
+                                        <ButtonLink href={ticketUrl} variant="primary" className="mt-2 w-full">
+                                            View my ticket
+                                        </ButtonLink>
                                     )
                                 )}
                                 <button type="button" className="mt-1 text-xs text-ink-muted underline" onClick={unregister}>
@@ -168,11 +164,9 @@ export default function Show({ event, committee, approval, registered, registrat
                                 <p className="mt-2 text-sm">
                                     This event is for <strong>{event.club.name}</strong> members only.
                                 </p>
-                                <Link href={`/clubs/${event.club.slug}/join`}>
-                                    <Button block className="mt-2">
-                                        Join {event.club.name} to register
-                                    </Button>
-                                </Link>
+                                <ButtonLink href={`/clubs/${event.club.slug}/join`} variant="primary" className="mt-2 w-full">
+                                    Join {event.club.name} to register
+                                </ButtonLink>
                             </>
                         ) : event.registration_open ? (
                             <Button block className="mt-3" onClick={register}>
@@ -186,11 +180,9 @@ export default function Show({ event, committee, approval, registered, registrat
                             (indemnity.signed ? (
                                 <p className="mt-3 text-sm text-success">✓ Indemnity signed</p>
                             ) : !indemnity.closed ? (
-                                <Link href={`/events/${event.slug}/indemnity`}>
-                                    <Button variant="secondary" block className="mt-3">
-                                        Sign indemnity (closes {indemnity.closes_at})
-                                    </Button>
-                                </Link>
+                                <ButtonLink href={`/events/${event.slug}/indemnity`} className="mt-3 w-full">
+                                    Sign indemnity (closes {indemnity.closes_at})
+                                </ButtonLink>
                             ) : (
                                 <p className="mt-3 text-sm text-danger">Indemnity signing has closed.</p>
                             ))}
@@ -207,7 +199,7 @@ export default function Show({ event, committee, approval, registered, registrat
                                             role="radio"
                                             aria-checked={on}
                                             className={`grid gap-0.5 rounded-control border p-3 text-left text-sm transition ${on ? 'border-ink bg-surface-muted' : 'border-line hover:bg-surface-muted'}`}
-                                            onClick={() => router.put(`/events/${event.slug}/registration-settings`, { members_only: o.v }, { preserveScroll: true })}
+                                            onClick={() => router.put(url(`/events/${event.slug}/registration-settings`), { members_only: o.v }, { preserveScroll: true })}
                                         >
                                             <span className="flex items-center gap-2 font-semibold">
                                                 <span className={`grid size-4 place-items-center rounded-full border-2 ${on ? 'border-ink' : 'border-line'}`}>{on && <span className="size-2 rounded-full bg-ink" />}</span>

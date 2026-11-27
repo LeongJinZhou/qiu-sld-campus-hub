@@ -4,6 +4,7 @@ import Pagination from '@/Components/ui/Pagination';
 import Select from '@/Components/ui/Select';
 import { useFilterVisit } from '@/hooks/useFilterVisit';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import type { Paginated } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
@@ -40,9 +41,9 @@ const STATUSES = [
 
 export default function Index({ proposals, filters, clubs, sessions }: ProposalsProps) {
     const [f, setF] = useState({ q: filters.q, club: filters.club, status: filters.status ?? '', session: filters.session });
-    const params = useFilterVisit('/admin/proposals', f);
+    const params = useFilterVisit(url('/admin/proposals'), f);
     const set = (key: keyof typeof f) => (v: string): void => setF({ ...f, [key]: v });
-    const exportUrl = (format: 'xlsx' | 'pdf'): string => `/admin/proposals/export.${format}?${new URLSearchParams(params).toString()}`;
+    const exportUrl = (format: 'xlsx' | 'pdf'): string => url(`/admin/proposals/export.${format}?${new URLSearchParams(params).toString()}`);
 
     return (
         <PortalLayout title="Proposals & exports">
@@ -83,7 +84,7 @@ export default function Index({ proposals, filters, clubs, sessions }: Proposals
                             {proposals.data.map((p) => (
                                 <tr key={p.id} className="border-t border-line align-top">
                                     <td className="px-4 py-3">
-                                        <Link href={`/documents/${p.id}`} className="font-medium hover:text-primary">
+                                        <Link href={url(`/documents/${p.id}`)} className="font-medium hover:text-primary">
                                             {p.event}
                                         </Link>
                                         <p className="text-xs text-ink-muted">
@@ -100,9 +101,9 @@ export default function Index({ proposals, filters, clubs, sessions }: Proposals
                                     <td className="px-4 py-3">
                                         {p.downloadable && (
                                             <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-medium text-primary">
-                                                <a href={`/documents/${p.id}/download/pdf`}>PDF</a>
-                                                <a href={`/documents/${p.id}/download/docx`}>Word</a>
-                                                <a href={`/admin/proposals/${p.id}/package.zip`} title="Proposal, withdrawals, attendance, post mortem and finance">
+                                                <a href={url(`/documents/${p.id}/download/pdf`)}>PDF</a>
+                                                <a href={url(`/documents/${p.id}/download/docx`)}>Word</a>
+                                                <a href={url(`/admin/proposals/${p.id}/package.zip`)} title="Proposal, withdrawals, attendance, post mortem and finance">
                                                     All + finance (ZIP)
                                                 </a>
                                             </div>

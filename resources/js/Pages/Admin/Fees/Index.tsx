@@ -5,6 +5,7 @@ import Input from '@/Components/ui/Input';
 import Select from '@/Components/ui/Select';
 import PortalLayout from '@/Layouts/PortalLayout';
 import { rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { Option } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
@@ -29,12 +30,12 @@ interface Drive {
 export default function Index({ fees, drives, clubs }: { fees: Fee[]; drives: Drive[]; clubs: Option[] }) {
     const reject = (id: number): void => {
         const reason = prompt('Why is this fee not approved? (sent to the treasurer)')?.trim();
-        if (reason) router.post(`/admin/fees/${id}/reject`, { reason }, { preserveScroll: true });
+        if (reason) router.post(url(`/admin/fees/${id}/reject`), { reason }, { preserveScroll: true });
     };
     const drive = useForm({ title: '', club_id: '' as number | string, starts_at: '', ends_at: '' });
     const submit = (e: FormEvent): void => {
         e.preventDefault();
-        drive.post('/admin/drives', { onSuccess: () => drive.reset() });
+        drive.post(url('/admin/drives'), { onSuccess: () => drive.reset() });
     };
     return (
         <PortalLayout title="Membership fees & drives">
@@ -55,7 +56,7 @@ export default function Index({ fees, drives, clubs }: { fees: Fee[]; drives: Dr
                                         <Button size="sm" variant="secondary" onClick={() => reject(f.id)}>
                                             Reject
                                         </Button>
-                                        <Button size="sm" onClick={() => router.post(`/admin/fees/${f.id}/approve`, {}, { preserveScroll: true })}>
+                                        <Button size="sm" onClick={() => router.post(url(`/admin/fees/${f.id}/approve`), {}, { preserveScroll: true })}>
                                             Approve
                                         </Button>
                                     </span>
@@ -66,14 +67,27 @@ export default function Index({ fees, drives, clubs }: { fees: Fee[]; drives: Dr
                     </ul>
                 </Card>
                 <Card title="Membership drives">
-                    <form className="mb-4 grid gap-3 md:grid-cols-[1fr_14rem_12rem_12rem_auto] md:items-end" onSubmit={submit}>
-                        <Input value={drive.data.title} onChange={(v) => drive.setData('title', v)} label="Title" placeholder="Orientation Week Drive" error={drive.errors.title} />
-                        <Select value={drive.data.club_id} onChange={(v) => drive.setData('club_id', v)} label="Club" options={[{ value: '', label: 'All clubs' }, ...clubs]} />
-                        <Input value={drive.data.starts_at} onChange={(v) => drive.setData('starts_at', v)} type="datetime-local" label="Starts" error={drive.errors.starts_at} />
-                        <Input value={drive.data.ends_at} onChange={(v) => drive.setData('ends_at', v)} type="datetime-local" label="Ends" error={drive.errors.ends_at} />
-                        <Button type="submit" loading={drive.processing}>
-                            Schedule
-                        </Button>
+                    <form
+                        className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 [&>div]:min-w-0 [&>div]:grid-cols-[minmax(0,1fr)] [&_input]:w-full [&_input]:min-w-0 [&_select]:w-full [&_select]:min-w-0"
+                        onSubmit={submit}
+                    >
+                        <div className="lg:col-span-2">
+                            <Input value={drive.data.title} onChange={(v) => drive.setData('title', v)} label="Title" placeholder="Orientation Week Drive" error={drive.errors.title} />
+                        </div>
+                        <div className="lg:col-span-2">
+                            <Select value={drive.data.club_id} onChange={(v) => drive.setData('club_id', v)} label="Club" options={[{ value: '', label: 'All clubs' }, ...clubs]} />
+                        </div>
+                        <div>
+                            <Input value={drive.data.starts_at} onChange={(v) => drive.setData('starts_at', v)} type="datetime-local" label="Starts" error={drive.errors.starts_at} />
+                        </div>
+                        <div>
+                            <Input value={drive.data.ends_at} onChange={(v) => drive.setData('ends_at', v)} type="datetime-local" label="Ends" error={drive.errors.ends_at} />
+                        </div>
+                        <div className="flex items-end md:col-span-2 md:justify-end">
+                            <Button type="submit" loading={drive.processing} className="w-full md:w-auto">
+                                Schedule
+                            </Button>
+                        </div>
                     </form>
                     <ul className="grid gap-1 text-sm">
                         {drives.map((d) => (

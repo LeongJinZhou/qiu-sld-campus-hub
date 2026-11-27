@@ -91,14 +91,14 @@ export default function ProfileView({ profile, extraTabs = [], coverActions, ava
             </div>
 
             <div className="border-t border-line">
-                <div role="tablist" className="flex gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:justify-center sm:gap-8">
+                <div role="tablist" className="flex w-full max-w-full gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:justify-center sm:gap-8">
                     {tabs.map((t) => (
                         <button
                             key={t.key}
                             type="button"
                             role="tab"
                             aria-selected={tab === t.key}
-                            className={`-mt-px flex items-center gap-1.5 border-t-2 px-3 py-3 text-xs font-semibold uppercase tracking-wide transition ${tab === t.key ? 'border-ink text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
+                            className={`-mt-px flex shrink-0 items-center gap-1.5 whitespace-nowrap border-t-2 px-3 py-3 text-xs font-semibold uppercase tracking-wide transition ${tab === t.key ? 'border-ink text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
                             onClick={() => setTab(t.key)}
                         >
                             <Icon name={t.icon} size={16} />

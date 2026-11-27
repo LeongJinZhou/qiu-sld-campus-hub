@@ -1,10 +1,11 @@
+import ButtonLink from '@/Components/forms/ButtonLink';
 import PayPanel from '@/Components/payments/PayPanel';
-import Button from '@/Components/ui/Button';
 import Card from '@/Components/ui/Card';
 import Icon from '@/Components/ui/Icon';
 import { useLeaveReminder } from '@/hooks/useLeaveReminder';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, usePoll } from '@inertiajs/react';
 
 interface PayProps {
@@ -26,7 +27,7 @@ export default function Pay({ event, registration, qrCodes, payment, committee }
             <Head title={`Pay · ${event.name}`} />
             <div className="mx-auto grid max-w-xl gap-5">
                 <header className="grid gap-1">
-                    <Link href={`/events/${event.slug}`} className="text-sm text-primary">
+                    <Link href={url(`/events/${event.slug}`)} className="text-sm text-primary">
                         ← {event.name}
                     </Link>
                     <h1 className="text-xl font-bold">Event registration</h1>
@@ -46,17 +47,11 @@ export default function Pay({ event, registration, qrCodes, payment, committee }
                                 {payment?.order_id && ` · ref ${payment.order_id}`}
                             </p>
                             {registration.ticket_url && (
-                                <Link href={registration.ticket_url}>
-                                    <Button>
-                                        <Icon name="ticket" size={18} /> View my ticket
-                                    </Button>
-                                </Link>
+                                <ButtonLink href={registration.ticket_url} variant="primary">
+                                    <Icon name="ticket" size={18} /> View my ticket
+                                </ButtonLink>
                             )}
-                            {event.is_outdoor && (
-                                <Link href={`/events/${event.slug}/indemnity`}>
-                                    <Button variant="secondary">Sign the indemnity form</Button>
-                                </Link>
-                            )}
+                            {event.is_outdoor && <ButtonLink href={`/events/${event.slug}/indemnity`}>Sign the indemnity form</ButtonLink>}
                         </div>
                     </Card>
                 ) : (
@@ -68,8 +63,8 @@ export default function Pay({ event, registration, qrCodes, payment, committee }
                             qrCodes={qrCodes}
                             payment={payment}
                             committee={committee}
-                            receiptUrl={`/events/${event.slug}/pay/receipt`}
-                            cashUrl={`/events/${event.slug}/pay/cash`}
+                            receiptUrl={url(`/events/${event.slug}/pay/receipt`)}
+                            cashUrl={url(`/events/${event.slug}/pay/cash`)}
                             outcome="Your registration is confirmed at once"
                         />
                     </Card>

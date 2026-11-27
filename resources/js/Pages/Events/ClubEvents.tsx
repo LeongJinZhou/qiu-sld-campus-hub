@@ -2,6 +2,7 @@ import Badge from '@/Components/ui/Badge';
 import Icon from '@/Components/ui/Icon';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -37,7 +38,7 @@ export default function ClubEvents({ club, ongoing, upcoming, past, years, year 
     const [tab, setTab] = useState<Tab>(ongoing.length ? 'ongoing' : upcoming.length ? 'upcoming' : 'past');
     const lists: Record<Tab, ClubEvent[]> = { ongoing, upcoming, past };
     const list = lists[tab];
-    const pickYear = (value: string): void => router.get(`/clubs/${club.slug}/events`, { year: value }, { preserveScroll: true, preserveState: true, only: ['past', 'year'] });
+    const pickYear = (value: string): void => router.get(url(`/clubs/${club.slug}/events`), { year: value }, { preserveScroll: true, preserveState: true, only: ['past', 'year'] });
 
     return (
         <AppLayout>
@@ -46,11 +47,11 @@ export default function ClubEvents({ club, ongoing, upcoming, past, years, year 
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <h1 className="text-xl font-bold">Events · {club.name}</h1>
-                        <Link href="/activities" className="text-sm text-primary">
+                        <Link href={url('/activities')} className="text-sm text-primary">
                             Back to Activities
                         </Link>
                     </div>
-                    <Link href={`/clubs/${club.slug}/events/create`} className="inline-flex items-center gap-1.5 rounded-control bg-ink px-3 py-2 text-sm font-semibold text-white">
+                    <Link href={url(`/clubs/${club.slug}/events/create`)} className="inline-flex items-center gap-1.5 rounded-control bg-ink px-3 py-2 text-sm font-semibold text-white">
                         <Icon name="plus" size={16} /> New event
                     </Link>
                 </header>
@@ -80,7 +81,7 @@ export default function ClubEvents({ club, ongoing, upcoming, past, years, year 
                 <ul className="grid gap-2">
                     {list.map((e) => (
                         <li key={e.slug}>
-                            <Link href={`/events/${e.slug}`} className="flex items-center gap-3 rounded-card border border-line bg-surface p-3 shadow-card transition hover:shadow-pop">
+                            <Link href={url(`/events/${e.slug}`)} className="flex items-center gap-3 rounded-card border border-line bg-surface p-3 shadow-card transition hover:shadow-pop">
                                 {e.poster_url ? (
                                     <img src={e.poster_url} alt="" className="size-14 shrink-0 rounded-control object-cover object-top" />
                                 ) : (

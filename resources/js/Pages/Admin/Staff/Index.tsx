@@ -5,6 +5,7 @@ import Input from '@/Components/ui/Input';
 import Select from '@/Components/ui/Select';
 import Table from '@/Components/ui/Table';
 import PortalLayout from '@/Layouts/PortalLayout';
+import { url } from '@/lib/url';
 import type { Option } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
@@ -32,11 +33,11 @@ export default function Index({ staff, approverRoles }: { staff: StaffRow[]; app
     const form = useForm({ email: '', staff_number: '', name: '', title: '', approver_role: '' as string });
     const create = (e: FormEvent): void => {
         e.preventDefault();
-        form.post('/admin/staff', { preserveScroll: true, onSuccess: () => form.reset() });
+        form.post(url('/admin/staff'), { preserveScroll: true, onSuccess: () => form.reset() });
     };
     const roleLabel = (value: string | null): string => approverRoles.find((r) => r.value === value)?.label ?? '—';
     const save = (row: StaffRow, changes: Partial<StaffRow>): void =>
-        router.put(`/admin/staff/${row.id}`, { name: row.name, title: row.title, staff_number: row.staff_number, approver_role: row.approver_role, active: row.active, ...changes }, { preserveScroll: true });
+        router.put(url(`/admin/staff/${row.id}`), { name: row.name, title: row.title, staff_number: row.staff_number, approver_role: row.approver_role, active: row.active, ...changes }, { preserveScroll: true });
     // Employee ID: printed beside advisors on the proposal's committee chart.
     function editStaffNumber(row: StaffRow): void {
         const value = window.prompt(`Employee ID for ${row.name}`, row.staff_number ?? '');

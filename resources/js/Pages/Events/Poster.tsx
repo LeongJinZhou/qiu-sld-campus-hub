@@ -5,6 +5,7 @@ import FileUpload from '@/Components/ui/FileUpload';
 import Input from '@/Components/ui/Input';
 import Tabs from '@/Components/ui/Tabs';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import { Head, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
@@ -59,7 +60,7 @@ export default function Poster({ event, checklist, ticked }: PosterProps) {
     const save = (e: FormEvent): void => {
         e.preventDefault();
         form.transform((d) => ({ ...d, poster: d.poster[0] ?? null }));
-        form.post(`/events/${event.slug}/poster`);
+        form.post(url(`/events/${event.slug}/poster`));
     };
 
     const [tab, setTab] = useState('upload');
@@ -100,7 +101,7 @@ export default function Poster({ event, checklist, ticked }: PosterProps) {
                 ctx.drawImage(photo, 0, (photo.height - (photo.width * h) / W) / 2, photo.width, (photo.width * h) / W, 0, 420, W, h);
             }
             // A: logos, top corners
-            const sa = await load('/brand/student-activity-white.png');
+            const sa = await load(url('/brand/student-activity-white.png'));
             if (cancelled) return;
             ctx.drawImage(sa, 48, 40, 220, (220 * sa.height) / sa.width);
             if (event.club.logo_url) {

@@ -6,6 +6,7 @@ import Table from '@/Components/ui/Table';
 import PortalLayout from '@/Layouts/PortalLayout';
 import { dateTime, rm } from '@/lib/format';
 import { searchTokens } from '@/lib/search';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 
@@ -63,7 +64,7 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
         const timer = setTimeout(
             () =>
                 router.get(
-                    '/admin/finance',
+                    url('/admin/finance'),
                     { ...(q.trim() ? { q: q.trim() } : {}), ...(moneyClub ? { club: moneyClub } : {}) },
                     { only: ['q', 'transactions'], preserveState: true, preserveScroll: true, replace: true, onStart: () => setSearching(true), onFinish: () => setSearching(false) },
                 ),
@@ -73,7 +74,7 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [q]);
     const moneyFor = (club: string): void =>
-        router.get('/admin/finance', { ...(initial ? { q: initial } : {}), ...(club ? { club } : {}) }, { only: ['money', 'moneyClub'], preserveState: true, preserveScroll: true, replace: true });
+        router.get(url('/admin/finance'), { ...(initial ? { q: initial } : {}), ...(club ? { club } : {}) }, { only: ['money', 'moneyClub'], preserveState: true, preserveScroll: true, replace: true });
     const tokens = searchTokens(initial);
     /** Splits an ID into its parts and marks the ones the search matched. */
     const parts = (id: string): { text: string; hit: boolean }[] => id.split('_').map((text) => ({ text, hit: tokens.some((t) => text.replace(/-/g, '').includes(t)) }));
@@ -81,7 +82,7 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
     return (
         <PortalLayout title="Club finance">
             <Head title="Club finance" />
-            <section className="grid gap-3">
+            <section className="grid min-w-0 gap-3">
                 <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 shadow-card focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30">
                     <Icon name="search" size={20} className="text-ink-muted" />
                     <input
@@ -95,7 +96,7 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
                     {searching && <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden="true" />}
                 </div>
                 <p className="text-xs text-ink-muted">
-                    IDs read <span className="font-mono">CLUB_EVENT or MEMBERSHIPDRIVE / NORMALREGISTER_STUDENTID_NAME_YYYYMMDD_HHMM_TRANSACTION</span>. Type any parts in any order: club, event, student ID, name, date
+                    IDs read <span className="break-all font-mono">CLUB_EVENT or MEMBERSHIPDRIVE / NORMALREGISTER_STUDENTID_NAME_YYYYMMDD_HHMM_TRANSACTION</span>. Type any parts in any order: club, event, student ID, name, date
                     (2026-11-01 or 1/11/2026), time (14:30) or bank reference.
                 </p>
                 {initial && (
@@ -138,7 +139,7 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
                                                 Receipt
                                             </a>
                                         )}
-                                        <Link href={`/clubs/${t.club_slug}/finance`} className="text-sm font-medium text-primary">
+                                        <Link href={url(`/clubs/${t.club_slug}/finance`)} className="text-sm font-medium text-primary">
                                             Ledger
                                         </Link>
                                     </div>
@@ -149,33 +150,39 @@ export default function Index({ q: initial, transactions, clubs, money, moneyClu
                     </>
                 )}
             </section>
-            <section className="mt-8 grid gap-3">
+            <section className="mt-8 grid min-w-0 gap-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <h2 className="text-lg font-semibold">Money in and out{moneyClub ? ` · ${clubs.find((c) => c.slug === moneyClub)?.name ?? ''}` : ' · all clubs'}</h2>
                     <Select value={moneyClub ?? ''} onChange={moneyFor} label="Club" options={[{ value: '', label: 'All clubs' }, ...clubs.map((c) => ({ value: c.slug, label: c.name }))]} />
                 </div>
                 <div className="grid gap-4 lg:grid-cols-2">
-                    <MoneyChart title="This session, month by month" rows={money.monthly} />
-                    <MoneyChart title="Year by year" rows={money.yearly} />
+                    <div className="min-w-0 overflow-x-auto">
+                        <MoneyChart title="This session, month by month" rows={money.monthly} />
+                    </div>
+                    <div className="min-w-0 overflow-x-auto">
+                        <MoneyChart title="Year by year" rows={money.yearly} />
+                    </div>
                 </div>
                 <p className="text-xs text-ink-muted">Fund withdrawals are advances, not expenses, so they are not counted here; the purchases they pay for are.</p>
             </section>
-            <section className="mt-8 grid gap-3">
+            <section className="mt-8 grid min-w-0 gap-3">
                 <h2 className="text-lg font-semibold">All clubs · balances</h2>
-                <Table
-                    columns={COLUMNS}
-                    rows={clubs}
-                    rowKey="slug"
-                    cells={{
-                        name: (row) => (
-                            <Link href={`/clubs/${row.slug}/finance`} className="font-medium hover:underline">
-                                {row.name}
-                            </Link>
-                        ),
-                        ready: (row) => <Badge tone={row.ready ? 'success' : 'warning'}>{row.ready ? 'Open' : 'Needs opening balance'}</Badge>,
-                        balance_sen: (row) => <span className={`tabular-nums ${row.balance_sen < 0 ? 'text-danger' : ''}`}>{rm(row.balance_sen)}</span>,
-                    }}
-                />
+                <div className="w-full min-w-0 overflow-x-auto">
+                    <Table
+                        columns={COLUMNS}
+                        rows={clubs}
+                        rowKey="slug"
+                        cells={{
+                            name: (row) => (
+                                <Link href={url(`/clubs/${row.slug}/finance`)} className="font-medium hover:underline">
+                                    {row.name}
+                                </Link>
+                            ),
+                            ready: (row) => <Badge tone={row.ready ? 'success' : 'warning'}>{row.ready ? 'Open' : 'Needs opening balance'}</Badge>,
+                            balance_sen: (row) => <span className={`tabular-nums ${row.balance_sen < 0 ? 'text-danger' : ''}`}>{rm(row.balance_sen)}</span>,
+                        }}
+                    />
+                </div>
             </section>
         </PortalLayout>
     );

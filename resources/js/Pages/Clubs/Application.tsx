@@ -3,6 +3,7 @@ import Badge from '@/Components/ui/Badge';
 import Button from '@/Components/ui/Button';
 import SignaturePad from '@/Components/ui/SignaturePad';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 
 interface ApplicationProps {
@@ -31,12 +32,12 @@ export default function Application({ application, can, categories, advisors, po
     const sign = useForm({ signature: null as string | null, signature_strokes: null as string | null });
     const back = (): void => {
         const note = prompt('What needs to change? (sent to the applicant)');
-        if (note) router.post(`/club-applications/${application.id}/return`, { note }, { preserveScroll: true });
+        if (note) router.post(url(`/club-applications/${application.id}/return`), { note }, { preserveScroll: true });
     };
     const decide = (approve: boolean): void => {
         const note = approve ? null : prompt('Why is it not approved? (sent to the applicant)');
         if (!approve && !note) return;
-        router.post(`/club-applications/${application.id}/decide`, { approve, note }, { preserveScroll: true });
+        router.post(url(`/club-applications/${application.id}/decide`), { approve, note }, { preserveScroll: true });
     };
     const approved = application.status === 'approved';
 
@@ -64,7 +65,7 @@ export default function Application({ application, can, categories, advisors, po
                 {application.club_slug && (
                     <p className="rounded-card bg-success/10 px-4 py-3 text-sm text-success">
                         The club is open.{' '}
-                        <Link href={`/clubs/${application.club_slug}`} className="font-semibold underline">
+                        <Link href={url(`/clubs/${application.club_slug}`)} className="font-semibold underline">
                             Go to the club page
                         </Link>
                     </p>
@@ -92,7 +93,7 @@ export default function Application({ application, can, categories, advisors, po
                         <h2 className="font-semibold">Your signature as advisor</h2>
                         <SignaturePad value={sign.data.signature} onChange={(png, strokes) => sign.setData({ signature: png, signature_strokes: strokes })} label="Sign to support this club" />
                         <div className="flex flex-wrap gap-2">
-                            <Button disabled={!sign.data.signature} loading={sign.processing} onClick={() => sign.post(`/club-applications/${application.id}/sign`, { preserveScroll: true })}>
+                            <Button disabled={!sign.data.signature} loading={sign.processing} onClick={() => sign.post(url(`/club-applications/${application.id}/sign`), { preserveScroll: true })}>
                                 Sign
                             </Button>
                             <Button variant="secondary" onClick={back}>
@@ -116,7 +117,7 @@ export default function Application({ application, can, categories, advisors, po
                     <>
                         <h2 className="font-semibold">Correct and sign again</h2>
                         <ApplicationForm
-                            action={`/club-applications/${application.id}/resubmit`}
+                            action={url(`/club-applications/${application.id}/resubmit`)}
                             categories={categories}
                             advisors={advisors}
                             positions={positions}

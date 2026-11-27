@@ -39,11 +39,11 @@ export default function Index({ entries }: { entries: Paginated<Entry> }) {
                                         {entry.action}
                                     </td>
                                     <td className="px-4 py-3">{entry.subject ?? '—'}</td>
-                                    <td className="px-4 py-3">
+                                    <td className="min-w-48 max-w-md px-4 py-3">
                                         {entry.details.length ? (
                                             <ul className="grid gap-0.5 text-xs text-ink-muted">
                                                 {entry.details.map((d, i) => (
-                                                    <li key={i}>{d}</li>
+                                                    <li key={i} className="break-words [overflow-wrap:anywhere]">{d}</li>
                                                 ))}
                                             </ul>
                                         ) : (

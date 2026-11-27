@@ -6,6 +6,7 @@ import Input from '@/Components/ui/Input';
 import SignaturePad from '@/Components/ui/SignaturePad';
 import Textarea from '@/Components/ui/Textarea';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import { Head, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 
@@ -41,7 +42,7 @@ export default function Indemnity({ event, student, saved, signedAt, mustSign }:
     const hasErrors = Object.keys(errors).length > 0;
     const submit = (e: FormEvent): void => {
         e.preventDefault();
-        form.post(`/events/${event.slug}/indemnity`);
+        form.post(url(`/events/${event.slug}/indemnity`));
     };
     const field = (key: keyof typeof data) => ({ value: data[key] as string, onChange: (v: string) => setData(key, v as never), error: errors[key] });
 
@@ -50,7 +51,7 @@ export default function Indemnity({ event, student, saved, signedAt, mustSign }:
             <Head title="Indemnity form" />
             <div className="mx-auto grid max-w-3xl gap-6">
                 <header className="grid justify-items-center gap-3 text-center">
-                    <img src="/brand/QIU_Wordmark.jpg" alt="Quest International University" className="h-20 w-auto mix-blend-multiply" />
+                    <img src={url('/brand/QIU_Wordmark.jpg')} alt="Quest International University" className="h-20 w-auto mix-blend-multiply" />
                     <h1 className="w-full bg-ink px-3 py-1.5 text-left font-semibold tracking-wide text-white">STUDENT LIFE DIVISION – INDEMNITY FORM</h1>
                 </header>
                 {signedAt ? (

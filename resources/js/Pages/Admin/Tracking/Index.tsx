@@ -3,6 +3,7 @@ import Select from '@/Components/ui/Select';
 import PortalLayout from '@/Layouts/PortalLayout';
 import { date, rm } from '@/lib/format';
 import { matchesSearch } from '@/lib/search';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { Fragment, useState } from 'react';
 
@@ -57,7 +58,7 @@ export default function Index({ session, sessions, months, clubs, transfers, tot
             <div className="grid gap-5">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <p className="text-sm text-ink-muted">What every club has submitted for {session}, and what is missing or overdue.</p>
-                    <Select value={session} onChange={(s) => router.get('/admin/tracking', { session: s }, { preserveScroll: true })} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />
+                    <Select value={session} onChange={(s) => router.get(url('/admin/tracking'), { session: s }, { preserveScroll: true })} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />
                 </div>
                 <section className="grid gap-3 sm:grid-cols-4">
                     {tiles.map((t) => (
@@ -73,7 +74,7 @@ export default function Index({ session, sessions, months, clubs, transfers, tot
                         <ul className="grid gap-1 text-sm">
                             {transfers.map((t) => (
                                 <li key={t.id} className="flex flex-wrap justify-between gap-2">
-                                    <Link href={`/withdrawals/${t.id}`} className="font-medium hover:underline">
+                                    <Link href={url(`/withdrawals/${t.id}`)} className="font-medium hover:underline">
                                         {t.club} · {t.for}
                                     </Link>
                                     <span className="tabular-nums">
@@ -145,7 +146,7 @@ export default function Index({ session, sessions, months, clubs, transfers, tot
                                                 <ul className="grid gap-1">
                                                     {c.events.map((e) => (
                                                         <li key={e.slug} className="flex flex-wrap items-center gap-2">
-                                                            <Link href={`/events/${e.slug}/documents`} className="font-medium hover:underline">
+                                                            <Link href={url(`/events/${e.slug}/documents`)} className="font-medium hover:underline">
                                                                 {date(e.date)} · {e.name}
                                                             </Link>
                                                             <Badge tone={e.complete ? 'success' : e.overdue ? 'danger' : 'warning'}>{e.complete ? 'Complete' : e.overdue ? 'Overdue' : 'In progress'}</Badge>

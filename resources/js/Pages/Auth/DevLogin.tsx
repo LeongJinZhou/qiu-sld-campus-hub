@@ -3,6 +3,7 @@ import Button from '@/Components/ui/Button';
 import Card from '@/Components/ui/Card';
 import Input from '@/Components/ui/Input';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { url } from '@/lib/url';
 import { Head, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
@@ -11,7 +12,7 @@ export default function DevLogin({ locked, accounts }: { locked: boolean; accoun
     const unlock = useForm({ passcode: '' });
     const submit = (e: FormEvent): void => {
         e.preventDefault();
-        unlock.post('/dev/login-as/unlock', { onFinish: () => unlock.reset() });
+        unlock.post(url('/dev/login-as/unlock'), { onFinish: () => unlock.reset() });
     };
     return (
         <GuestLayout>
@@ -29,7 +30,7 @@ export default function DevLogin({ locked, accounts }: { locked: boolean; accoun
                     <ul className="grid max-h-[70dvh] gap-1 overflow-y-auto">
                         {accounts.map((account) => (
                             <li key={account.email}>
-                                <button type="button" className="flex w-full items-center gap-3 rounded-control p-2 text-left hover:bg-surface-muted" onClick={() => router.post('/dev/login-as', { email: account.email })}>
+                                <button type="button" className="flex w-full items-center gap-3 rounded-control p-2 text-left hover:bg-surface-muted" onClick={() => router.post(url('/dev/login-as'), { email: account.email })}>
                                     <Avatar name={account.name} size="sm" />
                                     <span className="grid">
                                         <span className="text-sm font-medium">{account.name}</span>

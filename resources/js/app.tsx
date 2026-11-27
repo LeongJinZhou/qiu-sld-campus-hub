@@ -1,6 +1,7 @@
 import '../css/app.css';
 
 import { installMotion } from '@/lib/motion';
+import { url } from '@/lib/url';
 import { createInertiaApp, router } from '@inertiajs/react';
 import type { ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -29,5 +30,5 @@ router.on('navigate', (event) => {
 
 // Installable app: offline shell only (public/sw.js). Service workers need HTTPS, or localhost in development.
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+    window.addEventListener('load', () => navigator.serviceWorker.register(url('/sw.js'), { scope: url('/') }).catch(() => undefined));
 }

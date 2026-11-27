@@ -6,6 +6,7 @@ import { useFilterVisit } from '@/hooks/useFilterVisit';
 import AppLayout from '@/Layouts/AppLayout';
 import PortalLayout from '@/Layouts/PortalLayout';
 import { dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { Paginated } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
@@ -45,9 +46,9 @@ const minutesTone = (s: string): 'success' | 'warning' | 'info' | 'neutral' => (
 export default function Report({ club, meetings, totals, filters, kinds, clubs, sessions, exportBase }: ReportProps) {
     const title = club ? `Meetings report · ${club.name}` : 'Meetings';
     const [f, setF] = useState({ ...filters });
-    const params = useFilterVisit(club ? `/clubs/${club.slug}/meetings/report` : '/admin/meetings', f, 300);
+    const params = useFilterVisit(url(club ? `/clubs/${club.slug}/meetings/report` : '/admin/meetings'), f, 300);
     const set = (key: keyof typeof f) => (v: string): void => setF({ ...f, [key]: v });
-    const exportUrl = (format: 'xlsx' | 'pdf'): string => `${exportBase}/export.${format}?${new URLSearchParams(params).toString()}`;
+    const exportUrl = (format: 'xlsx' | 'pdf'): string => url(`${exportBase}/export.${format}?${new URLSearchParams(params).toString()}`);
     const cards = [
         { label: 'Meetings', value: totals.meetings },
         { label: 'Committee meetings', value: totals.committee },
@@ -58,12 +59,12 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
     const content = (
         <>
             <Head title={title} />
-            <div className="grid gap-5">
-                <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="grid min-w-0 gap-5">
+                <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
                     {club ? (
                         <div>
                             <h1 className="text-xl font-bold">{title}</h1>
-                            <Link href={`/clubs/${club.slug}/meetings`} className="text-sm text-primary">
+                            <Link href={url(`/clubs/${club.slug}/meetings`)} className="text-sm text-primary">
                                 Back to meetings
                             </Link>
                         </div>
@@ -93,7 +94,7 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
                     <Input value={f.month} onChange={set('month')} type="month" label="Month" />
                     <Select value={f.session} onChange={set('session')} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />
                 </div>
-                <div className="overflow-x-auto rounded-card border border-line bg-surface">
+                <div className="w-full min-w-0 overflow-x-auto rounded-card border border-line bg-surface">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-surface-muted text-xs uppercase tracking-wide text-ink-muted">
                             <tr>
@@ -115,7 +116,7 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
                                     <td className="whitespace-nowrap px-3 py-2 text-xs">{dateTime(r.date)}</td>
                                     {!club && <td className="px-3 py-2">{r.club}</td>}
                                     <td className="px-3 py-2">
-                                        <Link href={`/meetings/${r.id}`} className="font-medium text-primary">
+                                        <Link href={url(`/meetings/${r.id}`)} className="font-medium text-primary">
                                             {r.title}
                                         </Link>
                                         <div className="text-xs text-ink-muted">
@@ -136,17 +137,17 @@ export default function Report({ club, meetings, totals, filters, kinds, clubs, 
                                         <div className="flex flex-wrap gap-x-3 gap-y-1 whitespace-nowrap text-xs font-medium">
                                             {r.minutes_id &&
                                                 r.minutes_files.map((f) => (
-                                                    <a key={f} href={`/documents/${r.minutes_id}/download/${f}`} className="text-primary">
+                                                    <a key={f} href={url(`/documents/${r.minutes_id}/download/${f}`)} className="text-primary">
                                                         Minutes {f.toUpperCase()}
                                                     </a>
                                                 ))}
-                                            <a href={`/meetings/${r.id}/attendance/export.xlsx`} className="text-primary">
+                                            <a href={url(`/meetings/${r.id}/attendance/export.xlsx`)} className="text-primary">
                                                 Attendance Excel
                                             </a>
-                                            <a href={`/meetings/${r.id}/attendance/export.pdf`} className="text-primary">
+                                            <a href={url(`/meetings/${r.id}/attendance/export.pdf`)} className="text-primary">
                                                 Attendance PDF
                                             </a>
-                                            <a href={`/meetings/${r.id}/package.zip`} className="text-primary">
+                                            <a href={url(`/meetings/${r.id}/package.zip`)} className="text-primary">
                                                 All (ZIP)
                                             </a>
                                         </div>

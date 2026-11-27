@@ -7,6 +7,7 @@ import Icon from '@/Components/ui/Icon';
 import { useLeaveReminder } from '@/hooks/useLeaveReminder';
 import AppLayout from '@/Layouts/AppLayout';
 import { rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, router, usePoll } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -28,7 +29,7 @@ export default function Join({ club, fee, drive, membership, payment, committee,
     usePoll(3000, { only: ['payment', 'membership'] }, { autoStart: payment?.status === 'reading' });
     // Started joining a paid club but left before paying: remind them where they stopped.
     useLeaveReminder(`Paying for ${club.name}`, awaitingPayment);
-    const join = (): void => router.post(`/clubs/${club.slug}/join`, { acknowledged }, { preserveScroll: true });
+    const join = (): void => router.post(url(`/clubs/${club.slug}/join`), { acknowledged }, { preserveScroll: true });
     const member = membership?.status === 'active' || membership?.status === 'alumni';
     const canStart = !membership || membership.status === 'terminated' || (membership.status === 'grace' && !payment);
 
@@ -41,7 +42,7 @@ export default function Join({ club, fee, drive, membership, payment, committee,
                     <div>
                         <p className="text-sm text-ink-muted">Membership</p>
                         <h1 className="text-xl font-bold">{club.name}</h1>
-                        <Link href={`/clubs/${club.slug}`} className="text-sm text-primary">
+                        <Link href={url(`/clubs/${club.slug}`)} className="text-sm text-primary">
                             Back to club
                         </Link>
                     </div>
@@ -96,8 +97,8 @@ export default function Join({ club, fee, drive, membership, payment, committee,
                                     qrCodes={qrCodes}
                                     payment={payment}
                                     committee={committee}
-                                    receiptUrl={`/clubs/${club.slug}/join/receipt`}
-                                    cashUrl={`/clubs/${club.slug}/join/cash`}
+                                    receiptUrl={url(`/clubs/${club.slug}/join/receipt`)}
+                                    cashUrl={url(`/clubs/${club.slug}/join/cash`)}
                                     outcome="Your membership starts at once"
                                 />
                             </Card>

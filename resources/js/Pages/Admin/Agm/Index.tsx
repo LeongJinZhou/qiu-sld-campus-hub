@@ -8,6 +8,7 @@ import Icon from '@/Components/ui/Icon';
 import Input from '@/Components/ui/Input';
 import PortalLayout from '@/Layouts/PortalLayout';
 import { date } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
@@ -49,39 +50,39 @@ export default function Index({ period, history, clubs, themes, defaultSession }
     const open = useForm({ session: defaultSession, starts_on: '', agm_deadline: '', report_deadline: '' });
     const theme = useForm({ name: '', background_color: '#FFFFFF', title_color: '#14213D', body_color: '#333333', font: 'Poppins', background: [] as File[], is_default: false });
     const close = (): void => {
-        if (period && confirm('Close the AGM period? Clubs can no longer schedule or edit AGM work.')) router.post(`/admin/agm/periods/${period.id}/close`);
+        if (period && confirm('Close the AGM period? Clubs can no longer schedule or edit AGM work.')) router.post(url(`/admin/agm/periods/${period.id}/close`));
     };
     const openPeriod = (e: FormEvent): void => {
         e.preventDefault();
-        open.post('/admin/agm/periods');
+        open.post(url('/admin/agm/periods'));
     };
     const saveTheme = (e: FormEvent): void => {
         e.preventDefault();
         theme.transform((d) => ({ ...d, background: d.background[0] ?? null }));
-        theme.post('/admin/agm/themes', { forceFormData: true, preserveScroll: true, onSuccess: () => theme.reset() });
+        theme.post(url('/admin/agm/themes'), { forceFormData: true, preserveScroll: true, onSuccess: () => theme.reset() });
     };
     const checklistItem = (c: ClubRow, agm: ClubAgm, key: string, item: { label: string; ready: boolean }): ReactNode => {
         if (item.ready && key === 'report' && agm.report_id)
             return (
-                <Link href={`/documents/${agm.report_id}`} className="underline">
+                <Link href={url(`/documents/${agm.report_id}`)} className="underline">
                     {item.label}
                 </Link>
             );
         if (item.ready && key === 'finance')
             return (
-                <a href={`/clubs/${c.slug}/finance/export/pdf`} className="underline">
+                <a href={url(`/clubs/${c.slug}/finance/export/pdf`)} className="underline">
                     {item.label}
                 </a>
             );
         if (key === 'members')
             return (
-                <Link href={`/admin/clubs/${c.slug}/members`} className="underline">
+                <Link href={url(`/admin/clubs/${c.slug}/members`)} className="underline">
                     {item.label}
                 </Link>
             );
         if (item.ready && key === 'annual' && period)
             return (
-                <a href={`/clubs/${c.slug}/annual-report/pdf?session=${period.session_id}`} className="underline">
+                <a href={url(`/clubs/${c.slug}/annual-report/pdf?session=${period.session_id}`)} className="underline">
                     {item.label}
                 </a>
             );
@@ -156,14 +157,14 @@ export default function Index({ period, history, clubs, themes, defaultSession }
                                                 {/* SLD: acknowledge (archives the year), then start the committee handover. */}
                                                 <div className="mt-2 grid gap-1.5 border-t border-line pt-2 text-xs">
                                                     {!agm.acknowledged_at ? (
-                                                        <Button size="sm" disabled={!agm.package_submitted_at} onClick={() => router.post(`/admin/agms/${agm.id}/acknowledge`, {}, { preserveScroll: true })}>
+                                                        <Button size="sm" disabled={!agm.package_submitted_at} onClick={() => router.post(url(`/admin/agms/${agm.id}/acknowledge`), {}, { preserveScroll: true })}>
                                                             Acknowledge AGM
                                                         </Button>
                                                     ) : (
                                                         <p className="text-success">
                                                             Acknowledged {agm.acknowledged_at}{' '}
                                                             {agm.archive ? (
-                                                                <a href={`/clubs/${c.slug}/archive/${period.session_id}`} className="ml-1 underline">
+                                                                <a href={url(`/clubs/${c.slug}/archive/${period.session_id}`)} className="ml-1 underline">
                                                                     Archive (ZIP)
                                                                 </a>
                                                             ) : (
@@ -172,7 +173,7 @@ export default function Index({ period, history, clubs, themes, defaultSession }
                                                         </p>
                                                     )}
                                                     {agm.acknowledged_at && agm.election_id && agm.results_published && !agm.handover_started ? (
-                                                        <Button size="sm" variant="secondary" onClick={() => router.post(`/admin/elections/${agm.election_id}/handover`, {}, { preserveScroll: true })}>
+                                                        <Button size="sm" variant="secondary" onClick={() => router.post(url(`/admin/elections/${agm.election_id}/handover`), {}, { preserveScroll: true })}>
                                                             Start handover
                                                         </Button>
                                                     ) : agm.handed_over ? (

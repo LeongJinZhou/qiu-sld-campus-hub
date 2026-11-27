@@ -1,3 +1,4 @@
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Avatar from '@/Components/ui/Avatar';
 import Button from '@/Components/ui/Button';
 import Icon from '@/Components/ui/Icon';
@@ -7,8 +8,9 @@ import StepIndicator from '@/Components/ui/StepIndicator';
 import { useLeaveReminder } from '@/hooks/useLeaveReminder';
 import AppLayout from '@/Layouts/AppLayout';
 import { rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { RequestPayload } from '@inertiajs/core';
-import { Head, Link, router, usePoll } from '@inertiajs/react';
+import { Head, router, usePoll } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 
 interface HandoverProps {
@@ -59,7 +61,7 @@ export default function Handover({ side, handover: h, qrSvg, expectToken }: Hand
     const [busy, setBusy] = useState(false);
     const act = (action: string, data: Record<string, unknown> = {}): void => {
         setBusy(true);
-        router.post(`/handovers/${h.id}`, { action, ...data } as RequestPayload, { preserveScroll: true, forceFormData: 'photo' in data, onFinish: () => setBusy(false) });
+        router.post(url(`/handovers/${h.id}`), { action, ...data } as RequestPayload, { preserveScroll: true, forceFormData: 'photo' in data, onFinish: () => setBusy(false) });
     };
     const onPhoto = (photo: Blob): void => act('photo', { photo: new File([photo], 'handover.jpg', { type: 'image/jpeg' }) });
     // Retake goes back to the QR step on the server, so the student's phone shows their QR again too.
@@ -250,9 +252,9 @@ export default function Handover({ side, handover: h, qrSvg, expectToken }: Hand
                 <p className="text-center text-sm text-ink-muted">
                     {h.purpose === 'Membership' ? 'Membership is active' : 'The registration is confirmed'} and the club's finance has recorded it. A receipt was sent to both of you.
                 </p>
-                <Link href={`/clubs/${h.club_slug}`} className="justify-self-center">
-                    <Button variant="secondary">Back to club</Button>
-                </Link>
+                <ButtonLink href={`/clubs/${h.club_slug}`} className="justify-self-center">
+                    Back to club
+                </ButtonLink>
             </>
         );
     } else {

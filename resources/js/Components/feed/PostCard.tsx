@@ -5,6 +5,7 @@ import Icon from '@/Components/ui/Icon';
 import Modal from '@/Components/ui/Modal';
 import Textarea from '@/Components/ui/Textarea';
 import { dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { PostCardData } from '@/types';
 import { Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -37,11 +38,11 @@ export default function PostCard({ post, full = false }: { post: PostCardData; f
     function like(): void {
         setLiked(!liked);
         setLikes(likes + (liked ? -1 : 1));
-        router.post(`/posts/${post.id}/like`, {}, options);
+        router.post(url(`/posts/${post.id}/like`), {}, options);
     }
     function save(): void {
         setSaved(!saved);
-        router.post(`/posts/${post.id}/save`, {}, options);
+        router.post(url(`/posts/${post.id}/save`), {}, options);
     }
     async function share(): Promise<void> {
         const data = { title: post.event?.name ?? post.club?.name ?? 'QIU Campus Hub', url: post.url };
@@ -81,7 +82,7 @@ export default function PostCard({ post, full = false }: { post: PostCardData; f
         e.preventDefault();
         const { category, details } = reportForm.data;
         reportForm.transform(() => ({ reason: (details.trim() ? `${category}: ${details.trim()}` : category).slice(0, 255) }));
-        reportForm.post(`/posts/${post.id}/report`, {
+        reportForm.post(url(`/posts/${post.id}/report`), {
             preserveScroll: true,
             onSuccess: () => {
                 reportForm.reset();
@@ -92,19 +93,19 @@ export default function PostCard({ post, full = false }: { post: PostCardData; f
     const openComments = (): void => setCommenting(full || !commenting);
     const sendComment = (e: FormEvent): void => {
         e.preventDefault();
-        comment.post(`/posts/${post.id}/comments`, { preserveScroll: true, onSuccess: () => comment.reset() });
+        comment.post(url(`/posts/${post.id}/comments`), { preserveScroll: true, onSuccess: () => comment.reset() });
     };
     // SLD and the club's committee can delete comments.
     const removeComment = (id: number): void => {
-        if (confirm('Delete this comment for everyone?')) router.delete(`/comments/${id}`, { preserveScroll: true });
+        if (confirm('Delete this comment for everyone?')) router.delete(url(`/comments/${id}`), { preserveScroll: true });
     };
-    const register = (): void => router.post(`/events/${post.event?.slug}/register`, {}, { preserveScroll: true });
+    const register = (): void => router.post(url(`/events/${post.event?.slug}/register`), {}, { preserveScroll: true });
 
     return (
         <article className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
             <header className="flex items-center gap-3 px-4 py-3">
                 {post.club && (
-                    <Link href={`/clubs/${post.club.slug}`} className="flex items-center gap-3">
+                    <Link href={url(`/clubs/${post.club.slug}`)} className="flex items-center gap-3">
                         <Avatar src={post.club.logo_url} name={post.club.name} size="sm" ring />
                         <span className="text-sm font-semibold">{post.club.name}</span>
                     </Link>
@@ -239,7 +240,7 @@ export default function PostCard({ post, full = false }: { post: PostCardData; f
 
                 {post.event && (
                     <div className="grid gap-2 rounded-card border border-line bg-gradient-to-br from-gold/10 to-primary-strong/10 p-4 text-sm">
-                        <Link href={`/events/${post.event.slug}`} className="text-base font-bold">
+                        <Link href={url(`/events/${post.event.slug}`)} className="text-base font-bold">
                             {post.event.name}
                         </Link>
                         <p className="flex items-center gap-2 text-ink-muted">

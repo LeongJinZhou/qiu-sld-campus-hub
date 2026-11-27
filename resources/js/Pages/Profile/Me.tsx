@@ -9,10 +9,12 @@ import Drawer from '@/Components/ui/Drawer';
 import EmptyState from '@/Components/ui/EmptyState';
 import Icon from '@/Components/ui/Icon';
 import Input from '@/Components/ui/Input';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Modal from '@/Components/ui/Modal';
 import QrCode from '@/Components/ui/QrCode';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ProfileData } from '@/types';
 import { Deferred, Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState, type FormEvent, type ReactNode } from 'react';
@@ -40,7 +42,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
     const form = useForm({ hidden_sections: [...account.hidden_sections], personal_email: account.personal_email ?? '' });
     const save = (e: FormEvent): void => {
         e.preventDefault();
-        form.post('/me', { preserveScroll: true, onSuccess: () => setEditing(false) });
+        form.post(url('/me'), { preserveScroll: true, onSuccess: () => setEditing(false) });
     };
     const show = (section: string, on: boolean): void => form.setData('hidden_sections', on ? form.data.hidden_sections.filter((s) => s !== section) : [...form.data.hidden_sections, section]);
     async function share(): Promise<void> {
@@ -54,8 +56,8 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
     // First steps for a new student; the card disappears once every step is done.
     const steps: { label: string; done: boolean; href?: string; action?: () => void }[] = [
         { label: 'Add a profile photo', done: account.has_photo_override || !!profile.photo_url, action: () => setPhoto(true) },
-        { label: 'Join a club', done: (profile.clubs?.length ?? 0) > 0, href: '/search?type=clubs' },
-        { label: 'Sign up for an event', done: upcoming.length > 0 || (profile.events?.length ?? 0) > 0, href: '/feed' },
+        { label: 'Join a club', done: (profile.clubs?.length ?? 0) > 0, href: url('/search?type=clubs') },
+        { label: 'Sign up for an event', done: upcoming.length > 0 || (profile.events?.length ?? 0) > 0, href: url('/feed') },
         { label: 'Link a personal email (keeps your access after graduation)', done: !!account.personal_email, action: () => setEditing(true) },
     ];
     const stepsDone = steps.filter((s) => s.done).length;
@@ -69,7 +71,7 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
                         {upcoming.map((e) => (
                             <li key={e.slug}>
                                 <Link
-                                    href={e.needs_payment ? `/events/${e.slug}/pay` : e.needs_indemnity ? `/events/${e.slug}/indemnity` : `/events/${e.slug}`}
+                                    href={url(e.needs_payment ? `/events/${e.slug}/pay` : e.needs_indemnity ? `/events/${e.slug}/indemnity` : `/events/${e.slug}`)}
                                     className="flex items-center gap-3 rounded-card border border-line bg-surface p-3 transition hover:shadow-card"
                                 >
                                     {e.poster_url ? (
@@ -104,16 +106,14 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
                                     <strong className="block">{c.title}</strong>
                                     <span className="text-sm text-ink-muted">You {c.statement}</span>
                                     {c.code && (
-                                        <a href={`/certificates/${c.code}`} className="block text-xs text-primary">
+                                        <a href={url(`/certificates/${c.code}`)} className="block text-xs text-primary">
                                             Verification code {c.code}
                                         </a>
                                     )}
                                 </span>
-                                <a href={`/me/certificates/${c.kind}/${c.source_id}`}>
-                                    <Button size="sm" variant="secondary">
-                                        Download PDF
-                                    </Button>
-                                </a>
+                                <ButtonLink plain href={url(`/me/certificates/${c.kind}/${c.source_id}`)} size="sm" variant="secondary">
+                                    Download PDF
+                                </ButtonLink>
                             </li>
                         ))}
                     </ul>
@@ -212,11 +212,11 @@ export default function Me({ profile, account, hideableSections, saved, publicUr
             />
             {/* Phones have no sidebar, so account actions sit at the bottom of the profile. */}
             <section className="mt-6 grid gap-2 md:hidden">
-                <Link href="/activities" className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card">
+                <Link href={url('/activities')}className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card">
                     <Icon name="ticket" size={18} /> Activities &amp; tickets
                 </Link>
                 {nav?.isAdmin && (
-                    <Link href="/admin" className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card">
+                    <Link href={url('/admin')}className="flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-sm font-medium shadow-card">
                         <Icon name="shield" size={18} /> SLD Admin
                     </Link>
                 )}

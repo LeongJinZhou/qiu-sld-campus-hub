@@ -1,10 +1,11 @@
+import ButtonLink from '@/Components/forms/ButtonLink';
 import Avatar from '@/Components/ui/Avatar';
 import Button from '@/Components/ui/Button';
 import FileUpload from '@/Components/ui/FileUpload';
 import Icon from '@/Components/ui/Icon';
 import QrCode from '@/Components/ui/QrCode';
 import { rm } from '@/lib/format';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface PayPanelProps {
@@ -68,9 +69,9 @@ export default function PayPanel({ amountSen, accountName, paymentUrl, qrCodes, 
                                     <span className="size-2 animate-ping rounded-full bg-primary-strong" /> Your cash payment is in progress
                                 </p>
                                 <p className="text-ink-muted">Open it to follow each step with the committee member.</p>
-                                <Link href={`/handovers/${payment.handover_id}`}>
-                                    <Button block>Continue cash payment</Button>
-                                </Link>
+                                <ButtonLink href={`/handovers/${payment.handover_id}`} variant="primary" className="w-full">
+                                    Continue cash payment
+                                </ButtonLink>
                             </>
                         )
                     )}

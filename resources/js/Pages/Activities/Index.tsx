@@ -6,6 +6,7 @@ import EmptyState from '@/Components/ui/EmptyState';
 import Icon, { type IconName } from '@/Components/ui/Icon';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime } from '@/lib/format';
+import { url } from '@/lib/url';
 import type { ApprovalProgress, Ticket } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -49,14 +50,14 @@ interface MyClub {
 }
 // Everything a committee member or advisor runs, one tap away.
 const tools = (slug: string): { label: string; icon: IconName; href: string }[] => [
-    { label: 'New event', icon: 'plus', href: `/clubs/${slug}/events/create` },
-    { label: 'All events', icon: 'calendar', href: `/clubs/${slug}/events` },
-    { label: 'Finance', icon: 'file', href: `/clubs/${slug}/finance` },
-    { label: 'Members', icon: 'users', href: `/clubs/${slug}/members` },
-    { label: 'Participants', icon: 'ticket', href: `/clubs/${slug}/participants` },
-    { label: 'Meetings', icon: 'message', href: `/clubs/${slug}/meetings` },
-    { label: 'AGM', icon: 'award', href: `/clubs/${slug}/agm` },
-    { label: 'Venues', icon: 'pin', href: `/clubs/${slug}/venues` },
+    { label: 'New event', icon: 'plus', href: url(`/clubs/${slug}/events/create`) },
+    { label: 'All events', icon: 'calendar', href: url(`/clubs/${slug}/events`) },
+    { label: 'Finance', icon: 'file', href: url(`/clubs/${slug}/finance`) },
+    { label: 'Members', icon: 'users', href: url(`/clubs/${slug}/members`) },
+    { label: 'Participants', icon: 'ticket', href: url(`/clubs/${slug}/participants`) },
+    { label: 'Meetings', icon: 'message', href: url(`/clubs/${slug}/meetings`) },
+    { label: 'AGM', icon: 'award', href: url(`/clubs/${slug}/agm`) },
+    { label: 'Venues', icon: 'pin', href: url(`/clubs/${slug}/venues`) },
 ];
 const statusTone = (s: string): 'success' | 'warning' | 'info' | 'neutral' => (s === 'active' ? 'success' : s === 'grace' || s === 'pending' ? 'warning' : s === 'alumni' ? 'info' : 'neutral');
 const STATUS_LABEL: Record<string, string> = { active: 'Member', grace: 'Renew soon', pending: 'Payment pending', alumni: 'Alumni' };
@@ -67,7 +68,7 @@ const COLUMNS: { key: Column; label: string; empty: string }[] = [
     { key: 'approved', label: 'Approved', empty: 'Nothing approved in the last 30 days.' },
     { key: 'rejected', label: 'Rejected', empty: 'Nothing rejected.' },
 ];
-const ticketHref = (t: Ticket): string => (t.status === 'unpaid' ? `/events/${t.event.slug}/pay` : (t.url ?? `/events/${t.event.slug}`));
+const ticketHref = (t: Ticket): string => (t.status === 'unpaid' ? url(`/events/${t.event.slug}/pay`) : (t.url ?? url(`/events/${t.event.slug}`)));
 const heading = 'flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-ink-muted';
 
 /** The student's hub: tickets, events they help at, the clubs they run (with requests and tools), and clubs they joined. */
@@ -80,7 +81,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
     const inColumn = (c: MyClub, col: Column): RequestItem[] => c.requests.filter((r) => r.column === col);
     const tabOf = (c: MyClub): Column => tab[c.slug] ?? (c.requests.some((r) => r.column === 'submitted') ? 'submitted' : c.requests.some((r) => r.column === 'draft') ? 'draft' : 'submitted');
     const removeRequest = (r: RequestItem): void => {
-        if (confirm(`Delete the rejected ${r.type.toLowerCase()} "${r.title}"? This cannot be undone.`)) router.delete(`/documents/${r.id}/rejected`, { preserveScroll: true });
+        if (confirm(`Delete the rejected ${r.type.toLowerCase()} "${r.title}"? This cannot be undone.`)) router.delete(url(`/documents/${r.id}/rejected`), { preserveScroll: true });
     };
 
     return (
@@ -92,7 +93,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                         <h1 className="text-2xl font-bold">Activities</h1>
                         <p className="text-sm text-ink-muted">Your tickets, the clubs you run and the clubs you have joined.</p>
                     </div>
-                    <Link href="/calendar" className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-2 text-sm font-semibold shadow-card transition hover:-translate-y-0.5">
+                    <Link href={url('/calendar')} className="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-2 text-sm font-semibold shadow-card transition hover:-translate-y-0.5">
                         <Icon name="calendar" size={16} /> Calendar
                     </Link>
                 </header>
@@ -104,7 +105,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                     {!upcoming.length && (
                         <div className="rounded-card border border-dashed border-line p-5 text-center text-sm text-ink-muted">
                             No upcoming events.{' '}
-                            <Link href="/search?type=events" className="font-medium text-primary">
+                            <Link href={url('/search?type=events')} className="font-medium text-primary">
                                 Find one to join
                             </Link>
                         </div>
@@ -142,7 +143,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                         <ul className="grid gap-2 md:grid-cols-2">
                             {helping.map((e) => (
                                 <li key={e.slug}>
-                                    <Link href={`/events/${e.slug}/attendance`} className="flex items-center gap-3 rounded-card border border-line bg-surface p-3 shadow-card transition hover:shadow-pop">
+                                    <Link href={url(`/events/${e.slug}/attendance`)} className="flex items-center gap-3 rounded-card border border-line bg-surface p-3 shadow-card transition hover:shadow-pop">
                                         <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary text-white">
                                             <Icon name="scan" size={20} />
                                         </span>
@@ -155,7 +156,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                                         {e.live && <Badge tone="danger">Live</Badge>}
                                         <span className="text-xs font-semibold text-primary">Scan →</span>
                                     </Link>
-                                    <Link href={`/events/${e.slug}/purchases`} className="mt-1 flex items-center gap-1.5 px-3 text-xs font-medium text-primary">
+                                    <Link href={url(`/events/${e.slug}/purchases`)} className="mt-1 flex items-center gap-1.5 px-3 text-xs font-medium text-primary">
                                         <Icon name="receipt" size={14} /> Bought something? Claim a purchase
                                     </Link>
                                 </li>
@@ -172,7 +173,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                             const items = inColumn(c, current);
                             return (
                                 <article key={c.slug} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                                    <Link href={`/clubs/${c.slug}`} className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-primary-strong/10 p-4">
+                                    <Link href={url(`/clubs/${c.slug}`)} className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-primary-strong/10 p-4">
                                         <Avatar src={c.logo_url} name={c.name} size="md" ring />
                                         <span className="min-w-0 flex-1">
                                             <span className="block truncate text-base font-semibold">{c.name}</span>
@@ -195,7 +196,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                                                             <Icon name="calendar" size={20} />
                                                         </span>
                                                     )}
-                                                    <Link href={`/events/${e.slug}`} className="grid min-w-0 flex-1 text-sm">
+                                                    <Link href={url(`/events/${e.slug}`)} className="grid min-w-0 flex-1 text-sm">
                                                         <span className="flex items-center gap-2">
                                                             <strong className="truncate">{e.name}</strong>
                                                             {e.live ? <Badge tone="danger">Live</Badge> : e.past && <Badge>Ended</Badge>}
@@ -210,7 +211,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                                                             )}
                                                         </span>
                                                     </Link>
-                                                    <Link href={`/events/${e.slug}/attendance`} className="flex shrink-0 items-center gap-1.5 rounded-control bg-ink px-3 py-2 text-xs font-semibold text-white">
+                                                    <Link href={url(`/events/${e.slug}/attendance`)} className="flex shrink-0 items-center gap-1.5 rounded-control bg-ink px-3 py-2 text-xs font-semibold text-white">
                                                         <Icon name="scan" size={14} /> Door
                                                     </Link>
                                                 </div>
@@ -289,7 +290,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                             {joined.map((c) => (
                                 <li key={c.slug}>
                                     <Link
-                                        href={c.membership?.status === 'pending' ? `/clubs/${c.slug}/join` : `/clubs/${c.slug}`}
+                                        href={url(c.membership?.status === 'pending' ? `/clubs/${c.slug}/join` : `/clubs/${c.slug}`)}
                                         className="flex items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card transition hover:shadow-pop"
                                     >
                                         <Avatar src={c.logo_url} name={c.name} size="md" />
@@ -308,7 +309,7 @@ export default function Index({ tickets, helping, clubs }: { tickets: Ticket[]; 
                 {!clubs.length && !tickets.length && (
                     <>
                         <EmptyState title="Nothing here yet" description="Join a club or register for an event and it will show up here." />
-                        <Link href="/search" className="justify-self-center rounded-control bg-ink px-5 py-2.5 text-sm font-semibold text-white">
+                        <Link href={url('/search')} className="justify-self-center rounded-control bg-ink px-5 py-2.5 text-sm font-semibold text-white">
                             Explore clubs and events
                         </Link>
                     </>

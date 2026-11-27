@@ -1,5 +1,6 @@
 import ApplicationForm from '@/Components/clubs/ApplicationForm';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import { Head, Link } from '@inertiajs/react';
 
 interface ApplyProps {
@@ -23,7 +24,7 @@ export default function Apply({ categories, advisors, positions, me, mine }: App
                     <section className="grid gap-2 rounded-card border border-line bg-surface p-4 shadow-card">
                         <h2 className="text-sm font-semibold">Your applications</h2>
                         {mine.map((a) => (
-                            <Link key={a.id} href={`/club-applications/${a.id}`} className="flex justify-between text-sm hover:underline">
+                            <Link key={a.id} href={url(`/club-applications/${a.id}`)} className="flex justify-between text-sm hover:underline">
                                 <span>{a.name}</span>
                                 <span className="text-ink-muted">{a.status}</span>
                             </Link>
@@ -31,7 +32,7 @@ export default function Apply({ categories, advisors, positions, me, mine }: App
                     </section>
                 )}
                 {me ? (
-                    <ApplicationForm action="/clubs-apply" categories={categories} advisors={advisors} positions={positions} me={me} />
+                    <ApplicationForm action={url('/clubs-apply')} categories={categories} advisors={advisors} positions={positions} me={me} />
                 ) : (
                     // No student record yet (a QIU account that is not in camsys): the form could only fail at the end.
                     <p className="rounded-card border border-line bg-surface p-4 text-sm shadow-card" role="status">

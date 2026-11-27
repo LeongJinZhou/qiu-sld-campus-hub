@@ -1,5 +1,6 @@
 import ApprovalTracker from '@/Components/forms/ApprovalTracker';
 import AutosaveNote from '@/Components/forms/AutosaveNote';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import DynamicTable from '@/Components/forms/DynamicTable';
 import FormSection from '@/Components/forms/FormSection';
 import LockedField from '@/Components/forms/LockedField';
@@ -10,6 +11,7 @@ import SignaturePad from '@/Components/ui/SignaturePad';
 import { useAutosave } from '@/hooks/useAutosave';
 import AppLayout from '@/Layouts/AppLayout';
 import { copy } from '@/lib/clone';
+import { url } from '@/lib/url';
 import type { ApprovalProgress, ApprovalStep } from '@/types';
 import { Head, Link, useForm, usePoll } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -36,10 +38,10 @@ export default function PostMortem({ event, header, areas, document }: PostMorte
     const form = useForm({ rows: copy(document.data.rows), recommendations: [...document.data.recommendations], signature: null as string | null, signature_strokes: null as string | null });
     const { data, setData } = form;
     const readOnly = !document.editable;
-    const url = `/events/${event.slug}/post-mortem`;
+    const pageUrl = url(`/events/${event.slug}/post-mortem`);
     const suggesting = document.ai === 'pending';
     const draft = { rows: data.rows, recommendations: data.recommendations };
-    const autosaved = useAutosave(url, draft, document.editable && !suggesting, form.processing);
+    const autosaved = useAutosave(pageUrl, draft, document.editable && !suggesting, form.processing);
     usePoll(2500, { only: ['document'] }, { autoStart: suggesting });
     // When the AI has finished, load what it wrote into the form.
     useEffect(() => {
@@ -51,15 +53,15 @@ export default function PostMortem({ event, header, areas, document }: PostMorte
     // useForm keeps the last transform: set it before every request, so the signature always goes with the submission.
     const save = (): void => {
         form.transform((d) => ({ rows: d.rows, recommendations: d.recommendations }));
-        form.put(url, { preserveScroll: true });
+        form.put(pageUrl, { preserveScroll: true });
     };
     const suggest = (): void => {
         form.transform((d) => ({ rows: d.rows, recommendations: d.recommendations }));
-        form.post(`${url}/suggest`, { preserveScroll: true });
+        form.post(`${pageUrl}/suggest`, { preserveScroll: true });
     };
     const submit = (): void => {
         form.transform((d) => d);
-        form.post(`${url}/submit`, { preserveScroll: true, onSuccess: () => setSigning(false) });
+        form.post(`${pageUrl}/submit`, { preserveScroll: true, onSuccess: () => setSigning(false) });
     };
     const setCell = (key: string, field: (typeof FIELDS)[number], value: string): void => setData('rows', { ...data.rows, [key]: { ...(data.rows[key] as Row), [field]: value } });
     const errors = Object.values(form.errors);
@@ -69,7 +71,7 @@ export default function PostMortem({ event, header, areas, document }: PostMorte
             <Head title={`Post mortem · ${event.name}`} />
             <div className="grid gap-6">
                 <header>
-                    <Link href={`/events/${event.slug}`} className="text-sm text-primary">
+                    <Link href={url(`/events/${event.slug}`)} className="text-sm text-primary">
                         {event.name}
                     </Link>
                     <h1 className="text-xl font-bold">Event Post Mortem</h1>
@@ -83,11 +85,9 @@ export default function PostMortem({ event, header, areas, document }: PostMorte
                 {document.downloads.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                         {document.downloads.map((f) => (
-                            <a key={f} href={`/documents/${document.id}/download/${f}`}>
-                                <Button variant="secondary" size="sm">
-                                    Official 09 Post Mortem ({f.toUpperCase()})
-                                </Button>
-                            </a>
+                            <ButtonLink plain key={f} size="sm" href={`/documents/${document.id}/download/${f}`}>
+                                Official 09 Post Mortem ({f.toUpperCase()})
+                            </ButtonLink>
                         ))}
                     </div>
                 )}

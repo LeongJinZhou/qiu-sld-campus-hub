@@ -1,6 +1,6 @@
 import Avatar from '@/Components/ui/Avatar';
 import Badge from '@/Components/ui/Badge';
-import Button from '@/Components/ui/Button';
+import ButtonLink from '@/Components/forms/ButtonLink';
 import EmptyState from '@/Components/ui/EmptyState';
 import Icon from '@/Components/ui/Icon';
 import Input from '@/Components/ui/Input';
@@ -8,6 +8,7 @@ import Select from '@/Components/ui/Select';
 import AppLayout from '@/Layouts/AppLayout';
 import { date } from '@/lib/format';
 import { matchesSearch } from '@/lib/search';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -45,7 +46,7 @@ const SHOW = [
 
 /** Everyone who registered for or attended this club's events — members or not. */
 export default function Participants({ club, session, sessions, events, rows: all, labels }: ParticipantsProps) {
-    const url = `/clubs/${club.slug}/participants`;
+    const pageUrl = url(`/clubs/${club.slug}/participants`);
     const [show, setShow] = useState<'all' | 'non' | 'members'>('non');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState<'attended' | 'recent' | 'name'>('attended');
@@ -54,7 +55,7 @@ export default function Participants({ club, session, sessions, events, rows: al
     const rows = all
         .filter((r) => (show === 'all' || (show === 'non' ? !isMember(r.member) : isMember(r.member))) && matchesSearch(search, r.name, r.student_number, r.programme))
         .sort((a, b) => (sort === 'name' ? a.name.localeCompare(b.name) : sort === 'recent' ? (b.last_date ?? '').localeCompare(a.last_date ?? '') : b.attended - a.attended || b.registered - a.registered));
-    const exportUrl = (format: string): string => `${url}/export/${format}?session=${encodeURIComponent(session)}`;
+    const exportUrl = (format: string): string => `${pageUrl}/export/${format}?session=${encodeURIComponent(session)}`;
     const tiles = [
         { label: 'Events this session', value: events },
         { label: 'People who took part', value: all.length },
@@ -68,22 +69,20 @@ export default function Participants({ club, session, sessions, events, rows: al
             <div className="grid gap-5">
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <Link href={`/clubs/${club.slug}`} className="text-sm text-primary">
+                        <Link href={url(`/clubs/${club.slug}`)} className="text-sm text-primary">
                             ← {club.name}
                         </Link>
                         <h1 className="text-xl font-bold">Event participants</h1>
                         <p className="text-sm text-ink-muted">Everyone who registered for or attended {club.name} events — members or not.</p>
                     </div>
                     <div className="flex flex-wrap items-end gap-2">
-                        <Select value={session} onChange={(s) => router.get(url, { session: s }, { preserveScroll: true })} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />
-                        <a href={exportUrl('xlsx')}>
-                            <Button variant="secondary">
-                                <Icon name="file" size={16} /> Excel
-                            </Button>
-                        </a>
-                        <a href={exportUrl('pdf')}>
-                            <Button variant="secondary">PDF</Button>
-                        </a>
+                        <Select value={session} onChange={(s) => router.get(pageUrl,{ session: s }, { preserveScroll: true })} label="Session" options={sessions.map((s) => ({ value: s, label: s }))} />
+                        <ButtonLink plain href={exportUrl('xlsx')}>
+                            <Icon name="file" size={16} /> Excel
+                        </ButtonLink>
+                        <ButtonLink plain href={exportUrl('pdf')}>
+                            PDF
+                        </ButtonLink>
                     </div>
                 </header>
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -147,7 +146,7 @@ export default function Participants({ club, session, sessions, events, rows: al
                                         <ol className="grid gap-1.5">
                                             {r.events.map((e) => (
                                                 <li key={e.slug} className="flex flex-wrap items-center justify-between gap-2 rounded-control bg-surface px-3 py-2 text-sm">
-                                                    <Link href={`/events/${e.slug}`} className="min-w-0">
+                                                    <Link href={url(`/events/${e.slug}`)} className="min-w-0">
                                                         <span className="font-medium">{e.name}</span> <span className="text-xs text-ink-muted">· {date(e.date)}</span>
                                                     </Link>
                                                     <span className="flex flex-wrap items-center gap-1.5 text-xs">

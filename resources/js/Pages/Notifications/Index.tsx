@@ -4,6 +4,7 @@ import EmptyState from '@/Components/ui/EmptyState';
 import Icon, { type IconName } from '@/Components/ui/Icon';
 import Modal from '@/Components/ui/Modal';
 import AppLayout from '@/Layouts/AppLayout';
+import { url } from '@/lib/url';
 import { Head, Link, router, usePoll } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 
@@ -42,11 +43,11 @@ export default function Index({ actions, items, hasMore, limit, group, groups, t
     const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('Notification' in window ? Notification.permission : 'unsupported');
 
     // Filter by group, load more, clear one or many. "Action needed" is never cleared: it goes when the task is done.
-    const show = (g: string | null): void => router.get('/notifications', g ? { group: g } : {}, { preserveScroll: true, preserveState: true, replace: true });
-    const more = (): void => router.get('/notifications', { ...(group ? { group } : {}), limit: limit + 30 }, { preserveScroll: true, preserveState: true, replace: true });
+    const show = (g: string | null): void => router.get(url('/notifications'), g ? { group: g } : {}, { preserveScroll: true, preserveState: true, replace: true });
+    const more = (): void => router.get(url('/notifications'), { ...(group ? { group } : {}), limit: limit + 30 }, { preserveScroll: true, preserveState: true, replace: true });
     const clearOne = (id: string): void => {
         setRemoving((s) => new Set(s).add(id));
-        router.delete(`/notifications/${id}`, {
+        router.delete(url(`/notifications/${id}`), {
             preserveScroll: true,
             preserveState: true,
             onFinish: () =>
@@ -59,10 +60,10 @@ export default function Index({ actions, items, hasMore, limit, group, groups, t
     };
     const clearAll = (): void => {
         const what = group ? (groups.find((g) => g.key === group)?.label ?? 'these') : 'all';
-        if (confirm(`Clear ${what} notifications? Items that need action stay until they are completed.`)) router.delete('/notifications', { data: group ? { group } : {}, preserveScroll: true });
+        if (confirm(`Clear ${what} notifications? Items that need action stay until they are completed.`)) router.delete(url('/notifications'), { data: group ? { group } : {}, preserveScroll: true });
     };
     const toggle = (key: string, on: boolean): void => setMutes(on ? mutes.filter((k) => k !== key) : [...mutes, key]);
-    const saveMutes = (): void => router.put('/notifications/mutes', { muted: mutes }, { preserveScroll: true, onSuccess: () => setSettings(false) });
+    const saveMutes = (): void => router.put(url('/notifications/mutes'), { muted: mutes }, { preserveScroll: true, onSuccess: () => setSettings(false) });
 
     return (
         <AppLayout>

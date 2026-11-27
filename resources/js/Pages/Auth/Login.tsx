@@ -1,4 +1,5 @@
 import Toast from '@/Components/ui/Toast';
+import { url } from '@/lib/url';
 import { Head, Link } from '@inertiajs/react';
 
 export default function Login({ devLogin }: { devLogin: boolean }) {
@@ -11,7 +12,7 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
                     <div className="absolute -left-24 -top-24 size-96 rounded-full bg-primary/30 blur-3xl" aria-hidden="true" />
                     <div className="absolute -bottom-32 right-0 size-[28rem] rounded-full bg-primary-strong/30 blur-3xl" aria-hidden="true" />
                     <div className="absolute bottom-24 left-24 size-64 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
-                    <img src="/brand/student-activity-white.png" alt="QIU Student Activity" className="relative h-14 w-auto self-start" />
+                    <img src={url('/brand/student-activity-white.png')} alt="QIU Student Activity" className="relative h-14 w-auto self-start" />
                     <div className="relative grid gap-4">
                         <h2 className="text-5xl font-bold leading-tight">
                             Every club.
@@ -28,7 +29,7 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
                 <section className="relative grid place-items-center overflow-hidden px-6 py-12">
                     <div className="absolute -right-24 -top-24 size-72 rounded-full bg-gold/40 blur-3xl lg:hidden" aria-hidden="true" />
                     <div className="relative grid w-full max-w-sm gap-8 text-center">
-                        <img src="/brand/student-activity-black.png" alt="QIU Student Activity" className="mx-auto h-16 w-auto" />
+                        <img src={url('/brand/student-activity-black.png')} alt="QIU Student Activity" className="mx-auto h-16 w-auto" />
                         <div className="grid gap-2">
                             <h1 className="text-3xl font-bold">
                                 <span className="text-gradient-warm">Campus</span> <span className="text-gradient-cool">Hub</span>
@@ -37,7 +38,7 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
                                 Sign in with your <strong className="text-ink">@qiu.edu.my</strong> account.
                             </p>
                         </div>
-                        <a href="/auth/google/redirect" className="flex h-12 items-center justify-center gap-3 rounded-control border border-line bg-surface font-medium shadow-card transition hover:shadow-pop">
+                        <a href={url('/auth/google/redirect')} className="flex h-12 items-center justify-center gap-3 rounded-control border border-line bg-surface font-medium shadow-card transition hover:shadow-pop">
                             <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
                                 <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
                                 <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
@@ -46,11 +47,11 @@ export default function Login({ devLogin }: { devLogin: boolean }) {
                             </svg>
                             Continue with Google
                         </a>
-                        <a href="/auth/google/alumni" className="text-sm text-ink-muted hover:underline">
+                        <a href={url('/auth/google/alumni')} className="text-sm text-ink-muted hover:underline">
                             Graduated? Sign in with the personal email you linked
                         </a>
                         {devLogin && (
-                            <Link href="/dev/login-as" className="text-sm font-medium text-primary">
+                            <Link href={url('/dev/login-as')} className="text-sm font-medium text-primary">
                                 Demo sign-in (testing only)
                             </Link>
                         )}

@@ -4,6 +4,7 @@ import EmptyState from '@/Components/ui/EmptyState';
 import Icon from '@/Components/ui/Icon';
 import AppLayout from '@/Layouts/AppLayout';
 import { dateTime, rm } from '@/lib/format';
+import { url } from '@/lib/url';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -25,7 +26,7 @@ const TABS: { key: Type; label: string }[] = [
 export default function Index({ q: initial, type, clubs, events, people }: SearchProps) {
     const [q, setQ] = useState(initial);
     const go = (t: Type = type, text = q): void =>
-        router.get('/search', { ...(text.trim() ? { q: text.trim() } : {}), ...(t !== 'all' ? { type: t } : {}) }, { preserveState: true, replace: true, preserveScroll: true });
+        router.get(url('/search'), { ...(text.trim() ? { q: text.trim() } : {}), ...(t !== 'all' ? { type: t } : {}) }, { preserveState: true, replace: true, preserveScroll: true });
     const first = useRef(true);
     useEffect(() => {
         if (first.current) {
@@ -94,7 +95,7 @@ export default function Index({ q: initial, type, clubs, events, people }: Searc
                         <ul className="grid gap-3 sm:grid-cols-2">
                             {events.map((e) => (
                                 <li key={e.slug}>
-                                    <Link href={`/events/${e.slug}`} className={`flex items-center gap-3 rounded-card border border-line bg-surface p-3 transition hover:shadow-card ${e.past ? 'opacity-70' : ''}`}>
+                                    <Link href={url(`/events/${e.slug}`)} className={`flex items-center gap-3 rounded-card border border-line bg-surface p-3 transition hover:shadow-card ${e.past ? 'opacity-70' : ''}`}>
                                         {e.poster_url ? (
                                             <img src={e.poster_url} alt="" className="size-16 shrink-0 rounded-control object-cover object-top" loading="lazy" />
                                         ) : (
@@ -139,7 +140,7 @@ export default function Index({ q: initial, type, clubs, events, people }: Searc
                         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                             {clubs.map((club) => (
                                 <li key={club.slug}>
-                                    <Link href={`/clubs/${club.slug}`} className="group grid overflow-hidden rounded-card border border-line bg-surface text-center shadow-card transition hover:-translate-y-0.5 hover:shadow-pop">
+                                    <Link href={url(`/clubs/${club.slug}`)} className="group grid overflow-hidden rounded-card border border-line bg-surface text-center shadow-card transition hover:-translate-y-0.5 hover:shadow-pop">
                                         <span className="h-14 bg-gradient-to-r from-gold via-accent to-primary-strong" />
                                         <span className="-mt-9 grid justify-items-center gap-1.5 px-3 pb-4">
                                             <span className="rounded-full bg-surface p-0.5">
@@ -157,7 +158,7 @@ export default function Index({ q: initial, type, clubs, events, people }: Searc
                 {type === 'clubs' && (
                     <p className="text-center text-sm text-ink-muted">
                         Can't find your club?{' '}
-                        <Link href="/clubs-apply" className="font-medium text-primary hover:underline">
+                        <Link href={url('/clubs-apply')} className="font-medium text-primary hover:underline">
                             Start a new club
                         </Link>
                     </p>

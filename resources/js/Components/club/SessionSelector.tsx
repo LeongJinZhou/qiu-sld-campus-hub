@@ -1,5 +1,6 @@
 import Icon from '@/Components/ui/Icon';
 import type { SessionOption } from '@/types';
+import { url as urlWithBase } from '@/lib/url';
 import { router } from '@inertiajs/react';
 import { useLayoutEffect, useRef, useState } from 'react';
 
@@ -24,7 +25,7 @@ export default function SessionSelector({ sessions, selected, url }: { sessions:
     function choose(name: string): void {
         if (name === selected) return;
         setLoading(name);
-        router.get(url, { session: name }, { preserveScroll: true, preserveState: true, replace: true, onFinish: () => setLoading(null) });
+        router.get(urlWithBase(url), { session: name }, { preserveScroll: true, preserveState: true, replace: true, onFinish: () => setLoading(null) });
     }
     const step = (dir: -1 | 1): void => {
         const i = sessions.findIndex((s) => s.name === selected);
@@ -34,7 +35,7 @@ export default function SessionSelector({ sessions, selected, url }: { sessions:
     const arrow = 'grid size-7 place-items-center rounded-full border border-line text-ink-muted transition hover:bg-surface-muted disabled:opacity-30';
 
     return (
-        <div className="grid gap-2">
+        <div className="grid min-w-0 gap-2">
             <div className="flex items-center justify-between gap-2">
                 <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
                     <Icon name="calendar" size={14} /> Committee year
